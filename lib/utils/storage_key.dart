@@ -225,6 +225,7 @@ abstract final class SettingBoxKey {
       blockUserID = 'blockUserID',
       blockToast = 'blockToast',
       blockServer = 'blockServer',
+      blockSkipWhenSeekIntoSegment = 'blockSkipWhenSeekIntoSegment',
       blockTrack = 'blockTrack';
 
   static const String enableShowDanmaku = 'enableShowDanmaku',
