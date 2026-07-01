@@ -577,6 +577,13 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
             SliverToBoxAdapter(child: _blockToastItem(titleStyle)),
             sliverDivider,
             SliverToBoxAdapter(
+              child: _blockSkipWhenSeekIntoSegmentItem(
+                titleStyle,
+                subTitleStyle,
+              ),
+            ),
+            sliverDivider,
+            SliverToBoxAdapter(
               child: _blockTrackItem(titleStyle, subTitleStyle),
             ),
             sliverDivider,
