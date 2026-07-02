@@ -247,6 +247,14 @@ List<SettingsModel> get playSettings => [
     setKey: SettingBoxKey.enableInAppPip,
     defaultVal: true,
   ),
+  if (Platform.isWindows)
+    const SwitchModel(
+      title: '视频标签页',
+      subtitle: '在 Windows 端暂存打开过的视频，可从视频页菜单快速切换',
+      leading: Icon(Icons.tab_outlined),
+      setKey: SettingBoxKey.enableWindowsVideoTabs,
+      defaultVal: true,
+    ),
   if (Platform.isAndroid) ...[
     SwitchModel(
       title: '后台画中画',

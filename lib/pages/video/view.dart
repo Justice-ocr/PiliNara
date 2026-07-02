@@ -56,6 +56,7 @@ import 'package:PiliPlus/services/pip_overlay_service.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/services/shutdown_timer_service.dart'
     show shutdownTimerService;
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
@@ -181,6 +182,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     final String? targetContextKey = PipOverlayService.contextKeyFromArgs(
       Get.arguments is Map ? Get.arguments as Map : null,
     );
+    if (Get.arguments is Map) {
+      WindowsVideoTabService.upsert(Get.arguments as Map);
+    }
 
     // 如果有直播间 PiP 在运行，关闭它（采用非销毁式，避免干扰视频播放器单例）
     if (LivePipOverlayService.isInPipMode && !fromPip) {
@@ -647,6 +651,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   void dispose() {
     VideoStackManager.decrement(); // 减少视频页面层级追踪
     final isInAppPip = PipOverlayService.isInPipMode;
+    _syncWindowsVideoTabProgress();
     // 如果 _pipRetryPending=true 但用户没有继续 pop（_onPopInvokedWithResult 未触发），
     // 说明用户通过其他方式离开（点导航栏、Get.offAll 等），需要主动暂停播放器。
     if (_pipRetryPending && !isInAppPip && !_isEnteringPipMode) {
@@ -703,6 +708,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     isShowing = false;
 
     removeObserverMobile(this);
+    _syncWindowsVideoTabProgress();
 
     if (Platform.isAndroid && !videoDetailController.setSystemBrightness) {
       ScreenBrightnessPlatform.instance.resetApplicationScreenBrightness();
@@ -1732,6 +1738,13 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       shadows: shadows,
     ),
     itemBuilder: (BuildContext context) => <PopupMenuEntry>[
+      if (WindowsVideoTabService.enabled)
+        PopupMenuItem(
+          onTap: _showWindowsVideoTabs,
+          child: Obx(
+            () => Text('视频标签页 (${WindowsVideoTabService.tabs.length})'),
+          ),
+        ),
       PopupMenuItem(
         onTap: introController.viewLater,
         child: const Text('稍后再看'),
@@ -1769,6 +1782,99 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       ),
     ],
   );
+
+  void _showWindowsVideoTabs() {
+    _syncWindowsVideoTabProgress();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !WindowsVideoTabService.enabled) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('视频标签页'),
+          content: SizedBox(
+            width: 420,
+            child: Obx(() {
+              final tabs = WindowsVideoTabService.tabs;
+              if (tabs.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Text('暂无暂存的视频'),
+                );
+              }
+              return ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 420),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemBuilder: (context, index) {
+                    final item = tabs[index];
+                    final active =
+                        WindowsVideoTabService.activeId.value == item.id;
+                    return ListTile(
+                      dense: true,
+                      leading: Icon(
+                        active
+                            ? Icons.play_circle_outline
+                            : Icons.video_library_outlined,
+                      ),
+                      title: Text(
+                        item.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: item.subtitle.isEmpty
+                          ? null
+                          : Text(
+                              item.subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                      trailing: IconButton(
+                        tooltip: '关闭标签',
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          WindowsVideoTabService.close(item.id);
+                          if (WindowsVideoTabService.tabs.isEmpty) {
+                            Navigator.of(context).pop();
+                          }
+                        },
+                      ),
+                      selected: active,
+                      onTap: active
+                          ? () => Navigator.of(context).pop()
+                          : () {
+                              Navigator.of(context).pop();
+                              WindowsVideoTabService.open(item);
+                            },
+                    );
+                  },
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemCount: tabs.length,
+                ),
+              );
+            }),
+          ),
+          actions: [
+            TextButton(
+              onPressed: WindowsVideoTabService.clear,
+              child: const Text('清空'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('关闭'),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  void _syncWindowsVideoTabProgress() {
+    WindowsVideoTabService.updateProgress(
+      videoDetailController.args,
+      videoDetailController.playedTime ?? plPlayerController?.position,
+    );
+  }
 
   Widget plPlayer({
     required double width,

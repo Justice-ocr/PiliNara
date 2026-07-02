@@ -18,6 +18,7 @@ import 'package:PiliPlus/pages/common/publish/publish_route.dart';
 import 'package:PiliPlus/pages/contact/view.dart';
 import 'package:PiliPlus/pages/fav_panel/view.dart';
 import 'package:PiliPlus/pages/share/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/extension/context_ext.dart';
@@ -581,6 +582,7 @@ abstract final class PageUtils {
       'heroTag': Utils.makeHeroTag(cid),
       ...?extraArguments,
     };
+    WindowsVideoTabService.upsert(arguments);
     if (off) {
       return Get.offNamed(
         '/videoV',

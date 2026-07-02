@@ -44,6 +44,7 @@ abstract final class SettingBoxKey {
       autoPiP = 'autoPiP',
       enableInAppPip = 'enableInAppPip',
       enableInAppPipToSystemPip = 'enableInAppPipToSystemPip',
+      enableWindowsVideoTabs = 'enableWindowsVideoTabs',
       enableAutoLongPressSpeed = 'enableAutoLongPressSpeed',
       useRelativeSlide = 'useRelativeSlide',
       sliderDuration = 'sliderOffset',
