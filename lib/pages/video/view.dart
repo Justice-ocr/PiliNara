@@ -117,6 +117,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   dynamic _savedIntroControllerFromPip;
   VideoReplyController? _savedReplyControllerFromPip;
   bool _closingFromWindowsVideoTabService = false;
+  int _windowsVideoPlayerMountKey = 0;
 
   // 归位动画进行中：页面播放器以透明占位先行布局（供量取目标矩形），
   // 恢复握手完成后亮出，期间小窗是唯一可见端
@@ -857,16 +858,32 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     if (!mounted) return;
     WindowsVideoTabService.setActive(videoDetailController.args);
     videoDetailController.plPlayerController.activateAsGlobal();
+    plPlayerController = videoDetailController.plPlayerController;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _restoreWindowsVideoPlayerSurface();
+    });
     final route = ModalRoute.of(context);
     if (route != null && !route.isCurrent) {
       Navigator.of(context).popUntil((candidate) => candidate == route);
       return;
     }
     if (isShowing) {
-      setState(() {});
+      _restoreWindowsVideoPlayerSurface();
       return;
     }
     didPopNext();
+  }
+
+  void _restoreWindowsVideoPlayerSurface() {
+    if (!WindowsVideoTabService.enabled || !mounted) return;
+    if (!videoDetailController.autoPlay ||
+        plPlayerController?.videoController == null) {
+      return;
+    }
+    _windowsVideoPlayerMountKey++;
+    videoDetailController.videoState.value = true;
+    videoDetailController.videoState.refresh();
+    setState(() {});
   }
 
   void _closeWindowsVideoTab() {
@@ -975,6 +992,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
     if (WindowsVideoTabService.enabled) {
       videoDetailController.plPlayerController.activateAsGlobal();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _restoreWindowsVideoPlayerSurface();
+      });
     }
 
     // 如果 local 的 plPlayerController 实例指向了已被销毁的单例，刷新它
@@ -1919,6 +1939,35 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
     return const SizedBox.shrink();
   });
+
+  Widget _windowsVideoTabsButton(Color color, {List<Shadow>? shadows}) =>
+      Obx(() {
+        if (!WindowsVideoTabService.enabled) {
+          return const SizedBox.shrink();
+        }
+        final count = WindowsVideoTabService.tabs.length;
+        return SizedBox(
+          width: 42,
+          height: 34,
+          child: IconButton(
+            tooltip: count > 0 ? '视频标签页 ($count)' : '视频标签页',
+            style: const ButtonStyle(
+              padding: WidgetStatePropertyAll(EdgeInsets.zero),
+            ),
+            onPressed: _showWindowsVideoTabs,
+            icon: Badge(
+              isLabelVisible: count > 1,
+              label: Text('$count'),
+              child: Icon(
+                Icons.tab,
+                size: 20,
+                color: color,
+                shadows: shadows,
+              ),
+            ),
+          ),
+        );
+      });
 
   Widget _moreBtn(Color color, {List<Shadow>? shadows}) =>
       StaticPopupMenuButton(

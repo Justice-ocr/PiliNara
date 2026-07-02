@@ -37,6 +37,7 @@ import 'package:PiliPlus/pages/video/widgets/header_mixin.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/data_source.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/services/shutdown_timer_service.dart'
     show shutdownTimerService;
 import 'package:PiliPlus/utils/accounts.dart';
@@ -264,6 +265,7 @@ class HeaderControl extends StatefulWidget {
     required this.controller,
     required this.videoDetailCtr,
     required this.heroTag,
+    this.onShowWindowsVideoTabs,
     super.key,
   });
 
@@ -271,6 +273,7 @@ class HeaderControl extends StatefulWidget {
   final PlPlayerController controller;
   final VideoDetailController videoDetailCtr;
   final String heroTag;
+  final VoidCallback? onShowWindowsVideoTabs;
 
   @override
   State<HeaderControl> createState() => HeaderControlState();
