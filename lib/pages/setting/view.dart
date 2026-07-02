@@ -4,6 +4,7 @@ import 'package:PiliPlus/http/login.dart';
 import 'package:PiliPlus/models/common/setting_type.dart';
 import 'package:PiliPlus/pages/about/view.dart';
 import 'package:PiliPlus/pages/login/controller.dart';
+import 'package:PiliPlus/pages/setting/block_setting.dart';
 import 'package:PiliPlus/pages/setting/dynamics_setting.dart';
 import 'package:PiliPlus/pages/setting/extra_setting.dart';
 import 'package:PiliPlus/pages/setting/play_setting.dart';
@@ -48,8 +49,13 @@ class _SettingPageState extends State<SettingPage> {
   static const List<_SettingsModel> _items = [
     _SettingsModel(
       type: SettingType.privacySetting,
-      subtitle: '黑名单',
+      subtitle: '黑名单、隐私保护',
       icon: Icon(Icons.privacy_tip_outlined),
+    ),
+    _SettingsModel(
+      type: SettingType.blockSetting,
+      subtitle: '屏蔽用户、白名单、Tag 屏蔽',
+      icon: Icon(Icons.shield_outlined),
     ),
     _SettingsModel(
       type: SettingType.recommendSetting,
@@ -118,6 +124,9 @@ class _SettingPageState extends State<SettingPage> {
                     flex: 6,
                     child: switch (_type) {
                       SettingType.privacySetting => const PrivacySetting(
+                        showAppBar: false,
+                      ),
+                      SettingType.blockSetting => const BlockSetting(
                         showAppBar: false,
                       ),
                       SettingType.recommendSetting => const RecommendSetting(

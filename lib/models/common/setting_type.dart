@@ -1,11 +1,12 @@
-enum SettingType {
+﻿enum SettingType {
   privacySetting('隐私设置'),
+  blockSetting('屏蔽与豁免'),
   recommendSetting('推荐流设置'),
   dynamicsSetting('动态流设置'),
   videoSetting('音视频设置'),
   playSetting('播放器设置'),
   styleSetting('外观设置'),
-  extraSetting('其它设置'),
+  extraSetting('其他设置'),
   webdavSetting('WebDAV 设置'),
   about('关于'),
   ;

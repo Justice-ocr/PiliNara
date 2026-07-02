@@ -11,6 +11,11 @@ abstract final class RecommendFilter {
   static bool applyFilterToHotVideos = Pref.applyFilterToHotVideos;
   static bool applyFilterToRankVideos = Pref.applyFilterToRankVideos;
   static bool applyFilterToSearch = Pref.applyFilterToSearch;
+  static RegExp videoTagRegExp = RegExp(
+    Pref.parseBanWordToRegex(Pref.banWordForVideoTag),
+    caseSensitive: false,
+  );
+  static bool enableVideoTagFilter = videoTagRegExp.pattern.isNotEmpty;
 
   static RegExp rcmdRegExp = RegExp(
     Pref.parseBanWordToRegex(Pref.banWordForRecommend),
@@ -46,6 +51,12 @@ abstract final class RecommendFilter {
 
   static bool filterTitle(String title) {
     return (enableFilter && rcmdRegExp.hasMatch(title));
+  }
+
+  static bool filterVideoTags(Iterable<String>? tags) {
+    return enableVideoTagFilter &&
+        tags != null &&
+        tags.any(videoTagRegExp.hasMatch);
   }
 
   static bool filterUser(int? mid) {

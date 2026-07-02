@@ -1,57 +1,44 @@
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/grpc/reply.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
+import 'package:get/get.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
-import 'package:PiliPlus/utils/storage_pref.dart';
-import 'package:PiliPlus/utils/user_whitelist.dart';
 import 'package:flutter/material.dart';
 
 List<SettingsModel> get replySettings => [
   getListBanWordModel(
-    title: '关键词过滤',
+    title: '评论关键词过滤',
     key: SettingBoxKey.banWordForReply,
     onChanged: (value) {
       ReplyGrpc.replyRegExp = value;
       ReplyGrpc.enableFilter = value.pattern.isNotEmpty;
     },
   ),
-  getListUidWithNameModel(
-    title: '屏蔽用户',
-    getUidsMap: () => Pref.replyBlockedMids,
-    setUidsMap: (mids) {
-      Pref.replyBlockedMids = mids;
-      ReplyGrpc.replyBlockedMids = mids;
-    },
-    onUpdate: () {},
-  ),
-  getListUidWithNameModel(
-    title: '白名单用户',
-    leading: const Icon(Icons.person_add_alt_1_outlined),
-    emptySubtitle: '点击添加白名单用户',
-    countSubtitleBuilder: (count) => '已加入白名单 $count 个用户',
-    getUidsMap: () => Pref.whitelistMids,
-    setUidsMap: UserWhitelist.save,
-    onUpdate: () {},
+  NormalModel(
+    title: '屏蔽与豁免',
+    leading: const Icon(Icons.shield_outlined),
+    getSubtitle: () => '推荐/动态/评论用户屏蔽、白名单、Tag 屏蔽',
+    onTap: (context, setState) => Get.toNamed('/blockSetting'),
   ),
   SwitchModel(
     title: '屏蔽带货评论',
-    subtitle: '过滤包含商品推广的评论',
+    subtitle: '屏蔽商品推广相关评论',
     leading: const Icon(CustomIcons.shopping_bag_not_interested),
     setKey: SettingBoxKey.antiGoodsReply,
     defaultVal: false,
     onChanged: (value) => ReplyGrpc.antiGoodsReply = value,
   ),
   SwitchModel(
-    title: '保留 UP 主觉得很赞的评论',
-    subtitle: '豁免 UP 主点赞的评论，不受其他过滤规则影响',
+    title: '屏蔽点赞 UP 评论',
+    subtitle: '屏蔽已关注 UP 的点赞/评论相关内容',
     leading: const Icon(Icons.thumb_up_outlined),
     setKey: SettingBoxKey.keepUpLikeReply,
     defaultVal: false,
     onChanged: (value) => ReplyGrpc.keepUpLikeReply = value,
   ),
   SwitchModel(
-    title: '保留 UP 主参与回复的评论',
-    subtitle: '豁免 UP 主回复过的评论，不受其他过滤规则影响',
+    title: '屏蔽关注 UP 回复',
+    subtitle: '屏蔽已关注 UP 的回复内容',
     leading: const Icon(Icons.mark_chat_read_outlined),
     setKey: SettingBoxKey.keepUpReplyReply,
     defaultVal: false,

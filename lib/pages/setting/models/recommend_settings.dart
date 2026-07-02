@@ -8,7 +8,6 @@ import 'package:PiliPlus/utils/recommend_filter.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
-import 'package:PiliPlus/utils/user_whitelist.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -54,6 +53,12 @@ List<SettingsModel> get recommendSettings => [
       }
     },
   ),
+  NormalModel(
+    title: '屏蔽与豁免',
+    leading: const Icon(Icons.shield_outlined),
+    getSubtitle: () => '推荐/动态/评论用户屏蔽、白名单、Tag 屏蔽',
+    onTap: (context, setState) => Get.toNamed('/blockSetting'),
+  ),
   getVideoFilterSelectModel(
     title: '点赞率',
     suffix: '%',
@@ -75,29 +80,6 @@ List<SettingsModel> get recommendSettings => [
     onChanged: (value) {
       VideoHttp.zoneRegExp = value;
       VideoHttp.enableFilter = value.pattern.isNotEmpty;
-    },
-  ),
-  getListUidWithNameModel(
-    title: '屏蔽用户',
-    getUidsMap: () => Pref.recommendBlockedMids,
-    setUidsMap: (uidsMap) {
-      Pref.recommendBlockedMids = uidsMap;
-      GlobalData().recommendBlockedMids = uidsMap;
-      RecommendFilter.recommendBlockedMids = uidsMap;
-    },
-    onUpdate: () {
-      // Changes are immediately reflected
-    },
-  ),
-  getListUidWithNameModel(
-    title: '白名单用户',
-    leading: const Icon(Icons.person_add_alt_1_outlined),
-    emptySubtitle: '点击添加白名单用户',
-    countSubtitleBuilder: (count) => '已加入白名单 $count 个用户',
-    getUidsMap: () => Pref.whitelistMids,
-    setUidsMap: UserWhitelist.save,
-    onUpdate: () {
-      // Changes are immediately reflected
     },
   ),
   getVideoFilterSelectModel(
@@ -144,14 +126,6 @@ List<SettingsModel> get recommendSettings => [
       );
       setState();
     },
-  ),
-  SwitchModel(
-    title: '已关注UP豁免推荐过滤',
-    subtitle: '推荐中已关注用户发布的内容不会被过滤',
-    leading: const Icon(Icons.favorite_border_outlined),
-    setKey: SettingBoxKey.exemptFilterForFollowed,
-    defaultVal: true,
-    onChanged: (value) => RecommendFilter.exemptFilterForFollowed = value,
   ),
   SwitchModel(
     title: '过滤器也应用于相关视频',

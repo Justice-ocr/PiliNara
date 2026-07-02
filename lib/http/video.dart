@@ -12,6 +12,7 @@ import 'package:PiliPlus/models/common/account_type.dart';
 import 'package:PiliPlus/models/common/video/video_type.dart';
 import 'package:PiliPlus/models/home/rcmd/result.dart';
 import 'package:PiliPlus/models/model_hot_video_item.dart';
+import 'package:PiliPlus/models/model_video.dart';
 import 'package:PiliPlus/models/model_rec_video_item.dart';
 import 'package:PiliPlus/models/pgc_lcf.dart';
 import 'package:PiliPlus/models/video/play/url.dart';
@@ -37,6 +38,7 @@ import 'package:PiliPlus/utils/recommend_filter.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:PiliPlus/utils/video_tag_filter.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/parse_int.dart';
 import 'package:PiliPlus/utils/wbi_sign.dart';
@@ -51,6 +53,12 @@ abstract final class VideoHttp {
     caseSensitive: false,
   );
   static bool enableFilter = zoneRegExp.pattern.isNotEmpty;
+
+  static Future<List<T>> _applyVideoTagFilter<T extends BaseVideoItemModel>(
+    List<T> list,
+  ) async {
+    return VideoTagFilter.filterItems(list);
+  }
 
   // 首页推荐视频
   static Future<LoadingState<List<RcmdVideoItemModel>>> rcmdVideoList({
@@ -84,6 +92,7 @@ abstract final class VideoHttp {
           }
         }
       }
+      list = await _applyVideoTagFilter(list);
       return Success(list);
     } else {
       return Error(res.data['message']);
@@ -173,6 +182,7 @@ abstract final class VideoHttp {
           }
         }
       }
+      list = await _applyVideoTagFilter(list);
       return Success(list);
     } else {
       return Error(res.data['message']);
@@ -212,6 +222,7 @@ abstract final class VideoHttp {
           list.add(HotVideoItemModel.fromJson(i));
         }
       }
+      list = await _applyVideoTagFilter(list);
       return Success(list);
     } else {
       return Error(res.data['message']);
@@ -351,7 +362,9 @@ abstract final class VideoHttp {
       final list = RecommendFilter.applyFilterToRelatedVideos
           ? items?.where((i) => !RecommendFilter.filterAll(i)).toList()
           : items?.toList();
-      return Success(list);
+      return Success(
+        list == null ? null : await _applyVideoTagFilter(list),
+      );
     } else {
       return Error(res.data['message']);
     }
@@ -974,6 +987,7 @@ abstract final class VideoHttp {
           // }
         }
       }
+      list = await _applyVideoTagFilter(list);
       return Success(list);
     } else {
       return Error(res.data['message']);
