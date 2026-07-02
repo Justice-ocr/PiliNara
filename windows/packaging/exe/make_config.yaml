@@ -3,7 +3,7 @@ script_template: inno_setup.iss
 # 不要在其他应用的安装程序中使用相同的 AppId 值。
 app_id: 404deda7-6e76-49bc-97e7-ce02bc666e61
 publisher: dom
-publisher_url: https://github.com/Starfallan/PiliNara
+publisher_url: https://github.com/Justice-ocr/PiliNara
 display_name: PiliNara
 # create_desktop_icon: true
 # See: https://jrsoftware.org/ishelp/index.php?topic=setup_defaultdirname
