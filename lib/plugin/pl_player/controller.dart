@@ -523,6 +523,8 @@ class PlPlayerController with BlockConfigMixin {
     return _instance != null;
   }
 
+  bool get _isActiveGlobalInstance => identical(_instance, this);
+
   static void setPlayCallBack(PlayCallback? playCallBack) {
     _playCallBack = playCallBack;
   }
@@ -682,6 +684,16 @@ class PlPlayerController with BlockConfigMixin {
 
   static PlPlayerController ensureInstance({bool isLive = false}) {
     return (_instance ??= PlPlayerController._())..isLive = isLive;
+  }
+
+  static PlPlayerController createDetached({bool isLive = false}) {
+    return PlPlayerController._()
+      ..isLive = isLive
+      .._playerCount = 1;
+  }
+
+  void activateAsGlobal() {
+    _instance = this;
   }
 
   static bool _isAnimPgcType(int? pgcType) => pgcType == 1 || pgcType == 4;
@@ -1067,7 +1079,7 @@ class PlPlayerController with BlockConfigMixin {
 
   // 开始播放
   Future<void> _initializePlayer() async {
-    if (_instance == null) return;
+    if (_playerCount == 0) return;
     // 设置倍速
     if (isLive) {
       await setPlaybackSpeed(1.0);
@@ -1088,8 +1100,7 @@ class PlPlayerController with BlockConfigMixin {
 
     // 自动播放
     if (_autoPlay) {
-      playIfExists();
-      // await play(duration: duration);
+      await play();
     }
   }
 
@@ -2023,7 +2034,9 @@ class PlPlayerController with BlockConfigMixin {
     danmakuController = null;
     _stopOrientationListener();
     _disableAutoEnterPip();
-    setPlayCallBack(null);
+    if (_isActiveGlobalInstance) {
+      setPlayCallBack(null);
+    }
     dmState.clear();
     hideDesktopProgressPreview();
     if (showSeekPreview) {
@@ -2064,8 +2077,10 @@ class PlPlayerController with BlockConfigMixin {
     _videoPlayerController = null;
     _videoController = null;
     _activeVideoContextKey = null;
-    _instance = null;
-    videoPlayerServiceHandler?.clear();
+    if (_isActiveGlobalInstance) {
+      _instance = null;
+      videoPlayerServiceHandler?.clear();
+    }
   }
 
   static void updatePlayCount() {
@@ -2323,7 +2338,9 @@ class PlPlayerController with BlockConfigMixin {
         pause();
       }
 
-      setPlayCallBack(null);
+      if (_isActiveGlobalInstance) {
+        setPlayCallBack(null);
+      }
 
       if (Platform.isAndroid && _playerCount <= 1) {
         _disableAutoEnterPip();

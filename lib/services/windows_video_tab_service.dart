@@ -60,6 +60,9 @@ abstract final class WindowsVideoTabService {
   static final RxList<WindowsVideoTabItem> tabs =
       <WindowsVideoTabItem>[].obs;
   static final RxnString activeId = RxnString();
+  static final Map<String, void Function()> _activators = {};
+  static final Map<String, void Function()> _closers = {};
+  static final Map<String, _WindowsVideoTabPlayer> _players = {};
 
   static bool get enabled => Platform.isWindows && Pref.enableWindowsVideoTabs;
 
@@ -123,6 +126,9 @@ abstract final class WindowsVideoTabService {
   }
 
   static void close(String id) {
+    _closers.remove(id)?.call();
+    _activators.remove(id);
+    _players.remove(id)?.dispose();
     tabs.removeWhere((item) => item.id == id);
     if (activeId.value == id) {
       activeId.value = null;
@@ -130,29 +136,102 @@ abstract final class WindowsVideoTabService {
   }
 
   static void clear() {
+    final closers = List<void Function()>.from(_closers.values);
+    _closers.clear();
+    _activators.clear();
+    for (final close in closers) {
+      close();
+    }
+    for (final cached in _players.values) {
+      cached.dispose();
+    }
+    _players.clear();
     tabs.clear();
     activeId.value = null;
   }
 
-  static Future<void>? open(
-    WindowsVideoTabItem item, {
-    bool replace = true,
+  static T? takePlayer<T extends Object>(Map arguments) {
+    final id = keyFromArgs(arguments);
+    final cached = _players.remove(id);
+    if (cached == null) return null;
+    if (cached.player case final T player) {
+      return player;
+    }
+    cached.dispose();
+    return null;
+  }
+
+  static void keepPlayer<T extends Object>(
+    Map arguments,
+    T player, {
+    required void Function(T player) dispose,
   }) {
+    if (!enabled) return;
+    final id = keyFromArgs(arguments);
+    if (id.isEmpty || !has(id)) return;
+    _players[id] = _WindowsVideoTabPlayer(
+      player,
+      (player) => dispose(player as T),
+    );
+  }
+
+  static T? removePlayer<T extends Object>(Map arguments) {
+    final id = keyFromArgs(arguments);
+    if (id.isEmpty) return null;
+    final cached = _players.remove(id);
+    if (cached == null) return null;
+    if (cached.player case final T player) {
+      return player;
+    }
+    cached.dispose();
+    return null;
+  }
+
+  static void registerRoute(
+    Map arguments, {
+    required void Function() activate,
+    required void Function() close,
+  }) {
+    if (!enabled) return;
+    final id = keyFromArgs(arguments);
+    if (id.isEmpty) return;
+    _activators[id] = activate;
+    _closers[id] = close;
+  }
+
+  static void unregisterRoute(Map arguments, void Function() close) {
+    if (!enabled) return;
+    final id = keyFromArgs(arguments);
+    if (id.isEmpty) return;
+    if (identical(_closers[id], close)) {
+      _closers.remove(id);
+      _activators.remove(id);
+    }
+  }
+
+  static Future<void>? open(WindowsVideoTabItem item) {
     if (!enabled) return null;
     activeId.value = item.id;
+    final activate = _activators[item.id];
+    if (activate != null) {
+      activate();
+      return null;
+    }
     final args = Map<String, dynamic>.from(item.arguments)
       ..remove('fromPip');
-    if (replace) {
-      return Get.offNamed(
-        '/videoV',
-        arguments: args,
-        preventDuplicates: false,
-      );
-    }
     return Get.toNamed(
       '/videoV',
       arguments: args,
       preventDuplicates: false,
     );
   }
+}
+
+class _WindowsVideoTabPlayer {
+  const _WindowsVideoTabPlayer(this.player, this._dispose);
+
+  final Object player;
+  final void Function(Object player) _dispose;
+
+  void dispose() => _dispose(player);
 }
