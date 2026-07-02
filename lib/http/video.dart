@@ -12,6 +12,7 @@ import 'package:PiliPlus/models/common/account_type.dart';
 import 'package:PiliPlus/models/common/video/video_type.dart';
 import 'package:PiliPlus/models/home/rcmd/result.dart';
 import 'package:PiliPlus/models/model_hot_video_item.dart';
+import 'package:PiliPlus/models/model_video.dart';
 import 'package:PiliPlus/models/model_rec_video_item.dart';
 import 'package:PiliPlus/models/pgc_lcf.dart';
 import 'package:PiliPlus/models/video/play/url.dart';
@@ -53,6 +54,12 @@ abstract final class VideoHttp {
   );
   static bool enableFilter = zoneRegExp.pattern.isNotEmpty;
 
+  static Future<List<T>> _applyVideoTagFilter<T extends BaseVideoItemModel>(
+    List<T> list,
+  ) async {
+    return VideoTagFilter.filterItems(list);
+  }
+
   // 首页推荐视频
   static Future<LoadingState<List<RcmdVideoItemModel>>> rcmdVideoList({
     required int ps,
@@ -85,6 +92,7 @@ abstract final class VideoHttp {
           }
         }
       }
+      list = await _applyVideoTagFilter(list);
       return Success(list);
     } else {
       return Error(res.data['message']);
@@ -172,6 +180,7 @@ abstract final class VideoHttp {
           }
         }
       }
+      list = await _applyVideoTagFilter(list);
       return Success(list);
     } else {
       return Error(res.data['message']);
@@ -211,6 +220,7 @@ abstract final class VideoHttp {
           list.add(HotVideoItemModel.fromJson(i));
         }
       }
+      list = await _applyVideoTagFilter(list);
       return Success(list);
     } else {
       return Error(res.data['message']);
@@ -350,7 +360,9 @@ abstract final class VideoHttp {
       final list = RecommendFilter.applyFilterToRelatedVideos
           ? items?.where((i) => !RecommendFilter.filterAll(i)).toList()
           : items?.toList();
-      return Success(list);
+      return Success(
+        list == null ? null : await _applyVideoTagFilter(list),
+      );
     } else {
       return Error(res.data['message']);
     }
@@ -992,6 +1004,7 @@ abstract final class VideoHttp {
           // }
         }
       }
+      list = await _applyVideoTagFilter(list);
       return Success(list);
     } else {
       return Error(res.data['message']);

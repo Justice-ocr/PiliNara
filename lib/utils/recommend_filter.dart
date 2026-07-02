@@ -11,6 +11,11 @@ abstract final class RecommendFilter {
   static bool applyFilterToHotVideos = Pref.applyFilterToHotVideos;
   static bool applyFilterToRankVideos = Pref.applyFilterToRankVideos;
   static bool applyFilterToSearch = Pref.applyFilterToSearch;
+  static RegExp videoTagRegExp = RegExp(
+    Pref.parseBanWordToRegex(Pref.banWordForVideoTag),
+    caseSensitive: false,
+  );
+  static bool enableVideoTagFilter = videoTagRegExp.pattern.isNotEmpty;
 
   static RegExp rcmdRegExp = RegExp(
     Pref.parseBanWordToRegex(Pref.banWordForRecommend),

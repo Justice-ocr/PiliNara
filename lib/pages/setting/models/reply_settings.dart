@@ -1,6 +1,7 @@
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/grpc/reply.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
+import 'package:get/get.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/user_whitelist.dart';
@@ -8,34 +9,22 @@ import 'package:material_ui/material_ui.dart';
 
 List<SettingsModel> get replySettings => [
   getListBanWordModel(
-    title: '关键词过滤',
+    title: '评论关键词过滤',
     key: SettingBoxKey.banWordForReply,
     onChanged: (value) {
       ReplyGrpc.replyRegExp = value;
       ReplyGrpc.enableFilter = value.pattern.isNotEmpty;
     },
   ),
-  getListUidWithNameModel(
-    title: '屏蔽用户',
-    getUidsMap: () => Pref.replyBlockedMids,
-    setUidsMap: (mids) {
-      Pref.replyBlockedMids = mids;
-      ReplyGrpc.replyBlockedMids = mids;
-    },
-    onUpdate: () {},
-  ),
-  getListUidWithNameModel(
-    title: '白名单用户',
-    leading: const Icon(Icons.person_add_alt_1_outlined),
-    emptySubtitle: '点击添加白名单用户',
-    countSubtitleBuilder: (count) => '已加入白名单 $count 个用户',
-    getUidsMap: () => Pref.whitelistMids,
-    setUidsMap: UserWhitelist.save,
-    onUpdate: () {},
+  NormalModel(
+    title: '屏蔽与豁免',
+    leading: const Icon(Icons.shield_outlined),
+    getSubtitle: () => '推荐/动态/评论用户屏蔽、白名单、Tag 屏蔽',
+    onTap: (context, setState) => Get.toNamed('/blockSetting'),
   ),
   SwitchModel(
     title: '屏蔽带货评论',
-    subtitle: '过滤包含商品推广的评论',
+    subtitle: '屏蔽商品推广相关评论',
     leading: const Icon(CustomIcons.shopping_bag_not_interested),
     setKey: SettingBoxKey.antiGoodsReply,
     defaultVal: false,

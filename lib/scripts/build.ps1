@@ -4,15 +4,30 @@ param(
 
 try {
     $versionName = $null
+    $versionSuffix = $env:PILI_VERSION_SUFFIX
 
     $versionCode = [int](git rev-list --count HEAD).Trim()
 
     $commitHash = (git rev-parse HEAD).Trim()
 
+    if ([string]::IsNullOrWhiteSpace($versionSuffix) -and
+        $env:GITHUB_REPOSITORY -and
+        $env:GITHUB_REPOSITORY -ne 'Starfallan/PiliNara') {
+        $versionSuffix = '-fork'
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($versionSuffix) -and
+        -not $versionSuffix.StartsWith('-')) {
+        $versionSuffix = "-$versionSuffix"
+    }
+
     $updatedContent = foreach ($line in (Get-Content -Path 'pubspec.yaml' -Encoding UTF8)) {
         if ($line -match '^\s*version:\s*([\d\.]+)') {
             $versionName = $matches[1]
-            if ($Arg -eq 'android') {
+            if (-not [string]::IsNullOrWhiteSpace($versionSuffix)) {
+                $versionName += $versionSuffix
+            }
+            elseif ($Arg -eq 'android') {
                 $versionName += '-' + $commitHash.Substring(0, 9)
             }
             "version: $versionName+$versionCode"

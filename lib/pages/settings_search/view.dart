@@ -5,6 +5,7 @@ import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/pages/search/controller.dart' show DebounceStreamState;
 import 'package:PiliPlus/pages/setting/models/dynamics_settings.dart';
 import 'package:PiliPlus/pages/setting/models/extra_settings.dart';
+import 'package:PiliPlus/pages/setting/models/block_settings.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
 import 'package:PiliPlus/pages/setting/models/play_settings.dart';
 import 'package:PiliPlus/pages/setting/models/privacy_settings.dart';
@@ -32,6 +33,7 @@ class _SettingsSearchPageState
   late final _settings = [
     ...extraSettings,
     ...privacySettings,
+    ...blockSettings,
     ...recommendSettings,
     ...dynamicsSettings,
     ...videoSettings,
@@ -86,7 +88,7 @@ class _SettingsSearchPageState
           onChanged: ctr!.add,
           decoration: const InputDecoration(
             isDense: true,
-            hintText: '搜索',
+            hintText: '鎼滅储',
             visualDensity: .standard,
             border: InputBorder.none,
           ),
