@@ -1288,6 +1288,9 @@ abstract final class Pref {
   static bool get enableInAppPipToSystemPip =>
       _setting.get(SettingBoxKey.enableInAppPipToSystemPip, defaultValue: true);
 
+  static bool get enableWindowsVideoTabs =>
+      _setting.get(SettingBoxKey.enableWindowsVideoTabs, defaultValue: true);
+
   static bool get enableSponsorBlock =>
       _setting.get(SettingBoxKey.enableSponsorBlock, defaultValue: false);
 
