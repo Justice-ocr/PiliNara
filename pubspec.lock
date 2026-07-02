@@ -226,7 +226,7 @@ packages:
       path: "."
       ref: main
       resolved-ref: "3947b1fec9d89a8bb11b6feda7a43787ed1e73a9"
-      url: "https://github.com/Starfallan/canvas_danmaku.git"
+      url: "https://github.com/Justice-ocr/canvas_danmaku.git"
     source: git
     version: "0.2.6"
   catcher_2:
@@ -802,7 +802,7 @@ packages:
       path: "."
       ref: "version_4.7.2_patch"
       resolved-ref: "098d44d371f951f4f4d6b30739a887f87a15d0f8"
-      url: "https://github.com/Starfallan/getx.git"
+      url: "https://github.com/Justice-ocr/getx.git"
     source: git
     version: "4.7.2"
   glob:

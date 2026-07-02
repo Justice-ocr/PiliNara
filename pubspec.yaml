@@ -52,7 +52,7 @@ dependencies:
       ref: develop
   canvas_danmaku:
     git:
-      url: https://github.com/Starfallan/canvas_danmaku.git
+      url: https://github.com/Justice-ocr/canvas_danmaku.git
       ref: main
   catcher_2:
     git:
@@ -114,7 +114,7 @@ dependencies:
       ref: v10.9.0
   get:
     git:
-      url: https://github.com/Starfallan/getx.git
+      url: https://github.com/Justice-ocr/getx.git
       ref: version_4.7.2_patch
   hashlib: ^1.12.0
   hive_ce: ^2.19.3
