@@ -23,7 +23,6 @@ List<SettingsModel> get blockSettings => [
   ),
   getListUidModel(
     title: '动态屏蔽用户',
-    leading: const Icon(Icons.dynamic_feed_outlined),
     getUids: () => Pref.dynamicsBlockedMids,
     setUids: (uids) {
       Pref.dynamicsBlockedMids = uids;
