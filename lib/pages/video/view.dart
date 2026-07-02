@@ -110,6 +110,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   dynamic _savedIntroControllerFromPip;
   VideoReplyController? _savedReplyControllerFromPip;
   bool _closingFromWindowsVideoTabService = false;
+  int _windowsVideoPlayerMountKey = 0;
 
   // intro ctr
   late final CommonIntroController introController =
@@ -731,16 +732,32 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     if (!mounted) return;
     WindowsVideoTabService.setActive(videoDetailController.args);
     videoDetailController.plPlayerController.activateAsGlobal();
+    plPlayerController = videoDetailController.plPlayerController;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _restoreWindowsVideoPlayerSurface();
+    });
     final route = ModalRoute.of(context);
     if (route != null && !route.isCurrent) {
       Navigator.of(context).popUntil((candidate) => candidate == route);
       return;
     }
     if (isShowing) {
-      setState(() {});
+      _restoreWindowsVideoPlayerSurface();
       return;
     }
     didPopNext();
+  }
+
+  void _restoreWindowsVideoPlayerSurface() {
+    if (!WindowsVideoTabService.enabled || !mounted) return;
+    if (!videoDetailController.autoPlay ||
+        plPlayerController?.videoController == null) {
+      return;
+    }
+    _windowsVideoPlayerMountKey++;
+    videoDetailController.videoState.value = true;
+    videoDetailController.videoState.refresh();
+    setState(() {});
   }
 
   void _closeWindowsVideoTab() {
@@ -848,6 +865,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
     if (WindowsVideoTabService.enabled) {
       videoDetailController.plPlayerController.activateAsGlobal();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _restoreWindowsVideoPlayerSurface();
+      });
     }
 
     // 如果 local 的 plPlayerController 实例指向了已被销毁的单例，刷新它
@@ -1248,38 +1268,47 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                                     ),
                                     Align(
                                       alignment: Alignment.centerRight,
-                                      child:
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          _windowsVideoTabsButton(
+                                            themeData.colorScheme.onSurface,
+                                          ),
                                           videoDetailController.playedTime ==
-                                              null
-                                          ? _moreBtn(
-                                              themeData.colorScheme.onSurface,
-                                            )
-                                          : SizedBox(
-                                              width: 42,
-                                              height: 34,
-                                              child: IconButton(
-                                                tooltip: "更多设置",
-                                                style: const ButtonStyle(
-                                                  padding:
-                                                      WidgetStatePropertyAll(
-                                                        EdgeInsets.zero,
-                                                      ),
-                                                ),
-                                                onPressed: () =>
-                                                    (videoDetailController
-                                                                .headerCtrKey
-                                                                .currentState
-                                                            as HeaderControlState?)
-                                                        ?.showSettingSheet(),
-                                                icon: Icon(
-                                                  Icons.more_vert_outlined,
-                                                  size: 19,
-                                                  color: themeData
+                                                  null
+                                              ? _moreBtn(
+                                                  themeData
                                                       .colorScheme
                                                       .onSurface,
+                                                )
+                                              : SizedBox(
+                                                  width: 42,
+                                                  height: 34,
+                                                  child: IconButton(
+                                                    tooltip: "更多设置",
+                                                    style: const ButtonStyle(
+                                                      padding:
+                                                          WidgetStatePropertyAll(
+                                                            EdgeInsets.zero,
+                                                          ),
+                                                    ),
+                                                    onPressed: () =>
+                                                        (videoDetailController
+                                                                    .headerCtrKey
+                                                                    .currentState
+                                                                as HeaderControlState?)
+                                                            ?.showSettingSheet(),
+                                                    icon: Icon(
+                                                      Icons.more_vert_outlined,
+                                                      size: 19,
+                                                      color: themeData
+                                                          .colorScheme
+                                                          .onSurface,
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
-                                            ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -1773,6 +1802,15 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                 ],
               ),
               actions: [
+                _windowsVideoTabsButton(
+                  Colors.white,
+                  shadows: const [
+                    Shadow(
+                      blurRadius: 1.5,
+                      color: Colors.black,
+                    ),
+                  ],
+                ),
                 _moreBtn(
                   Colors.white,
                   shadows: const [
@@ -1804,6 +1842,35 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
     return const SizedBox.shrink();
   });
+
+  Widget _windowsVideoTabsButton(Color color, {List<Shadow>? shadows}) =>
+      Obx(() {
+        if (!WindowsVideoTabService.enabled) {
+          return const SizedBox.shrink();
+        }
+        final count = WindowsVideoTabService.tabs.length;
+        return SizedBox(
+          width: 42,
+          height: 34,
+          child: IconButton(
+            tooltip: count > 0 ? '视频标签页 ($count)' : '视频标签页',
+            style: const ButtonStyle(
+              padding: WidgetStatePropertyAll(EdgeInsets.zero),
+            ),
+            onPressed: _showWindowsVideoTabs,
+            icon: Badge(
+              isLabelVisible: count > 1,
+              label: Text('$count'),
+              child: Icon(
+                Icons.tab,
+                size: 20,
+                color: color,
+                shadows: shadows,
+              ),
+            ),
+          ),
+        );
+      });
 
   Widget _moreBtn(Color color, {List<Shadow>? shadows}) =>
       StaticPopupMenuButton(
@@ -1976,6 +2043,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
               plPlayerController?.videoController == null
           ? const SizedBox.shrink()
           : PLVideoPlayer(
+              key: ValueKey(
+                'video-player-$heroTag-$isPipMode-$_windowsVideoPlayerMountKey',
+              ),
               maxWidth: width,
               maxHeight: height,
               isPipMode: isPipMode,
@@ -1988,6 +2058,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                 controller: videoDetailController.plPlayerController,
                 videoDetailCtr: videoDetailController,
                 heroTag: heroTag,
+                onShowWindowsVideoTabs: _showWindowsVideoTabs,
               ),
               danmuWidget: isPipMode && pipNoDanmaku
                   ? null
