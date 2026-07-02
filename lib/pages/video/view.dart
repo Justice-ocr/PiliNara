@@ -109,6 +109,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   // 从 PiP 恢复时提前取出的 additional controllers（在 stopPip 清空前保存）
   dynamic _savedIntroControllerFromPip;
   VideoReplyController? _savedReplyControllerFromPip;
+  bool _closingFromWindowsVideoTabService = false;
 
   // intro ctr
   late final CommonIntroController introController =
@@ -268,6 +269,15 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         PipOverlayService.releaseSavedVideoOwner();
       }
       videoDetailController = Get.put(VideoDetailController(), tag: heroTag);
+    }
+
+    if (WindowsVideoTabService.enabled) {
+      videoDetailController.plPlayerController.activateAsGlobal();
+      WindowsVideoTabService.registerRoute(
+        videoDetailController.args,
+        activate: _activateWindowsVideoTab,
+        close: _closeWindowsVideoTab,
+      );
     }
 
     if (videoDetailController.removeSafeArea) {
@@ -651,6 +661,11 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   void dispose() {
     VideoStackManager.decrement(); // 减少视频页面层级追踪
     final isInAppPip = PipOverlayService.isInPipMode;
+    final keepWindowsTabAlive = WindowsVideoTabService.enabled &&
+        !_closingFromWindowsVideoTabService &&
+        WindowsVideoTabService.has(
+          WindowsVideoTabService.keyFromArgs(videoDetailController.args),
+        );
     _syncWindowsVideoTabProgress();
     // 如果 _pipRetryPending=true 但用户没有继续 pop（_onPopInvokedWithResult 未触发），
     // 说明用户通过其他方式离开（点导航栏、Get.offAll 等），需要主动暂停播放器。
@@ -686,6 +701,13 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     if (!videoDetailController.plPlayerController.isCloseAll) {
       if (isInAppPip || _isEnteringPipMode) {
         videoDetailController.makeHeartBeat();
+      } else if (keepWindowsTabAlive) {
+        videoDetailController.makeHeartBeat();
+        WindowsVideoTabService.keepPlayer(
+          videoDetailController.args,
+          videoDetailController.plPlayerController,
+          dispose: (player) => player.dispose(),
+        );
       } else {
         videoPlayerServiceHandler?.onVideoDetailDispose(heroTag);
         if (plPlayerController != null) {
@@ -697,8 +719,55 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       }
     }
     removeObserverMobile(this);
+    WindowsVideoTabService.unregisterRoute(
+      videoDetailController.args,
+      _closeWindowsVideoTab,
+    );
 
     super.dispose();
+  }
+
+  void _activateWindowsVideoTab() {
+    if (!mounted) return;
+    WindowsVideoTabService.setActive(videoDetailController.args);
+    videoDetailController.plPlayerController.activateAsGlobal();
+    final route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) {
+      Navigator.of(context).popUntil((candidate) => candidate == route);
+      return;
+    }
+    if (isShowing) {
+      setState(() {});
+      return;
+    }
+    didPopNext();
+  }
+
+  void _closeWindowsVideoTab() {
+    if (!mounted) return;
+    _closingFromWindowsVideoTabService = true;
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      if (route.isCurrent) {
+        Navigator.of(context).maybePop();
+      } else {
+        Navigator.of(context).removeRoute(route);
+      }
+      return;
+    }
+    WindowsVideoTabService.unregisterRoute(
+      videoDetailController.args,
+      _closeWindowsVideoTab,
+    );
+    final player =
+        WindowsVideoTabService.removePlayer<PlPlayerController>(
+          videoDetailController.args,
+        ) ??
+        plPlayerController ??
+        videoDetailController.plPlayerController;
+    videoPlayerServiceHandler?.onVideoDetailDispose(heroTag);
+    videoDetailController.makeHeartBeat();
+    player.dispose();
   }
 
   @override
@@ -724,7 +793,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
     // 确定是否需要释放/暂停资源
     final bool shouldKeepAlive =
-        _isEnteringPipMode || PipOverlayService.isInPipMode || willStartPip;
+        WindowsVideoTabService.enabled ||
+        _isEnteringPipMode ||
+        PipOverlayService.isInPipMode ||
+        willStartPip;
 
     introController.cancelTimer();
 
@@ -772,6 +844,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
     if (videoDetailController.plPlayerController.isCloseAll) {
       return;
+    }
+
+    if (WindowsVideoTabService.enabled) {
+      videoDetailController.plPlayerController.activateAsGlobal();
     }
 
     // 如果 local 的 plPlayerController 实例指向了已被销毁的单例，刷新它
@@ -1833,8 +1909,11 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                         tooltip: '关闭标签',
                         icon: const Icon(Icons.close),
                         onPressed: () {
+                          if (active) {
+                            Navigator.of(context).pop();
+                          }
                           WindowsVideoTabService.close(item.id);
-                          if (WindowsVideoTabService.tabs.isEmpty) {
+                          if (!active && WindowsVideoTabService.tabs.isEmpty) {
                             Navigator.of(context).pop();
                           }
                         },
@@ -1856,7 +1935,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           ),
           actions: [
             TextButton(
-              onPressed: WindowsVideoTabService.clear,
+              onPressed: () {
+                Navigator.of(context).pop();
+                WindowsVideoTabService.clear();
+              },
               child: const Text('清空'),
             ),
             TextButton(

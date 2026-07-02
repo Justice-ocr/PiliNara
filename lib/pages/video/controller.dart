@@ -57,6 +57,7 @@ import 'package:PiliPlus/plugin/pl_player/models/heart_beat_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/services/pip_overlay_service.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/connectivity_utils.dart';
 import 'package:PiliPlus/utils/danmaku_density_trend.dart';
@@ -136,8 +137,22 @@ class VideoDetailController extends GetxController
   final videoPlayerKey = GlobalKey();
   final childKey = GlobalKey<ScaffoldState>();
 
-  PlPlayerController plPlayerController = PlPlayerController.getInstance()
-    ..brightness.value = -1;
+  late PlPlayerController plPlayerController;
+
+  static PlPlayerController _createPlayerController(Map args) {
+    if (WindowsVideoTabService.enabled) {
+      return WindowsVideoTabService.takePlayer<PlPlayerController>(args) ??
+          PlPlayerController.createDetached();
+    }
+    return PlPlayerController.getInstance();
+  }
+
+  PlPlayerController _recoverPlayerController() {
+    if (WindowsVideoTabService.enabled) {
+      return PlPlayerController.createDetached();
+    }
+    return PlPlayerController.ensureInstance();
+  }
   bool get setSystemBrightness => plPlayerController.setSystemBrightness;
   bool get removeSafeArea => plPlayerController.removeSafeArea;
   double get uiScale => plPlayerController.uiScale;
@@ -431,6 +446,7 @@ class VideoDetailController extends GetxController
   void onInit() {
     super.onInit();
     args = Get.arguments;
+    plPlayerController = _createPlayerController(args)..brightness.value = -1;
 
     // 开启新视频时，如果存在前代播放器的应用内小窗，则按播放上下文决定是否重置旧状态
     // 避免不同视频/分P之间 SponsorBlock 片段状态污染，同时保留同上下文无缝恢复能力
@@ -905,7 +921,7 @@ class VideoDetailController extends GetxController
   }) async {
     // 如果播放器单例已被外部销毁（例如在二级页面关闭了小窗），重新获取一个新实例
     if (plPlayerController.videoPlayerController == null) {
-      plPlayerController = PlPlayerController.ensureInstance();
+      plPlayerController = _recoverPlayerController();
     }
     if (isFileSource) {
       await _loadLocalPlaybackMeta();
@@ -1635,7 +1651,10 @@ class VideoDetailController extends GetxController
       // 正在进入小窗，保留资源
       return;
     }
-    plPlayerController.pause();
+    if (!WindowsVideoTabService.enabled ||
+        !WindowsVideoTabService.has(WindowsVideoTabService.keyFromArgs(args))) {
+      plPlayerController.pause();
+    }
     cancelBlockListener();
     _dmTrendTaskId++;
     cid.close();
