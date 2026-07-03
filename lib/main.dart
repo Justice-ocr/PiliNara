@@ -422,47 +422,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class _WindowsMediaTabShell extends StatelessWidget {
-  const _WindowsMediaTabShell({
-    required this.mediaQuery,
-    required this.child,
-  });
-
-  static const double tabBarHeight = 42;
-
-  final MediaQueryData mediaQuery;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    if (!WindowsVideoTabService.enabled) {
-      return MediaQuery(data: mediaQuery, child: child);
-    }
-    return Obx(() {
-      if (!WindowsVideoTabService.isNotEmpty) {
-        return MediaQuery(data: mediaQuery, child: child);
-      }
-      final adjustedHeight = mediaQuery.size.height > tabBarHeight
-          ? mediaQuery.size.height - tabBarHeight
-          : 0.0;
-      final adjusted = mediaQuery.copyWith(
-        size: Size(mediaQuery.size.width, adjustedHeight),
-      );
-      return Column(
-        children: [
-          const SizedBox(
-            height: tabBarHeight,
-            child: WindowsMediaTabBar(),
-          ),
-          Expanded(
-            child: MediaQuery(data: adjusted, child: child),
-          ),
-        ],
-      );
-    });
-  }
-}
-
 class _CustomHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
