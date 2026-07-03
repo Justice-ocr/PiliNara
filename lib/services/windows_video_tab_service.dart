@@ -83,6 +83,7 @@ abstract final class WindowsVideoTabService {
   static final Map<String, void Function()> _closers = {};
   static final Map<String, _WindowsVideoTabPlayer> _players = {};
   static bool _hostMounted = false;
+  static Map? currentArguments;
 
   static bool get enabled => Platform.isWindows && Pref.enableWindowsVideoTabs;
 
@@ -152,6 +153,7 @@ abstract final class WindowsVideoTabService {
     }
     if (activate) {
       activeId.value = id;
+      currentArguments = normalized;
     }
   }
 
@@ -183,6 +185,7 @@ abstract final class WindowsVideoTabService {
     tabs.removeWhere((item) => item.id == id);
     if (activeId.value == id) {
       activeId.value = tabs.isEmpty ? null : tabs.last.id;
+      currentArguments = tabs.isEmpty ? null : tabs.last.arguments;
     }
     if (!_hostMounted && Get.currentRoute != hostRoute) {
       close?.call();
@@ -202,6 +205,7 @@ abstract final class WindowsVideoTabService {
     _players.clear();
     tabs.clear();
     activeId.value = null;
+    currentArguments = null;
   }
 
   static T? takePlayer<T extends Object>(Map arguments) {
@@ -274,8 +278,10 @@ abstract final class WindowsVideoTabService {
 
   static void select(String id) {
     if (!enabled) return;
-    if (has(id)) {
+    final index = tabs.indexWhere((item) => item.id == id);
+    if (index != -1) {
       activeId.value = id;
+      currentArguments = tabs[index].arguments;
     }
   }
 

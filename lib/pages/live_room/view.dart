@@ -66,7 +66,9 @@ import 'package:screen_brightness_platform_interface/screen_brightness_platform_
 const baseWhite = Color(0xFFEEEEEE);
 
 class LiveRoomPage extends StatefulWidget {
-  const LiveRoomPage({super.key});
+  const LiveRoomPage({super.key, this.arguments});
+
+  final Object? arguments;
 
   @override
   State<LiveRoomPage> createState() => _LiveRoomPageState();
@@ -155,7 +157,10 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   void initState() {
     super.initState();
     addObserverMobile(this);
-    final args = Get.arguments;
+    final args = _routeArgs;
+    if (args is Map) {
+      WindowsVideoTabService.currentArguments = args;
+    }
 
     // 解析当前请求进入的房间号
     int? currentEntryRoomId;

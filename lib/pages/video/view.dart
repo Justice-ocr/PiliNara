@@ -92,7 +92,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 
 class VideoDetailPageV extends StatefulWidget {
-  const VideoDetailPageV({super.key});
+  const VideoDetailPageV({super.key, this.arguments});
+
+  final Map? arguments;
 
   @override
   State<VideoDetailPageV> createState() => _VideoDetailPageVState();
@@ -265,10 +267,12 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   @override
   void initState() {
     super.initState();
+    WindowsVideoTabService.currentArguments = _routeArgs;
+    heroTag = _routeArgs['heroTag'];
     VideoStackManager.increment(); // 追踪视频页面层级
-    final bool fromPip = Get.arguments['fromPip'] ?? false;
+    final bool fromPip = _routeArgs['fromPip'] ?? false;
     final String? targetContextKey = PipOverlayService.contextKeyFromArgs(
-      Get.arguments is Map ? Get.arguments as Map : null,
+      _routeArgs,
     );
     // 同视频复用：从推荐流/动态等入口点开 PiP 中正在播放的同一视频
     // （videoType|bvid|cid|epId|seasonId 完全匹配）时，走与 fromPip
@@ -1067,7 +1071,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
 
     // 如果是从开启新页面方式（Get.toNamed）从小窗手动返回，播放器应已在运行，跳过部分重置逻辑
-    final bool fromPip = Get.arguments?['fromPip'] ?? false;
+    final bool fromPip = _routeArgs['fromPip'] ?? false;
     if (fromPip) {
       isShowing = true;
       PlPlayerController.setPlayCallBack(playCallBack);
