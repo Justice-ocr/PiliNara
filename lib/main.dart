@@ -16,6 +16,7 @@ import 'package:PiliPlus/services/download/download_collection_service.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/services/logger.dart';
 import 'package:PiliPlus/services/service_locator.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/app_font.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
 import 'package:PiliPlus/utils/calc_window_position.dart';
@@ -335,28 +336,24 @@ class MyApp extends StatelessWidget {
     }
     // -----------------------------------------------------------------------
 
-    if (uiScale != 1.0) {
-      child = MediaQuery(
-        data: mediaQuery.copyWith(
-          textScaler: textScaler,
-          size: mediaQuery.size / uiScale,
-          padding: tmpPadding ?? mediaQuery.padding / uiScale,
-          viewInsets: mediaQuery.viewInsets / uiScale,
-          viewPadding: tmpPadding ?? mediaQuery.viewPadding / uiScale,
-          devicePixelRatio: mediaQuery.devicePixelRatio * uiScale,
-        ),
-        child: child!,
-      );
-    } else {
-      child = MediaQuery(
-        data: mediaQuery.copyWith(
-          textScaler: textScaler,
-          padding: tmpPadding ?? effectivePadding,
-          viewPadding: tmpPadding ?? effectiveViewPadding,
-        ),
-        child: child!,
-      );
-    }
+    final appMediaQuery = uiScale != 1.0
+        ? mediaQuery.copyWith(
+            textScaler: textScaler,
+            size: mediaQuery.size / uiScale,
+            padding: tmpPadding ?? mediaQuery.padding / uiScale,
+            viewInsets: mediaQuery.viewInsets / uiScale,
+            viewPadding: tmpPadding ?? mediaQuery.viewPadding / uiScale,
+            devicePixelRatio: mediaQuery.devicePixelRatio * uiScale,
+          )
+        : mediaQuery.copyWith(
+            textScaler: textScaler,
+            padding: tmpPadding ?? effectivePadding,
+            viewPadding: tmpPadding ?? effectiveViewPadding,
+          );
+    child = _WindowsMediaTabShell(
+      mediaQuery: appMediaQuery,
+      child: child!,
+    );
     if (PlatformUtils.isDesktop) {
       return BackDetector(
         onBack: _onBack,
@@ -409,6 +406,47 @@ class MyApp extends StatelessWidget {
     }
     GStorage.setting.put(SettingBoxKey.dynamicColor, false);
     return false;
+  }
+}
+
+class _WindowsMediaTabShell extends StatelessWidget {
+  const _WindowsMediaTabShell({
+    required this.mediaQuery,
+    required this.child,
+  });
+
+  static const double tabBarHeight = 42;
+
+  final MediaQueryData mediaQuery;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!WindowsVideoTabService.enabled) {
+      return MediaQuery(data: mediaQuery, child: child);
+    }
+    return Obx(() {
+      if (!WindowsVideoTabService.isNotEmpty) {
+        return MediaQuery(data: mediaQuery, child: child);
+      }
+      final adjustedHeight = mediaQuery.size.height > tabBarHeight
+          ? mediaQuery.size.height - tabBarHeight
+          : 0.0;
+      final adjusted = mediaQuery.copyWith(
+        size: Size(mediaQuery.size.width, adjustedHeight),
+      );
+      return Column(
+        children: [
+          const SizedBox(
+            height: tabBarHeight,
+            child: WindowsMediaTabBar(),
+          ),
+          Expanded(
+            child: MediaQuery(data: adjusted, child: child),
+          ),
+        ],
+      );
+    });
   }
 }
 

@@ -26,6 +26,7 @@ import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/data_source.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/danmaku_options.dart';
 import 'package:PiliPlus/services/service_locator.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/tcp/live.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/connectivity_utils.dart';
@@ -55,9 +56,7 @@ class LiveRoomController extends GetxController {
   bool isReturningFromPip = false;
   int? ruid;
   DanmakuController<DanmakuExtra>? danmakuController;
-  PlPlayerController plPlayerController = PlPlayerController.getInstance(
-    isLive: true,
-  );
+  late PlPlayerController plPlayerController;
 
   final isLoaded = false.obs;
   final roomInfoH5 = Rxn<RoomInfoH5Data>();
@@ -167,6 +166,19 @@ class LiveRoomController extends GetxController {
     } else {
       roomId = args as int;
     }
+    final tabArgs = {
+      'roomId': roomId,
+      'mediaTabType': WindowsMediaTabType.live.name,
+    };
+    if (WindowsVideoTabService.enabled) {
+      WindowsVideoTabService.upsert(tabArgs, type: WindowsMediaTabType.live);
+      plPlayerController =
+          WindowsVideoTabService.takePlayer<PlPlayerController>(tabArgs) ??
+          PlPlayerController.createDetached(isLive: true);
+      plPlayerController.activateAsGlobal();
+    } else {
+      plPlayerController = PlPlayerController.getInstance(isLive: true);
+    }
 
     scrollController = ScrollController()..addListener(listener);
     final account = Accounts.main;
@@ -203,8 +215,10 @@ class LiveRoomController extends GetxController {
       return null;
     }
 
-    // 如果播放器已被彻底销毁（例如在其他页面关闭了小窗），重新获取单例实例
-    if (plPlayerController.videoPlayerController == null) {
+    // 如果播放器已被彻底销毁（例如在其他页面关闭了小窗），重新获取单例实例。
+    // Windows 标签页使用 detached 播放器，首次 setDataSource 前 controller 为空是正常状态。
+    if (!WindowsVideoTabService.enabled &&
+        plPlayerController.videoPlayerController == null) {
       plPlayerController = PlPlayerController.ensureInstance(isLive: true);
     }
 
@@ -319,6 +333,15 @@ class LiveRoomController extends GetxController {
     if (res case Success(:final response)) {
       roomInfoH5.value = response;
       title.value = response.roomInfo?.title ?? '';
+      WindowsVideoTabService.upsert(
+        {
+          'roomId': roomId,
+          'title': response.roomInfo?.title,
+          'mediaTabType': WindowsMediaTabType.live.name,
+        },
+        type: WindowsMediaTabType.live,
+        activate: false,
+      );
       watchedShow.value = response.watchedShow?.textLarge;
       videoPlayerServiceHandler?.onVideoDetailChange(response, roomId, heroTag);
     } else {

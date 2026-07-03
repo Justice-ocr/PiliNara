@@ -535,6 +535,11 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   // 播放器状态监听
   Future<void> playerListener(PlayerStatus status) async {
     final isPlaying = status.isPlaying;
+    if (WindowsVideoTabService.enabled && isPlaying) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _restoreWindowsVideoPlayerSurface();
+      });
+    }
     try {
       if (videoDetailController.scrollCtr.hasClients) {
         if (isPlaying) {

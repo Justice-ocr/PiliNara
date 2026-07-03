@@ -1,17 +1,25 @@
 import 'dart:io' show Platform;
 
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+enum WindowsMediaTabType {
+  video,
+  live,
+}
 
 class WindowsVideoTabItem {
   WindowsVideoTabItem({
     required this.id,
+    required this.type,
     required this.arguments,
     required this.createdAt,
     required this.updatedAt,
   });
 
   final String id;
+  final WindowsMediaTabType type;
   final Map<String, dynamic> arguments;
   final DateTime createdAt;
   DateTime updatedAt;
@@ -29,11 +37,22 @@ class WindowsVideoTabItem {
     if (aid != null) {
       return 'av$aid';
     }
-    return '视频';
+    final roomId = arguments['roomId'] ?? arguments['id'];
+    if (roomId != null) {
+      return '直播间 $roomId';
+    }
+    return type == WindowsMediaTabType.live ? '直播间' : '视频';
   }
 
   String get subtitle {
     final parts = <String>[];
+    if (type == WindowsMediaTabType.live) {
+      final roomId = arguments['roomId'] ?? arguments['id'];
+      if (roomId != null) {
+        parts.add('room $roomId');
+      }
+      return parts.join(' · ');
+    }
     if (arguments['bvid'] case final String bvid when bvid.isNotEmpty) {
       parts.add(bvid);
     }
@@ -66,19 +85,41 @@ abstract final class WindowsVideoTabService {
 
   static bool get enabled => Platform.isWindows && Pref.enableWindowsVideoTabs;
 
+  static bool get isNotEmpty => tabs.isNotEmpty;
+
   static String keyFromArgs(Map arguments) {
+    final type = _typeFromArgs(arguments);
+    if (type == WindowsMediaTabType.live) {
+      final roomId =
+          arguments['roomId']?.toString() ?? arguments['id']?.toString();
+      return roomId == null || roomId.isEmpty ? '' : 'live:$roomId';
+    }
     final bvid = arguments['bvid']?.toString();
     final cid = arguments['cid']?.toString();
     final epId = arguments['epId']?.toString();
     final seasonId = arguments['seasonId']?.toString();
-    return [bvid, cid, epId, seasonId]
+    final key = [bvid, cid, epId, seasonId]
         .where((item) => item != null && item.isNotEmpty)
         .join(':');
+    return key.isEmpty ? '' : 'video:$key';
   }
 
-  static void upsert(Map arguments) {
+  static WindowsMediaTabType _typeFromArgs(Map arguments) {
+    final type = arguments['mediaTabType'];
+    if (type == WindowsMediaTabType.live || type == 'live') {
+      return WindowsMediaTabType.live;
+    }
+    return WindowsMediaTabType.video;
+  }
+
+  static void upsert(
+    Map arguments, {
+    WindowsMediaTabType type = WindowsMediaTabType.video,
+    bool activate = true,
+  }) {
     if (!enabled) return;
-    final normalized = Map<String, dynamic>.from(arguments);
+    final normalized = Map<String, dynamic>.from(arguments)
+      ..['mediaTabType'] = type.name;
     final id = keyFromArgs(normalized);
     if (id.isEmpty) return;
 
@@ -88,6 +129,7 @@ abstract final class WindowsVideoTabService {
       tabs.add(
         WindowsVideoTabItem(
           id: id,
+          type: type,
           arguments: normalized,
           createdAt: now,
           updatedAt: now,
@@ -101,7 +143,9 @@ abstract final class WindowsVideoTabService {
       tab.updatedAt = DateTime.now();
       tabs.refresh();
     }
-    activeId.value = id;
+    if (activate) {
+      activeId.value = id;
+    }
   }
 
   static void updateProgress(Map arguments, Duration? progress) {
@@ -219,10 +263,122 @@ abstract final class WindowsVideoTabService {
     }
     final args = Map<String, dynamic>.from(item.arguments)
       ..remove('fromPip');
+    if (item.type == WindowsMediaTabType.live) {
+      return Get.toNamed(
+        '/liveRoom',
+        arguments: args,
+        preventDuplicates: false,
+      );
+    }
     return Get.toNamed(
       '/videoV',
       arguments: args,
       preventDuplicates: false,
+    );
+  }
+}
+
+class WindowsMediaTabBar extends StatelessWidget {
+  const WindowsMediaTabBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!WindowsVideoTabService.enabled) {
+      return const SizedBox.shrink();
+    }
+    final theme = Theme.of(context);
+    return Obx(() {
+      final tabs = WindowsVideoTabService.tabs;
+      if (tabs.isEmpty) {
+        return const SizedBox.shrink();
+      }
+      final activeId = WindowsVideoTabService.activeId.value;
+      return Material(
+        color: theme.colorScheme.surface,
+        elevation: 1,
+        child: SafeArea(
+          bottom: false,
+          child: SizedBox(
+            height: 42,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              itemBuilder: (context, index) {
+                final item = tabs[index];
+                final active = activeId == item.id;
+                return _WindowsMediaTabChip(item: item, active: active);
+              },
+              separatorBuilder: (_, _) => const SizedBox(width: 6),
+              itemCount: tabs.length,
+            ),
+          ),
+        ),
+      );
+    });
+  }
+}
+
+class _WindowsMediaTabChip extends StatelessWidget {
+  const _WindowsMediaTabChip({
+    required this.item,
+    required this.active,
+  });
+
+  final WindowsVideoTabItem item;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final bg = active ? colors.primaryContainer : colors.surfaceContainerHighest;
+    final fg = active ? colors.onPrimaryContainer : colors.onSurfaceVariant;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 132, maxWidth: 260),
+      child: Material(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: active ? null : () => WindowsVideoTabService.open(item),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 10, right: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  item.type == WindowsMediaTabType.live
+                      ? Icons.sensors
+                      : Icons.play_circle_outline,
+                  size: 17,
+                  color: fg,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(color: fg),
+                  ),
+                ),
+                SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: IconButton(
+                    tooltip: '关闭标签',
+                    padding: EdgeInsets.zero,
+                    iconSize: 16,
+                    color: fg,
+                    onPressed: () => WindowsVideoTabService.close(item.id),
+                    icon: const Icon(Icons.close),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

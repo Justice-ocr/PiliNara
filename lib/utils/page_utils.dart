@@ -544,10 +544,16 @@ abstract final class PageUtils {
     if (roomId == null) {
       return;
     }
+    WindowsVideoTabService.upsert(
+      {
+        'roomId': roomId,
+      },
+      type: WindowsMediaTabType.live,
+    );
     if (off) {
-      Get.offNamed('/liveRoom', arguments: roomId);
+      Get.offNamed('/liveRoom', arguments: {'roomId': roomId});
     } else {
-      PageUtils.toDupNamed('/liveRoom', arguments: roomId);
+      PageUtils.toDupNamed('/liveRoom', arguments: {'roomId': roomId});
     }
   }
 

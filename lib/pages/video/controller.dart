@@ -919,8 +919,10 @@ class VideoDetailController extends GetxController
     bool? autoplay,
     bool autoFullScreenFlag = false,
   }) async {
-    // 如果播放器单例已被外部销毁（例如在二级页面关闭了小窗），重新获取一个新实例
-    if (plPlayerController.videoPlayerController == null) {
+    // 如果播放器单例已被外部销毁（例如在二级页面关闭了小窗），重新获取一个新实例。
+    // Windows 标签页使用 detached 播放器，首次 setDataSource 前 controller 为空是正常状态。
+    if (!WindowsVideoTabService.enabled &&
+        plPlayerController.videoPlayerController == null) {
       plPlayerController = _recoverPlayerController();
     }
     if (isFileSource) {
