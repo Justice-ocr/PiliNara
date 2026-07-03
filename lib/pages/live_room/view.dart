@@ -40,6 +40,7 @@ import 'package:PiliPlus/services/logger.dart';
 import 'package:PiliPlus/services/pip_overlay_service.dart';
 import 'package:PiliPlus/services/pip_transition_coordinator.dart';
 import 'package:PiliPlus/services/service_locator.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
@@ -76,11 +77,13 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   late final fullScreenSCWidth = Pref.fullScreenSCWidth;
   final String heroTag = Utils.generateRandomString(6);
   late final LiveRoomController _liveRoomController;
-  late final PlPlayerController plPlayerController;
+  late PlPlayerController plPlayerController;
   bool get isFullScreen => plPlayerController.isFullScreen.value;
 
   // 标志位：是否正在进入 PiP 模式
   bool _isEnteringPipMode = false;
+  bool _closingFromWindowsLiveTabService = false;
+  int _windowsLivePlayerMountKey = 0;
 
   late final GlobalKey pageKey = GlobalKey();
   late final GlobalKey chatKey = GlobalKey();
@@ -201,6 +204,14 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     );
     plPlayerController = _liveRoomController.plPlayerController
       ..addStatusLister(playerListener);
+    if (WindowsVideoTabService.enabled) {
+      plPlayerController.activateAsGlobal();
+      WindowsVideoTabService.registerRoute(
+        _liveTabArgs,
+        activate: _activateWindowsLiveTab,
+        close: _closeWindowsLiveTab,
+      );
+    }
     PlPlayerController.setPlayCallBack(plPlayerController.play);
 
     if (isReturningFromPip) {
@@ -242,6 +253,10 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   @override
   Future<void> didPopNext() async {
     addObserverMobile(this);
+    if (WindowsVideoTabService.enabled) {
+      WindowsVideoTabService.setActive(_liveTabArgs);
+      plPlayerController.activateAsGlobal();
+    }
 
     // 如果返回当前页面时应用内小窗正在运行，且房间号匹配，说明是从正在小窗播放的页面返回
     if (LivePipOverlayService.isInPipMode) {
@@ -355,6 +370,11 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   }
 
   void playerListener(PlayerStatus status) {
+    if (WindowsVideoTabService.enabled && status.isPlaying) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _restoreWindowsLivePlayerSurface();
+      });
+    }
     if (status.isPlaying) {
       _liveRoomController
         ..danmakuController?.resume()
@@ -368,23 +388,87 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     }
   }
 
+  void _activateWindowsLiveTab() {
+    if (!mounted) return;
+    WindowsVideoTabService.setActive(_liveTabArgs);
+    plPlayerController.activateAsGlobal();
+    PlPlayerController.setPlayCallBack(plPlayerController.play);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _restoreWindowsLivePlayerSurface();
+    });
+    final route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) {
+      Navigator.of(context).popUntil((candidate) => candidate == route);
+      return;
+    }
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _restoreWindowsLivePlayerSurface() {
+    if (!WindowsVideoTabService.enabled || !mounted) return;
+    if (!_liveRoomController.isLoaded.value ||
+        plPlayerController.videoController == null) {
+      return;
+    }
+    _windowsLivePlayerMountKey++;
+    _liveRoomController.isLoaded.refresh();
+    setState(() {});
+  }
+
+  void _closeWindowsLiveTab() {
+    if (!mounted) return;
+    _closingFromWindowsLiveTabService = true;
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      if (route.isCurrent) {
+        Navigator.of(context).maybePop();
+      } else {
+        Navigator.of(context).removeRoute(route);
+      }
+      return;
+    }
+    WindowsVideoTabService.unregisterRoute(
+      _liveTabArgs,
+      _closeWindowsLiveTab,
+    );
+    final player =
+        WindowsVideoTabService.removePlayer<PlPlayerController>(_liveTabArgs) ??
+        plPlayerController;
+    videoPlayerServiceHandler?.onVideoDetailDispose(heroTag);
+    player.dispose();
+    Get.delete<LiveRoomController>(tag: heroTag, force: true);
+  }
+
   @override
   void dispose() {
     final isInLivePip = LivePipOverlayService.isCurrentLiveRoom(
       _liveRoomController.roomId,
     );
-    if (!isInLivePip && !_isEnteringPipMode) {
+    final keepWindowsTabAlive = WindowsVideoTabService.enabled &&
+        !_closingFromWindowsLiveTabService &&
+        WindowsVideoTabService.has(
+          WindowsVideoTabService.keyFromArgs(_liveTabArgs),
+        );
+    if (!isInLivePip && !_isEnteringPipMode && !keepWindowsTabAlive) {
       videoPlayerServiceHandler?.onVideoDetailDispose(heroTag);
     }
     removeObserverMobile(this);
     if (Platform.isAndroid && !plPlayerController.setSystemBrightness) {
       ScreenBrightnessPlatform.instance.resetApplicationScreenBrightness();
     }
-    if (!isInLivePip && !_isEnteringPipMode) {
+    if (!isInLivePip && !_isEnteringPipMode && !keepWindowsTabAlive) {
       PlPlayerController.setPlayCallBack(null);
     }
     plPlayerController.removeStatusLister(playerListener);
-    if (!isInLivePip && !_isEnteringPipMode) {
+    if (keepWindowsTabAlive) {
+      WindowsVideoTabService.keepPlayer(
+        _liveTabArgs,
+        plPlayerController,
+        dispose: (player) => player.dispose(),
+      );
+    } else if (!isInLivePip && !_isEnteringPipMode) {
       plPlayerController.dispose();
     }
 
@@ -394,7 +478,12 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       );
     }
 
-    if (!isInLivePip && !_isEnteringPipMode) {
+    WindowsVideoTabService.unregisterRoute(
+      _liveTabArgs,
+      _closeWindowsLiveTab,
+    );
+
+    if (!isInLivePip && !_isEnteringPipMode && !keepWindowsTabAlive) {
       Get.delete<LiveRoomController>(tag: heroTag, force: true);
     }
 
@@ -475,6 +564,10 @@ class _LiveRoomPageState extends State<LiveRoomPage>
         if (_liveRoomController.isLoaded.value && plPlayerController.isLive) {
           final roomInfoH5 = _liveRoomController.roomInfoH5.value;
           return PLVideoPlayer(
+            key: ValueKey(
+              'live-player-${_liveRoomController.roomId}-'
+              '$isPipMode-$_windowsLivePlayerMountKey',
+            ),
             maxWidth: width,
             maxHeight: height,
             isPipMode: isPipMode,
