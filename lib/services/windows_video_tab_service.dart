@@ -82,10 +82,17 @@ abstract final class WindowsVideoTabService {
   static final Map<String, void Function()> _activators = {};
   static final Map<String, void Function()> _closers = {};
   static final Map<String, _WindowsVideoTabPlayer> _players = {};
+  static bool _hostMounted = false;
 
   static bool get enabled => Platform.isWindows && Pref.enableWindowsVideoTabs;
 
   static bool get isNotEmpty => tabs.isNotEmpty;
+
+  static const hostRoute = '/windowsMediaTabs';
+
+  static void setHostMounted(bool value) {
+    _hostMounted = value;
+  }
 
   static String keyFromArgs(Map arguments) {
     final type = _typeFromArgs(arguments);
@@ -170,12 +177,15 @@ abstract final class WindowsVideoTabService {
   }
 
   static void close(String id) {
-    _closers.remove(id)?.call();
+    final close = _closers.remove(id);
     _activators.remove(id);
     _players.remove(id)?.dispose();
     tabs.removeWhere((item) => item.id == id);
     if (activeId.value == id) {
-      activeId.value = null;
+      activeId.value = tabs.isEmpty ? null : tabs.last.id;
+    }
+    if (!_hostMounted && Get.currentRoute != hostRoute) {
+      close?.call();
     }
   }
 
@@ -255,27 +265,33 @@ abstract final class WindowsVideoTabService {
 
   static Future<void>? open(WindowsVideoTabItem item) {
     if (!enabled) return null;
-    activeId.value = item.id;
-    final activate = _activators[item.id];
-    if (activate != null) {
-      activate();
+    select(item.id);
+    if (!_hostMounted && Get.currentRoute != hostRoute) {
+      return Get.toNamed(hostRoute, preventDuplicates: true);
+    }
+    return null;
+  }
+
+  static void select(String id) {
+    if (!enabled) return;
+    if (has(id)) {
+      activeId.value = id;
+    }
+  }
+
+  static Future<void>? showHost({bool off = false}) {
+    if (!enabled ||
+        tabs.isEmpty ||
+        _hostMounted ||
+        Get.currentRoute == hostRoute) {
       return null;
     }
-    final args = Map<String, dynamic>.from(item.arguments)
-      ..remove('fromPip');
-    if (item.type == WindowsMediaTabType.live) {
-      return Get.toNamed(
-        '/liveRoom',
-        arguments: args,
-        preventDuplicates: false,
-      );
+    if (off) {
+      return Get.offNamed(hostRoute);
     }
-    return Get.toNamed(
-      '/videoV',
-      arguments: args,
-      preventDuplicates: false,
-    );
+    return Get.toNamed(hostRoute, preventDuplicates: true);
   }
+
 }
 
 class WindowsMediaTabBar extends StatelessWidget {
@@ -340,7 +356,7 @@ class _WindowsMediaTabChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
         child: InkWell(
           borderRadius: BorderRadius.circular(6),
-          onTap: active ? null : () => WindowsVideoTabService.open(item),
+          onTap: active ? null : () => WindowsVideoTabService.select(item.id),
           child: Padding(
             padding: const EdgeInsets.only(left: 10, right: 4),
             child: Row(

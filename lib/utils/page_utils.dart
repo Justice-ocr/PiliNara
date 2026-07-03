@@ -550,6 +550,10 @@ abstract final class PageUtils {
       },
       type: WindowsMediaTabType.live,
     );
+    if (WindowsVideoTabService.enabled) {
+      WindowsVideoTabService.showHost(off: off);
+      return;
+    }
     if (off) {
       Get.offNamed('/liveRoom', arguments: {'roomId': roomId});
     } else {
@@ -589,6 +593,9 @@ abstract final class PageUtils {
       ...?extraArguments,
     };
     WindowsVideoTabService.upsert(arguments);
+    if (WindowsVideoTabService.enabled) {
+      return WindowsVideoTabService.showHost(off: off);
+    }
     if (off) {
       return Get.offNamed(
         '/videoV',

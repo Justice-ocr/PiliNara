@@ -79,6 +79,7 @@ import 'package:PiliPlus/pages/webdav/view.dart';
 import 'package:PiliPlus/pages/webview/view.dart';
 import 'package:PiliPlus/pages/whisper/view.dart';
 import 'package:PiliPlus/pages/whisper_detail/view.dart';
+import 'package:PiliPlus/pages/windows_media_tabs/view.dart';
 import 'package:get/get.dart';
 
 class Routes {
@@ -90,6 +91,10 @@ class Routes {
     GetPage(name: '/hot', page: () => const HotPage()),
     // 瑙嗛璇︽儏
     GetPage(name: '/videoV', page: () => const VideoDetailPageV()),
+    GetPage(
+      name: '/windowsMediaTabs',
+      page: () => const WindowsMediaTabsPage(),
+    ),
     //
     GetPage(name: '/webview', page: () => const WebviewPage()),
     // 璁剧疆
