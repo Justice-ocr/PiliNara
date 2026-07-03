@@ -99,7 +99,9 @@ abstract final class WindowsVideoTabService {
   static bool get isNotEmpty => tabs.isNotEmpty;
 
   static const hostRoute = '/windowsMediaTabs';
+  static const rootRoute = '/';
   static const homeTabId = 'home';
+  static const maxMediaTabs = 8;
 
   static WindowsVideoTabItem _homeTab() {
     final now = DateTime.now();
@@ -131,6 +133,14 @@ abstract final class WindowsVideoTabService {
 
   static void setHostMounted(bool value) {
     _hostMounted = value;
+  }
+
+  static bool get _isHostCurrent =>
+      Get.currentRoute == hostRoute || Get.currentRoute == rootRoute;
+
+  static bool _isHostRoute(Route<dynamic> route) {
+    final name = route.settings.name;
+    return route.isFirst || name == hostRoute || name == rootRoute;
   }
 
   static String keyFromArgs(Map arguments) {
@@ -200,6 +210,9 @@ abstract final class WindowsVideoTabService {
       activeId.value = id;
       currentArguments = normalized;
     }
+    if (type != WindowsMediaTabType.home) {
+      _trimMediaTabs(keepId: id);
+    }
   }
 
   static void updateProgress(Map arguments, Duration? progress) {
@@ -218,8 +231,29 @@ abstract final class WindowsVideoTabService {
   static void setActive(Map arguments) {
     if (!enabled) return;
     final id = keyFromArgs(arguments);
-    if (id.isNotEmpty && has(id)) {
+    final index = tabs.indexWhere((item) => item.id == id);
+    if (id.isNotEmpty && index != -1) {
       activeId.value = id;
+      currentArguments = tabs[index].isHome ? null : tabs[index].arguments;
+    }
+  }
+
+  static void _trimMediaTabs({required String keepId}) {
+    while (mediaTabCount > maxMediaTabs) {
+      final active = activeId.value;
+      final candidates = tabs
+          .where(
+            (item) =>
+                !item.isHome && item.id != keepId && item.id != active,
+          )
+          .toList(growable: false);
+      final fallback = tabs
+          .where((item) => !item.isHome && item.id != keepId)
+          .toList(growable: false);
+      final removable = candidates.isNotEmpty ? candidates : fallback;
+      if (removable.isEmpty) return;
+      removable.sort((a, b) => a.updatedAt.compareTo(b.updatedAt));
+      close(removable.first.id);
     }
   }
 
@@ -322,7 +356,13 @@ abstract final class WindowsVideoTabService {
   static Future<void>? open(WindowsVideoTabItem item) {
     if (!enabled) return null;
     select(item.id);
-    if (!_hostMounted && Get.currentRoute != hostRoute) {
+    if (_hostMounted) {
+      if (!_isHostCurrent) {
+        Get.until(_isHostRoute);
+      }
+      return null;
+    }
+    if (!_isHostCurrent) {
       return Get.toNamed(hostRoute, preventDuplicates: true);
     }
     return null;
@@ -340,10 +380,19 @@ abstract final class WindowsVideoTabService {
   }
 
   static Future<void>? showHost({bool off = false}) {
-    if (!enabled || _hostMounted || Get.currentRoute == hostRoute) {
+    if (!enabled) {
       return null;
     }
     ensureHomeTab();
+    if (_hostMounted) {
+      if (!_isHostCurrent) {
+        Get.until(_isHostRoute);
+      }
+      return null;
+    }
+    if (_isHostCurrent) {
+      return null;
+    }
     if (off) {
       return Get.offNamed(hostRoute);
     }

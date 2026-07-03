@@ -27,9 +27,6 @@ try {
             if (-not [string]::IsNullOrWhiteSpace($versionSuffix)) {
                 $versionName += $versionSuffix
             }
-            elseif ($Arg -eq 'android') {
-                $versionName += '-' + $commitHash.Substring(0, 9)
-            }
             "version: $versionName+$versionCode"
         }
         else {

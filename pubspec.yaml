@@ -9,11 +9,6 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # followed by an optional build number separated by a +.
 # Both the version and the builder number may be overridden in flutter
 # build by specifying --build-name and --build-number, respectively.
-# In Android, build-name is used as versionName while build-number used as versionCode.
-# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
-# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
-# Read more about iOS versioning at
-# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
 # update when release
@@ -190,11 +185,6 @@ dependency_overrides:
     git:
       url: https://github.com/dongfengweixiao/flutter_clipboard.git
       ref: patch-1
-  flutter_inappwebview_android:
-    git:
-      url: https://github.com/bggRGjQaUbCoE/flutter_inappwebview.git
-      path: flutter_inappwebview_android
-      ref: v6.1.5
   flutter_inappwebview_windows:
     git:
       url: https://github.com/bggRGjQaUbCoE/flutter_inappwebview.git
@@ -251,23 +241,12 @@ dev_dependencies:
   jnigen: ^0.17.0
 
 flutter_launcher_icons:
-  android: true
-  ios: true
-  remove_alpha_ios: true
   image_path: assets/images/logo/logo_2.png
-  image_path_android: assets/images/logo/logo_2.png
-  image_path_ios: assets/images/logo/logo.png
-  adaptive_icon_background: "#ffffff"
-  adaptive_icon_foreground: assets/images/logo/logo_2.png
-  adaptive_icon_monochrome: assets/images/logo/logo_2.png
-  macos:
+  windows:
     generate: true
-    image_path: assets/images/logo/logo.png
+    image_path: assets/images/logo/logo_2.png
 
 flutter_native_splash:
-  android_12:
-    color: "#ffffff"
-    color_dark: "#212121"
   color: "#ffffff"
   color_dark: "#212121"
   image: assets/images/logo/logo_2.png
@@ -282,7 +261,7 @@ flutter:
     - path: assets/images/logo/ico/
       platforms: [windows]
     - path: assets/images/logo/desktop/
-      platforms: [linux, macos]
+      platforms: [windows]
     - path: assets/images/live/
     - path: assets/images/paycoins/
     - path: assets/shaders/
