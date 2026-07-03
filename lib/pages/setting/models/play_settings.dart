@@ -253,7 +253,7 @@ List<SettingsModel> get playSettings => [
       subtitle: '在 Windows 端暂存打开过的视频，可从视频页菜单快速切换',
       leading: Icon(Icons.tab_outlined),
       setKey: SettingBoxKey.enableWindowsVideoTabs,
-      defaultVal: true,
+      defaultVal: false,
     ),
   if (Platform.isAndroid) ...[
     SwitchModel(

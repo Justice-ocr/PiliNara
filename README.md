@@ -26,7 +26,7 @@
 - 本项目PiliNara是基于[PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)进行修改的,做了一些自用的改动.
 - 本仓库保留了PiliPlus的所有功能,并在此基础上进行了部分自用的优化和调整.支持导入PiliPlus的设置和数据，也应该支持了导出设置和数据到PiliPlus.
 - 本项目会定期同步PiliPlus的更新,并在此基础上进行修改和优化.
-- 本项目仅供个人学习和测试使用，目前只打包了安卓版本,如有需要请自行Fork后编译.
+- 本项目仅供个人学习和测试使用；当前分支专注 Windows 端，非 Windows 平台工程已移除。
 - 有啥需要的功能或者想法欢迎提issue或者PR,我会尽量抽时间进行开发和完善.
 - 本人开发水平有限，可能存在一些bug和不完善的地方，欢迎提交issue和PR.
 
@@ -37,14 +37,13 @@
 Fork特性：
 
 **基础适配与界面**
-- [x] 应用名称由PiliPlus更改为PiliNara，做了各平台相应替换以实现共存
+- [x] 应用名称由PiliPlus更改为PiliNara，并做了 Windows 端相应替换以实现共存
 - [x] 修复Flutter在澎湃小窗下无法正常显示的问题，参考Flutter官方issue [#161086](https://github.com/flutter/flutter/issues/161086)，该问题似乎在HyperOS3上被修复
    修复方案参考了[venera/pull/467](https://github.com/venera-app/venera/pull/467)
 - [x] 支持自定义「我的」页面卡片顺序和显示数量
 - [x] 「我的」页面新增历史记录卡片预览和「稍后再看」卡片板块
 - [x] 支持自定义修改应用字体和弹幕字体，可以手动选择本地字体文件
 - [x] 支持自动侧边栏切换，并可配置触发宽度
-- [x] Android 支持预测性返回动画
 - [x] 图片长按/右键菜单支持复制图片
 
 - [x] 优化了部分界面UI？
@@ -70,7 +69,7 @@ Fork特性：
 - [x] 离线缓存新增“全部视频 / 文件夹”双视图，支持文件夹管理、手动排序、批量归类和按文件夹顺序播放
 - [x] 离线缓存视频支持 CC 字幕下载与离线播放
 - [x] 离线缓存播放支持元数据持久化，播放本地缓存时可恢复章节进度条与 SponsorBlock
-- [x] 下载页支持导出离线缓存视频到公共 Download 目录，支持单个导出和批量多选（仅 Android）
+- [x] 离线缓存播放与管理能力保留，Windows 端缓存工作流持续优化中
 
 **弹幕与屏蔽**
 - [x] 增强合并弹幕功能，添加类[Pakku.js](https://github.com/xmcp/pakku.js)实现，重复弹幕字体随数量而增大,可设置放大阈值和放大速度
@@ -96,11 +95,7 @@ Fork特性：
 
 ## 适配平台
 
-- [x] Android
-- [x] iOS
-- [x] Pad
 - [x] Windows
-- [x] Linux
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/piliplus.svg)](https://repology.org/project/piliplus/versions)
 
@@ -115,11 +110,9 @@ Fork特性：
 - [x] 编辑动态
 - [x] DLNA 投屏
 - [x] 离线缓存/播放
-- [x] 移动端支持点击弹幕悬停，点赞、复制、举报 by [@My-Responsitories](https://github.com/My-Responsitories)
 - [x] 播放音频
 - [x] 跳过番剧片头/片尾
-- [x] 安卓端 `loudnorm` 适配 by [@My-Responsitories](https://github.com/My-Responsitories)
-- [x] Win/Mac 支持极验、短信登录 by [@My-Responsitories](https://github.com/My-Responsitories)
+- [x] Windows 支持极验、短信登录 by [@My-Responsitories](https://github.com/My-Responsitories)
 - [x] 视频截取动图 by [@My-Responsitories](https://github.com/My-Responsitories)
 - [x] AI 原声翻译
 - [x] SuperChat

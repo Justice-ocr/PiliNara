@@ -2,16 +2,6 @@ param(
     [string]$platform = ""
 )
 
-# TODO: remove
-# https://github.com/flutter/flutter/issues/182281
-$NewOverScrollIndicator = "362b1de29974ffc1ed6faa826e1df870d7bec75f";
-
-$BottomSheetAndroidPatch = "lib/scripts/bottom_sheet_android.patch"
-
-# https://github.com/bggRGjQaUbCoE/PiliPlus/issues/1906
-$BottomSheetIOSFlutterPatch = "lib/scripts/bottom_sheet_ios_flutter.patch"
-$BottomSheetIOSPiliPlusPatch = "lib/scripts/bottom_sheet_ios_piliplus.patch"
-
 # https://github.com/bggRGjQaUbCoE/PiliPlus/issues/1662
 $ScrollViewPatch = "lib/scripts/scroll_view.patch"
 
@@ -37,19 +27,6 @@ $ModalBarrierPatch = "lib/scripts/modal_barrier.patch"
 # https://github.com/flutter/flutter/issues/182466
 $MouseCursorPatch = "lib/scripts/mouse_cursor.patch"
 
-$GeetestIOSPatch = "lib/scripts/geetest_ios.patch"
-
-if ($platform.ToLower() -eq "ios") {
-    git apply $BottomSheetIOSPiliPlusPatch
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "$BottomSheetIOSPiliPlusPatch applied"
-    }
-    git apply $GeetestIOSPatch
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "$GeetestIOSPatch applied"
-    }
-}
-
 Set-Location $env:FLUTTER_ROOT
 
 $picks   = @()
@@ -58,21 +35,6 @@ $patches = @($ModalBarrierPatch, $TextSelectionPatch, $MouseCursorPatch,
             $ImageAnimPatch, $LayoutBuilderPatch, $NavigationDrawerPatch)
 
 switch ($platform.ToLower()) {
-    "android" {
-        $reverts += $NewOverScrollIndicator
-        $patches += $BottomSheetAndroidPatch
-        $patches += $ScrollViewPatch
-        $patches += $NavigatorPatch
-    }
-    "ios" {
-        $patches += $ScrollViewPatch
-        $patches += $BottomSheetIOSFlutterPatch
-        $patches += $NavigatorPatch
-    }
-    "linux" {
-    }
-    "macos" {
-    }
     "windows" {
     }
     default {}
@@ -108,11 +70,4 @@ foreach ($patch in $patches) {
     if ($LASTEXITCODE -eq 0) {
         Write-Host "$patch applied"
     }
-}
-
-# TODO: remove
-if ($platform.ToLower() -eq "android") {
-    "df67bb3b55323961184ae7117cc91c054f36a42c" | Set-Content -Path .\bin\internal\engine.version
-    Remove-Item -Path ".\bin\cache" -Recurse -Force
-    flutter --version
 }
