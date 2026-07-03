@@ -1971,7 +1971,7 @@ class HeaderControlState extends State<HeaderControl>
               if (WindowsVideoTabService.enabled &&
                   widget.onShowWindowsVideoTabs != null)
                 Obx(() {
-                  final count = WindowsVideoTabService.tabs.length;
+                  final count = WindowsVideoTabService.mediaTabCount;
                   return SizedBox(
                     width: btnWidth,
                     height: btnHeight,

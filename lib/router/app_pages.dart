@@ -80,11 +80,17 @@ import 'package:PiliPlus/pages/webview/view.dart';
 import 'package:PiliPlus/pages/whisper/view.dart';
 import 'package:PiliPlus/pages/whisper_detail/view.dart';
 import 'package:PiliPlus/pages/windows_media_tabs/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:get/get.dart';
 
 class Routes {
   static final List<GetPage<dynamic>> getPages = [
-    GetPage(name: '/', page: () => const MainApp()),
+    GetPage(
+      name: '/',
+      page: () => WindowsVideoTabService.enabled
+          ? const WindowsMediaTabsPage()
+          : const MainApp(),
+    ),
     // 棣栭〉(鎺ㄨ崘)
     GetPage(name: '/home', page: () => const HomePage()),
     // 鐑棬

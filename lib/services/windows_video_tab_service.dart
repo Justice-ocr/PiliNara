@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 enum WindowsMediaTabType {
+  home,
   video,
   live,
 }
@@ -24,7 +25,12 @@ class WindowsVideoTabItem {
   final DateTime createdAt;
   DateTime updatedAt;
 
+  bool get isHome => type == WindowsMediaTabType.home;
+
   String get title {
+    if (isHome) {
+      return '\u9996\u9875';
+    }
     final value = arguments['title'];
     if (value is String && value.trim().isNotEmpty) {
       return value.trim();
@@ -45,6 +51,9 @@ class WindowsVideoTabItem {
   }
 
   String get subtitle {
+    if (isHome) {
+      return '';
+    }
     final parts = <String>[];
     if (type == WindowsMediaTabType.live) {
       final roomId = arguments['roomId'] ?? arguments['id'];
@@ -90,6 +99,35 @@ abstract final class WindowsVideoTabService {
   static bool get isNotEmpty => tabs.isNotEmpty;
 
   static const hostRoute = '/windowsMediaTabs';
+  static const homeTabId = 'home';
+
+  static WindowsVideoTabItem _homeTab() {
+    final now = DateTime.now();
+    return WindowsVideoTabItem(
+      id: homeTabId,
+      type: WindowsMediaTabType.home,
+      arguments: const {'mediaTabType': 'home'},
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
+
+  static void ensureHomeTab() {
+    if (!enabled) return;
+    final index = tabs.indexWhere((item) => item.id == homeTabId);
+    if (index == -1) {
+      tabs.insert(0, _homeTab());
+    } else if (index != 0) {
+      final item = tabs.removeAt(index);
+      tabs.insert(0, item);
+    }
+    activeId.value ??= homeTabId;
+  }
+
+  static int get mediaTabCount =>
+      tabs.where((item) => item.type != WindowsMediaTabType.home).length;
+
+  static bool get hasMediaTabs => mediaTabCount > 0;
 
   static void setHostMounted(bool value) {
     _hostMounted = value;
@@ -97,6 +135,9 @@ abstract final class WindowsVideoTabService {
 
   static String keyFromArgs(Map arguments) {
     final type = _typeFromArgs(arguments);
+    if (type == WindowsMediaTabType.home) {
+      return homeTabId;
+    }
     if (type == WindowsMediaTabType.live) {
       final roomId =
           arguments['roomId']?.toString() ?? arguments['id']?.toString();
@@ -114,6 +155,9 @@ abstract final class WindowsVideoTabService {
 
   static WindowsMediaTabType _typeFromArgs(Map arguments) {
     final type = arguments['mediaTabType'];
+    if (type == WindowsMediaTabType.home || type == 'home') {
+      return WindowsMediaTabType.home;
+    }
     if (type == WindowsMediaTabType.live || type == 'live') {
       return WindowsMediaTabType.live;
     }
@@ -126,6 +170,7 @@ abstract final class WindowsVideoTabService {
     bool activate = true,
   }) {
     if (!enabled) return;
+    ensureHomeTab();
     final normalized = Map<String, dynamic>.from(arguments)
       ..['mediaTabType'] = type.name;
     final id = keyFromArgs(normalized);
@@ -179,13 +224,14 @@ abstract final class WindowsVideoTabService {
   }
 
   static void close(String id) {
+    if (id == homeTabId) return;
     final close = _closers.remove(id);
     _activators.remove(id);
     _players.remove(id)?.dispose();
     tabs.removeWhere((item) => item.id == id);
     if (activeId.value == id) {
-      activeId.value = tabs.isEmpty ? null : tabs.last.id;
-      currentArguments = tabs.isEmpty ? null : tabs.last.arguments;
+      ensureHomeTab();
+      select(tabs.last.id);
     }
     if (!_hostMounted && Get.currentRoute != hostRoute) {
       close?.call();
@@ -193,7 +239,11 @@ abstract final class WindowsVideoTabService {
   }
 
   static void clear() {
-    final closers = List<void Function()>.from(_closers.values);
+    final closers = List<void Function()>.from(
+      _closers.entries
+          .where((entry) => entry.key != homeTabId)
+          .map((entry) => entry.value),
+    );
     _closers.clear();
     _activators.clear();
     for (final close in closers) {
@@ -203,8 +253,10 @@ abstract final class WindowsVideoTabService {
       cached.dispose();
     }
     _players.clear();
-    tabs.clear();
-    activeId.value = null;
+    tabs
+      ..clear()
+      ..add(_homeTab());
+    activeId.value = homeTabId;
     currentArguments = null;
   }
 
@@ -278,20 +330,20 @@ abstract final class WindowsVideoTabService {
 
   static void select(String id) {
     if (!enabled) return;
+    ensureHomeTab();
     final index = tabs.indexWhere((item) => item.id == id);
     if (index != -1) {
       activeId.value = id;
-      currentArguments = tabs[index].arguments;
+      currentArguments = tabs[index].isHome ? null : tabs[index].arguments;
+      _activators[id]?.call();
     }
   }
 
   static Future<void>? showHost({bool off = false}) {
-    if (!enabled ||
-        tabs.isEmpty ||
-        _hostMounted ||
-        Get.currentRoute == hostRoute) {
+    if (!enabled || _hostMounted || Get.currentRoute == hostRoute) {
       return null;
     }
+    ensureHomeTab();
     if (off) {
       return Get.offNamed(hostRoute);
     }
@@ -368,13 +420,7 @@ class _WindowsMediaTabChip extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  item.type == WindowsMediaTabType.live
-                      ? Icons.sensors
-                      : Icons.play_circle_outline,
-                  size: 17,
-                  color: fg,
-                ),
+                Icon(_iconForType(item.type), size: 17, color: fg),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
@@ -384,24 +430,33 @@ class _WindowsMediaTabChip extends StatelessWidget {
                     style: theme.textTheme.bodySmall?.copyWith(color: fg),
                   ),
                 ),
-                SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: IconButton(
-                    tooltip: '关闭标签',
-                    padding: EdgeInsets.zero,
-                    iconSize: 16,
-                    color: fg,
-                    onPressed: () => WindowsVideoTabService.close(item.id),
-                    icon: const Icon(Icons.close),
+                if (!item.isHome)
+                  SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: IconButton(
+                      tooltip: '关闭标签',
+                      padding: EdgeInsets.zero,
+                      iconSize: 16,
+                      color: fg,
+                      onPressed: () => WindowsVideoTabService.close(item.id),
+                      icon: const Icon(Icons.close),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  IconData _iconForType(WindowsMediaTabType type) {
+    return switch (type) {
+      WindowsMediaTabType.home => Icons.home_outlined,
+      WindowsMediaTabType.live => Icons.sensors,
+      WindowsMediaTabType.video => Icons.play_circle_outline,
+    };
   }
 }
 
