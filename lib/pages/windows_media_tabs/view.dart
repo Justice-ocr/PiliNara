@@ -1,4 +1,5 @@
 import 'package:PiliPlus/pages/live_room/view.dart';
+import 'package:PiliPlus/pages/main/view.dart';
 import 'package:PiliPlus/pages/video/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
   @override
   void initState() {
     super.initState();
+    WindowsVideoTabService.ensureHomeTab();
     WindowsVideoTabService.setHostMounted(true);
   }
 
@@ -32,8 +34,8 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
       final tabs = WindowsVideoTabService.tabs.toList(growable: false);
       if (tabs.isEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
+          if (mounted) {
+            WindowsVideoTabService.ensureHomeTab();
           }
         });
         return const Scaffold(body: SizedBox.shrink());
@@ -81,12 +83,20 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
       key: key,
       onGenerateRoute: (_) => GetPageRoute(
         settings: RouteSettings(
-          name: item.type == WindowsMediaTabType.live ? '/liveRoom' : '/videoV',
+          name: switch (item.type) {
+            WindowsMediaTabType.home => '/',
+            WindowsMediaTabType.live => '/liveRoom',
+            WindowsMediaTabType.video => '/videoV',
+          },
           arguments: item.arguments,
         ),
-        page: () => item.type == WindowsMediaTabType.live
-            ? LiveRoomPage(arguments: item.arguments)
-            : VideoDetailPageV(arguments: item.arguments),
+        page: () => switch (item.type) {
+          WindowsMediaTabType.home => const MainApp(),
+          WindowsMediaTabType.live => LiveRoomPage(arguments: item.arguments),
+          WindowsMediaTabType.video => VideoDetailPageV(
+            arguments: item.arguments,
+          ),
+        },
       ),
     );
   }

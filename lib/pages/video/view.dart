@@ -1954,7 +1954,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         if (!WindowsVideoTabService.enabled) {
           return const SizedBox.shrink();
         }
-        final count = WindowsVideoTabService.tabs.length;
+        final count = WindowsVideoTabService.mediaTabCount;
         return SizedBox(
           width: 42,
           height: 34,
@@ -1991,7 +1991,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         PopupMenuItem(
           onTap: _showWindowsVideoTabs,
           child: Obx(
-            () => Text('视频标签页 (${WindowsVideoTabService.tabs.length})'),
+            () => Text(
+              '视频标签页 (${WindowsVideoTabService.mediaTabCount})',
+            ),
           ),
         ),
       PopupMenuItem(
@@ -2044,7 +2046,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           content: SizedBox(
             width: 420,
             child: Obx(() {
-              final tabs = WindowsVideoTabService.tabs;
+              final tabs = WindowsVideoTabService.tabs
+                  .where((item) => !item.isHome)
+                  .toList(growable: false);
               if (tabs.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.symmetric(vertical: 24),
@@ -2086,7 +2090,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                             Navigator.of(context).pop();
                           }
                           WindowsVideoTabService.close(item.id);
-                          if (!active && WindowsVideoTabService.tabs.isEmpty) {
+                          if (!active && !WindowsVideoTabService.hasMediaTabs) {
                             Navigator.of(context).pop();
                           }
                         },
