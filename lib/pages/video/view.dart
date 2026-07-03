@@ -795,11 +795,22 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   void dispose() {
     VideoStackManager.decrement(); // 减少视频页面层级追踪
     final isInAppPip = PipOverlayService.isInPipMode;
+    final currentVideoContextKey = PipOverlayService.contextKeyFromArgs(
+      videoDetailController.args,
+    );
+    final isCurrentVideoInPip =
+        isInAppPip &&
+        PipOverlayService.savedVideoContextKey == currentVideoContextKey;
     final keepWindowsTabAlive = WindowsVideoTabService.enabled &&
         !_closingFromWindowsVideoTabService &&
         WindowsVideoTabService.has(
           WindowsVideoTabService.keyFromArgs(videoDetailController.args),
         );
+    final closeRemovedWindowsTabPip =
+        WindowsVideoTabService.enabled &&
+        isCurrentVideoInPip &&
+        !keepWindowsTabAlive &&
+        !_isEnteringPipMode;
     _syncWindowsVideoTabProgress();
     // 如果 _pipRetryPending=true 但用户没有继续 pop（_onPopInvokedWithResult 未触发），
     // 说明用户通过其他方式离开（点导航栏、Get.offAll 等），需要主动暂停播放器。
@@ -833,7 +844,13 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
 
     if (!videoDetailController.plPlayerController.isCloseAll) {
-      if (isInAppPip || _isEnteringPipMode) {
+      if (closeRemovedWindowsTabPip) {
+        PipOverlayService.stopPip(
+          callOnClose: true,
+          immediate: true,
+          targetContextKey: currentVideoContextKey,
+        );
+      } else if (isCurrentVideoInPip || _isEnteringPipMode) {
         videoDetailController.makeHeartBeat();
       } else if (keepWindowsTabAlive) {
         videoDetailController.makeHeartBeat();
@@ -1621,6 +1638,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                   child: videoIntro(
                     width: introWidth,
                     height: introHeight,
+                    needCtr: false,
                   ),
                 ),
               ),
@@ -1858,6 +1876,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                               return maxWidth / flex;
                             }(),
                             height: bottomHeight,
+                            needCtr: false,
                           ),
                         ),
                         if (videoDetailController.showReply)
@@ -2133,6 +2152,50 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       videoDetailController.args,
       videoDetailController.playedTime ?? plPlayerController?.position,
     );
+  }
+
+  bool _restoreWindowsReturnRoute() {
+    if (!WindowsVideoTabService.enabled) {
+      return false;
+    }
+    final route = videoDetailController.args['windowsReturnRoute'];
+    if (route != '/search' && route != '/searchResult') {
+      return false;
+    }
+    final rawParameters = videoDetailController.args['windowsReturnParameters'];
+    final Map<String, String>? parameters = rawParameters is Map
+        ? rawParameters.map(
+            (key, value) => MapEntry(
+              key.toString(),
+              value == null ? '' : value.toString(),
+            ),
+          )
+        : null;
+    final rawArguments = videoDetailController.args['windowsReturnArguments'];
+    final Map<String, dynamic>? arguments = rawArguments is Map
+        ? Map<String, dynamic>.from(rawArguments)
+        : null;
+
+    WindowsVideoTabService.select(WindowsVideoTabService.homeTabId);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.currentRoute == route) {
+        return;
+      }
+      Get.toNamed(
+        route,
+        parameters: parameters,
+        arguments: arguments,
+        preventDuplicates: false,
+      );
+    });
+    return true;
+  }
+
+  void _handleVideoBack() {
+    if (_restoreWindowsReturnRoute()) {
+      return;
+    }
+    Get.back();
   }
 
   Widget plPlayer({
@@ -3067,6 +3130,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
     if (didPop) {
       _startInAppPipIfNeeded(fromPop: true);
+      _restoreWindowsReturnRoute();
       // 消费 didPopNext else 分支设的重试标志（用户真的继续 pop 了）。
       // 立即调用通常足够（didPopNext 已同步关闭其他 PiP，playerInit 多半已完成）；
       // 若立即失败（rapid back press 时 playerInit 还在 await，playerStatus 不是 playing），
@@ -3252,6 +3316,18 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         _logSponsorBlock(
           'Tap to return from PiP, args contains: bvid=${args['bvid']}, cid=${args['cid']}, heroTag=${args['heroTag']}, title=${args['title']}, segmentList.length: ${videoDetailController.segmentList.length}',
         );
+
+        if (WindowsVideoTabService.enabled) {
+          WindowsVideoTabService.upsert(args);
+          WindowsVideoTabService.showHost();
+          final tabId = WindowsVideoTabService.keyFromArgs(args);
+          if (tabId.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              WindowsVideoTabService.select(tabId);
+            });
+          }
+          return;
+        }
 
         Get.toNamed('/videoV', arguments: args);
       },
