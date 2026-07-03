@@ -445,7 +445,7 @@ class VideoDetailController extends GetxController
   @override
   void onInit() {
     super.onInit();
-    args = Get.arguments;
+    args = WindowsVideoTabService.currentArguments ?? Get.arguments;
     plPlayerController = _createPlayerController(args)..brightness.value = -1;
 
     // 开启新视频时，如果存在前代播放器的应用内小窗，则按播放上下文决定是否重置旧状态

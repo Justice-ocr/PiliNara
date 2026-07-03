@@ -29,6 +29,7 @@ import 'package:PiliPlus/pages/video/reply/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
 import 'package:PiliPlus/services/logger.dart';
 import 'package:PiliPlus/services/service_locator.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
@@ -88,7 +89,8 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
       });
     }
 
-    videoDetail.value.title = Get.arguments['title'] ?? '';
+    final args = WindowsVideoTabService.currentArguments ?? Get.arguments;
+    videoDetail.value.title = args['title'] ?? '';
   }
 
   // 获取视频简介&分p

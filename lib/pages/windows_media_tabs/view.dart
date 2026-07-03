@@ -85,8 +85,8 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
           arguments: item.arguments,
         ),
         page: () => item.type == WindowsMediaTabType.live
-            ? const LiveRoomPage()
-            : const VideoDetailPageV(),
+            ? LiveRoomPage(arguments: item.arguments)
+            : VideoDetailPageV(arguments: item.arguments),
       ),
     );
   }

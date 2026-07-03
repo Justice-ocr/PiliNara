@@ -82,7 +82,9 @@ import 'package:get/get.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 
 class VideoDetailPageV extends StatefulWidget {
-  const VideoDetailPageV({super.key});
+  const VideoDetailPageV({super.key, this.arguments});
+
+  final Map? arguments;
 
   @override
   State<VideoDetailPageV> createState() => _VideoDetailPageVState();
@@ -90,7 +92,9 @@ class VideoDetailPageV extends StatefulWidget {
 
 class _VideoDetailPageVState extends State<VideoDetailPageV>
     with RouteAware, RouteAwareMixin, WidgetsBindingObserver {
-  final heroTag = Get.arguments['heroTag'];
+  late final String heroTag;
+
+  Map get _routeArgs => widget.arguments ?? (Get.arguments as Map);
 
   late final VideoDetailController videoDetailController;
   late final VideoReplyController _videoReplyController;
@@ -179,14 +183,14 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   @override
   void initState() {
     super.initState();
+    WindowsVideoTabService.currentArguments = _routeArgs;
+    heroTag = _routeArgs['heroTag'];
     VideoStackManager.increment(); // 追踪视频页面层级
-    final bool fromPip = Get.arguments['fromPip'] ?? false;
+    final bool fromPip = _routeArgs['fromPip'] ?? false;
     final String? targetContextKey = PipOverlayService.contextKeyFromArgs(
-      Get.arguments is Map ? Get.arguments as Map : null,
+      _routeArgs,
     );
-    if (Get.arguments is Map) {
-      WindowsVideoTabService.upsert(Get.arguments as Map);
-    }
+    WindowsVideoTabService.upsert(_routeArgs);
 
     // 如果有直播间 PiP 在运行，关闭它（采用非销毁式，避免干扰视频播放器单例）
     if (LivePipOverlayService.isInPipMode && !fromPip) {
@@ -931,7 +935,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
 
     // 如果是从开启新页面方式（Get.toNamed）从小窗手动返回，播放器应已在运行，跳过部分重置逻辑
-    final bool fromPip = Get.arguments?['fromPip'] ?? false;
+    final bool fromPip = _routeArgs['fromPip'] ?? false;
     if (fromPip) {
       isShowing = true;
       PlPlayerController.setPlayCallBack(playCallBack);
