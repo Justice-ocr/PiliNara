@@ -577,32 +577,6 @@ abstract final class PageUtils {
     bool isVertical = false,
     Dimension? dimension,
   }) {
-    Map<String, dynamic>? windowsReturnArguments() {
-      if (!WindowsVideoTabService.enabled) {
-        return null;
-      }
-      final currentRoute = Get.currentRoute;
-      if (currentRoute != '/search' && currentRoute != '/searchResult') {
-        return null;
-      }
-      final returnArguments = Get.arguments is Map
-          ? (Get.arguments as Map).map<String, dynamic>(
-              (key, value) => MapEntry(key.toString(), value),
-            )
-          : <String, dynamic>{};
-      if (currentRoute == '/searchResult') {
-        returnArguments['fromSearch'] = false;
-      }
-      return {
-        'windowsReturnRoute': currentRoute,
-        'windowsReturnParameters': Get.parameters.map(
-          (key, value) => MapEntry(key, value),
-        ),
-        if (returnArguments.isNotEmpty)
-          'windowsReturnArguments': returnArguments,
-      };
-    }
-
     final arguments = {
       'aid': aid ?? IdUtils.bv2av(bvid!),
       'bvid': bvid ?? IdUtils.av2bv(aid!),
@@ -616,7 +590,6 @@ abstract final class PageUtils {
       'videoType': videoType,
       'isVertical': dimension?.isVertical ?? isVertical,
       'heroTag': Utils.makeHeroTag(cid),
-      ...?windowsReturnArguments(),
       ...?extraArguments,
     };
     WindowsVideoTabService.upsert(arguments);

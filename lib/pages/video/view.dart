@@ -2058,48 +2058,25 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     );
   }
 
-  bool _restoreWindowsReturnRoute() {
-    if (!WindowsVideoTabService.enabled) {
-      return false;
-    }
-    final route = videoDetailController.args['windowsReturnRoute'];
-    if (route != '/search' && route != '/searchResult') {
-      return false;
-    }
-    final rawParameters = videoDetailController.args['windowsReturnParameters'];
-    final Map<String, String>? parameters = rawParameters is Map
-        ? rawParameters.map(
-            (key, value) => MapEntry(
-              key.toString(),
-              value == null ? '' : value.toString(),
-            ),
-          )
-        : null;
-    final rawArguments = videoDetailController.args['windowsReturnArguments'];
-    final Map<String, dynamic>? arguments = rawArguments is Map
-        ? Map<String, dynamic>.from(rawArguments)
-        : null;
-
-    WindowsVideoTabService.select(WindowsVideoTabService.homeTabId);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (Get.currentRoute == route) {
-        return;
-      }
-      Get.toNamed(
-        route,
-        parameters: parameters,
-        arguments: arguments,
-        preventDuplicates: false,
-      );
-    });
-    return true;
-  }
-
   void _handleVideoBack() {
-    if (_restoreWindowsReturnRoute()) {
+    if (_closeWindowsVideoTabFromBack()) {
       return;
     }
     Get.back();
+  }
+
+  bool _closeWindowsVideoTabFromBack() {
+    if (!WindowsVideoTabService.enabled) {
+      return false;
+    }
+    final id = WindowsVideoTabService.keyFromArgs(videoDetailController.args);
+    if (id.isEmpty || !WindowsVideoTabService.has(id)) {
+      return false;
+    }
+    _syncWindowsVideoTabProgress();
+    _startInAppPipIfNeeded(fromPop: true);
+    WindowsVideoTabService.close(id);
+    return true;
   }
 
   Widget plPlayer({
@@ -2109,9 +2086,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   }) => popScope(
     key: videoDetailController.videoPlayerKey,
     canPop:
-        !isFullScreen &&
-        !videoDetailController.plPlayerController.isDesktopPip &&
-        (videoDetailController.horizontalScreen || isPortrait),
+        WindowsVideoTabService.enabled ||
+        (!isFullScreen &&
+            !videoDetailController.plPlayerController.isDesktopPip &&
+            (videoDetailController.horizontalScreen || isPortrait)),
     onPopInvokedWithResult: _onPopInvokedWithResult,
     child: Obx(
       () =>
@@ -2135,6 +2113,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                 controller: videoDetailController.plPlayerController,
                 videoDetailCtr: videoDetailController,
                 heroTag: heroTag,
+                onBack: _handleVideoBack,
                 onShowWindowsVideoTabs: _showWindowsVideoTabs,
               ),
               danmuWidget: isPipMode && pipNoDanmaku
@@ -3005,7 +2984,16 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
     if (didPop) {
       _startInAppPipIfNeeded(fromPop: true);
-      _restoreWindowsReturnRoute();
+      if (WindowsVideoTabService.enabled) {
+        final id = WindowsVideoTabService.keyFromArgs(
+          videoDetailController.args,
+        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (id.isNotEmpty && WindowsVideoTabService.has(id)) {
+            WindowsVideoTabService.close(id);
+          }
+        });
+      }
       // 消费 didPopNext else 分支设的重试标志（用户真的继续 pop 了）。
       // 立即调用通常足够（didPopNext 已同步关闭其他 PiP，playerInit 多半已完成）；
       // 若立即失败（rapid back press 时 playerInit 还在 await，playerStatus 不是 playing），

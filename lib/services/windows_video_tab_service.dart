@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 
 enum WindowsMediaTabType {
   home,
+  search,
   video,
   live,
 }
@@ -31,6 +32,13 @@ class WindowsVideoTabItem {
     if (isHome) {
       return '\u9996\u9875';
     }
+    if (type == WindowsMediaTabType.search) {
+      final keyword = arguments['keyword'];
+      if (keyword != null && keyword.toString().trim().isNotEmpty) {
+        return '\u641c\u7d22: ${keyword.toString().trim()}';
+      }
+      return '\u641c\u7d22';
+    }
     final value = arguments['title'];
     if (value is String && value.trim().isNotEmpty) {
       return value.trim();
@@ -55,6 +63,13 @@ class WindowsVideoTabItem {
       return '';
     }
     final parts = <String>[];
+    if (type == WindowsMediaTabType.search) {
+      final index = arguments['initIndex'];
+      if (index != null) {
+        parts.add('tab $index');
+      }
+      return parts.join(' 路 ');
+    }
     if (type == WindowsMediaTabType.live) {
       final roomId = arguments['roomId'] ?? arguments['id'];
       if (roomId != null) {
@@ -153,6 +168,10 @@ abstract final class WindowsVideoTabService {
           arguments['roomId']?.toString() ?? arguments['id']?.toString();
       return roomId == null || roomId.isEmpty ? '' : 'live:$roomId';
     }
+    if (type == WindowsMediaTabType.search) {
+      final keyword = arguments['keyword']?.toString();
+      return keyword == null || keyword.isEmpty ? '' : 'search:$keyword';
+    }
     final bvid = arguments['bvid']?.toString();
     final cid = arguments['cid']?.toString();
     final epId = arguments['epId']?.toString();
@@ -170,6 +189,9 @@ abstract final class WindowsVideoTabService {
     }
     if (type == WindowsMediaTabType.live || type == 'live') {
       return WindowsMediaTabType.live;
+    }
+    if (type == WindowsMediaTabType.search || type == 'search') {
+      return WindowsMediaTabType.search;
     }
     return WindowsMediaTabType.video;
   }
@@ -503,6 +525,7 @@ class _WindowsMediaTabChip extends StatelessWidget {
   IconData _iconForType(WindowsMediaTabType type) {
     return switch (type) {
       WindowsMediaTabType.home => Icons.home_outlined,
+      WindowsMediaTabType.search => Icons.search,
       WindowsMediaTabType.live => Icons.sensors,
       WindowsMediaTabType.video => Icons.play_circle_outline,
     };

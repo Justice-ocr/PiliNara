@@ -6,6 +6,7 @@ import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/search/suggest.dart';
 import 'package:PiliPlus/models_new/search/search_rcmd/data.dart';
 import 'package:PiliPlus/models_new/search/search_trending/data.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
@@ -180,6 +181,27 @@ class SSearchController extends GetxController
     }
 
     searchFocusNode.unfocus();
+    if (WindowsVideoTabService.enabled) {
+      WindowsVideoTabService.upsert(
+        {
+          'keyword': controller.text,
+          'tag': tag,
+          'initIndex': initIndex,
+          'fromSearch': false,
+        },
+        type: WindowsMediaTabType.search,
+      );
+      await WindowsVideoTabService.showHost();
+      searchFocusNode.requestFocus();
+      if (PlatformUtils.isDesktop) {
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          controller.selection = TextSelection.collapsed(
+            offset: controller.text.length,
+          );
+        });
+      }
+      return;
+    }
     await Get.toNamed(
       '/searchResult',
       parameters: {

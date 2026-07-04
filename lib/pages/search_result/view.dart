@@ -12,7 +12,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class SearchResultPage extends StatefulWidget {
-  const SearchResultPage({super.key});
+  const SearchResultPage({super.key, this.arguments});
+
+  final Map? arguments;
 
   @override
   State<SearchResultPage> createState() => _SearchResultPageState();
@@ -23,27 +25,31 @@ class _SearchResultPageState extends State<SearchResultPage>
   late SearchResultController _searchResultController;
   late TabController _tabController;
   final String _tag = DateTime.now().millisecondsSinceEpoch.toString();
-  final bool _isFromSearch = Get.arguments?['fromSearch'] ?? false;
+  late final Map _args;
+  late final bool _isFromSearch;
   SSearchController? sSearchController;
 
   @override
   void initState() {
     super.initState();
+    _args = widget.arguments ??
+        (Get.arguments is Map ? Get.arguments as Map : const {});
+    _isFromSearch = _args['fromSearch'] ?? false;
     _searchResultController = Get.put(
-      SearchResultController(),
+      SearchResultController(arguments: _args),
       tag: _tag,
     );
 
     _tabController = TabController(
       vsync: this,
-      initialIndex: Get.arguments?['initIndex'] ?? 0,
+      initialIndex: _args['initIndex'] ?? 0,
       length: SearchType.values.length,
     );
 
     if (_isFromSearch) {
       try {
         sSearchController = Get.find<SSearchController>(
-          tag: Get.parameters['tag'],
+          tag: _args['tag'] ?? Get.parameters['tag'],
         );
         _tabController.addListener(listener);
       } catch (_) {}

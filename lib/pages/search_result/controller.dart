@@ -2,7 +2,12 @@ import 'package:PiliPlus/models/common/search/search_type.dart';
 import 'package:get/get.dart';
 
 class SearchResultController extends GetxController {
-  String keyword = Get.parameters['keyword'] ?? '';
+  SearchResultController({Map? arguments})
+    : keyword = arguments?['keyword']?.toString() ??
+          Get.parameters['keyword'] ??
+          '';
+
+  final String keyword;
 
   RxList<int> count = List.filled(SearchType.values.length, -1).obs;
 

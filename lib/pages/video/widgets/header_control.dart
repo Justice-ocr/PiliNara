@@ -183,6 +183,7 @@ class HeaderControl extends StatefulWidget {
     required this.controller,
     required this.videoDetailCtr,
     required this.heroTag,
+    this.onBack,
     this.onShowWindowsVideoTabs,
     super.key,
   });
@@ -191,6 +192,7 @@ class HeaderControl extends StatefulWidget {
   final PlPlayerController controller;
   final VideoDetailController videoDetailCtr;
   final String heroTag;
+  final VoidCallback? onBack;
   final VoidCallback? onShowWindowsVideoTabs;
 
   @override
@@ -1765,8 +1767,12 @@ class HeaderControlState extends State<HeaderControl>
                     size: 15,
                     color: Colors.white,
                   ),
-                  onPressed: () =>
-                      plPlayerController.onPopInvokedWithResult(false, null),
+                  onPressed:
+                      widget.onBack ??
+                      () => plPlayerController.onPopInvokedWithResult(
+                        false,
+                        null,
+                      ),
                 ),
               ),
               if (!plPlayerController.isDesktopPip &&

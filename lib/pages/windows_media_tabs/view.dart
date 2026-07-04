@@ -1,5 +1,6 @@
 import 'package:PiliPlus/pages/live_room/view.dart';
 import 'package:PiliPlus/pages/main/view.dart';
+import 'package:PiliPlus/pages/search_result/view.dart';
 import 'package:PiliPlus/pages/video/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:flutter/material.dart';
@@ -85,6 +86,7 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
         settings: RouteSettings(
           name: switch (item.type) {
             WindowsMediaTabType.home => '/',
+            WindowsMediaTabType.search => '/searchResult',
             WindowsMediaTabType.live => '/liveRoom',
             WindowsMediaTabType.video => '/videoV',
           },
@@ -92,6 +94,9 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
         ),
         page: () => switch (item.type) {
           WindowsMediaTabType.home => const MainApp(),
+          WindowsMediaTabType.search => SearchResultPage(
+            arguments: item.arguments,
+          ),
           WindowsMediaTabType.live => LiveRoomPage(arguments: item.arguments),
           WindowsMediaTabType.video => VideoDetailPageV(
             arguments: item.arguments,
