@@ -265,6 +265,7 @@ class HeaderControl extends StatefulWidget {
     required this.controller,
     required this.videoDetailCtr,
     required this.heroTag,
+    this.onBack,
     this.onShowWindowsVideoTabs,
     super.key,
   });
@@ -273,6 +274,7 @@ class HeaderControl extends StatefulWidget {
   final PlPlayerController controller;
   final VideoDetailController videoDetailCtr;
   final String heroTag;
+  final VoidCallback? onBack;
   final VoidCallback? onShowWindowsVideoTabs;
 
   @override
