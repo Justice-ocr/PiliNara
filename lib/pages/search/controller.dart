@@ -81,8 +81,10 @@ class BaseSearchController extends GetxController {
 
 class SSearchController extends GetxController
     with DebounceStreamMixin<String> {
-  SSearchController(this.tag);
+  SSearchController(this.tag, {Map<String, String>? parameters})
+    : _parameters = parameters;
   final String tag;
+  final Map<String, String>? _parameters;
 
   final searchFocusNode = FocusNode();
   final controller = TextEditingController();
@@ -117,7 +119,7 @@ class SSearchController extends GetxController
   @override
   void onInit() {
     super.onInit();
-    final params = Get.parameters;
+    final params = _parameters ?? Get.parameters;
     hintText = params['hintText'];
     final text = params['text'];
     if (text != null) {

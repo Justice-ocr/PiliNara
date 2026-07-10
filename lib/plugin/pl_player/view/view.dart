@@ -69,6 +69,7 @@ import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart'
@@ -2713,7 +2714,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                   MdiIcons.accountOutline,
                   color: Colors.white,
                 ),
-                onTap: () => Get.toNamed('/member?mid=${extra.mid}'),
+                onTap: () => PageUtils.toMember(extra.mid),
               ),
               _dmActionItem(
                 const Icon(

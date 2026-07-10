@@ -62,7 +62,7 @@ class FollowItem extends StatelessWidget {
             );
           } else {
             feedBack();
-            Get.toNamed('/member?mid=${item.mid}');
+            PageUtils.toMember(item.mid);
           }
         },
         child: Padding(

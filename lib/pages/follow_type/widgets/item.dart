@@ -24,7 +24,7 @@ class FollowTypeItem extends StatelessWidget {
     return SizedBox(
       height: 66,
       child: InkWell(
-        onTap: onTap ?? () => Get.toNamed('/member?mid=${item.mid}'),
+        onTap: onTap ?? () => PageUtils.toMember(item.mid),
         onLongPress: onLongPress,
         onSecondaryTap: onSecondaryTap,
         child: Padding(

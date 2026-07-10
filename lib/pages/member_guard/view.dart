@@ -94,7 +94,7 @@ class _MemberGuardState extends State<MemberGuard> {
                     return ListTile(
                       safeArea: false,
                       visualDensity: .comfortable,
-                      onTap: () => Get.toNamed('/member?mid=${item.uid}'),
+                      onTap: () => PageUtils.toMember(item.uid),
                       leading: _avatar(item.face, 32, item.guardLevel),
                       title: Text(
                         item.username,
@@ -115,7 +115,7 @@ class _MemberGuardState extends State<MemberGuard> {
   Widget _buildTopItem(GuardItem item, double size) {
     final child = GestureDetector(
       behavior: .opaque,
-      onTap: () => Get.toNamed('/member?mid=${item.uid}'),
+      onTap: () => PageUtils.toMember(item.uid),
       child: Padding(
         padding: const .symmetric(vertical: 10.0),
         child: Column(

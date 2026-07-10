@@ -86,7 +86,7 @@ class _FansPageState extends FollowTypePageState<FansPage> {
           );
           return;
         }
-        Get.toNamed('/member?mid=${item.mid}');
+        PageUtils.toMember(item.mid);
       },
       onLongPress: flag ? onRemove : null,
       onSecondaryTap: flag && !PlatformUtils.isMobile ? onRemove : null,

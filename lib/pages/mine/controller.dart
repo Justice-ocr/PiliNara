@@ -312,7 +312,7 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
     if (!accountService.isLogin.value || longPress) {
       Get.toNamed('/loginPage');
     } else {
-      Get.toNamed('/member?mid=${userInfo.value.mid}');
+      PageUtils.toMember(userInfo.value.mid);
     }
   }
 

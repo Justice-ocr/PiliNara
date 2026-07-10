@@ -25,7 +25,7 @@ class SearchUserItem extends StatelessWidget {
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
-        onTap: () => Get.toNamed('/member?mid=${item.mid}'),
+        onTap: () => PageUtils.toMember(item.mid),
         child: Row(
           children: [
             const SizedBox(width: 15),

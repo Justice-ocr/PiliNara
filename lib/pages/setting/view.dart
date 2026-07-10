@@ -7,6 +7,7 @@ import 'package:PiliPlus/pages/about/view.dart';
 import 'package:PiliPlus/pages/login/controller.dart';
 import 'package:PiliPlus/pages/setting/common_setting.dart';
 import 'package:PiliPlus/pages/setting/widgets/multi_select_dialog.dart';
+import 'package:PiliPlus/pages/settings_search/view.dart';
 import 'package:PiliPlus/pages/webdav/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
@@ -173,6 +174,22 @@ class _SettingPageState extends State<SettingPage> {
     }
   }
 
+  Widget _buildSettingPage(
+    SettingType type, {
+    bool showAppBar = true,
+  }) => switch (type) {
+    SettingType.privacySetting => PrivacySetting(showAppBar: showAppBar),
+    SettingType.blockSetting => BlockSetting(showAppBar: showAppBar),
+    SettingType.recommendSetting => RecommendSetting(showAppBar: showAppBar),
+    SettingType.dynamicsSetting => DynamicsSetting(showAppBar: showAppBar),
+    SettingType.videoSetting => VideoSetting(showAppBar: showAppBar),
+    SettingType.playSetting => PlaySetting(showAppBar: showAppBar),
+    SettingType.styleSetting => StyleSetting(showAppBar: showAppBar),
+    SettingType.extraSetting => ExtraSetting(showAppBar: showAppBar),
+    SettingType.webdavSetting => WebDavSettingPage(showAppBar: showAppBar),
+    SettingType.about => AboutPage(showAppBar: showAppBar),
+  };
+
   Color? _getTileColor(ThemeData theme, SettingType type) {
     if (_isPortrait) {
       return null;
@@ -319,7 +336,11 @@ class _SettingPageState extends State<SettingPage> {
       color: theme.colorScheme.onInverseSurface,
       borderRadius: const BorderRadius.all(Radius.circular(50)),
       child: InkWell(
-        onTap: () => Get.toNamed('/settingsSearch'),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const SettingsSearchPage(),
+          ),
+        ),
         borderRadius: const BorderRadius.all(Radius.circular(50)),
         child: const Padding(
           padding: EdgeInsets.symmetric(vertical: 8),

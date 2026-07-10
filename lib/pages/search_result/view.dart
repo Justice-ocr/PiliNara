@@ -85,10 +85,12 @@ class _SearchResultPageState extends State<SearchResultPage>
             if (_isFromSearch) {
               Get.back();
             } else {
-              Get.offNamed(
-                '/search',
-                parameters: {'text': _searchResultController.keyword},
-              );
+              final parameters = {'text': _searchResultController.keyword};
+              if (WindowsVideoTabService.enabled) {
+                PageUtils.toSearch(parameters: parameters);
+              } else {
+                Get.offNamed('/search', parameters: parameters);
+              }
             }
           },
           behavior: HitTestBehavior.opaque,

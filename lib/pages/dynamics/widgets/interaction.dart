@@ -1,5 +1,6 @@
 import 'package:PiliPlus/common/widgets/gesture/tap_gesture_recognizer.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get_core/src/get_main.dart';
@@ -79,7 +80,7 @@ Widget _item(
                   : TextStyle(color: theme.colorScheme.onSurfaceVariant),
               recognizer: isAt
                   ? (NoDeadlineTapGestureRecognizer()
-                      ..onTap = () => Get.toNamed('/member?mid=${e.rid}'))
+                      ..onTap = () => PageUtils.toMember(e.rid))
                   : null,
             );
           },

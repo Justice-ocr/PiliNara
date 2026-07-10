@@ -152,7 +152,7 @@ class ReplyItemGrpc extends StatelessWidget {
     Widget header = GestureDetector(
       onTap: () {
         feedBack();
-        Get.toNamed('/member?mid=${replyItem.mid}');
+        PageUtils.toMember(replyItem.mid);
       },
       child: TranslucentRow(
         spacing: 12,
@@ -853,7 +853,7 @@ class ReplyItemGrpc extends StatelessWidget {
               style: TextStyle(color: colorScheme.primary),
               recognizer: NoDeadlineTapGestureRecognizer()
                 ..onTap = () =>
-                    Get.toNamed('/member?mid=${content.atNameToMid[name]}'),
+                    PageUtils.toMember(content.atNameToMid[name]),
             ),
           );
         } else if (_voteRegExp.hasMatch(matchStr)) {

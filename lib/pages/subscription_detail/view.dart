@@ -188,7 +188,7 @@ class _SubDetailPageState extends State<SubDetailPage> with GridMixin {
                     ),
                     GestureDetector(
                       onTap: () =>
-                          Get.toNamed('/member?mid=${info.upper!.mid}'),
+                          PageUtils.toMember(info.upper!.mid),
                       child: Text(
                         info.upper!.name!,
                         style: TextStyle(color: theme.colorScheme.primary),

@@ -47,7 +47,14 @@ const Set<TargetPlatform> _kDesktopPlatforms = <TargetPlatform>{
 };
 
 class DynamicDetailPage extends StatefulWidget {
-  const DynamicDetailPage({super.key});
+  const DynamicDetailPage({
+    super.key,
+    this.arguments,
+    this.controllerTag,
+  });
+
+  final Map? arguments;
+  final String? controllerTag;
 
   @override
   State<DynamicDetailPage> createState() => _DynamicDetailPageState();

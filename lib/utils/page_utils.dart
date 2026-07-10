@@ -40,6 +40,75 @@ import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 abstract final class PageUtils {
+  static void toSearch({
+    Map<String, String>? parameters,
+    bool off = false,
+  }) {
+    if (WindowsVideoTabService.navigateInActiveTab(
+      '/search',
+      parameters: parameters,
+      replace: off,
+    )) {
+      return;
+    }
+    toDupNamed('/search', parameters: parameters, off: off);
+  }
+
+  static void toMember(
+    Object? mid, {
+    Object? fromViewAid,
+    bool off = false,
+    bool newTab = false,
+  }) {
+    if (mid == null) return;
+    final value = mid.toString();
+    final parameters = {
+      'mid': value,
+      if (fromViewAid != null) 'from_view_aid': fromViewAid.toString(),
+    };
+    final shouldOpenNewTab =
+        newTab || HardwareKeyboard.instance.isControlPressed;
+    if (shouldOpenNewTab && WindowsVideoTabService.enabled) {
+      WindowsVideoTabService.openTab(
+        {
+          ...parameters,
+          'mediaTabType': WindowsMediaTabType.member.name,
+        },
+        type: WindowsMediaTabType.member,
+        off: off,
+      );
+      return;
+    }
+    if (WindowsVideoTabService.navigateInActiveTab(
+      '/member',
+      parameters: parameters,
+      replace: off,
+    )) {
+      return;
+    }
+    toDupNamed('/member', parameters: parameters, off: off);
+  }
+
+  static void openToolTab({
+    required String route,
+    required String title,
+    bool off = false,
+  }) {
+    if (WindowsVideoTabService.enabled) {
+      WindowsVideoTabService.openTab(
+        {
+          'tabRoute': route,
+          'title': title,
+          'mediaTabType': WindowsMediaTabType.tool.name,
+        },
+        type: WindowsMediaTabType.tool,
+        off: off,
+      );
+      return;
+    }
+    toDupNamed(route, off: off);
+  }
+
   static RelativeRect menuPosition(Offset offset) {
     return .fromLTRB(offset.dx, offset.dy, offset.dx, 0);
   }
@@ -241,6 +310,23 @@ abstract final class PageUtils {
           },
         );
       } else {
+        if (WindowsVideoTabService.enabled &&
+            HardwareKeyboard.instance.isControlPressed) {
+          final author = item.modules.moduleAuthor?.name;
+          WindowsVideoTabService.openTab(
+            {
+              'item': item,
+              'dynamicId': item.idStr,
+              'title': author == null || author.isEmpty
+                  ? '动态详情'
+                  : '$author · 动态',
+              if (onUpdate != null) 'onUpdate': onUpdate,
+              'mediaTabType': WindowsMediaTabType.dynamic.name,
+            },
+            type: WindowsMediaTabType.dynamic,
+          );
+          return;
+        }
         toDupNamed(
           '/dynamicDetail',
           arguments: {

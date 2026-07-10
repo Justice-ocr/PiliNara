@@ -302,7 +302,7 @@ class VideoPopupMenu extends StatelessWidget {
         _VideoCustomAction(
           '访问：${videoItem.owner.name}',
           const Icon(MdiIcons.accountCircleOutline, size: 16),
-          () => Get.toNamed('/member?mid=${videoItem.owner.mid}'),
+          () => PageUtils.toMember(videoItem.owner.mid),
         ),
         _VideoCustomAction(
           '本地屏蔽',

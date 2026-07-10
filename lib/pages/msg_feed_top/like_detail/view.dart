@@ -118,7 +118,7 @@ class _LikeDetailPageState extends State<LikeDetailPage> {
 
   Widget _buildItem(ThemeData theme, MsgLikeDetailItem item) {
     return ListTile(
-      onTap: () => Get.toNamed('/member?mid=${item.user!.mid}'),
+      onTap: () => PageUtils.toMember(item.user!.mid),
       leading: NetworkImgLayer(
         width: 45,
         height: 45,

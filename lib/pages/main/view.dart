@@ -19,6 +19,7 @@ import 'package:PiliPlus/utils/extension/context_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/mobile_observer.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -584,7 +585,7 @@ class _MainAppState extends PopScopeState<MainApp>
             Icons.search_outlined,
             semanticLabel: '搜索',
           ),
-          onPressed: () => Get.toNamed('/search'),
+          onPressed: PageUtils.toSearch,
         ),
       ],
     );

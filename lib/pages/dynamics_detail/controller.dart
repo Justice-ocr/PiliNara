@@ -13,9 +13,9 @@ class DynamicDetailController extends CommonDynController with ReloadMixin {
   static const String _kWebLinkPlaceholder = '网页链接';
   late int oid;
   late int replyType;
-  late DynamicItemModel dynItem;
+  DynamicItemModel dynItem;
   final RxInt detailVersion = 0.obs;
-  ValueChanged<DynamicItemModel>? _onUpdate;
+  final ValueChanged<DynamicItemModel>? _onUpdate;
 
   @override
   dynamic get sourceId => replyType == 1 ? IdUtils.av2bv(oid) : oid;
@@ -23,8 +23,6 @@ class DynamicDetailController extends CommonDynController with ReloadMixin {
   @override
   void onInit() {
     super.onInit();
-    dynItem = Get.arguments['item'];
-    _onUpdate = Get.arguments['onUpdate'];
     final commentType = dynItem.basic?.commentType;
     final commentIdStr = dynItem.basic?.commentIdStr;
     if (commentType != null &&

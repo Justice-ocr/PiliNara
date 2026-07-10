@@ -193,7 +193,7 @@ class _UpowerRankPageState extends State<UpowerRankPage>
                   return Material(
                     type: MaterialType.transparency,
                     child: ListTile(
-                      onTap: () => Get.toNamed('/member?mid=${item.mid}'),
+                      onTap: () => PageUtils.toMember(item.mid),
                       leading: SizedBox(
                         width: width,
                         child: Center(

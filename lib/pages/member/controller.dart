@@ -13,6 +13,7 @@ import 'package:PiliPlus/models_new/space/space/reservation_card_list.dart';
 import 'package:PiliPlus/models_new/space/space/setting.dart';
 import 'package:PiliPlus/models_new/space/space/tab2.dart';
 import 'package:PiliPlus/pages/common/common_data_controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/nested_scroll_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
@@ -27,7 +28,8 @@ import 'package:material_ui/material_ui.dart';
 
 class MemberController extends CommonDataController<SpaceData, SpaceData?>
     with GetTickerProviderStateMixin {
-  MemberController({required this.mid});
+  MemberController({required this.mid, String? fromViewAid})
+    : fromViewAid = fromViewAid ?? Get.parameters['from_view_aid'];
   int mid;
   String? username;
   String? userAvatar;
@@ -64,7 +66,7 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
 
   List<ReservationCardItem>? reserves;
 
-  final fromViewAid = Get.parameters['from_view_aid'];
+  final String? fromViewAid;
 
   final scrollKey = GlobalKey<ExtendedNestedScrollViewState>();
 
@@ -80,6 +82,7 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
     final card = data.card;
     username = card?.name ?? '';
     userAvatar = card?.face;
+    WindowsVideoTabService.updateTitle('member:$mid', username);
 
     isFollowed = card?.relation?.isFollowed;
 

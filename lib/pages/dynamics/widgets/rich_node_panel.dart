@@ -87,7 +87,7 @@ TextSpan? richNode(
                 text: '${spanChildren.isNotEmpty ? ' ' : ''}${i.text}',
                 style: style,
                 recognizer: NoDeadlineTapGestureRecognizer()
-                  ..onTap = () => Get.toNamed('/member?mid=${i.rid}'),
+                  ..onTap = () => PageUtils.toMember(i.rid),
               ),
             );
             break;

@@ -51,7 +51,16 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class MemberPage extends StatefulWidget {
-  const MemberPage({super.key});
+  const MemberPage({
+    super.key,
+    this.mid,
+    this.fromViewAid,
+    this.controllerTag,
+  });
+
+  final int? mid;
+  final String? fromViewAid;
+  final String? controllerTag;
 
   @override
   State<MemberPage> createState() => _MemberPageState();
@@ -68,10 +77,10 @@ class _MemberPageState extends State<MemberPage> {
   @override
   void initState() {
     super.initState();
-    _mid = int.tryParse(Get.parameters['mid']!) ?? -1;
-    _heroTag = Utils.makeHeroTag(_mid);
+    _mid = widget.mid ?? int.tryParse(Get.parameters['mid'] ?? '') ?? -1;
+    _heroTag = widget.controllerTag ?? Utils.makeHeroTag(_mid);
     _userController = Get.put(
-      MemberController(mid: _mid),
+      MemberController(mid: _mid, fromViewAid: widget.fromViewAid),
       tag: _heroTag,
     );
   }

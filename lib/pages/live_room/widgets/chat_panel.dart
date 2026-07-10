@@ -12,6 +12,7 @@ import 'package:PiliPlus/pages/member/widget/medal_widget.dart';
 import 'package:PiliPlus/pages/video/widgets/header_control.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -117,7 +118,7 @@ class LiveRoomChatPanel extends StatelessWidget {
                                   ),
                                   recognizer: NoDeadlineTapGestureRecognizer()
                                     ..onTap = () =>
-                                        Get.toNamed('/member?mid=${reply.mid}'),
+                                        PageUtils.toMember(reply.mid),
                                 ),
                               _buildMsg(devicePixelRatio, item),
                             ],
@@ -348,7 +349,7 @@ class LiveRoomChatPanel extends StatelessWidget {
         ),
         CustomPopupMenuItem(
           height: 38,
-          onTap: () => Get.toNamed('/member?mid=${item.extra.mid}'),
+          onTap: () => PageUtils.toMember(item.extra.mid),
           child: const Text(
             '去TA的个人空间',
             style: TextStyle(fontSize: 13),

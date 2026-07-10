@@ -230,7 +230,7 @@ class _NoteListPageState extends State<NoteListPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               GestureDetector(
-                onTap: () => Get.toNamed('/member?mid=${item.author!.mid}'),
+                onTap: () => PageUtils.toMember(item.author!.mid),
                 child: NetworkImgLayer(
                   height: 34,
                   width: 34,
@@ -246,7 +246,7 @@ class _NoteListPageState extends State<NoteListPage>
                   children: [
                     GestureDetector(
                       onTap: () =>
-                          Get.toNamed('/member?mid=${item.author!.mid}'),
+                          PageUtils.toMember(item.author!.mid),
                       child: Row(
                         children: [
                           Text(

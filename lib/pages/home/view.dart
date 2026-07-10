@@ -162,8 +162,7 @@ class _HomePageState extends CommonPageState<HomePage>
             splashColor: _colorScheme.primaryContainer.withValues(
               alpha: 0.3,
             ),
-            onTap: () => Get.toNamed(
-              '/search',
+            onTap: () => PageUtils.toSearch(
               parameters: _homeController.enableSearchWord
                   ? {'hintText': _homeController.defaultSearch.value}
                   : null,
