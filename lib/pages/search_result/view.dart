@@ -8,6 +8,8 @@ import 'package:PiliPlus/pages/search_panel/pgc/view.dart';
 import 'package:PiliPlus/pages/search_panel/user/view.dart';
 import 'package:PiliPlus/pages/search_panel/video/view.dart';
 import 'package:PiliPlus/pages/search_result/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -85,10 +87,12 @@ class _SearchResultPageState extends State<SearchResultPage>
             if (_isFromSearch) {
               Get.back();
             } else {
-              Get.offNamed(
-                '/search',
-                parameters: {'text': _searchResultController.keyword},
-              );
+              final parameters = {'text': _searchResultController.keyword};
+              if (WindowsVideoTabService.enabled) {
+                PageUtils.toSearch(parameters: parameters);
+              } else {
+                Get.offNamed('/search', parameters: parameters);
+              }
             }
           },
           behavior: HitTestBehavior.opaque,

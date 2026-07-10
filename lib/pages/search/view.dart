@@ -11,6 +11,7 @@ import 'package:PiliPlus/pages/search/widgets/hot_keyword.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:PiliPlus/utils/em.dart' show Em;
 import 'package:PiliPlus/utils/extension/size_ext.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
@@ -18,7 +19,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
+  const SearchPage({super.key, this.parameters});
+
+  final Map<String, String>? parameters;
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -35,7 +38,7 @@ class _SearchPageState extends State<SearchPage> {
   void initState() {
     super.initState();
     _searchController = Get.put(
-      SSearchController(_tag),
+      SSearchController(_tag, parameters: widget.parameters),
       tag: _tag,
     );
   }
@@ -98,9 +101,8 @@ class _SearchPageState extends State<SearchPage> {
             ? IconButton(
                 tooltip: 'UID搜索用户',
                 icon: const Icon(Icons.person_outline, size: 22),
-                onPressed: () => Get.toNamed(
-                  '/member?mid=${_searchController.controller.text}',
-                ),
+                onPressed: () =>
+                    PageUtils.toMember(_searchController.controller.text),
               )
             : const SizedBox.shrink(),
       ),

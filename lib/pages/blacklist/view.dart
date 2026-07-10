@@ -9,6 +9,7 @@ import 'package:PiliPlus/pages/blacklist/controller.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -81,7 +82,7 @@ class _BlackListPageState extends State<BlackListPage> {
                   final item = response[index];
                   return ListTile(
                     visualDensity: .standard,
-                    onTap: () => Get.toNamed('/member?mid=${item.mid}'),
+                    onTap: () => PageUtils.toMember(item.mid),
                     leading: NetworkImgLayer(
                       width: 45,
                       height: 45,

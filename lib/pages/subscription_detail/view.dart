@@ -9,6 +9,7 @@ import 'package:PiliPlus/pages/subscription_detail/widget/sub_video_card.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -188,7 +189,7 @@ class _SubDetailPageState extends State<SubDetailPage> with GridMixin {
                     ),
                     GestureDetector(
                       onTap: () =>
-                          Get.toNamed('/member?mid=${info.upper!.mid}'),
+                          PageUtils.toMember(info.upper!.mid),
                       child: Text(
                         info.upper!.name!,
                         style: TextStyle(color: theme.colorScheme.primary),

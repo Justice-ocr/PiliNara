@@ -106,7 +106,7 @@ class _SuperChatCardState extends State<SuperChatCard> {
       items: [
         PopupMenuItem(
           height: 38,
-          onTap: () => Get.toNamed('/member?mid=${item.uid}'),
+          onTap: () => PageUtils.toMember(item.uid),
           child: Text(
             '访问: ${item.userInfo.uname}',
             style: const TextStyle(fontSize: 13),

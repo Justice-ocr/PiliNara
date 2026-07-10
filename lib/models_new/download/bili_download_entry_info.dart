@@ -138,7 +138,7 @@ class BiliDownloadEntryInfo with MultiSelectData {
                     '访问${ownerName != null ? '：$ownerName' : '用户主页'}',
                     style: const TextStyle(fontSize: 13),
                   ),
-                  onTap: () => Get.toNamed('/member?mid=$mid'),
+                  onTap: () => PageUtils.toMember(mid),
                 ),
             ],
           );

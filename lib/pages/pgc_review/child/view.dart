@@ -18,6 +18,7 @@ import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -212,7 +213,7 @@ class _PgcReviewChildPageState extends State<PgcReviewChildPage>
             children: [
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => Get.toNamed('/member?mid=${item.author!.mid}'),
+                onTap: () => PageUtils.toMember(item.author!.mid),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

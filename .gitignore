@@ -101,5 +101,7 @@ CLAUDE.md
 
 .claude
 test*
+!test/
+!test/**
 /pubspec_overrides.yaml
 .mindfs

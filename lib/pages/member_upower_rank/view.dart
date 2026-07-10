@@ -10,6 +10,7 @@ import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models_new/upower_rank/rank_info.dart';
 import 'package:PiliPlus/pages/member_upower_rank/controller.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/material.dart' hide ListTile;
 import 'package:get/get.dart';
 
@@ -193,7 +194,7 @@ class _UpowerRankPageState extends State<UpowerRankPage>
                   return Material(
                     type: MaterialType.transparency,
                     child: ListTile(
-                      onTap: () => Get.toNamed('/member?mid=${item.mid}'),
+                      onTap: () => PageUtils.toMember(item.mid),
                       leading: SizedBox(
                         width: width,
                         child: Center(

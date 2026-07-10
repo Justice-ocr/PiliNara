@@ -773,7 +773,7 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
             text: '@${currentDesc.rawText}',
             style: TextStyle(color: colorSchemePrimary),
             recognizer: NoDeadlineTapGestureRecognizer()
-              ..onTap = () => Get.toNamed('/member?mid=${currentDesc.bizId}'),
+              ..onTap = () => PageUtils.toMember(currentDesc.bizId),
           );
         default:
           return const TextSpan();

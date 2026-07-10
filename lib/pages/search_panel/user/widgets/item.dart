@@ -3,6 +3,7 @@ import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/src/extension_navigation.dart';
@@ -25,7 +26,7 @@ class SearchUserItem extends StatelessWidget {
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
-        onTap: () => Get.toNamed('/member?mid=${item.mid}'),
+        onTap: () => PageUtils.toMember(item.mid),
         child: Row(
           children: [
             const SizedBox(width: 15),

@@ -9,6 +9,19 @@ enum WindowsMediaTabType {
   search,
   video,
   live,
+  member,
+  dynamic,
+  tool,
+}
+
+class WindowsTabRouteData {
+  const WindowsTabRouteData({
+    this.arguments,
+    this.parameters = const {},
+  });
+
+  final Object? arguments;
+  final Map<String, String> parameters;
 }
 
 class WindowsVideoTabItem {
@@ -27,10 +40,16 @@ class WindowsVideoTabItem {
   DateTime updatedAt;
 
   bool get isHome => type == WindowsMediaTabType.home;
+  bool get isHeavyMedia =>
+      type == WindowsMediaTabType.video || type == WindowsMediaTabType.live;
 
   String get title {
     if (isHome) {
-      return '\u9996\u9875';
+      return '主页';
+    }
+    final value = arguments['title'];
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
     }
     if (type == WindowsMediaTabType.search) {
       final keyword = arguments['keyword'];
@@ -39,9 +58,15 @@ class WindowsVideoTabItem {
       }
       return '\u641c\u7d22';
     }
-    final value = arguments['title'];
-    if (value is String && value.trim().isNotEmpty) {
-      return value.trim();
+    if (type == WindowsMediaTabType.member) {
+      final mid = arguments['mid'];
+      return mid == null ? '用户空间' : '用户 $mid';
+    }
+    if (type == WindowsMediaTabType.dynamic) {
+      return '动态详情';
+    }
+    if (type == WindowsMediaTabType.tool) {
+      return arguments['title']?.toString() ?? '工具';
     }
     final bvid = arguments['bvid'];
     if (bvid is String && bvid.isNotEmpty) {
@@ -77,6 +102,13 @@ class WindowsVideoTabItem {
       }
       return parts.join(' · ');
     }
+    if (type == WindowsMediaTabType.member && arguments['mid'] != null) {
+      return 'UID ${arguments['mid']}';
+    }
+    if (type == WindowsMediaTabType.dynamic &&
+        arguments['dynamicId'] != null) {
+      return 'ID ${arguments['dynamicId']}';
+    }
     if (arguments['bvid'] case final String bvid when bvid.isNotEmpty) {
       parts.add(bvid);
     }
@@ -106,6 +138,8 @@ abstract final class WindowsVideoTabService {
   static final Map<String, void Function()> _activators = {};
   static final Map<String, void Function()> _closers = {};
   static final Map<String, _WindowsVideoTabPlayer> _players = {};
+  static final Map<String, GlobalKey<NavigatorState>> _navigatorKeys = {};
+  static final List<String> _activationHistory = [];
   static bool _hostMounted = false;
   static Map? currentArguments;
 
@@ -117,6 +151,12 @@ abstract final class WindowsVideoTabService {
   static const rootRoute = '/';
   static const homeTabId = 'home';
   static const maxMediaTabs = 8;
+  static const nestedRoutes = {
+    '/search',
+    '/member',
+    '/dynamicDetail',
+    '/articlePage',
+  };
 
   static WindowsVideoTabItem _homeTab() {
     final now = DateTime.now();
@@ -139,15 +179,85 @@ abstract final class WindowsVideoTabService {
       tabs.insert(0, item);
     }
     activeId.value ??= homeTabId;
+    _rememberActive(activeId.value!);
   }
 
-  static int get mediaTabCount =>
+  static int get tabCount =>
       tabs.where((item) => item.type != WindowsMediaTabType.home).length;
+
+  static int get mediaTabCount =>
+      tabs.where((item) => item.isHeavyMedia).length;
 
   static bool get hasMediaTabs => mediaTabCount > 0;
 
   static void setHostMounted(bool value) {
     _hostMounted = value;
+    if (!value) {
+      _navigatorKeys.clear();
+    }
+  }
+
+  static GlobalKey<NavigatorState> navigatorKeyFor(String id) =>
+      _navigatorKeys.putIfAbsent(id, GlobalKey<NavigatorState>.new);
+
+  static void retainNavigatorKeys(Set<String> ids) {
+    _navigatorKeys.removeWhere((id, _) => !ids.contains(id));
+  }
+
+  static bool navigateInActiveTab(
+    String page, {
+    Object? arguments,
+    Map<String, String>? parameters,
+    bool replace = false,
+  }) {
+    if (!enabled || !_hostMounted || !_isHostCurrent) return false;
+    final uri = Uri.tryParse(page);
+    if (uri == null || !nestedRoutes.contains(uri.path)) return false;
+    final id = activeId.value;
+    final navigator = id == null ? null : _navigatorKeys[id]?.currentState;
+    if (navigator == null) return false;
+    final routeData = WindowsTabRouteData(
+      arguments: arguments,
+      parameters: {
+        ...uri.queryParameters,
+        ...?parameters,
+      },
+    );
+    if (replace) {
+      navigator.pushReplacementNamed(uri.path, arguments: routeData);
+    } else {
+      navigator.pushNamed(uri.path, arguments: routeData);
+    }
+    return true;
+  }
+
+  static void popActiveTabToRoot() {
+    final id = activeId.value;
+    final navigator = id == null ? null : _navigatorKeys[id]?.currentState;
+    navigator?.popUntil((route) => route.isFirst);
+  }
+
+  static bool popActiveTab() {
+    final id = activeId.value;
+    final navigator = id == null ? null : _navigatorKeys[id]?.currentState;
+    if (navigator?.canPop() != true) return false;
+    navigator!.pop();
+    return true;
+  }
+
+  static void closeActiveTab() {
+    final id = activeId.value;
+    if (id != null && id != homeTabId) {
+      close(id);
+    }
+  }
+
+  static void selectRelative(int offset) {
+    if (tabs.length < 2) return;
+    final current = tabs.indexWhere((item) => item.id == activeId.value);
+    final start = current == -1 ? 0 : current;
+    final next = (start + offset) % tabs.length;
+    select(tabs[next].id);
   }
 
   static bool get _isHostCurrent =>
@@ -172,6 +282,20 @@ abstract final class WindowsVideoTabService {
       final keyword = arguments['keyword']?.toString();
       return keyword == null || keyword.isEmpty ? '' : 'search:$keyword';
     }
+    if (type == WindowsMediaTabType.member) {
+      final mid = arguments['mid']?.toString();
+      return mid == null || mid.isEmpty ? '' : 'member:$mid';
+    }
+    if (type == WindowsMediaTabType.dynamic) {
+      final dynamicId = arguments['dynamicId']?.toString();
+      return dynamicId == null || dynamicId.isEmpty
+          ? ''
+          : 'dynamic:$dynamicId';
+    }
+    if (type == WindowsMediaTabType.tool) {
+      final route = arguments['tabRoute']?.toString();
+      return route == null || route.isEmpty ? '' : 'tool:$route';
+    }
     final bvid = arguments['bvid']?.toString();
     final cid = arguments['cid']?.toString();
     final epId = arguments['epId']?.toString();
@@ -192,6 +316,15 @@ abstract final class WindowsVideoTabService {
     }
     if (type == WindowsMediaTabType.search || type == 'search') {
       return WindowsMediaTabType.search;
+    }
+    if (type == WindowsMediaTabType.member || type == 'member') {
+      return WindowsMediaTabType.member;
+    }
+    if (type == WindowsMediaTabType.dynamic || type == 'dynamic') {
+      return WindowsMediaTabType.dynamic;
+    }
+    if (type == WindowsMediaTabType.tool || type == 'tool') {
+      return WindowsMediaTabType.tool;
     }
     return WindowsMediaTabType.video;
   }
@@ -222,17 +355,23 @@ abstract final class WindowsVideoTabService {
       );
     } else {
       final tab = tabs[index];
+      final previousTitle = tab.arguments['title'];
       tab.arguments
         ..clear()
         ..addAll(normalized);
+      if (!tab.arguments.containsKey('title') && previousTitle != null) {
+        tab.arguments['title'] = previousTitle;
+      }
       tab.updatedAt = DateTime.now();
       tabs.refresh();
     }
     if (activate) {
       activeId.value = id;
       currentArguments = normalized;
+      _rememberActive(id);
     }
-    if (type != WindowsMediaTabType.home) {
+    if (type == WindowsMediaTabType.video ||
+        type == WindowsMediaTabType.live) {
       _trimMediaTabs(keepId: id);
     }
   }
@@ -257,7 +396,32 @@ abstract final class WindowsVideoTabService {
     if (id.isNotEmpty && index != -1) {
       activeId.value = id;
       currentArguments = tabs[index].isHome ? null : tabs[index].arguments;
+      _rememberActive(id);
     }
+  }
+
+  static Future<void>? openTab(
+    Map arguments, {
+    required WindowsMediaTabType type,
+    bool off = false,
+  }) {
+    upsert(arguments, type: type);
+    return showHost(off: off);
+  }
+
+  static void updateTitle(String id, String? title) {
+    if (title == null || title.trim().isEmpty) return;
+    final index = tabs.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+    tabs[index].arguments['title'] = title.trim();
+    tabs[index].updatedAt = DateTime.now();
+    tabs.refresh();
+  }
+
+  static void _rememberActive(String id) {
+    _activationHistory
+      ..remove(id)
+      ..add(id);
   }
 
   static void _trimMediaTabs({required String keepId}) {
@@ -266,11 +430,13 @@ abstract final class WindowsVideoTabService {
       final candidates = tabs
           .where(
             (item) =>
-                !item.isHome && item.id != keepId && item.id != active,
+                item.isHeavyMedia &&
+                item.id != keepId &&
+                item.id != active,
           )
           .toList(growable: false);
       final fallback = tabs
-          .where((item) => !item.isHome && item.id != keepId)
+          .where((item) => item.isHeavyMedia && item.id != keepId)
           .toList(growable: false);
       final removable = candidates.isNotEmpty ? candidates : fallback;
       if (removable.isEmpty) return;
@@ -284,10 +450,17 @@ abstract final class WindowsVideoTabService {
     final close = _closers.remove(id);
     _activators.remove(id);
     _players.remove(id)?.dispose();
+    _navigatorKeys.remove(id);
+    _activationHistory.remove(id);
     tabs.removeWhere((item) => item.id == id);
     if (activeId.value == id) {
+      final nextId = _activationHistory.reversed.firstWhere(
+        has,
+        orElse: () => homeTabId,
+      );
+      activeId.value = null;
       ensureHomeTab();
-      select(tabs.last.id);
+      select(nextId);
     }
     if (!_hostMounted && Get.currentRoute != hostRoute) {
       close?.call();
@@ -309,6 +482,10 @@ abstract final class WindowsVideoTabService {
       cached.dispose();
     }
     _players.clear();
+    _navigatorKeys.removeWhere((id, _) => id != homeTabId);
+    _activationHistory
+      ..clear()
+      ..add(homeTabId);
     tabs
       ..clear()
       ..add(_homeTab());
@@ -397,6 +574,7 @@ abstract final class WindowsVideoTabService {
     if (index != -1) {
       activeId.value = id;
       currentArguments = tabs[index].isHome ? null : tabs[index].arguments;
+      _rememberActive(id);
       _activators[id]?.call();
     }
   }
@@ -491,7 +669,7 @@ class _WindowsMediaTabChip extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(_iconForType(item.type), size: 17, color: fg),
+                Icon(_iconForItem(item), size: 17, color: fg),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
@@ -522,12 +700,20 @@ class _WindowsMediaTabChip extends StatelessWidget {
     );
   }
 
-  IconData _iconForType(WindowsMediaTabType type) {
-    return switch (type) {
+  IconData _iconForItem(WindowsVideoTabItem item) {
+    return switch (item.type) {
       WindowsMediaTabType.home => Icons.home_outlined,
       WindowsMediaTabType.search => Icons.search,
       WindowsMediaTabType.live => Icons.sensors,
       WindowsMediaTabType.video => Icons.play_circle_outline,
+      WindowsMediaTabType.member => Icons.person_outline,
+      WindowsMediaTabType.dynamic => Icons.motion_photos_on_outlined,
+      WindowsMediaTabType.tool => switch (item.arguments['tabRoute']) {
+        '/setting' => Icons.settings_outlined,
+        '/download' => Icons.download_outlined,
+        '/whisper' => Icons.chat_bubble_outline,
+        _ => Icons.apps_outlined,
+      },
     };
   }
 }

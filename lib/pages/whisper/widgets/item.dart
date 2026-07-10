@@ -224,7 +224,7 @@ class WhisperSessionItem extends StatelessWidget {
           return GestureDetector(
             onTap: item.sessionInfo.avatar.hasMid()
                 ? () =>
-                      Get.toNamed('/member?mid=${item.sessionInfo.avatar.mid}')
+                      PageUtils.toMember(item.sessionInfo.avatar.mid)
                 : null,
             child: PendantAvatar(
               avatar,

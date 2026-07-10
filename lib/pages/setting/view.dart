@@ -13,6 +13,7 @@ import 'package:PiliPlus/pages/setting/recommend_setting.dart';
 import 'package:PiliPlus/pages/setting/style_setting.dart';
 import 'package:PiliPlus/pages/setting/video_setting.dart';
 import 'package:PiliPlus/pages/setting/widgets/multi_select_dialog.dart';
+import 'package:PiliPlus/pages/settings_search/view.dart';
 import 'package:PiliPlus/pages/webdav/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
@@ -122,36 +123,7 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                   Expanded(
                     flex: 6,
-                    child: switch (_type) {
-                      SettingType.privacySetting => const PrivacySetting(
-                        showAppBar: false,
-                      ),
-                      SettingType.blockSetting => const BlockSetting(
-                        showAppBar: false,
-                      ),
-                      SettingType.recommendSetting => const RecommendSetting(
-                        showAppBar: false,
-                      ),
-                      SettingType.dynamicsSetting => const DynamicsSetting(
-                        showAppBar: false,
-                      ),
-                      SettingType.videoSetting => const VideoSetting(
-                        showAppBar: false,
-                      ),
-                      SettingType.playSetting => const PlaySetting(
-                        showAppBar: false,
-                      ),
-                      SettingType.styleSetting => const StyleSetting(
-                        showAppBar: false,
-                      ),
-                      SettingType.extraSetting => const ExtraSetting(
-                        showAppBar: false,
-                      ),
-                      SettingType.webdavSetting => const WebDavSettingPage(
-                        showAppBar: false,
-                      ),
-                      SettingType.about => const AboutPage(showAppBar: false),
-                    },
+                    child: _buildSettingPage(_type, showAppBar: false),
                   ),
                 ],
               ),
@@ -167,12 +139,30 @@ class _SettingPageState extends State<SettingPage> {
 
   void _toPage(SettingType type) {
     if (_isPortrait) {
-      Get.toNamed('/${type.name}');
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => _buildSettingPage(type)),
+      );
     } else {
       _type = type;
       setState(() {});
     }
   }
+
+  Widget _buildSettingPage(
+    SettingType type, {
+    bool showAppBar = true,
+  }) => switch (type) {
+    SettingType.privacySetting => PrivacySetting(showAppBar: showAppBar),
+    SettingType.blockSetting => BlockSetting(showAppBar: showAppBar),
+    SettingType.recommendSetting => RecommendSetting(showAppBar: showAppBar),
+    SettingType.dynamicsSetting => DynamicsSetting(showAppBar: showAppBar),
+    SettingType.videoSetting => VideoSetting(showAppBar: showAppBar),
+    SettingType.playSetting => PlaySetting(showAppBar: showAppBar),
+    SettingType.styleSetting => StyleSetting(showAppBar: showAppBar),
+    SettingType.extraSetting => ExtraSetting(showAppBar: showAppBar),
+    SettingType.webdavSetting => WebDavSettingPage(showAppBar: showAppBar),
+    SettingType.about => AboutPage(showAppBar: showAppBar),
+  };
 
   Color? _getTileColor(ThemeData theme, SettingType type) {
     if (_isPortrait) {
@@ -305,7 +295,11 @@ class _SettingPageState extends State<SettingPage> {
     child: Material(
       type: MaterialType.transparency,
       child: InkWell(
-        onTap: () => Get.toNamed('/settingsSearch'),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const SettingsSearchPage(),
+          ),
+        ),
         borderRadius: const BorderRadius.all(Radius.circular(50)),
         child: Ink(
           padding: const EdgeInsets.symmetric(vertical: 8),

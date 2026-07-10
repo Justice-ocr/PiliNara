@@ -7,6 +7,7 @@ import 'package:PiliPlus/pages/share/view.dart' show UserModel;
 import 'package:PiliPlus/utils/parse_int.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -86,7 +87,7 @@ class _FansPageState extends FollowTypePageState<FansPage> {
           );
           return;
         }
-        Get.toNamed('/member?mid=${item.mid}');
+        PageUtils.toMember(item.mid);
       },
       onLongPress: flag ? onRemove : null,
       onSecondaryTap: flag && !PlatformUtils.isMobile ? onRemove : null,

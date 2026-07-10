@@ -18,6 +18,7 @@ import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/user_whitelist.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -302,7 +303,7 @@ class VideoPopupMenu extends StatelessWidget {
         _VideoCustomAction(
           '访问：${videoItem.owner.name}',
           const Icon(MdiIcons.accountCircleOutline, size: 16),
-          () => Get.toNamed('/member?mid=${videoItem.owner.mid}'),
+          () => PageUtils.toMember(videoItem.owner.mid),
         ),
         _VideoCustomAction(
           '本地屏蔽',

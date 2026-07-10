@@ -19,6 +19,10 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
 class ArticleController extends CommonDynController {
+  ArticleController({Map<String, String>? parameters})
+    : _parameters = parameters;
+
+  final Map<String, String>? _parameters;
   late String id;
   late String type;
 
@@ -53,7 +57,7 @@ class ArticleController extends CommonDynController {
   @override
   void onInit() {
     super.onInit();
-    final params = Get.parameters;
+    final params = _parameters ?? Get.parameters;
     id = params['id']!;
     type = params['type']!;
 

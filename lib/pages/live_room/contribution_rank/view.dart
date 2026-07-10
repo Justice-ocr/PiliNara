@@ -12,6 +12,7 @@ import 'package:PiliPlus/pages/member/widget/medal_widget.dart';
 import 'package:PiliPlus/utils/color_utils.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -214,7 +215,7 @@ class _Item extends StatelessWidget {
       }
     }
     return InkWell(
-      onTap: () => Get.toNamed('/member?mid=${item.uid}'),
+      onTap: () => PageUtils.toMember(item.uid),
       child: Padding(
         padding: const .only(left: 10, top: 9, bottom: 8, right: 16),
         child: Row(

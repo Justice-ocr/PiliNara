@@ -9,6 +9,7 @@ import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -151,8 +152,7 @@ class _HomePageState extends CommonPageState<HomePage>
             splashColor: theme.colorScheme.primaryContainer.withValues(
               alpha: 0.3,
             ),
-            onTap: () => Get.toNamed(
-              '/search',
+            onTap: () => PageUtils.toSearch(
               parameters: _homeController.enableSearchWord
                   ? {'hintText': _homeController.defaultSearch.value}
                   : null,

@@ -10,6 +10,7 @@ import 'package:PiliPlus/pages/msg_feed_top/like_detail/controller.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -111,7 +112,7 @@ class _LikeDetailPageState extends State<LikeDetailPage> {
 
   Widget _buildItem(ThemeData theme, MsgLikeDetailItem item) {
     return ListTile(
-      onTap: () => Get.toNamed('/member?mid=${item.user!.mid}'),
+      onTap: () => PageUtils.toMember(item.user!.mid),
       leading: NetworkImgLayer(
         width: 45,
         height: 45,

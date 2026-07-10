@@ -1877,12 +1877,12 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         if (!WindowsVideoTabService.enabled) {
           return const SizedBox.shrink();
         }
-        final count = WindowsVideoTabService.mediaTabCount;
+        final count = WindowsVideoTabService.tabCount;
         return SizedBox(
           width: 42,
           height: 34,
           child: IconButton(
-            tooltip: count > 0 ? '视频标签页 ($count)' : '视频标签页',
+            tooltip: count > 0 ? '标签页 ($count)' : '标签页',
             style: const ButtonStyle(
               padding: WidgetStatePropertyAll(EdgeInsets.zero),
             ),
@@ -1915,7 +1915,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           onTap: _showWindowsVideoTabs,
           child: Obx(
             () => Text(
-              '视频标签页 (${WindowsVideoTabService.mediaTabCount})',
+              '标签页 (${WindowsVideoTabService.tabCount})',
             ),
           ),
         ),
@@ -1965,7 +1965,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('视频标签页'),
+          title: const Text('标签页'),
           content: SizedBox(
             width: 420,
             child: Obx(() {
@@ -1975,7 +1975,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
               if (tabs.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Text('暂无暂存的视频'),
+                  child: Text('暂无可切换的标签页'),
                 );
               }
               return ConstrainedBox(
@@ -1990,8 +1990,19 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                       dense: true,
                       leading: Icon(
                         active
-                            ? Icons.play_circle_outline
-                            : Icons.video_library_outlined,
+                            ? Icons.radio_button_checked
+                            : switch (item.type) {
+                                WindowsMediaTabType.search => Icons.search,
+                                WindowsMediaTabType.video =>
+                                  Icons.play_circle_outline,
+                                WindowsMediaTabType.live => Icons.sensors,
+                                WindowsMediaTabType.member =>
+                                  Icons.person_outline,
+                                WindowsMediaTabType.dynamic =>
+                                  Icons.motion_photos_on_outlined,
+                                WindowsMediaTabType.tool => Icons.apps_outlined,
+                                WindowsMediaTabType.home => Icons.home_outlined,
+                              },
                       ),
                       title: Text(
                         item.title,
@@ -2013,7 +2024,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                             Navigator.of(context).pop();
                           }
                           WindowsVideoTabService.close(item.id);
-                          if (!active && !WindowsVideoTabService.hasMediaTabs) {
+                          if (!active && WindowsVideoTabService.tabCount == 0) {
                             Navigator.of(context).pop();
                           }
                         },

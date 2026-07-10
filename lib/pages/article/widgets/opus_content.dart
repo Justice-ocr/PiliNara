@@ -76,7 +76,7 @@ class OpusContent extends StatelessWidget {
                 ..onTap = () {
                   switch (rich.type) {
                     case 'RICH_TEXT_NODE_TYPE_AT':
-                      Get.toNamed('/member?mid=${rich.rid}');
+                      PageUtils.toMember(rich.rid);
                     // case 'RICH_TEXT_NODE_TYPE_TOPIC':
                     default:
                       if (rich.jumpUrl != null) {

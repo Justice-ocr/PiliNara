@@ -1977,12 +1977,12 @@ class HeaderControlState extends State<HeaderControl>
               if (WindowsVideoTabService.enabled &&
                   widget.onShowWindowsVideoTabs != null)
                 Obx(() {
-                  final count = WindowsVideoTabService.mediaTabCount;
+                  final count = WindowsVideoTabService.tabCount;
                   return SizedBox(
                     width: btnWidth,
                     height: btnHeight,
                     child: IconButton(
-                      tooltip: count > 0 ? '视频标签页 ($count)' : '视频标签页',
+                      tooltip: count > 0 ? '标签页 ($count)' : '标签页',
                       style: btnStyle,
                       onPressed: widget.onShowWindowsVideoTabs,
                       icon: Badge(

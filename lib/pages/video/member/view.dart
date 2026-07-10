@@ -349,7 +349,7 @@ class _HorizontalMemberPageState extends State<HorizontalMemberPage> {
                 tapTargetSize: .shrinkWrap,
                 visualDensity: const VisualDensity(vertical: -2),
               ),
-              onPressed: () => Get.toNamed('/member?mid=${widget.mid}'),
+              onPressed: () => PageUtils.toMember(widget.mid),
               child: const Text(
                 '查看主页',
                 maxLines: 1,

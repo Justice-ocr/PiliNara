@@ -966,7 +966,7 @@ class _AudioPageState extends State<AudioPage> {
                         behavior: HitTestBehavior.opaque,
                         onTap: () {
                           _controller.player?.pause();
-                          Get.toNamed('/member?mid=${audioItem.owner.mid}');
+                          PageUtils.toMember(audioItem.owner.mid);
                         },
                         child: Row(
                           spacing: 6,

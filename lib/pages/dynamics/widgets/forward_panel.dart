@@ -112,7 +112,7 @@ Widget _forwardAuthor({
     children: [
       GestureDetector(
         onTap: isNormalAuth
-            ? () => Get.toNamed('/member?mid=${moduleAuthor.mid}')
+            ? () => PageUtils.toMember(moduleAuthor.mid)
             : null,
         child: Text(
           '${isNormalAuth ? '@' : ''}${moduleAuthor.name}',

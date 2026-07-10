@@ -17,6 +17,7 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -315,7 +316,7 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
     if (!accountService.isLogin.value || longPress) {
       Get.toNamed('/loginPage');
     } else {
-      Get.toNamed('/member?mid=${userInfo.value.mid}');
+      PageUtils.toMember(userInfo.value.mid);
     }
   }
 

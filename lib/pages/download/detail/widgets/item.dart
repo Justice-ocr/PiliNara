@@ -521,7 +521,7 @@ class DetailItem extends StatelessWidget {
                       '访问${entry.ownerName != null ? '：${entry.ownerName}' : '用户主页'}',
                       style: const TextStyle(fontSize: 13),
                     ),
-                    onTap: () => Get.toNamed('/member?mid=$mid'),
+                    onTap: () => PageUtils.toMember(mid),
                   ),
                 if (canDel && Platform.isAndroid)
                   PopupMenuItem(

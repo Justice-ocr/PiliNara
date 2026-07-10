@@ -23,6 +23,7 @@ import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
@@ -194,7 +195,7 @@ class _MediaPageState extends CommonPageState<MinePage>
             padding: padding,
             style: style,
             tooltip: '搜索',
-            onPressed: () => Get.toNamed('/search'),
+            onPressed: PageUtils.toSearch,
             icon: const Icon(Icons.search),
           ),
           msgBadge(_mainController),
@@ -248,7 +249,8 @@ class _MediaPageState extends CommonPageState<MinePage>
           padding: padding,
           style: style,
           tooltip: '设置',
-          onPressed: () => Get.toNamed('/setting', preventDuplicates: false),
+          onPressed: () =>
+              PageUtils.openToolTab(route: '/setting', title: '设置'),
           icon: const Icon(Icons.settings_outlined),
         ),
         const SizedBox(width: 16),

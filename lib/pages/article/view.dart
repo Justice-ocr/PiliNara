@@ -33,7 +33,14 @@ import 'package:get/get.dart';
 import 'package:html/parser.dart' as parser;
 
 class ArticlePage extends StatefulWidget {
-  const ArticlePage({super.key});
+  const ArticlePage({
+    super.key,
+    this.parameters,
+    this.controllerTag,
+  });
+
+  final Map<String, String>? parameters;
+  final String? controllerTag;
 
   @override
   State<ArticlePage> createState() => _ArticlePageState();
@@ -41,10 +48,17 @@ class ArticlePage extends StatefulWidget {
 
 class _ArticlePageState extends CommonDynPageState<ArticlePage> {
   @override
-  final ArticleController controller = Get.putOrFind(
-    ArticleController.new,
-    tag: Get.parameters['type']! + Get.parameters['id']!,
-  );
+  late final ArticleController controller;
+
+  @override
+  void initState() {
+    final parameters = widget.parameters ?? Get.parameters;
+    controller = Get.putOrFind(
+      () => ArticleController(parameters: parameters),
+      tag: widget.controllerTag ?? parameters['type']! + parameters['id']!,
+    );
+    super.initState();
+  }
 
   @override
   dynamic get arguments => {
