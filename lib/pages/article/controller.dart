@@ -19,10 +19,10 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
 class ArticleController extends CommonDynController {
-  ArticleController({Map<String, String>? parameters})
+  ArticleController({Map<String, String?>? parameters})
     : _parameters = parameters;
 
-  final Map<String, String>? _parameters;
+  final Map<String, String?>? _parameters;
   late String id;
   late String type;
 
