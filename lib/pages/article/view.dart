@@ -43,7 +43,7 @@ class ArticlePage extends StatefulWidget {
     this.controllerTag,
   });
 
-  final Map<String, String>? parameters;
+  final Map<String, String?>? parameters;
   final String? controllerTag;
 
   @override
