@@ -261,6 +261,18 @@ class _LiveHeaderControlState extends State<LiveHeaderControl>
                       ],
                     ),
                   ),
+                  if (Platform.isWindows)
+                    PopupMenuItem(
+                      height: 35,
+                      onTap: liveController.onCast,
+                      child: const Row(
+                        spacing: 8,
+                        children: [
+                          Icon(Icons.cast, size: 17),
+                          Text('投屏', style: TextStyle(fontSize: 14)),
+                        ],
+                      ),
+                    ),
                   PopupMenuItem(
                     height: 35,
                     child: const Row(
