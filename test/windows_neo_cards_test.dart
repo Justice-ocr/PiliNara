@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:PiliPlus/models/model_rec_video_item.dart';
 import 'package:PiliPlus/pages/rank/view.dart';
 import 'package:PiliPlus/pages/rank/zone/view.dart';
+import 'package:PiliPlus/pages/setting/view.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_horizontal_video_tile.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_video_card_v.dart';
@@ -101,5 +102,14 @@ void main() {
     final titleBox = tester.renderObject<RenderBox>(find.text(title));
     expect(titleBox.size.height, greaterThanOrEqualTo(36));
     expect(tester.takeException(), isNull);
+  });
+
+  test('Windows settings pages inherit the actual content pane size', () {
+    const parent = MediaQueryData(size: Size(2048, 1152));
+    const constraints = BoxConstraints.tightFor(width: 920, height: 800);
+
+    final pane = windowsSettingsPaneMediaQuery(parent, constraints);
+
+    expect(pane.size, const Size(920, 800));
   });
 }
