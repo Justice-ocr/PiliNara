@@ -501,6 +501,25 @@ class _DownloadPageState extends State<DownloadPage>
               title: const Text('离线缓存'),
               actions: [
                 if (isVideoTab) ...[
+                  Obx(() {
+                    final target = _controller.continueTarget.value;
+                    if (target == null) {
+                      return const SizedBox.shrink();
+                    }
+                    return IconButton(
+                      tooltip: '继续播放：${target.entry.showTitle}',
+                      onPressed: () async {
+                        await openDownloadEntry(
+                          entry: target.entry,
+                          playContext: target.playContext,
+                        );
+                        if (mounted) {
+                          await _controller.refreshContinueTarget();
+                        }
+                      },
+                      icon: const Icon(Icons.play_circle_outline),
+                    );
+                  }),
                   IconButton(
                     tooltip: '搜索',
                     onPressed: () async {
