@@ -13,7 +13,7 @@ import 'package:flutter/services.dart'
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:material_ui/material_ui.dart';
 
-class PlayerFocus extends StatelessWidget {
+class PlayerFocus extends StatefulWidget {
   const PlayerFocus({
     super.key,
     required this.child,
@@ -44,6 +44,33 @@ class PlayerFocus extends StatelessWidget {
         logicalKey == LogicalKeyboardKey.arrowUp ||
         logicalKey == LogicalKeyboardKey.arrowDown;
   }
+}
+
+class _PlayerFocusState extends State<PlayerFocus> {
+  final _focusNode = FocusNode(debugLabel: 'player-keyboard-shortcuts');
+
+  PlPlayerController get plPlayerController => widget.plPlayerController;
+  CommonIntroController? get introController => widget.introController;
+  VoidCallback get onSendDanmaku => widget.onSendDanmaku;
+  ValueGetter<bool>? get canPlay => widget.canPlay;
+  ValueGetter<bool>? get onSkipSegment => widget.onSkipSegment;
+  VoidCallback? get onRefresh => widget.onRefresh;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +84,11 @@ class PlayerFocus extends StatelessWidget {
         }
         return KeyEventResult.ignored;
       },
-      child: child,
+      child: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) => _focusNode.requestFocus(),
+        child: widget.child,
+      ),
     );
   }
 

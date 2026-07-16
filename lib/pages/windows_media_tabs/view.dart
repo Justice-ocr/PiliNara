@@ -85,7 +85,9 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
               WindowsVideoTabService.popActiveTab,
         },
         child: Focus(
-          autofocus: true,
+          // Active media pages own keyboard focus. Keeping a focusable shell
+          // here prevents PlayerFocus from receiving video shortcuts.
+          canRequestFocus: false,
           child: WindowsNeoShell(
             mainController: _mainController,
             tabs: tabs,
