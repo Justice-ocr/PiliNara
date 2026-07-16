@@ -211,6 +211,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
   StreamSubscription? _controlsListener;
   void _onControlChanged(bool val) {
     final visible = val && !plPlayerController.controlsLock.value;
+    if (!visible && Platform.isWindows) {
+      plPlayerController.hideDesktopProgressPreview();
+    }
 
     if ((widget.headerControl.key as GlobalKey<TimeBatteryMixin>).currentState
         case final state?) {
@@ -792,35 +795,47 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
               initialValue: val,
               color: Colors.black.withValues(alpha: 0.8),
               itemBuilder: (context) {
-                return [
-                  PopupMenuItem<int>(
-                    value: 0,
-                    height: 35,
-                    onTap: () => videoDetailController.setSubtitle(0),
-                    child: const Text(
-                      "关闭字幕",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  ...videoDetailController.subtitles.indexed.map((e) {
-                    return PopupMenuItem<int>(
-                      value: e.$1 + 1,
+                if (!Platform.isWindows ||
+                    videoDetailController.subtitles.length < 2) {
+                  return [
+                    PopupMenuItem<int>(
+                      value: 0,
                       height: 35,
-                      onTap: () => videoDetailController.setSubtitle(e.$1 + 1),
-                      child: Text(
-                        "${e.$2.lanDoc}",
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                      onTap: () => videoDetailController.setSubtitle(0),
+                      child: const Text(
+                        "关闭字幕",
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 13,
                         ),
                       ),
-                    );
-                  }),
+                    ),
+                    ...videoDetailController.subtitles.indexed.map((e) {
+                      return PopupMenuItem<int>(
+                        value: e.$1 + 1,
+                        height: 35,
+                        onTap: () => videoDetailController.setSubtitle(e.$1 + 1),
+                        child: Text(
+                          "${e.$2.lanDoc}",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
+                        ),
+                      );
+                    }),
+                  ];
+                }
+                return [
+                  PopupMenuItem<int>(
+                    enabled: false,
+                    padding: EdgeInsets.zero,
+                    child: _SubtitleSelectPanel(
+                      controller: videoDetailController,
+                    ),
+                  ),
                 ];
               },
               child: SizedBox(
@@ -1556,63 +1571,81 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
 
         /// 时间进度 toast
         if (!isLive)
-          IgnorePointer(
-            ignoring: true,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: FractionalTranslation(
-                translation: isFullScreen
-                    ? const Offset(0.0, 1.2)
-                    : const Offset(0.0, 0.8),
-                child: Obx(
-                  () => AnimatedOpacity(
-                    curve: Curves.easeInOut,
-                    opacity: plPlayerController.isSliderMoving.value
-                        ? 1.0
-                        : 0.0,
-                    duration: const Duration(milliseconds: 150),
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: Color(0x88000000),
-                        borderRadius: BorderRadius.all(Radius.circular(64)),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        spacing: 2,
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Obx(() {
-                            return Text(
-                              DurationUtils.formatDuration(
-                                plPlayerController
-                                    .sliderTempPosition
-                                    .value
-                                    .inSeconds,
-                              ),
-                              style: textStyle,
-                            );
-                          }),
-                          const Text('/', style: textStyle),
-                          Obx(
-                            () {
-                              return Text(
-                                DurationUtils.formatDuration(
-                                  plPlayerController.duration.value.inSeconds,
-                                ),
-                                style: textStyle,
-                              );
-                            },
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: true,
+              child: Obx(() {
+                final desktopPreview =
+                    Platform.isWindows &&
+                    plPlayerController.showDesktopProgressFeedback.value;
+                final opacity =
+                    desktopPreview ||
+                        (!Platform.isWindows &&
+                            plPlayerController.isSliderMoving.value)
+                    ? 1.0
+                    : 0.0;
+                final child = AnimatedOpacity(
+                  curve: Curves.easeInOut,
+                  opacity: opacity,
+                  duration: const Duration(milliseconds: 150),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Color(0x88000000),
+                      borderRadius: BorderRadius.all(Radius.circular(64)),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      spacing: 2,
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          DurationUtils.formatDuration(
+                            plPlayerController
+                                .sliderTempPosition
+                                .value
+                                .inSeconds,
                           ),
-                        ],
-                      ),
+                          style: textStyle,
+                        ),
+                        const Text('/', style: textStyle),
+                        Text(
+                          DurationUtils.formatDuration(
+                            plPlayerController.duration.value.inSeconds,
+                          ),
+                          style: textStyle,
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ),
+                );
+                final previewValue =
+                    plPlayerController.desktopProgressPreviewValue.value;
+                if (desktopPreview && previewValue != null) {
+                  return _DesktopProgressPreviewLayout(
+                    maxWidth: maxWidth,
+                    previewValue: previewValue,
+                    anchorWidth: desktopSeekPreviewWidth(
+                      plPlayerController,
+                      maxHeight,
+                    ),
+                    bottom: 38,
+                    child: child,
+                  );
+                }
+                return Align(
+                  alignment: Alignment.topCenter,
+                  child: FractionalTranslation(
+                    translation: isFullScreen
+                        ? const Offset(0.0, 1.2)
+                        : const Offset(0.0, 0.8),
+                    child: child,
+                  ),
+                );
+              }),
             ),
           ),
 
@@ -1950,11 +1983,13 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           ),
 
         if (!isLive && plPlayerController.showSeekPreview)
-          buildSeekPreviewWidget(
-            plPlayerController,
-            maxWidth,
-            maxHeight,
-            () => mounted,
+          Positioned.fill(
+            child: buildSeekPreviewWidget(
+              plPlayerController,
+              maxWidth,
+              maxHeight,
+              () => mounted,
+            ),
           ),
 
         if (isFullScreen || plPlayerController.isDesktopPip) ...[
@@ -2609,6 +2644,118 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           },
         ),
       ),
+    );
+  }
+}
+
+class _SubtitleSelectPanel extends StatelessWidget {
+  const _SubtitleSelectPanel({required this.controller});
+
+  final VideoDetailController controller;
+
+  static const _headerStyle = TextStyle(color: Colors.white70, fontSize: 12);
+  static const _itemStyle = TextStyle(color: Colors.white, fontSize: 13);
+  static const _disabledStyle = TextStyle(color: Colors.white38, fontSize: 13);
+
+  Widget _item({
+    required String label,
+    required bool selected,
+    required bool disabled,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: disabled ? null : onTap,
+      child: Container(
+        height: 35,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: disabled ? _disabledStyle : _itemStyle,
+              ),
+            ),
+            if (selected)
+              const Icon(Icons.check, size: 16, color: Colors.white),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _column({
+    required String title,
+    required int selectedIndex,
+    required int disabledIndex,
+    required ValueChanged<int> onSelect,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: 32,
+          child: Center(child: Text(title, style: _headerStyle)),
+        ),
+        _item(
+          label: '关闭',
+          selected: selectedIndex == 0,
+          disabled: false,
+          onTap: () => onSelect(0),
+        ),
+        ...controller.subtitles.indexed.map(
+          (entry) => _item(
+            label: entry.$2.lanDoc ?? entry.$2.lan,
+            selected: selectedIndex == entry.$1 + 1,
+            disabled: disabledIndex == entry.$1 + 1,
+            onTap: () => onSelect(entry.$1 + 1),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () {
+        final primary = controller.vttSubtitlesIndex.value;
+        final secondary = controller.vttSecondarySubtitlesIndex.value;
+        return SizedBox(
+          width: 300,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _column(
+                    title: '主字幕',
+                    selectedIndex: primary,
+                    disabledIndex: secondary,
+                    onSelect: controller.setSubtitle,
+                  ),
+                ),
+                const VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: Colors.white24,
+                ),
+                Expanded(
+                  child: _column(
+                    title: '副字幕',
+                    selectedIndex: secondary,
+                    disabledIndex: primary,
+                    onSelect: controller.setSecondarySubtitle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

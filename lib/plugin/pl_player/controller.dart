@@ -375,6 +375,12 @@ class PlPlayerController with BlockConfigMixin {
   final bool showVipDanmaku = Pref.showVipDanmaku; // loop unswitching
   late double subtitleStrokeWidth = Pref.subtitleStrokeWidth;
   late int subtitleFontWeight = Pref.subtitleFontWeight;
+  late double subtitleSecondaryFontScale = Pref.subtitleSecondaryFontScale;
+  late double subtitleSecondaryFontScaleFS = Pref.subtitleSecondaryFontScaleFS;
+  late double subtitleSecondaryBgOpacity = Pref.subtitleSecondaryBgOpacity;
+  late double subtitleSecondaryStrokeWidth = Pref.subtitleSecondaryStrokeWidth;
+  late int subtitleSecondaryFontWeight = Pref.subtitleSecondaryFontWeight;
+  late double subtitleSecondarySpacing = Pref.subtitleSecondarySpacing;
 
   // settings
   late final showFSActionItem = Pref.showFSActionItem;
@@ -430,17 +436,35 @@ class PlPlayerController with BlockConfigMixin {
   // 播放顺序相关
   late PlayRepeat playRepeat = Pref.playRepeat;
 
-  TextStyle get subTitleStyle => TextStyle(
+  TextStyle _buildSubtitleStyle({
+    required double fontScale,
+    required double fontScaleFS,
+    required int fontWeight,
+    required double bgOpacity,
+  }) => TextStyle(
     height: 1.5,
-    fontSize:
-        16 * (isFullScreen.value ? subtitleFontScaleFS : subtitleFontScale),
+    fontSize: 16 * (isFullScreen.value ? fontScaleFS : fontScale),
     letterSpacing: 0.1,
     wordSpacing: 0.1,
     color: Colors.white,
-    fontWeight: FontWeight.values[subtitleFontWeight],
-    backgroundColor: subtitleBgOpacity == 0
+    fontWeight: FontWeight.values[fontWeight],
+    backgroundColor: bgOpacity == 0
         ? null
-        : Colors.black.withValues(alpha: subtitleBgOpacity),
+        : Colors.black.withValues(alpha: bgOpacity),
+  );
+
+  TextStyle get subTitleStyle => _buildSubtitleStyle(
+    fontScale: subtitleFontScale,
+    fontScaleFS: subtitleFontScaleFS,
+    fontWeight: subtitleFontWeight,
+    bgOpacity: subtitleBgOpacity,
+  );
+
+  TextStyle get subTitleSecondaryStyle => _buildSubtitleStyle(
+    fontScale: subtitleSecondaryFontScale,
+    fontScaleFS: subtitleSecondaryFontScaleFS,
+    fontWeight: subtitleSecondaryFontWeight,
+    bgOpacity: subtitleSecondaryBgOpacity,
   );
 
   late final Rx<SubtitleViewConfiguration> subtitleConfig = getSubConfig.obs;
@@ -448,19 +472,35 @@ class PlPlayerController with BlockConfigMixin {
 
   SubtitleViewConfiguration get getSubConfig {
     final subTitleStyle = this.subTitleStyle;
+    final secondaryStyle = subTitleSecondaryStyle;
+
+    TextStyle? strokeOf(TextStyle base, double bgOpacity, double strokeWidth) =>
+        bgOpacity == 0
+        ? base.copyWith(
+            color: null,
+            background: null,
+            backgroundColor: null,
+            foreground: Paint()
+              ..color = Colors.black
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = strokeWidth,
+          )
+        : null;
+
     return SubtitleViewConfiguration(
       style: subTitleStyle,
-      strokeStyle: subtitleBgOpacity == 0
-          ? subTitleStyle.copyWith(
-              color: null,
-              background: null,
-              backgroundColor: null,
-              foreground: Paint()
-                ..color = Colors.black
-                ..style = PaintingStyle.stroke
-                ..strokeWidth = subtitleStrokeWidth,
-            )
-          : null,
+      strokeStyle: strokeOf(
+        subTitleStyle,
+        subtitleBgOpacity,
+        subtitleStrokeWidth,
+      ),
+      secondaryStyle: secondaryStyle,
+      secondaryStrokeStyle: strokeOf(
+        secondaryStyle,
+        subtitleSecondaryBgOpacity,
+        subtitleSecondaryStrokeWidth,
+      ),
+      spacing: subtitleSecondarySpacing,
       padding: EdgeInsets.only(
         left: subtitlePaddingH.toDouble(),
         right: subtitlePaddingH.toDouble(),
@@ -792,6 +832,7 @@ class PlPlayerController with BlockConfigMixin {
       if (showSeekPreview) {
         _clearPreview();
       }
+      hideDesktopProgressPreview();
       cancelLongPressTimer();
       if (_videoPlayerController != null &&
           _videoPlayerController!.state.playing) {
@@ -1407,6 +1448,10 @@ class PlPlayerController with BlockConfigMixin {
     cancelSeek = null;
     hasToast = null;
     isSliderMoving.value = false;
+    if (Platform.isWindows) {
+      requireDesktopProgressHoverReenter = _desktopProgressPointerInside;
+      hideDesktopProgressPreview();
+    }
     hideTaskControls();
   }
 
@@ -1571,6 +1616,9 @@ class PlPlayerController with BlockConfigMixin {
   }
 
   set controls(bool visible) {
+    if (!visible && Platform.isWindows) {
+      hideDesktopProgressPreview();
+    }
     showControls.value = visible;
     _timer?.cancel();
     if (visible) {
@@ -1674,6 +1722,7 @@ class PlPlayerController with BlockConfigMixin {
   void onLockControl(bool val) {
     feedBack();
     controlsLock.value = val;
+    if (val) hideDesktopProgressPreview();
     if (!val && showControls.value) {
       showControls.refresh();
     }
@@ -1854,6 +1903,12 @@ class PlPlayerController with BlockConfigMixin {
       SettingBoxKey.subtitleBgOpacity: subtitleBgOpacity,
       SettingBoxKey.subtitleStrokeWidth: subtitleStrokeWidth,
       SettingBoxKey.subtitleFontWeight: subtitleFontWeight,
+      SettingBoxKey.subtitleSecondaryFontScale: subtitleSecondaryFontScale,
+      SettingBoxKey.subtitleSecondaryFontScaleFS: subtitleSecondaryFontScaleFS,
+      SettingBoxKey.subtitleSecondaryBgOpacity: subtitleSecondaryBgOpacity,
+      SettingBoxKey.subtitleSecondaryStrokeWidth: subtitleSecondaryStrokeWidth,
+      SettingBoxKey.subtitleSecondaryFontWeight: subtitleSecondaryFontWeight,
+      SettingBoxKey.subtitleSecondarySpacing: subtitleSecondarySpacing,
     });
   }
 
@@ -1896,6 +1951,7 @@ class PlPlayerController with BlockConfigMixin {
       setPlayCallBack(null);
     }
     dmState.clear();
+    hideDesktopProgressPreview();
     if (showSeekPreview) {
       _clearPreview();
     }
@@ -1970,11 +2026,93 @@ class PlPlayerController with BlockConfigMixin {
   late final RxBool showPreview = false.obs;
   late final showSeekPreview = Pref.showSeekPreview;
   late final previewIndex = RxnInt();
+  final RxBool showDesktopProgressFeedback = false.obs;
+  final Rx<double?> desktopProgressHoverValue = Rx<double?>(null);
+  final Rx<double?> desktopProgressPreviewValue = Rx<double?>(null);
+  final RxInt desktopProgressPreviewLayoutVersion = 0.obs;
+  bool _desktopProgressPointerInside = false;
+  bool requireDesktopProgressHoverReenter = false;
+
+  void refreshDesktopProgressPreviewLayout() {
+    desktopProgressPreviewLayoutVersion.value++;
+  }
+
+  double _progressValueFromDuration(Duration value) {
+    final totalMilliseconds = duration.value.inMilliseconds;
+    if (totalMilliseconds <= 0) return 0.0;
+    return (value.inMilliseconds / totalMilliseconds).clamp(0.0, 1.0);
+  }
+
+  void _setDesktopProgressPreviewState(Duration value) {
+    final progressValue = _progressValueFromDuration(value);
+    sliderTempPosition.value = value;
+    desktopProgressHoverValue.value = progressValue;
+    desktopProgressPreviewValue.value = progressValue;
+  }
+
+  void updateDesktopProgressPreviewFromDrag(Duration value) {
+    if (!Platform.isWindows) return;
+    _setDesktopProgressPreviewState(value);
+    showDesktopProgressFeedback.value = true;
+    if (!isFileSource && showSeekPreview) {
+      updatePreviewIndex(value.inSeconds);
+    }
+  }
+
+  void onDesktopProgressDragStart(Duration value) {
+    _desktopProgressPointerInside = true;
+    requireDesktopProgressHoverReenter = false;
+    updateDesktopProgressPreviewFromDrag(value);
+  }
+
+  void onDesktopProgressHoverStart(Duration value) {
+    _desktopProgressPointerInside = true;
+    if (controlsLock.value || isSliderMoving.value ||
+        requireDesktopProgressHoverReenter) {
+      return;
+    }
+    _setDesktopProgressPreviewState(value);
+    showDesktopProgressFeedback.value = true;
+    if (!isFileSource && showSeekPreview) {
+      updatePreviewIndex(value.inSeconds);
+    }
+  }
+
+  void onDesktopProgressHoverUpdate(Duration value) {
+    _desktopProgressPointerInside = true;
+    if (controlsLock.value || isSliderMoving.value ||
+        requireDesktopProgressHoverReenter) {
+      return;
+    }
+    _setDesktopProgressPreviewState(value);
+    showDesktopProgressFeedback.value = true;
+    if (!isFileSource && showSeekPreview) {
+      updatePreviewIndex(value.inSeconds);
+    }
+  }
+
+  void onDesktopProgressHoverEnd() {
+    _desktopProgressPointerInside = false;
+    requireDesktopProgressHoverReenter = false;
+    if (!isSliderMoving.value) hideDesktopProgressPreview();
+  }
+
+  void hideDesktopProgressPreview() {
+    showDesktopProgressFeedback.value = false;
+    desktopProgressHoverValue.value = null;
+    desktopProgressPreviewValue.value = null;
+    if (showSeekPreview) showPreview.value = false;
+  }
 
   void updatePreviewIndex(int seconds) {
     if (videoShot == null) {
       videoShot = LoadingState.loading();
+      if (Platform.isWindows) showPreview.value = true;
       getVideoShot();
+      return;
+    }
+    if (videoShot is Loading) {
+      if (Platform.isWindows) showPreview.value = true;
       return;
     }
     if (videoShot case Success(:final response)) {
@@ -1983,6 +2121,9 @@ class PlPlayerController with BlockConfigMixin {
         0,
         (response.index.where((item) => item <= seconds).length - 2),
       );
+    } else {
+      showPreview.value = false;
+      previewIndex.value = null;
     }
   }
 
@@ -1998,6 +2139,14 @@ class PlPlayerController with BlockConfigMixin {
 
   Future<void> getVideoShot() async {
     videoShot = await VideoHttp.videoshot(bvid: bvid, cid: cid!);
+    if (!showPreview.value) return;
+    if (videoShot case Success()) {
+      showPreview.refresh();
+      updatePreviewIndex(sliderTempPosition.value.inSeconds);
+    } else {
+      showPreview.value = false;
+      previewIndex.value = null;
+    }
   }
 
   Future<void> takeScreenshot() async {

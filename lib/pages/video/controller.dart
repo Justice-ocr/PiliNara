@@ -1317,6 +1317,7 @@ class VideoDetailController extends GetxController
   RxList<Subtitle> subtitles = RxList<Subtitle>();
   final Map<int, ({bool isData, String id})> vttSubtitles = {};
   late final RxInt vttSubtitlesIndex = (-1).obs;
+  late final RxInt vttSecondarySubtitlesIndex = 0.obs;
   late final RxBool showVP = Pref.showViewPointsOverlay.obs;
   late final RxList<ViewPointSegment> viewPointList = <ViewPointSegment>[].obs;
 
@@ -1397,6 +1398,7 @@ class VideoDetailController extends GetxController
   }
 
   Future<void> _loadFileSubtitles() async {
+    await setSecondarySubtitle(0);
     final indexFile = File(
       path.join(
         entry.entryDirPath,
@@ -1458,32 +1460,56 @@ class VideoDetailController extends GetxController
       return;
     }
 
-    Future<void> setSub(({bool isData, String id}) subtitle) async {
-      final sub = subtitles[index - 1];
-
-      String subUri = subtitle.id;
-      if (subtitle.isData) {
-        subUri = 'memory://$subUri';
-      }
-      await plPlayerController.videoPlayerController?.setSubtitleTrack(
-        SubtitleTrack(subUri, sub.lanDoc, sub.lan, uri: true),
-      );
-      vttSubtitlesIndex.value = index;
+    if (index == vttSecondarySubtitlesIndex.value) {
+      await setSecondarySubtitle(0);
     }
 
-    ({bool isData, String id})? subtitle = vttSubtitles[index - 1];
-    if (subtitle != null) {
-      await setSub(subtitle);
-    } else {
-      final result = await VideoHttp.vttSubtitles(
-        subtitles[index - 1].subtitleUrl!,
-      );
-      if (!isClosed && result != null) {
-        final subtitle = (isData: true, id: result);
-        vttSubtitles[index - 1] = subtitle;
-        await setSub(subtitle);
-      }
+    final subUri = await _resolveVttUri(index - 1);
+    if (isClosed || subUri == null) return;
+    final sub = subtitles[index - 1];
+    await plPlayerController.videoPlayerController?.setSubtitleTrack(
+      SubtitleTrack(subUri, sub.lanDoc, sub.lan, uri: true),
+    );
+    vttSubtitlesIndex.value = index;
+  }
+
+  Future<void> setSecondarySubtitle(int index) async {
+    if (!Platform.isWindows) {
+      vttSecondarySubtitlesIndex.value = 0;
+      return;
     }
+
+    final player = plPlayerController.videoPlayerController;
+
+    if (index <= 0 || index == vttSubtitlesIndex.value) {
+      vttSecondarySubtitlesIndex.value = 0;
+      await player?.setSecondarySubtitleTrack(SubtitleTrack.no());
+      return;
+    }
+
+    if (player == null) return;
+    final subUri = await _resolveVttUri(index - 1);
+    if (isClosed || subUri == null) return;
+    final sub = subtitles[index - 1];
+    await player.setSecondarySubtitleTrack(
+      SubtitleTrack(subUri, sub.lanDoc, sub.lan, uri: true),
+    );
+    vttSecondarySubtitlesIndex.value = index;
+  }
+
+  Future<String?> _resolveVttUri(int subIdx) async {
+    final cached = vttSubtitles[subIdx];
+    if (cached != null) {
+      return cached.isData ? 'memory://${cached.id}' : cached.id;
+    }
+
+    final result = await VideoHttp.vttSubtitles(
+      subtitles[subIdx].subtitleUrl!,
+    );
+    if (result == null) return null;
+    final subtitle = (isData: true, id: result);
+    vttSubtitles[subIdx] = subtitle;
+    return 'memory://${subtitle.id}';
   }
 
   // interactive video
@@ -1539,6 +1565,7 @@ class VideoDetailController extends GetxController
   Future<void> _queryPlayInfo() async {
     vttSubtitles.clear();
     vttSubtitlesIndex.value = 0;
+    await setSecondarySubtitle(0);
     if (plPlayerController.showViewPoints) {
       viewPointList.clear();
     }

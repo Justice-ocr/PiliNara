@@ -1285,6 +1285,7 @@ class HeaderControlState extends State<HeaderControl>
 
   /// 字幕设置
   void showSetSubtitle() {
+    int segment = 0;
     showBottomSheet(
       padding: () => isFullScreen ? const .only(bottom: 70) : .zero,
       (context, setState) {
@@ -1299,17 +1300,40 @@ class HeaderControlState extends State<HeaderControl>
           thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
         );
 
+        final isPrimary = !Platform.isWindows || segment == 0;
+        final fontScale = isPrimary
+            ? subtitleFontScale
+            : plPlayerController.subtitleSecondaryFontScale;
+        final fontScaleFS = isPrimary
+            ? subtitleFontScaleFS
+            : plPlayerController.subtitleSecondaryFontScaleFS;
+        final fontWeight = isPrimary
+            ? subtitleFontWeight
+            : plPlayerController.subtitleSecondaryFontWeight;
+        final strokeWidth = isPrimary
+            ? subtitleStrokeWidth
+            : plPlayerController.subtitleSecondaryStrokeWidth;
+        final bgOpacity = isPrimary
+            ? subtitleBgOpacity
+            : plPlayerController.subtitleSecondaryBgOpacity;
+
         void updateStrokeWidth(double val) {
-          plPlayerController
-            ..subtitleStrokeWidth = val
-            ..updateSubtitleStyle();
+          if (isPrimary) {
+            plPlayerController.subtitleStrokeWidth = val;
+          } else {
+            plPlayerController.subtitleSecondaryStrokeWidth = val;
+          }
+          plPlayerController.updateSubtitleStyle();
           setState(() {});
         }
 
         void updateOpacity(double val) {
-          plPlayerController
-            ..subtitleBgOpacity = val.toPrecision(2)
-            ..updateSubtitleStyle();
+          if (isPrimary) {
+            plPlayerController.subtitleBgOpacity = val.toPrecision(2);
+          } else {
+            plPlayerController.subtitleSecondaryBgOpacity = val.toPrecision(2);
+          }
+          plPlayerController.updateSubtitleStyle();
           setState(() {});
         }
 
@@ -1328,22 +1352,38 @@ class HeaderControlState extends State<HeaderControl>
         }
 
         void updateFontScaleFS(double val) {
-          plPlayerController
-            ..subtitleFontScaleFS = val
-            ..updateSubtitleStyle();
+          if (isPrimary) {
+            plPlayerController.subtitleFontScaleFS = val;
+          } else {
+            plPlayerController.subtitleSecondaryFontScaleFS = val;
+          }
+          plPlayerController.updateSubtitleStyle();
           setState(() {});
         }
 
         void updateFontScale(double val) {
-          plPlayerController
-            ..subtitleFontScale = val
-            ..updateSubtitleStyle();
+          if (isPrimary) {
+            plPlayerController.subtitleFontScale = val;
+          } else {
+            plPlayerController.subtitleSecondaryFontScale = val;
+          }
+          plPlayerController.updateSubtitleStyle();
           setState(() {});
         }
 
         void updateFontWeight(double val) {
+          if (isPrimary) {
+            plPlayerController.subtitleFontWeight = val.toInt();
+          } else {
+            plPlayerController.subtitleSecondaryFontWeight = val.toInt();
+          }
+          plPlayerController.updateSubtitleStyle();
+          setState(() {});
+        }
+
+        void updateSecondarySpacing(double val) {
           plPlayerController
-            ..subtitleFontWeight = val.toInt()
+            ..subtitleSecondarySpacing = val
             ..updateSubtitleStyle();
           setState(() {});
         }
@@ -1363,14 +1403,36 @@ class HeaderControlState extends State<HeaderControl>
                     height: 45,
                     child: Center(child: Text('字幕设置', style: titleStyle)),
                   ),
+                  if (Platform.isWindows) ...[
+                    Center(
+                      child: SegmentedButton<int>(
+                        showSelectedIcon: false,
+                        style: const ButtonStyle(
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        segments: const [
+                          ButtonSegment(value: 0, label: Text('主字幕')),
+                          ButtonSegment(value: 1, label: Text('副字幕')),
+                        ],
+                        selected: {segment},
+                        onSelectionChanged: (value) =>
+                            setState(() => segment = value.first),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '字体大小 ${(subtitleFontScale * 100).toStringAsFixed(1)}%',
+                        '字体大小 ${(fontScale * 100).toStringAsFixed(1)}%',
                       ),
-                      resetBtn(theme, '100.0%', () => updateFontScale(1.0)),
+                      resetBtn(
+                        theme,
+                        isPrimary ? '100.0%' : '80.0%',
+                        () => updateFontScale(isPrimary ? 1.0 : 0.8),
+                      ),
                     ],
                   ),
                   Padding(
@@ -1385,10 +1447,10 @@ class HeaderControlState extends State<HeaderControl>
                       child: Slider(
                         min: 0.5,
                         max: 2.5,
-                        value: subtitleFontScale,
+                        value: fontScale,
                         divisions: 20,
                         label:
-                            '${(subtitleFontScale * 100).toStringAsFixed(1)}%',
+                            '${(fontScale * 100).toStringAsFixed(1)}%',
                         onChanged: updateFontScale,
                       ),
                     ),
@@ -1397,9 +1459,13 @@ class HeaderControlState extends State<HeaderControl>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '全屏字体大小 ${(subtitleFontScaleFS * 100).toStringAsFixed(1)}%',
+                        '全屏字体大小 ${(fontScaleFS * 100).toStringAsFixed(1)}%',
                       ),
-                      resetBtn(theme, '150.0%', () => updateFontScaleFS(1.5)),
+                      resetBtn(
+                        theme,
+                        isPrimary ? '150.0%' : '110.0%',
+                        () => updateFontScaleFS(isPrimary ? 1.5 : 1.1),
+                      ),
                     ],
                   ),
                   Padding(
@@ -1414,10 +1480,10 @@ class HeaderControlState extends State<HeaderControl>
                       child: Slider(
                         min: 0.5,
                         max: 2.5,
-                        value: subtitleFontScaleFS,
+                        value: fontScaleFS,
                         divisions: 20,
                         label:
-                            '${(subtitleFontScaleFS * 100).toStringAsFixed(1)}%',
+                            '${(fontScaleFS * 100).toStringAsFixed(1)}%',
                         onChanged: updateFontScaleFS,
                       ),
                     ),
@@ -1425,7 +1491,7 @@ class HeaderControlState extends State<HeaderControl>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('字体粗细 ${subtitleFontWeight + 1}（可能无法精确调节）'),
+                      Text('字体粗细 ${fontWeight + 1}（可能无法精确调节）'),
                       resetBtn(theme, 6, () => updateFontWeight(5)),
                     ],
                   ),
@@ -1441,9 +1507,9 @@ class HeaderControlState extends State<HeaderControl>
                       child: Slider(
                         min: 0,
                         max: 8,
-                        value: subtitleFontWeight.toDouble(),
+                        value: fontWeight.toDouble(),
                         divisions: 8,
-                        label: '${subtitleFontWeight + 1}',
+                        label: '${fontWeight + 1}',
                         onChanged: updateFontWeight,
                       ),
                     ),
@@ -1451,7 +1517,7 @@ class HeaderControlState extends State<HeaderControl>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('描边粗细 $subtitleStrokeWidth'),
+                      Text('描边粗细 $strokeWidth'),
                       resetBtn(theme, 2.0, () => updateStrokeWidth(2.0)),
                     ],
                   ),
@@ -1467,21 +1533,23 @@ class HeaderControlState extends State<HeaderControl>
                       child: Slider(
                         min: 0,
                         max: 5,
-                        value: subtitleStrokeWidth,
+                        value: strokeWidth,
                         divisions: 10,
-                        label: '$subtitleStrokeWidth',
+                        label: '$strokeWidth',
                         onChanged: updateStrokeWidth,
                       ),
                     ),
                   ),
-                  Row(
+                  if (isPrimary)
+                    Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('左右边距 $subtitlePaddingH'),
                       resetBtn(theme, 24, () => updateHorizontalPadding(24)),
                     ],
                   ),
-                  Padding(
+                  if (isPrimary)
+                    Padding(
                     padding: const EdgeInsets.only(
                       top: 0,
                       bottom: 6,
@@ -1500,14 +1568,16 @@ class HeaderControlState extends State<HeaderControl>
                       ),
                     ),
                   ),
-                  Row(
+                  if (isPrimary)
+                    Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('底部边距 $subtitlePaddingB'),
                       resetBtn(theme, 24, () => updateBottomPadding(24)),
                     ],
                   ),
-                  Padding(
+                  if (isPrimary)
+                    Padding(
                     padding: const EdgeInsets.only(
                       top: 0,
                       bottom: 6,
@@ -1526,10 +1596,45 @@ class HeaderControlState extends State<HeaderControl>
                       ),
                     ),
                   ),
+                  if (!isPrimary)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '与主字幕间距 ${plPlayerController.subtitleSecondarySpacing.toStringAsFixed(1)}',
+                        ),
+                        resetBtn(
+                          theme,
+                          '4.0',
+                          () => updateSecondarySpacing(4.0),
+                        ),
+                      ],
+                    ),
+                  if (!isPrimary)
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        top: 0,
+                        bottom: 6,
+                        left: 10,
+                        right: 10,
+                      ),
+                      child: SliderTheme(
+                        data: sliderTheme,
+                        child: Slider(
+                          min: 0,
+                          max: 40,
+                          divisions: 40,
+                          value: plPlayerController.subtitleSecondarySpacing,
+                          label: plPlayerController.subtitleSecondarySpacing
+                              .toStringAsFixed(1),
+                          onChanged: updateSecondarySpacing,
+                        ),
+                      ),
+                    ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('背景不透明度 ${(subtitleBgOpacity * 100).toInt()}%'),
+                      Text('背景不透明度 ${(bgOpacity * 100).toInt()}%'),
                       resetBtn(theme, '67%', () => updateOpacity(0.67)),
                     ],
                   ),
@@ -1545,7 +1650,7 @@ class HeaderControlState extends State<HeaderControl>
                       child: Slider(
                         min: 0,
                         max: 1,
-                        value: subtitleBgOpacity,
+                        value: bgOpacity,
                         onChanged: updateOpacity,
                       ),
                     ),

@@ -1154,8 +1154,8 @@ packages:
     description:
       path: media_kit
       ref: "version_1.2.5"
-      resolved-ref: deac6b62569584b6a5e28e6c60c187a0a7281b3a
-      url: "https://github.com/My-Responsitories/media-kit.git"
+      resolved-ref: dfb488e7d59ed77cfd29eda479719ac3c8b7d5ba
+      url: "https://github.com/Starfallan/media-kit.git"
     source: git
     version: "1.1.11"
   media_kit_libs_android_video:
@@ -1195,8 +1195,8 @@ packages:
     description:
       path: "libs/universal/media_kit_libs_video"
       ref: "version_1.2.5"
-      resolved-ref: deac6b62569584b6a5e28e6c60c187a0a7281b3a
-      url: "https://github.com/My-Responsitories/media-kit.git"
+      resolved-ref: dfb488e7d59ed77cfd29eda479719ac3c8b7d5ba
+      url: "https://github.com/Starfallan/media-kit.git"
     source: git
     version: "1.0.5"
   media_kit_libs_windows_video:
@@ -1204,8 +1204,8 @@ packages:
     description:
       path: "libs/windows/media_kit_libs_windows_video"
       ref: "version_1.2.5"
-      resolved-ref: deac6b62569584b6a5e28e6c60c187a0a7281b3a
-      url: "https://github.com/My-Responsitories/media-kit.git"
+      resolved-ref: dfb488e7d59ed77cfd29eda479719ac3c8b7d5ba
+      url: "https://github.com/Starfallan/media-kit.git"
     source: git
     version: "1.0.10"
   media_kit_native_event_loop:
@@ -1213,8 +1213,8 @@ packages:
     description:
       path: media_kit_native_event_loop
       ref: "version_1.2.5"
-      resolved-ref: deac6b62569584b6a5e28e6c60c187a0a7281b3a
-      url: "https://github.com/My-Responsitories/media-kit.git"
+      resolved-ref: dfb488e7d59ed77cfd29eda479719ac3c8b7d5ba
+      url: "https://github.com/Starfallan/media-kit.git"
     source: git
     version: "1.0.9"
   media_kit_video:
@@ -1222,8 +1222,8 @@ packages:
     description:
       path: media_kit_video
       ref: "version_1.2.5"
-      resolved-ref: deac6b62569584b6a5e28e6c60c187a0a7281b3a
-      url: "https://github.com/My-Responsitories/media-kit.git"
+      resolved-ref: dfb488e7d59ed77cfd29eda479719ac3c8b7d5ba
+      url: "https://github.com/Starfallan/media-kit.git"
     source: git
     version: "1.2.5"
   menu_base:
