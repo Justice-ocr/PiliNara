@@ -1185,6 +1185,11 @@ class HeaderControlState extends State<HeaderControl>
                               onPressed: () => Get.back(result: 'srt'),
                               child: const Text('SRT'),
                             ),
+                            if (Platform.isWindows)
+                              SimpleDialogOption(
+                                onPressed: () => Get.back(result: 'vtt'),
+                                child: const Text('WEBVTT'),
+                              ),
                           ],
                         ),
                       );
@@ -1192,44 +1197,66 @@ class HeaderControlState extends State<HeaderControl>
                       final url = item.subtitleUrl;
                       if (url == null || url.isEmpty) return;
                       try {
-                        final res = await Request.dio.get<Uint8List>(
-                          url.http2https,
-                          options: Options(
-                            responseType: ResponseType.bytes,
-                            headers: Constants.baseHeaders,
-                            extra: {'account': const NoAccount()},
-                          ),
-                        );
-                        if (res.statusCode == 200) {
+                        final extension = format;
+                        Uint8List? bytes;
+                        if (format == 'vtt') {
+                          final subtitleIndex = videoDetailCtr.subtitles.indexOf(
+                            item,
+                          );
+                          final cached =
+                              videoDetailCtr.vttSubtitles[subtitleIndex];
+                          if (cached?.isData == true) {
+                            bytes = Uint8List.fromList(utf8.encode(cached!.id));
+                          }
+                        }
+                        if (bytes == null) {
+                          final res = await Request.dio.get<Uint8List>(
+                            url.http2https,
+                            options: Options(
+                              responseType: ResponseType.bytes,
+                              headers: Constants.baseHeaders,
+                              extra: {'account': const NoAccount()},
+                            ),
+                          );
+                          if (res.statusCode != 200) return;
                           final rawBytes = Uint8List.fromList(
                             Request.responseBytesDecoder(
                               res.data!,
                               res.headers.map,
                             ),
                           );
-                          Uint8List bytes = rawBytes;
-                          String extension = 'json';
-                          if (format == 'srt') {
-                            final Map<String, dynamic> json =
-                                jsonDecode(utf8.decode(rawBytes))
-                                    as Map<String, dynamic>;
+                          bytes = rawBytes;
+                          if (format != 'json') {
+                            final json = jsonDecode(utf8.decode(rawBytes))
+                                as Map<String, dynamic>;
                             final body = json['body'] as List<dynamic>;
-                            final srtText = SubtitleUtils.bccToSrt(body);
-                            bytes = Uint8List.fromList(utf8.encode(srtText));
-                            extension = 'srt';
+                            final subtitle = format == 'vtt'
+                                ? SubtitleUtils.bccToVtt(body)
+                                : SubtitleUtils.bccToSrt(body);
+                            bytes = Uint8List.fromList(utf8.encode(subtitle));
+                            if (format == 'vtt') {
+                              final subtitleIndex =
+                                  videoDetailCtr.subtitles.indexOf(item);
+                              videoDetailCtr.vttSubtitles[subtitleIndex] = (
+                                isData: true,
+                                id: subtitle,
+                              );
+                            }
                           }
-                          String name =
-                              '${introController.videoDetail.value.title}-${videoDetailCtr.bvid}-${videoDetailCtr.cid.value}-${item.lanDoc}.$extension';
-                          name = name.replaceAll(
-                            RegExp(r'[<>:/\\|?*"]'),
-                            '',
-                          );
-                          StorageUtils.saveBytes2File(
-                            name: name,
-                            bytes: bytes,
-                            allowedExtensions: [extension],
-                          );
                         }
+                        final videoDetail = introController.videoDetail.value;
+                        final rawName = Platform.isWindows
+                            ? '${videoDetail.title}-${videoDetail.owner?.name}(${videoDetail.owner?.mid})-${videoDetailCtr.bvid}-${videoDetailCtr.cid.value}-${item.lanDoc ?? item.lan}.$extension'
+                            : '${videoDetail.title}-${videoDetailCtr.bvid}-${videoDetailCtr.cid.value}-${item.lanDoc ?? item.lan}.$extension';
+                        final name = rawName.replaceAll(
+                          Platform.isWindows ? RegExp(r'[<>:/\\|?*"]') : '/',
+                          '_',
+                        );
+                        StorageUtils.saveBytes2File(
+                          name: name,
+                          bytes: bytes!,
+                          allowedExtensions: [extension],
+                        );
                       } catch (e, s) {
                         Utils.reportError(e, s);
                         SmartDialog.showToast(e.toString());
