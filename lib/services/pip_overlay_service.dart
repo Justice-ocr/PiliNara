@@ -103,29 +103,27 @@ class PipOverlayService {
     }
   }
 
-  static void releaseSavedVideoOwner({
-    bool clearMediaSession = true,
-    bool disposePlayer = true,
+  // Release the page held by PiP only after stopPip captures its references.
+  // A page still in the route stack must only pause its player: disposing it
+  // consumes the shared player count and breaks the page when the user returns.
+  static void _releaseSavedVideoOwner({
+    required VideoDetailController controller,
+    required PlPlayerController? player,
+    required bool disposePlayer,
   }) {
-    final savedController = _savedController;
-    final savedPlayerController = _savedPlayerController;
+    controller
+      ..isEnteringPip = false
+      ..cancelBlockListener();
 
-    if (savedController is! VideoDetailController) {
-      return;
+    if (player != null) {
+      controller.makeHeartBeat();
+      if (disposePlayer) {
+        videoPlayerServiceHandler?.onVideoDetailDispose(controller.heroTag);
+        player.dispose();
+      } else {
+        player.pause();
+      }
     }
-
-    savedController.isEnteringPip = false;
-    savedController.cancelBlockListener();
-
-    if (clearMediaSession) {
-      videoPlayerServiceHandler?.onVideoDetailDispose(savedController.heroTag);
-    }
-
-    if (disposePlayer && savedPlayerController != null) {
-      savedController.makeHeartBeat();
-      savedPlayerController.dispose();
-    }
-
   }
 
   static String _keyPart(Object? value) => value?.toString() ?? '';
@@ -258,6 +256,8 @@ class PipOverlayService {
     bool immediate = false,
     bool resetState = true,
     String? targetContextKey,
+    bool releaseSavedOwner = false,
+    bool disposeSavedOwnerPlayer = true,
   }) {
     if (!isInPipMode && _overlayEntry == null) {
       return;
@@ -283,6 +283,8 @@ class PipOverlayService {
 
     final closeCallback = callOnClose ? _onCloseCallback : null;
     final playerController = _savedPlayerController;
+    // The static fields are cleared below, so retain the owner before doing so.
+    final ownerToRelease = releaseSavedOwner ? _savedController : null;
     _onCloseCallback = null;
     _onTapToReturnCallback = null;
 
@@ -343,6 +345,13 @@ class PipOverlayService {
         if (kDebugMode) {
           debugPrint('Error removing pip overlay: $e');
         }
+      }
+      if (ownerToRelease is VideoDetailController) {
+        _releaseSavedVideoOwner(
+          controller: ownerToRelease,
+          player: playerController,
+          disposePlayer: disposeSavedOwnerPlayer,
+        );
       }
       closeCallback?.call();
     }

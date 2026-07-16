@@ -270,9 +270,11 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           callOnClose: false,
           immediate: true,
           targetContextKey: targetContextKey,
+          releaseSavedOwner: true,
+          // A chained video navigation keeps the old page in the route stack.
+          // Preserve its shared player count so it can recover on return.
+          disposeSavedOwnerPlayer: !fromVideoPage,
         );
-        // 旧应用内小窗已被当前页面接管结束，显式释放旧页面 owner 和媒体会话
-        PipOverlayService.releaseSavedVideoOwner();
       }
       videoDetailController = Get.put(VideoDetailController(), tag: heroTag);
     }

@@ -1653,8 +1653,11 @@ class VideoDetailController extends GetxController
       // 正在进入小窗，保留资源
       return;
     }
-    if (!WindowsVideoTabService.enabled ||
-        !WindowsVideoTabService.has(WindowsVideoTabService.keyFromArgs(args))) {
+    if ((!WindowsVideoTabService.enabled ||
+            !WindowsVideoTabService.has(
+              WindowsVideoTabService.keyFromArgs(args),
+            )) &&
+        plPlayerController.isCurrentVideoSource(bvid: bvid, cid: cid.value)) {
       plPlayerController.pause();
     }
     cancelBlockListener();
