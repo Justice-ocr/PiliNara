@@ -37,6 +37,11 @@ class _SettingsModel {
   });
 }
 
+MediaQueryData windowsSettingsPaneMediaQuery(
+  MediaQueryData parent,
+  BoxConstraints constraints,
+) => parent.copyWith(size: constraints.biggest);
+
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
 
@@ -217,9 +222,17 @@ class _SettingPageState extends State<SettingPage> {
                               scaffoldBackgroundColor: tokens.surface,
                               canvasColor: tokens.surface,
                             ),
-                            child: _buildSettingPage(
-                              _type,
-                              showAppBar: false,
+                            child: LayoutBuilder(
+                              builder: (context, constraints) => MediaQuery(
+                                data: windowsSettingsPaneMediaQuery(
+                                  MediaQuery.of(context),
+                                  constraints,
+                                ),
+                                child: _buildSettingPage(
+                                  _type,
+                                  showAppBar: false,
+                                ),
+                              ),
                             ),
                           ),
                         ),
