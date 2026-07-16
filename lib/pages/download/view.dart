@@ -15,6 +15,7 @@ import 'package:PiliPlus/pages/download/search/view.dart';
 import 'package:PiliPlus/pages/download/sort/view.dart';
 import 'package:PiliPlus/pages/download/utils/cache_delete_confirm.dart';
 import 'package:PiliPlus/pages/download/utils/cache_export.dart';
+import 'package:PiliPlus/pages/download/utils/open_download_entry.dart';
 import 'package:PiliPlus/pages/download/widgets/folder_card.dart';
 import 'package:PiliPlus/pages/download/widgets/folder_dialog.dart';
 import 'package:PiliPlus/services/download/download_collection_service.dart';
@@ -432,6 +433,25 @@ class _DownloadPageState extends State<DownloadPage>
               title: const Text('离线缓存'),
               actions: [
                 if (isVideoTab) ...[
+                  Obx(() {
+                    final target = _controller.continueTarget.value;
+                    if (target == null) {
+                      return const SizedBox.shrink();
+                    }
+                    return IconButton(
+                      tooltip: '继续播放：${target.entry.showTitle}',
+                      onPressed: () async {
+                        await openDownloadEntry(
+                          entry: target.entry,
+                          playContext: target.playContext,
+                        );
+                        if (mounted) {
+                          await _controller.refreshContinueTarget();
+                        }
+                      },
+                      icon: const Icon(Icons.play_circle_outline),
+                    );
+                  }),
                   IconButton(
                     tooltip: '搜索',
                     onPressed: () async {
@@ -439,7 +459,10 @@ class _DownloadPageState extends State<DownloadPage>
                       if (!mounted) {
                         return;
                       }
-                      Get.to(DownloadSearchPage(progress: _progress));
+                      await Get.to(DownloadSearchPage(progress: _progress));
+                      if (mounted) {
+                        await _controller.refreshContinueTarget();
+                      }
                     },
                     icon: const Icon(Icons.search),
                   ),
@@ -641,9 +664,13 @@ class _DownloadPageState extends State<DownloadPage>
                         removeList: true,
                       );
                       GStorage.watchProgress.delete(entry.cid.toString());
+                      await _collectionService.clearLastLocalPlayedIfCid(
+                        entry.cid,
+                      );
                     },
                     controller: _controller,
                     playContext: const DownloadVideoPlayContext.all(),
+                    onPlayReturned: _controller.refreshContinueTarget,
                     customOnLongPress: () => _controller
                       ..enableMultiSelect.value = true
                       ..onSelect(entry),
@@ -717,9 +744,14 @@ class _DownloadPageState extends State<DownloadPage>
                     checked: folder.checked,
                     onTap: _folderSelectController.enableMultiSelect.value
                         ? () => _folderSelectController.onSelect(folder)
-                        : () => Get.to(
-                            DownloadFolderPage(folderId: folder.id),
-                          ),
+                        : () async {
+                            await Get.to(
+                              DownloadFolderPage(folderId: folder.id),
+                            );
+                            if (mounted) {
+                              await _controller.refreshContinueTarget();
+                            }
+                          },
                     onLongPress: () => _folderSelectController
                       ..enableMultiSelect.value = true
                       ..onSelect(folder),
