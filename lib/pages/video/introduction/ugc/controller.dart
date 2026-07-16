@@ -481,6 +481,10 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
 
       final String? cover = episode.cover;
 
+      if (manual) {
+        videoDetailCtr.plPlayerController.markManualEpisodeChange();
+      }
+
       // 重新获取视频资源
       if (videoDetailCtr.isPlayAll) {
         if (videoDetailCtr.mediaList.indexWhere((item) => item.bvid == bvid) ==
