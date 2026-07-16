@@ -14,7 +14,7 @@ import 'package:flutter/services.dart'
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
-class PlayerFocus extends StatelessWidget {
+class PlayerFocus extends StatefulWidget {
   const PlayerFocus({
     super.key,
     required this.child,
@@ -34,6 +34,9 @@ class PlayerFocus extends StatelessWidget {
   final ValueGetter<bool>? onSkipSegment;
   final VoidCallback? onRefresh;
 
+  @override
+  State<PlayerFocus> createState() => _PlayerFocusState();
+
   static bool _shouldHandle(LogicalKeyboardKey logicalKey) {
     return logicalKey == LogicalKeyboardKey.tab ||
         logicalKey == LogicalKeyboardKey.arrowLeft ||
@@ -41,19 +44,50 @@ class PlayerFocus extends StatelessWidget {
         logicalKey == LogicalKeyboardKey.arrowUp ||
         logicalKey == LogicalKeyboardKey.arrowDown;
   }
+}
+
+class _PlayerFocusState extends State<PlayerFocus> {
+  final _focusNode = FocusNode(debugLabel: 'player-keyboard-shortcuts');
+
+  PlPlayerController get plPlayerController => widget.plPlayerController;
+  CommonIntroController? get introController => widget.introController;
+  VoidCallback get onSendDanmaku => widget.onSendDanmaku;
+  ValueGetter<bool>? get canPlay => widget.canPlay;
+  ValueGetter<bool>? get onSkipSegment => widget.onSkipSegment;
+  VoidCallback? get onRefresh => widget.onRefresh;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Focus(
-      autofocus: true,
+      focusNode: _focusNode,
       onKeyEvent: (node, event) {
         final handled = _handleKey(event);
-        if (handled || _shouldHandle(event.logicalKey)) {
+        if (handled || PlayerFocus._shouldHandle(event.logicalKey)) {
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
       },
-      child: child,
+      child: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) => _focusNode.requestFocus(),
+        child: widget.child,
+      ),
     );
   }
 
