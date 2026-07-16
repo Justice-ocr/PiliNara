@@ -84,6 +84,8 @@ mixin TripleMixin on GetxController, TickerProvider {
     _timer = null;
   }
 
+  bool get isTripling => _tripleAnimCtr?.status == AnimationStatus.forward;
+
   static final _duration = PlatformUtils.isMobile
       ? const Duration(milliseconds: 200)
       : const Duration(milliseconds: 255);

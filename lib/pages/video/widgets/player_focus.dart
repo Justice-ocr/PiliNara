@@ -141,6 +141,10 @@ class _PlayerFocusState extends State<PlayerFocus> {
         introController!.onCancelTriple(isKeyQ);
       }
       return true;
+    } else if (event is KeyDownEvent && Platform.isWindows) {
+      if (introController?.isTripling ?? false) {
+        introController!.onCancelTriple();
+      }
     }
 
     final isArrowUp = key == LogicalKeyboardKey.arrowUp;
