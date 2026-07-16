@@ -7,9 +7,11 @@ import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/member_guard/guard_top_list.dart';
 import 'package:PiliPlus/pages/member_guard/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart' hide ListTile;
 import 'package:get/get.dart';
 
@@ -54,21 +56,41 @@ class _MemberGuardState extends State<MemberGuard> {
 
   @override
   Widget build(BuildContext context) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text('$_userName的舰队${_count == null ? '' : '($_count)'}'),
       ),
-      body: refreshIndicator(
-        onRefresh: _controller.onRefresh,
-        child: CustomScrollView(
-          slivers: [
-            ViewSliverSafeArea(
-              sliver: Obx(() => _buildBody(_controller.loadingState.value)),
+      body:
+          refreshIndicator(
+            onRefresh: _controller.onRefresh,
+            child: CustomScrollView(
+              slivers: [
+                if (isWindowsNeo)
+                  SliverPadding(
+                    padding: EdgeInsets.only(
+                      left: 18,
+                      top: 16,
+                      right: 18,
+                      bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
+                    ),
+                    sliver: Obx(
+                      () => _buildBody(_controller.loadingState.value),
+                    ),
+                  )
+                else
+                  ViewSliverSafeArea(
+                    sliver: Obx(
+                      () => _buildBody(_controller.loadingState.value),
+                    ),
+                  ),
+              ],
             ),
-          ],
-        ),
-      ).constraintWidth(),
+          ).constraintWidth(
+            constraints: BoxConstraints(maxWidth: isWindowsNeo ? 820 : 625),
+          ),
     );
   }
 
@@ -91,18 +113,25 @@ class _MemberGuardState extends State<MemberGuard> {
                     }
 
                     final item = response[index];
-                    return ListTile(
-                      safeArea: false,
-                      visualDensity: .comfortable,
-                      onTap: () => PageUtils.toMember(item.uid),
-                      leading: _avatar(item.face, 32, item.guardLevel),
-                      title: Text(
-                        item.username,
-                        style: const TextStyle(fontSize: 14),
+                    return Material(
+                      color: WindowsVideoTabService.enabled
+                          ? context.windowsNeo.surface
+                          : Colors.transparent,
+                      child: ListTile(
+                        safeArea: false,
+                        visualDensity: .comfortable,
+                        onTap: () => PageUtils.toMember(item.uid),
+                        leading: _avatar(item.face, 32, item.guardLevel),
+                        title: Text(
+                          item.username,
+                          style: const TextStyle(fontSize: 14),
+                        ),
                       ),
                     );
                   },
-                  separatorBuilder: (_, _) => const SizedBox(height: 4),
+                  separatorBuilder: (_, _) => WindowsVideoTabService.enabled
+                      ? Divider(height: 1, color: context.windowsNeo.border)
+                      : const SizedBox(height: 4),
                 ),
               ),
           ],
@@ -162,14 +191,25 @@ class _MemberGuardState extends State<MemberGuard> {
     } else {
       third = const SizedBox.shrink();
     }
+    Widget child = Row(
+      children: [
+        Expanded(child: second),
+        Expanded(child: first),
+        Expanded(child: third),
+      ],
+    );
+    if (WindowsVideoTabService.enabled) {
+      child = DecoratedBox(
+        decoration: BoxDecoration(
+          color: context.windowsNeo.surface,
+          border: Border.all(color: context.windowsNeo.border),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: child,
+      );
+    }
     return SliverToBoxAdapter(
-      child: Row(
-        children: [
-          Expanded(child: second),
-          Expanded(child: first),
-          Expanded(child: third),
-        ],
-      ),
+      child: child,
     );
   }
 

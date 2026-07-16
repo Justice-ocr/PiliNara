@@ -4,9 +4,11 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/dynamic_panel.dart';
 import 'package:PiliPlus/pages/member_dynamics/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:waterfall_flow/waterfall_flow.dart'
@@ -25,6 +27,12 @@ class _MemberDynamicsPageState extends State<MemberDynamicsPage>
     with AutomaticKeepAliveClientMixin, DynMixin {
   late MemberDynamicsController _memberDynamicController;
   late int mid;
+  final _windowsGridDelegate =
+      SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 520,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+      );
 
   @override
   bool get wantKeepAlive => true;
@@ -44,8 +52,12 @@ class _MemberDynamicsPageState extends State<MemberDynamicsPage>
   Widget build(BuildContext context) {
     super.build(context);
     final padding = MediaQuery.viewPaddingOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return widget.mid == null
         ? Scaffold(
+            backgroundColor: isWindowsNeo
+                ? context.windowsNeo.background
+                : null,
             resizeToAvoidBottomInset: false,
             appBar: AppBar(title: const Text('我的动态')),
             body: Padding(
@@ -65,7 +77,12 @@ class _MemberDynamicsPageState extends State<MemberDynamicsPage>
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverPadding(
-          padding: EdgeInsets.only(bottom: padding.bottom + 100),
+          padding: EdgeInsets.only(
+            left: WindowsVideoTabService.enabled ? 18 : 0,
+            top: WindowsVideoTabService.enabled && widget.mid == null ? 16 : 0,
+            right: WindowsVideoTabService.enabled ? 18 : 0,
+            bottom: padding.bottom + 100,
+          ),
           sliver: buildPage(
             Obx(
               () => _buildContent(_memberDynamicController.loadingState.value),
@@ -83,7 +100,9 @@ class _MemberDynamicsPageState extends State<MemberDynamicsPage>
         response != null && response.isNotEmpty
             ? GlobalData().dynamicsWaterfallFlow
                   ? SliverWaterfallFlow(
-                      gridDelegate: dynGridDelegate,
+                      gridDelegate: WindowsVideoTabService.enabled
+                          ? _windowsGridDelegate
+                          : dynGridDelegate,
                       delegate: SliverChildBuilderDelegate(
                         (_, index) {
                           if (index == response.length - 1) {

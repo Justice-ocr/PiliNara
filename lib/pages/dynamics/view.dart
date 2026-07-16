@@ -9,7 +9,10 @@ import 'package:PiliPlus/pages/dynamics/widgets/up_panel.dart';
 import 'package:PiliPlus/pages/dynamics_create/view.dart';
 import 'package:PiliPlus/pages/dynamics_tab/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart' hide DraggableScrollableSheet;
 import 'package:get/get.dart';
 
@@ -52,15 +55,15 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
     ),
   );
 
-  Widget upPanelPart(ThemeData theme) {
-    final isTop = upPanelPosition == .top;
+  Widget upPanelPart(ThemeData theme, {bool? horizontal}) {
+    final isTop = horizontal ?? upPanelPosition == .top;
     final needBg = upPanelPosition.index > 2;
     return Material(
       type: needBg ? .canvas : .transparency,
       color: needBg ? theme.colorScheme.surface : null,
       child: SizedBox(
-        width: isTop ? null : 64,
-        height: isTop ? 76 : null,
+        width: isTop ? null : horizontal == false ? 82 : 64,
+        height: isTop ? (horizontal == true ? 84 : 76) : null,
         child: NotificationListener<ScrollEndNotification>(
           onNotification: (notification) {
             final metrics = notification.metrics;
@@ -80,6 +83,9 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
       Loading() => const SizedBox.shrink(),
       Success<FollowUpModel>() => UpPanel(
         dynamicsController: _dynamicsController,
+        horizontal: WindowsVideoTabService.enabled
+            ? MediaQuery.sizeOf(context).width < 800
+            : null,
       ),
       Error() => Center(
         child: IconButton(
@@ -129,6 +135,10 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
           .map((e) => DynamicsTabPage(dynamicsType: e))
           .toList(),
     );
+
+    if (WindowsVideoTabService.enabled) {
+      return _buildWindowsPage(context, theme, child);
+    }
 
     switch (upPanelPosition) {
       case UpPanelPosition.top:
@@ -201,6 +211,85 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
       drawer: drawer,
       endDrawer: endDrawer,
       body: onBuild(child),
+    );
+  }
+
+  Widget _buildWindowsPage(
+    BuildContext context,
+    ThemeData theme,
+    Widget tabView,
+  ) {
+    return WindowsNeoPage(
+      title: '\u52a8\u6001',
+      subtitle: '\u5173\u6ce8\u5185\u5bb9\u4e0e\u6700\u65b0\u66f4\u65b0',
+      leading: Icon(
+        Icons.motion_photos_on_outlined,
+        color: context.windowsNeo.accent,
+      ),
+      actions: [
+        IconButton(
+          tooltip: '\u5237\u65b0',
+          onPressed: _dynamicsController.onRefresh,
+          icon: const Icon(Icons.refresh_outlined),
+        ),
+        IconButton(
+          tooltip: '\u53d1\u5e03\u52a8\u6001',
+          onPressed: () => CreateDynPanel.onCreateDyn(context),
+          icon: const Icon(Icons.add_circle_outline),
+        ),
+        const SizedBox(width: 6),
+      ],
+      commandBar: _buildWindowsTabs(theme),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final horizontal = constraints.maxWidth < 800;
+          if (horizontal) {
+            return Column(
+              children: [
+                upPanelPart(theme, horizontal: true),
+                Divider(height: 1, color: context.windowsNeo.border),
+                Expanded(child: tabView),
+              ],
+            );
+          }
+          return Row(
+            children: [
+              upPanelPart(theme, horizontal: false),
+              VerticalDivider(width: 1, color: context.windowsNeo.border),
+              Expanded(child: tabView),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildWindowsTabs(ThemeData theme) {
+    return SizedBox(
+      height: 44,
+      child: TabBar(
+        controller: _dynamicsController.tabController,
+        tabs: DynamicsTabType.values.map((item) => Tab(text: item.label)).toList(),
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        dividerColor: Colors.transparent,
+        dividerHeight: 0,
+        indicatorSize: TabBarIndicatorSize.label,
+        indicator: UnderlineTabIndicator(
+          borderSide: BorderSide(
+            color: context.windowsNeo.accent,
+            width: 2.5,
+          ),
+        ),
+        labelColor: theme.colorScheme.onSurface,
+        unselectedLabelColor: context.windowsNeo.muted,
+        onTap: (_) {
+          if (!_dynamicsController.tabController.indexIsChanging) {
+            _dynamicsController.animateToTop();
+          }
+        },
+      ),
     );
   }
 }

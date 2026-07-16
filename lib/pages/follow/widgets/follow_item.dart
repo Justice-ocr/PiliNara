@@ -1,12 +1,13 @@
 import 'package:PiliPlus/common/widgets/pendant_avatar.dart';
 import 'package:PiliPlus/models_new/follow/list.dart';
 import 'package:PiliPlus/pages/share/view.dart' show UserModel;
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 class FollowItem extends StatelessWidget {
   final FollowItemModel item;
@@ -49,7 +50,8 @@ class FollowItem extends StatelessWidget {
       );
     }
     return Material(
-      type: .transparency,
+      type: WindowsVideoTabService.enabled ? .canvas : .transparency,
+      color: WindowsVideoTabService.enabled ? context.windowsNeo.surface : null,
       child: InkWell(
         onTap: () {
           if (onSelect != null) {
@@ -98,8 +100,8 @@ class FollowItem extends StatelessWidget {
                           color: colorScheme.outline,
                         ),
                       ),
-                    if (GlobalData().remarkMids[item.mid] case final String remark
-                        when remark.isNotEmpty)
+                    if (GlobalData().remarkMids[item.mid]
+                        case final String remark when remark.isNotEmpty)
                       Text(
                         '备注：$remark',
                         maxLines: 1,

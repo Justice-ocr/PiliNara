@@ -8,7 +8,9 @@ import 'package:PiliPlus/pages/member_contribute/controller.dart';
 import 'package:PiliPlus/pages/member_opus/view.dart';
 import 'package:PiliPlus/pages/member_season_series/view.dart';
 import 'package:PiliPlus/pages/member_video/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -51,37 +53,63 @@ class _MemberContributeState extends State<MemberContribute>
   Widget build(BuildContext context) {
     super.build(context);
     final theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    Widget buildTabBar() => TabBar(
+      overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+      splashFactory: NoSplash.splashFactory,
+      padding: EdgeInsets.symmetric(horizontal: isWindowsNeo ? 18 : 8),
+      isScrollable: true,
+      tabs: _controller.tabs!,
+      tabAlignment: TabAlignment.start,
+      controller: _controller.tabController,
+      dividerHeight: 0,
+      indicatorWeight: 0,
+      indicatorPadding: isWindowsNeo
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: 3, vertical: 8),
+      indicator: isWindowsNeo
+          ? UnderlineTabIndicator(
+              borderSide: BorderSide(
+                color: context.windowsNeo.accent,
+                width: 2.5,
+              ),
+            )
+          : BoxDecoration(
+              color: theme.colorScheme.secondaryContainer,
+              borderRadius: const BorderRadius.all(Radius.circular(20)),
+            ),
+      indicatorSize: isWindowsNeo
+          ? TabBarIndicatorSize.label
+          : TabBarIndicatorSize.tab,
+      labelStyle:
+          TabBarTheme.of(context).labelStyle?.copyWith(fontSize: 14) ??
+          const TextStyle(fontSize: 14),
+      labelColor: isWindowsNeo
+          ? context.windowsNeo.accent
+          : theme.colorScheme.onSecondaryContainer,
+      unselectedLabelColor: isWindowsNeo
+          ? context.windowsNeo.muted
+          : theme.colorScheme.outline,
+    );
     return _controller.tabs != null
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TabBar(
-                overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-                splashFactory: NoSplash.splashFactory,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                isScrollable: true,
-                tabs: _controller.tabs!,
-                tabAlignment: TabAlignment.start,
-                controller: _controller.tabController,
-                dividerHeight: 0,
-                indicatorWeight: 0,
-                indicatorPadding: const EdgeInsets.symmetric(
-                  horizontal: 3,
-                  vertical: 8,
-                ),
-                indicator: BoxDecoration(
-                  color: theme.colorScheme.secondaryContainer,
-                  borderRadius: const BorderRadius.all(Radius.circular(20)),
-                ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                labelStyle:
-                    TabBarTheme.of(
-                      context,
-                    ).labelStyle?.copyWith(fontSize: 14) ??
-                    const TextStyle(fontSize: 14),
-                labelColor: theme.colorScheme.onSecondaryContainer,
-                unselectedLabelColor: theme.colorScheme.outline,
-              ),
+              if (isWindowsNeo)
+                Container(
+                  height: 48,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: context.windowsNeo.surface,
+                    border: Border(
+                      bottom: BorderSide(color: context.windowsNeo.border),
+                    ),
+                  ),
+                  alignment: Alignment.centerLeft,
+                  child: buildTabBar(),
+                )
+              else
+                buildTabBar(),
               Expanded(
                 child: TabBarView(
                   physics: const NeverScrollableScrollPhysics(),

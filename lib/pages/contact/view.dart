@@ -3,7 +3,9 @@ import 'package:PiliPlus/pages/fan/view.dart';
 import 'package:PiliPlus/pages/follow/child/child_view.dart';
 import 'package:PiliPlus/pages/follow_search/view.dart';
 import 'package:PiliPlus/pages/share/view.dart' show UserModel;
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -39,11 +41,16 @@ class _ContactPageState extends State<ContactPage>
 
   @override
   Widget build(BuildContext context) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('通讯录'),
         bottom: TabBar(
+          isScrollable: isWindowsNeo,
+          tabAlignment: isWindowsNeo ? TabAlignment.start : null,
+          dividerColor: isWindowsNeo ? context.windowsNeo.border : null,
           controller: _controller,
           tabs: const [
             Tab(text: '我的关注'),

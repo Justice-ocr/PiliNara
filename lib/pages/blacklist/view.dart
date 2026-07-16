@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:PiliPlus/common/skeleton/msg_feed_top.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -6,10 +8,12 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models_new/blacklist/list.dart';
 import 'package:PiliPlus/pages/blacklist/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -35,7 +39,13 @@ class _BlackListPageState extends State<BlackListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final horizontalPadding = max(
+      18.0,
+      (MediaQuery.sizeOf(context).width - 820) / 2,
+    );
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Obx(
@@ -52,6 +62,9 @@ class _BlackListPageState extends State<BlackListPage> {
           slivers: [
             SliverPadding(
               padding: EdgeInsets.only(
+                left: isWindowsNeo ? horizontalPadding : 0,
+                top: isWindowsNeo ? 16 : 0,
+                right: isWindowsNeo ? horizontalPadding : 0,
                 bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
               ),
               sliver: Obx(
@@ -65,6 +78,7 @@ class _BlackListPageState extends State<BlackListPage> {
   }
 
   Widget _buildBody(LoadingState<List<BlackListItem>?> loadingState) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     late final style = TextStyle(color: Theme.of(context).colorScheme.outline);
     return switch (loadingState) {
       Loading() => SliverList.builder(
@@ -73,14 +87,14 @@ class _BlackListPageState extends State<BlackListPage> {
       ),
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? SliverList.builder(
+            ? SliverList.separated(
                 itemCount: response.length,
                 itemBuilder: (BuildContext context, int index) {
                   if (index == response.length - 1) {
                     _blackListController.onLoadMore();
                   }
                   final item = response[index];
-                  return ListTile(
+                  final child = ListTile(
                     visualDensity: .standard,
                     onTap: () => PageUtils.toMember(item.mid),
                     leading: NetworkImgLayer(
@@ -102,17 +116,36 @@ class _BlackListPageState extends State<BlackListPage> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     dense: true,
-                    trailing: TextButton(
-                      onPressed: () => _blackListController.onRemove(
-                        context,
-                        index,
-                        item.uname,
-                        item.mid,
-                      ),
-                      child: const Text('移除'),
-                    ),
+                    trailing: isWindowsNeo
+                        ? IconButton(
+                            tooltip: '移出黑名单',
+                            onPressed: () => _blackListController.onRemove(
+                              context,
+                              index,
+                              item.uname,
+                              item.mid,
+                            ),
+                            icon: const Icon(Icons.person_remove_outlined),
+                          )
+                        : TextButton(
+                            onPressed: () => _blackListController.onRemove(
+                              context,
+                              index,
+                              item.uname,
+                              item.mid,
+                            ),
+                            child: const Text('移除'),
+                          ),
+                  );
+                  if (!isWindowsNeo) return child;
+                  return Material(
+                    color: context.windowsNeo.surface,
+                    child: child,
                   );
                 },
+                separatorBuilder: (_, _) => isWindowsNeo
+                    ? Divider(height: 1, color: context.windowsNeo.border)
+                    : const SizedBox.shrink(),
               )
             : HttpError(onReload: _blackListController.onReload),
       Error(:final errMsg) => HttpError(

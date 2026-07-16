@@ -4,6 +4,8 @@ import 'package:PiliPlus/models_new/download/download_collection.dart';
 import 'package:PiliPlus/pages/download/widgets/folder_card.dart';
 import 'package:PiliPlus/pages/download/widgets/folder_dialog.dart';
 import 'package:PiliPlus/services/download/download_collection_service.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -72,6 +74,9 @@ class _DownloadFolderManagePageState extends State<DownloadFolderManagePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.background
+          : null,
       appBar: AppBar(
         title: const Text('排序文件夹'),
         actions: [
@@ -90,39 +95,59 @@ class _DownloadFolderManagePageState extends State<DownloadFolderManagePage> {
           const SizedBox(width: 16),
         ],
       ),
-      body: ReorderableListView.builder(
-        itemCount: _folders.length,
-        onReorder: _onReorder,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding:
-            MediaQuery.viewPaddingOf(context).copyWith(top: 0) +
-            const EdgeInsets.only(bottom: 100),
-        itemBuilder: (context, index) {
-          final folder = _folders[index];
-          final entries = _entriesOf(folder.id);
-          return SizedBox(
-            key: Key(folder.id),
-            height: 100,
-            child: DownloadFolderCard(
-              title: folder.title,
-              count: entries.length,
-              entry: entries.firstOrNull,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    tooltip: '重命名',
-                    onPressed: () => _renameFolder(folder),
-                    icon: const Icon(Icons.drive_file_rename_outline),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWindowsNeo = WindowsVideoTabService.enabled;
+          final horizontal = isWindowsNeo && constraints.maxWidth > 800
+              ? (constraints.maxWidth - 760) / 2
+              : isWindowsNeo
+              ? 20.0
+              : 0.0;
+          return ReorderableListView.builder(
+            itemCount: _folders.length,
+            // Keep the current index-adjustment behavior until this flow is
+            // migrated together with its persistence tests.
+            // ignore: deprecated_member_use
+            onReorder: _onReorder,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding:
+                MediaQuery.viewPaddingOf(context).copyWith(
+                  left: isWindowsNeo ? horizontal : null,
+                  top: isWindowsNeo ? 16 : 0,
+                  right: isWindowsNeo ? horizontal : null,
+                ) +
+                const EdgeInsets.only(bottom: 100),
+            itemBuilder: (context, index) {
+              final folder = _folders[index];
+              final entries = _entriesOf(folder.id);
+              return Padding(
+                key: Key(folder.id),
+                padding: EdgeInsets.only(bottom: isWindowsNeo ? 12 : 0),
+                child: SizedBox(
+                  height: isWindowsNeo ? 112 : 100,
+                  child: DownloadFolderCard(
+                    title: folder.title,
+                    count: entries.length,
+                    entry: entries.firstOrNull,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: '重命名',
+                          onPressed: () => _renameFolder(folder),
+                          icon: const Icon(Icons.drive_file_rename_outline),
+                        ),
+                        IconButton(
+                          tooltip: '删除',
+                          onPressed: () => _deleteFolder(folder),
+                          icon: const Icon(Icons.delete_outline),
+                        ),
+                      ],
+                    ),
                   ),
-                  IconButton(
-                    tooltip: '删除',
-                    onPressed: () => _deleteFolder(folder),
-                    icon: const Icon(Icons.delete_outline),
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           );
         },
       ),

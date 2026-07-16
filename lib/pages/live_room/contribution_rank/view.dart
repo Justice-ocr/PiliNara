@@ -9,10 +9,12 @@ import 'package:PiliPlus/models/common/live/live_contribution_rank_type.dart';
 import 'package:PiliPlus/models_new/live/live_contribution_rank/item.dart';
 import 'package:PiliPlus/pages/live_room/contribution_rank/controller.dart';
 import 'package:PiliPlus/pages/member/widget/medal_widget.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/color_utils.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -61,9 +63,32 @@ class _ContributionRankPanelState extends State<ContributionRankPanel>
             tabs: LiveContributionRankType.values
                 .map((e) => Tab(text: e.title))
                 .toList(),
-            dividerColor: Theme.of(
-              context,
-            ).colorScheme.outline.withValues(alpha: 0.3),
+            dividerColor: WindowsVideoTabService.enabled
+                ? context.windowsNeo.border
+                : Theme.of(
+                    context,
+                  ).colorScheme.outline.withValues(alpha: 0.3),
+            indicatorSize: WindowsVideoTabService.enabled
+                ? TabBarIndicatorSize.tab
+                : TabBarIndicatorSize.tab,
+            indicator: WindowsVideoTabService.enabled
+                ? BoxDecoration(
+                    color: context.windowsNeo.accentSurface,
+                    borderRadius: BorderRadius.circular(7),
+                  )
+                : null,
+            indicatorPadding: WindowsVideoTabService.enabled
+                ? const EdgeInsets.symmetric(horizontal: 5, vertical: 5)
+                : EdgeInsets.zero,
+            labelColor: WindowsVideoTabService.enabled
+                ? context.windowsNeo.ink
+                : null,
+            labelStyle: WindowsVideoTabService.enabled
+                ? const TextStyle(fontWeight: FontWeight.w700)
+                : null,
+            unselectedLabelColor: WindowsVideoTabService.enabled
+                ? context.windowsNeo.muted
+                : null,
             onTap: (index) {
               if (!_tabController.indexIsChanging) {
                 Get.find<ContributionRankController>(

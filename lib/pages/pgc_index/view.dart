@@ -10,7 +10,9 @@ import 'package:PiliPlus/models_new/pgc/pgc_index_result/list.dart';
 import 'package:PiliPlus/pages/pgc_index/controller.dart';
 import 'package:PiliPlus/pages/pgc_index/widgets/pgc_card_v_pgc_index.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -43,8 +45,12 @@ class _PgcIndexPageState extends State<PgcIndexPage>
   Widget build(BuildContext context) {
     super.build(context);
     final theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return widget.indexType == null
         ? Scaffold(
+            backgroundColor: isWindowsNeo
+                ? context.windowsNeo.background
+                : null,
             resizeToAvoidBottomInset: false,
             appBar: AppBar(title: const Text('索引')),
             body: Obx(() => _buildBody(theme, _ctr.conditionState.value)),
@@ -66,7 +72,10 @@ class _PgcIndexPageState extends State<PgcIndexPage>
               (response.filter?.length ?? 0);
           if (count == 0) return const SizedBox.shrink();
           return Padding(
-            padding: EdgeInsets.only(left: padding.left, right: padding.right),
+            padding: EdgeInsets.only(
+              left: WindowsVideoTabService.enabled ? 0 : padding.left,
+              right: WindowsVideoTabService.enabled ? 0 : padding.right,
+            ),
             child: CustomScrollView(
               controller: _ctr.scrollController,
               slivers: [
@@ -84,9 +93,11 @@ class _PgcIndexPageState extends State<PgcIndexPage>
                 ),
                 SliverPadding(
                   padding: EdgeInsets.only(
-                    left: Style.safeSpace,
-                    right: Style.safeSpace,
-                    top: 12,
+                    left: WindowsVideoTabService.enabled ? 18 : Style.safeSpace,
+                    right: WindowsVideoTabService.enabled
+                        ? 18
+                        : Style.safeSpace,
+                    top: WindowsVideoTabService.enabled ? 16 : 12,
                     bottom: padding.bottom + 100,
                   ),
                   sliver: Obx(() => _buildList(_ctr.loadingState.value)),
@@ -224,11 +235,15 @@ class _PgcIndexPageState extends State<PgcIndexPage>
   );
 
   late final gridDelegate = SliverGridDelegateWithExtentAndRatio(
-    mainAxisSpacing: Style.cardSpace,
-    crossAxisSpacing: Style.cardSpace,
-    maxCrossAxisExtent: Grid.smallCardWidth * 0.6,
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.cardSpace,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.cardSpace,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 220
+        : Grid.smallCardWidth * 0.6,
     childAspectRatio: 0.75,
-    mainAxisExtent: MediaQuery.textScalerOf(context).scale(50),
+    mainAxisExtent: MediaQuery.textScalerOf(
+      context,
+    ).scale(WindowsVideoTabService.enabled ? 64 : 50),
   );
 
   Widget _buildList(LoadingState<List<PgcIndexItem>?> loadingState) {

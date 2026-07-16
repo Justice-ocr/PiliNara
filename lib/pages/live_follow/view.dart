@@ -6,7 +6,9 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/live/live_follow/item.dart';
 import 'package:PiliPlus/pages/live_follow/controller.dart';
 import 'package:PiliPlus/pages/live_follow/widgets/live_item_follow.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -23,7 +25,9 @@ class _LiveFollowPageState extends State<LiveFollowPage> {
   @override
   Widget build(BuildContext context) {
     final padding = MediaQuery.viewPaddingOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Obx(
@@ -40,8 +44,9 @@ class _LiveFollowPageState extends State<LiveFollowPage> {
           slivers: [
             SliverPadding(
               padding: EdgeInsets.only(
-                left: Style.safeSpace + padding.left,
-                right: Style.safeSpace + padding.right,
+                left: isWindowsNeo ? 18 : Style.safeSpace + padding.left,
+                top: isWindowsNeo ? 16 : 0,
+                right: isWindowsNeo ? 18 : Style.safeSpace + padding.right,
                 bottom: padding.bottom + 100,
               ),
               sliver: Obx(() => _buildBody(_controller.loadingState.value)),
@@ -53,11 +58,17 @@ class _LiveFollowPageState extends State<LiveFollowPage> {
   }
 
   late final gridDelegate = SliverGridDelegateWithExtentAndRatio(
-    mainAxisSpacing: Style.cardSpace,
-    crossAxisSpacing: Style.cardSpace,
-    maxCrossAxisExtent: Grid.smallCardWidth,
-    childAspectRatio: Style.aspectRatio,
-    mainAxisExtent: MediaQuery.textScalerOf(context).scale(90),
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 14 : Style.cardSpace,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 14 : Style.cardSpace,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 300
+        : Grid.smallCardWidth,
+    childAspectRatio: WindowsVideoTabService.enabled
+        ? Style.aspectRatio16x9
+        : Style.aspectRatio,
+    mainAxisExtent: MediaQuery.textScalerOf(
+      context,
+    ).scale(WindowsVideoTabService.enabled ? 92 : 90),
   );
 
   Widget _buildBody(LoadingState<List<LiveFollowItem>?> loadingState) {

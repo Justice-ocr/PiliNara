@@ -6,7 +6,9 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/space/space_fav/data.dart';
 import 'package:PiliPlus/pages/member_favorite/controller.dart';
 import 'package:PiliPlus/pages/member_favorite/widget/item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -51,6 +53,9 @@ class _MemberFavoriteState extends State<MemberFavorite>
         slivers: [
           SliverPadding(
             padding: EdgeInsets.only(
+              left: WindowsVideoTabService.enabled ? 18 : 0,
+              top: WindowsVideoTabService.enabled ? 16 : 0,
+              right: WindowsVideoTabService.enabled ? 18 : 0,
               bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
             ),
             sliver: Obx(
@@ -68,9 +73,19 @@ class _MemberFavoriteState extends State<MemberFavorite>
   ) {
     return switch (loadingState) {
       Loading() => SliverPadding(
-        padding: const EdgeInsets.only(top: 7),
+        padding: EdgeInsets.only(
+          top: WindowsVideoTabService.enabled ? 0 : 7,
+        ),
         sliver: SliverGrid.builder(
-          gridDelegate: Grid.videoCardHDelegate(context),
+          gridDelegate: WindowsVideoTabService.enabled
+              ? SliverGridDelegateWithExtentAndRatio(
+                  maxCrossAxisExtent: 520,
+                  childAspectRatio: 4.2,
+                  minHeight: 112,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                )
+              : Grid.videoCardHDelegate(context),
           itemBuilder: (context, index) => const VideoCardHSkeleton(),
           itemCount: 10,
         ),
@@ -111,7 +126,12 @@ class _MemberFavoriteState extends State<MemberFavorite>
       slivers: [
         SliverPinnedHeader(
           child: Material(
-            color: theme.colorScheme.surface,
+            color: WindowsVideoTabService.enabled
+                ? context.windowsNeo.surface
+                : theme.colorScheme.surface,
+            shape: WindowsVideoTabService.enabled
+                ? Border(bottom: BorderSide(color: context.windowsNeo.border))
+                : null,
             child: Builder(
               builder: (context) {
                 return InkWell(
@@ -124,7 +144,10 @@ class _MemberFavoriteState extends State<MemberFavorite>
                     }
                   },
                   child: Padding(
-                    padding: const .symmetric(horizontal: 12, vertical: 10),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: WindowsVideoTabService.enabled ? 14 : 12,
+                      vertical: 10,
+                    ),
                     child: Text.rich(
                       TextSpan(
                         children: [
@@ -164,23 +187,31 @@ class _MemberFavoriteState extends State<MemberFavorite>
           }
           if (list != null && list.isNotEmpty) {
             return SliverGrid.builder(
-              gridDelegate: gridDelegate,
+              gridDelegate: WindowsVideoTabService.enabled
+                  ? SliverGridDelegateWithExtentAndRatio(
+                      maxCrossAxisExtent: 520,
+                      childAspectRatio: 4.2,
+                      minHeight: 112,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                    )
+                  : gridDelegate,
               itemCount: list.length,
               itemBuilder: (context, index) {
                 final item = list[index];
-                return SizedBox(
-                  height: 98,
-                  child: MemberFavItem(
-                    item: item,
-                    onDelete: (isDeleted) {
-                      if (isDeleted ?? false) {
-                        _controller.favState
-                          ..value.mediaListResponse?.list?.remove(item)
-                          ..refresh();
-                      }
-                    },
-                  ),
+                final child = MemberFavItem(
+                  item: item,
+                  onDelete: (isDeleted) {
+                    if (isDeleted ?? false) {
+                      _controller.favState
+                        ..value.mediaListResponse?.list?.remove(item)
+                        ..refresh();
+                    }
+                  },
                 );
+                return WindowsVideoTabService.enabled
+                    ? child
+                    : SizedBox(height: 98, child: child);
               },
             );
           }

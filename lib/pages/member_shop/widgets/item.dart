@@ -2,7 +2,9 @@ import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models_new/space/space_shop/item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -17,11 +19,18 @@ class MemberShopItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     final belowLabels = item.belowLabels?.map((e) => e.title).join('|');
     return Card(
-      clipBehavior: Clip.hardEdge,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(6)),
+      color: isWindowsNeo ? context.windowsNeo.surface : null,
+      elevation: 0,
+      margin: isWindowsNeo ? EdgeInsets.zero : null,
+      clipBehavior: isWindowsNeo ? Clip.antiAlias : Clip.hardEdge,
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.all(Radius.circular(6)),
+        side: isWindowsNeo
+            ? BorderSide(color: context.windowsNeo.border)
+            : BorderSide.none,
       ),
       child: InkWell(
         onTap: () {

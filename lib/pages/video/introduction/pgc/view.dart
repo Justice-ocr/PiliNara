@@ -14,6 +14,7 @@ import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/pgc/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/pgc/widgets/pgc_panel.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/action_item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
@@ -97,11 +98,11 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
       }
     }
     return SliverPadding(
-      padding: const .fromLTRB(
-        Style.safeSpace,
-        Style.safeSpace,
-        Style.safeSpace,
-        Style.safeSpace + 50,
+      padding: EdgeInsets.fromLTRB(
+        WindowsVideoTabService.enabled ? 18 : Style.safeSpace,
+        WindowsVideoTabService.enabled ? 16 : Style.safeSpace,
+        WindowsVideoTabService.enabled ? 18 : Style.safeSpace,
+        WindowsVideoTabService.enabled ? 68 : Style.safeSpace + 50,
       ),
       sliver: sliver,
     );

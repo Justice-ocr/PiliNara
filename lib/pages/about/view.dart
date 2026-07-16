@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' show max;
 
 import 'package:PiliPlus/build_config.dart';
 import 'package:PiliPlus/common/assets.dart';
@@ -10,6 +11,7 @@ import 'package:PiliPlus/common/widgets/dialog/export_import.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/services/logger.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
@@ -23,6 +25,7 @@ import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/update.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart' hide ListTile;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -88,13 +91,24 @@ class _AboutPageState extends State<AboutPage> {
     final subTitleStyle = TextStyle(fontSize: 13, color: outline);
     final showAppBar = widget.showAppBar;
     final padding = MediaQuery.viewPaddingOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final windowsHorizontalPadding = max(
+      18.0,
+      (MediaQuery.sizeOf(context).width - 720) / 2,
+    );
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       appBar: showAppBar ? AppBar(title: const Text('关于')) : null,
       resizeToAvoidBottomInset: false,
       body: ListView(
         padding: EdgeInsets.only(
-          left: showAppBar ? padding.left : 0,
-          right: showAppBar ? padding.right : 0,
+          left: isWindowsNeo
+              ? windowsHorizontalPadding
+              : (showAppBar ? padding.left : 0),
+          top: isWindowsNeo ? 16 : 0,
+          right: isWindowsNeo
+              ? windowsHorizontalPadding
+              : (showAppBar ? padding.right : 0),
           bottom: padding.bottom + 100,
         ),
         children: [
@@ -107,8 +121,8 @@ class _AboutPageState extends State<AboutPage> {
             },
             onSecondaryTap: PlatformUtils.isDesktop ? _showDialog : null,
             child: Image.asset(
-              width: 150,
-              height: 150,
+              width: isWindowsNeo ? 120 : 150,
+              height: isWindowsNeo ? 120 : 150,
               excludeFromSemantics: true,
               cacheWidth: 150.cacheSize(context),
               Assets.logo,
@@ -168,7 +182,9 @@ Commit Hash: ${BuildConfig.commitHash}''',
           Divider(
             thickness: 1,
             height: 30,
-            color: theme.colorScheme.outlineVariant,
+            color: isWindowsNeo
+                ? context.windowsNeo.border
+                : theme.colorScheme.outlineVariant,
           ),
           ListTile(
             onTap: () => PageUtils.launchURL(Constants.sourceCodeUrl),
@@ -301,7 +317,10 @@ Commit Hash: ${BuildConfig.commitHash}''',
                         await GStorage.clear();
                         SmartDialog.showToast('重置成功');
                       },
-                      title: const Text('重置所有数据（含登录信息）', style: style),
+                      title: const Text(
+                        '重置所有数据（含登录信息）',
+                        style: style,
+                      ),
                     ),
                   ],
                 );

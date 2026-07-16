@@ -1,4 +1,6 @@
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart' hide ListTile;
 
 class NormalItem extends StatefulWidget {
@@ -42,7 +44,7 @@ class _NormalItemState extends State<NormalItem> {
         ),
       );
     }
-    return ListTile(
+    final child = ListTile(
       contentPadding: widget.contentPadding,
       onTap: widget.onTap == null
           ? null
@@ -54,6 +56,14 @@ class _NormalItemState extends State<NormalItem> {
       subtitle: subtitle,
       leading: widget.leading,
       trailing: widget.getTrailing?.call(theme),
+    );
+    if (!WindowsVideoTabService.enabled) return child;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.windowsNeo.surface,
+        border: Border(bottom: BorderSide(color: context.windowsNeo.border)),
+      ),
+      child: child,
     );
   }
 

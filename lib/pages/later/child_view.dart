@@ -7,6 +7,7 @@ import 'package:PiliPlus/models_new/later/list.dart';
 import 'package:PiliPlus/pages/later/base_controller.dart';
 import 'package:PiliPlus/pages/later/controller.dart';
 import 'package:PiliPlus/pages/later/widgets/video_card_h_later.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
@@ -50,7 +51,9 @@ class _LaterViewChildPageState extends State<LaterViewChildPage>
         slivers: [
           SliverPadding(
             padding: EdgeInsets.only(
-              top: 7,
+              left: WindowsVideoTabService.enabled ? 18 : 0,
+              top: WindowsVideoTabService.enabled ? 16 : 7,
+              right: WindowsVideoTabService.enabled ? 18 : 0,
               bottom: MediaQuery.viewPaddingOf(context).bottom + 85,
             ),
             sliver: Obx(
@@ -68,7 +71,15 @@ class _LaterViewChildPageState extends State<LaterViewChildPage>
       Success(:final response) =>
         response != null && response.isNotEmpty
             ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
+                gridDelegate: WindowsVideoTabService.enabled
+                    ? SliverGridDelegateWithExtentAndRatio(
+                        maxCrossAxisExtent: 520,
+                        childAspectRatio: 4.2,
+                        minHeight: 112,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                      )
+                    : gridDelegate,
                 itemBuilder: (context, index) {
                   if (index == response.length - 1) {
                     _laterController.onLoadMore();

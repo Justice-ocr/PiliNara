@@ -3,7 +3,9 @@ import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/pages/search_panel/article/controller.dart';
 import 'package:PiliPlus/pages/search_panel/article/widgets/item.dart';
 import 'package:PiliPlus/pages/search_panel/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -50,9 +52,16 @@ class _SearchArticlePanelState
   @override
   Widget buildHeader(ThemeData theme) {
     return SliverFloatingHeaderWidget(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.surface
+          : theme.colorScheme.surface,
       child: Padding(
-        padding: const .fromLTRB(25, 0, 12, 4),
+        padding: EdgeInsets.fromLTRB(
+          WindowsVideoTabService.enabled ? 16 : 25,
+          0,
+          WindowsVideoTabService.enabled ? 16 : 12,
+          4,
+        ),
         child: Row(
           children: [
             Obx(
@@ -80,14 +89,16 @@ class _SearchArticlePanelState
                   padding: WidgetStatePropertyAll(EdgeInsets.zero),
                 ),
                 onPressed: () => controller.onShowFilterDialog(context),
-                icon: Obx(() => Icon(
-                  controller.includeKeywords.isNotEmpty ||
-                          controller.excludeKeywords.isNotEmpty
-                      ? Icons.filter_list
-                      : Icons.filter_list_off,
-                  size: 18,
-                  color: theme.colorScheme.primary,
-                )),
+                icon: Obx(
+                  () => Icon(
+                    controller.includeKeywords.isNotEmpty ||
+                            controller.excludeKeywords.isNotEmpty
+                        ? Icons.filter_list
+                        : Icons.filter_list_off,
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
               ),
             ),
           ],
@@ -98,8 +109,16 @@ class _SearchArticlePanelState
 
   @override
   Widget buildList(ThemeData theme, List<SearchArticleItemModel> list) {
-    return SliverGrid.builder(
-      gridDelegate: gridDelegate,
+    final grid = SliverGrid.builder(
+      gridDelegate: WindowsVideoTabService.enabled
+          ? SliverGridDelegateWithExtentAndRatio(
+              maxCrossAxisExtent: 520,
+              childAspectRatio: 4.2,
+              minHeight: 112,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+            )
+          : gridDelegate,
       itemBuilder: (context, index) {
         if (index == list.length - 1) {
           controller.onLoadMore();
@@ -108,8 +127,19 @@ class _SearchArticlePanelState
       },
       itemCount: list.length,
     );
+    return WindowsVideoTabService.enabled
+        ? SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            sliver: grid,
+          )
+        : grid;
   }
 
   @override
-  Widget get buildLoading => gridSkeleton;
+  Widget get buildLoading => WindowsVideoTabService.enabled
+      ? SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          sliver: gridSkeleton,
+        )
+      : gridSkeleton;
 }

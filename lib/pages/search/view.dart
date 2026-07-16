@@ -9,12 +9,14 @@ import 'package:PiliPlus/models_new/search/search_rcmd/data.dart';
 import 'package:PiliPlus/pages/search/controller.dart';
 import 'package:PiliPlus/pages/search/widgets/hot_keyword.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/em.dart' show Em;
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -48,7 +50,10 @@ class _SearchPageState extends State<SearchPage> {
     super.didChangeDependencies();
     theme = Theme.of(context);
     padding = MediaQuery.viewPaddingOf(context);
-    isPortrait = MediaQuery.sizeOf(context).isPortrait;
+    final size = MediaQuery.sizeOf(context);
+    isPortrait = WindowsVideoTabService.enabled
+        ? size.width < 760
+        : size.isPortrait;
   }
 
   @override
@@ -60,31 +65,41 @@ class _SearchPageState extends State<SearchPage> {
         ? _buildHotSearch(isTrending: false)
         : null;
 
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final content = CustomScrollView(
+      slivers: [
+        if (_searchController.searchSuggestion) _buildSearchSuggest(),
+        if (isPortrait) ...[
+          ?trending,
+          _buildHistory,
+          ?rcmd,
+        ] else if (_searchController.enableTrending ||
+            _searchController.enableSearchRcmd)
+          SliverCrossAxisGroup(
+            slivers: [
+              SliverMainAxisGroup(slivers: [?trending, ?rcmd]),
+              _buildHistory,
+            ],
+          )
+        else
+          _buildHistory,
+        SliverPadding(padding: .only(bottom: padding.bottom)),
+      ],
+    );
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       appBar: _buildAppBar,
-      body: Padding(
-        padding: .only(left: padding.left, right: padding.right),
-        child: CustomScrollView(
-          slivers: [
-            if (_searchController.searchSuggestion) _buildSearchSuggest(),
-            if (isPortrait) ...[
-              ?trending,
-              _buildHistory,
-              ?rcmd,
-            ] else if (_searchController.enableTrending ||
-                _searchController.enableSearchRcmd)
-              SliverCrossAxisGroup(
-                slivers: [
-                  SliverMainAxisGroup(slivers: [?trending, ?rcmd]),
-                  _buildHistory,
-                ],
-              )
-            else
-              _buildHistory,
-            SliverPadding(padding: .only(bottom: padding.bottom)),
-          ],
-        ),
-      ),
+      body: isWindowsNeo
+          ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Center(
+                child: SizedBox(width: 1100, child: content),
+              ),
+            )
+          : Padding(
+              padding: .only(left: padding.left, right: padding.right),
+              child: content,
+            ),
     );
   }
 

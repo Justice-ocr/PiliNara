@@ -10,7 +10,9 @@ import 'package:PiliPlus/pages/common/fab_mixin.dart';
 import 'package:PiliPlus/pages/member/controller.dart';
 import 'package:PiliPlus/pages/member_video/controller.dart';
 import 'package:PiliPlus/pages/member_video/widgets/video_card_h_member_video.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
@@ -55,9 +57,19 @@ class _MemberVideoState extends State<MemberVideo>
 
   int? _index;
   late ExtendedNestedScrollController _scrollController;
+  late final _windowsGridDelegate = SliverGridDelegateWithExtentAndRatio(
+    maxCrossAxisExtent: 520,
+    childAspectRatio: 4.2,
+    minHeight: 112,
+    mainAxisSpacing: 12,
+    crossAxisSpacing: 12,
+  );
+
+  SliverGridDelegateWithExtentAndRatio get _effectiveGridDelegate =>
+      WindowsVideoTabService.enabled ? _windowsGridDelegate : gridDelegate;
 
   void _jumpToIndex(int index) {
-    final scrollOffset = gridDelegate.layoutCache!
+    final scrollOffset = _effectiveGridDelegate.layoutCache!
         .getGeometryForChildIndex(index)
         .scrollOffset;
     try {
@@ -109,7 +121,12 @@ class _MemberVideoState extends State<MemberVideo>
         physics: ReloadScrollPhysics(controller: _controller),
         slivers: [
           SliverPadding(
-            padding: EdgeInsets.only(bottom: padding.bottom + 100),
+            padding: EdgeInsets.only(
+              left: WindowsVideoTabService.enabled ? 18 : 0,
+              top: WindowsVideoTabService.enabled && widget.isSingle ? 16 : 0,
+              right: WindowsVideoTabService.enabled ? 18 : 0,
+              bottom: padding.bottom + 100,
+            ),
             sliver: Obx(
               () => _buildBody(theme, _controller.loadingState.value),
             ),
@@ -202,7 +219,7 @@ class _MemberVideoState extends State<MemberVideo>
                 slivers: [
                   _buildHeader(theme),
                   SliverGrid.builder(
-                    gridDelegate: gridDelegate,
+                    gridDelegate: _effectiveGridDelegate,
                     itemBuilder: (context, index) {
                       if (widget.type != .season &&
                           index == response.length - 1) {
@@ -227,9 +244,16 @@ class _MemberVideoState extends State<MemberVideo>
 
   Widget _buildHeader(ThemeData theme) {
     return SliverFloatingHeaderWidget(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.surface
+          : theme.colorScheme.surface,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 2.5, 8, 2.5),
+        padding: EdgeInsets.fromLTRB(
+          WindowsVideoTabService.enabled ? 12 : 14,
+          2.5,
+          WindowsVideoTabService.enabled ? 12 : 8,
+          2.5,
+        ),
         child: Row(
           children: [
             ?_buildCount(),

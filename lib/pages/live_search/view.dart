@@ -3,7 +3,9 @@ import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/models/common/live/live_search_type.dart';
 import 'package:PiliPlus/pages/live_search/child/view.dart';
 import 'package:PiliPlus/pages/live_search/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -22,7 +24,62 @@ class _LiveSearchPageState extends State<LiveSearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final content = Obx(() {
+      return Opacity(
+        opacity: _controller.hasData.value ? 1 : 0,
+        child: Column(
+          children: [
+            TabBar(
+              isScrollable: isWindowsNeo,
+              tabAlignment: isWindowsNeo ? TabAlignment.start : null,
+              dividerColor: isWindowsNeo ? context.windowsNeo.border : null,
+              controller: _controller.tabController,
+              tabs: [
+                Obx(
+                  () => Tab(
+                    text:
+                        '正在直播 ${_controller.counts[0] != -1 ? _controller.counts[0] : ''}',
+                  ),
+                ),
+                Obx(
+                  () => Tab(
+                    text:
+                        '主播 ${_controller.counts[1] != -1 ? _controller.counts[1] : ''}',
+                  ),
+                ),
+              ],
+              onTap: (index) {
+                if (!_controller.tabController.indexIsChanging) {
+                  if (index == 0) {
+                    _controller.roomCtr.animateToTop();
+                  } else {
+                    _controller.userCtr.animateToTop();
+                  }
+                }
+              },
+            ),
+            Expanded(
+              child: tabBarView(
+                controller: _controller.tabController,
+                children: [
+                  LiveSearchChildPage(
+                    controller: _controller.roomCtr,
+                    searchType: LiveSearchType.room,
+                  ),
+                  LiveSearchChildPage(
+                    controller: _controller.userCtr,
+                    searchType: LiveSearchType.user,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         actions: [
@@ -57,58 +114,14 @@ class _LiveSearchPageState extends State<LiveSearchPage> {
           },
         ),
       ),
-      body: ViewSafeArea(
-        child: Obx(() {
-          return Opacity(
-            opacity: _controller.hasData.value ? 1 : 0,
-            child: Column(
-              children: [
-                TabBar(
-                  controller: _controller.tabController,
-                  tabs: [
-                    Obx(
-                      () => Tab(
-                        text:
-                            '正在直播 ${_controller.counts[0] != -1 ? _controller.counts[0] : ''}',
-                      ),
-                    ),
-                    Obx(
-                      () => Tab(
-                        text:
-                            '主播 ${_controller.counts[1] != -1 ? _controller.counts[1] : ''}',
-                      ),
-                    ),
-                  ],
-                  onTap: (index) {
-                    if (!_controller.tabController.indexIsChanging) {
-                      if (index == 0) {
-                        _controller.roomCtr.animateToTop();
-                      } else {
-                        _controller.userCtr.animateToTop();
-                      }
-                    }
-                  },
-                ),
-                Expanded(
-                  child: tabBarView(
-                    controller: _controller.tabController,
-                    children: [
-                      LiveSearchChildPage(
-                        controller: _controller.roomCtr,
-                        searchType: LiveSearchType.room,
-                      ),
-                      LiveSearchChildPage(
-                        controller: _controller.userCtr,
-                        searchType: LiveSearchType.user,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ),
+      body: isWindowsNeo
+          ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Center(
+                child: SizedBox(width: 1100, child: content),
+              ),
+            )
+          : ViewSafeArea(child: content),
     );
   }
 }

@@ -14,6 +14,7 @@ import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models/common/image_preview_type.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
@@ -21,6 +22,7 @@ import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -62,7 +64,10 @@ class ChatItem extends StatelessWidget {
     // }
 
     late final ThemeData theme = Theme.of(context);
-    late final Color textColor = isOwner
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    late final Color textColor = isWindowsNeo
+        ? theme.colorScheme.onSurface
+        : isOwner
         ? theme.colorScheme.onSecondaryContainer
         : theme.colorScheme.onSurfaceVariant;
     late final dynamic content = jsonDecode(item.content);
@@ -87,12 +92,23 @@ class ChatItem extends StatelessWidget {
         mainAxisAlignment: isOwner ? .end : .start,
         children: [
           Container(
-            constraints: const BoxConstraints(maxWidth: 300.0),
+            constraints: BoxConstraints(
+              maxWidth: isWindowsNeo ? 420 : 300,
+            ),
             decoration: BoxDecoration(
-              color: isOwner
+              color: isWindowsNeo
+                  ? isOwner
+                        ? context.windowsNeo.accentSurface
+                        : context.windowsNeo.surfaceRaised
+                  : isOwner
                   ? theme.colorScheme.secondaryContainer
                   : theme.colorScheme.onInverseSurface,
-              borderRadius: isOwner
+              border: isWindowsNeo
+                  ? Border.all(color: context.windowsNeo.border)
+                  : null,
+              borderRadius: isWindowsNeo
+                  ? BorderRadius.circular(6)
+                  : isOwner
                   ? const .only(
                       topLeft: .circular(16),
                       topRight: .circular(16),

@@ -13,7 +13,10 @@ import 'package:PiliPlus/pages/follow/controller.dart';
 import 'package:PiliPlus/pages/follow/widgets/follow_item.dart';
 import 'package:PiliPlus/pages/follow_type/follow_same/view.dart';
 import 'package:PiliPlus/pages/share/view.dart' show UserModel;
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/utils/extension/widget_ext.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -82,8 +85,12 @@ class _FollowChildPageState extends State<FollowChildPage>
     super.build(context);
     final colorScheme = ColorScheme.of(context);
     final padding = MediaQuery.viewPaddingOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     Widget child = Padding(
-      padding: EdgeInsets.only(left: padding.left, right: padding.right),
+      padding: EdgeInsets.only(
+        left: isWindowsNeo ? 18 : padding.left,
+        right: isWindowsNeo ? 18 : padding.right,
+      ),
       child: refreshIndicator(
         onRefresh: _followController.onRefresh,
         child: CustomScrollView(
@@ -98,7 +105,10 @@ class _FollowChildPageState extends State<FollowChildPage>
                 ),
               ),
             SliverPadding(
-              padding: EdgeInsets.only(bottom: padding.bottom + 100),
+              padding: EdgeInsets.only(
+                top: isWindowsNeo ? 16 : 0,
+                bottom: padding.bottom + 100,
+              ),
               sliver: Obx(
                 () => _buildBody(_followController.loadingState.value),
               ),
@@ -107,6 +117,11 @@ class _FollowChildPageState extends State<FollowChildPage>
         ),
       ),
     );
+    if (isWindowsNeo) {
+      child = child.constraintWidth(
+        constraints: const BoxConstraints(maxWidth: 820),
+      );
+    }
     if (widget.onSelect != null ||
         (widget.controller?.isOwner == true && widget.tagid == null)) {
       return Stack(
@@ -163,7 +178,7 @@ class _FollowChildPageState extends State<FollowChildPage>
       ),
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? SliverList.builder(
+            ? SliverList.separated(
                 itemCount: response.length,
                 itemBuilder: (context, index) {
                   if (index == response.length - 1) {
@@ -180,6 +195,9 @@ class _FollowChildPageState extends State<FollowChildPage>
                     },
                   );
                 },
+                separatorBuilder: (_, _) => WindowsVideoTabService.enabled
+                    ? Divider(height: 1, color: context.windowsNeo.border)
+                    : const SizedBox.shrink(),
               )
             : HttpError(onReload: _followController.onReload),
       Error(:final errMsg) => HttpError(

@@ -17,6 +17,7 @@ import 'package:PiliPlus/pages/emote/view.dart';
 import 'package:PiliPlus/pages/whisper_detail/controller.dart';
 import 'package:PiliPlus/pages/whisper_detail/widget/chat_item.dart';
 import 'package:PiliPlus/pages/whisper_link_setting/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/file_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
@@ -24,6 +25,7 @@ import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart' hide TextField;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -51,12 +53,45 @@ class _WhisperDetailPageState
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final padding = MediaQuery.viewPaddingOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     late final containerColor = ElevationOverlay.colorWithOverlay(
-      theme.colorScheme.surface,
-      theme.hoverColor,
+      isWindowsNeo
+          ? context.windowsNeo.surfaceRaised
+          : theme.colorScheme.surface,
+      isWindowsNeo ? context.windowsNeo.hover : theme.hoverColor,
       1,
     );
+    final content = Padding(
+      padding: EdgeInsets.only(
+        left: isWindowsNeo ? 0 : padding.left,
+        right: isWindowsNeo ? 0 : padding.right,
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: Listener(
+              onPointerDown: hidePanel,
+              behavior: HitTestBehavior.opaque,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Obx(
+                  () => _buildBody(
+                    _whisperDetailController.loadingState.value,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (_whisperDetailController.mid != null) ...[
+            _buildInputView(theme, containerColor),
+            buildPanelContainer(theme, containerColor),
+          ] else
+            SizedBox(height: padding.bottom),
+        ],
+      ),
+    );
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: GestureDetector(
@@ -119,34 +154,28 @@ class _WhisperDetailPageState
           const SizedBox(width: 5),
         ],
       ),
-      body: Padding(
-        padding: EdgeInsets.only(left: padding.left, right: padding.right),
-        child: Column(
-          children: [
-            Expanded(
-              child: Listener(
-                onPointerDown: hidePanel,
-                behavior: HitTestBehavior.opaque,
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: Obx(
-                    () =>
-                        _buildBody(_whisperDetailController.loadingState.value),
+      body: isWindowsNeo
+          ? LayoutBuilder(
+              builder: (context, constraints) {
+                final horizontal = constraints.maxWidth > 860
+                    ? (constraints.maxWidth - 820) / 2
+                    : 20.0;
+                return Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontal),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: context.windowsNeo.surface,
+                      border: Border(
+                        left: BorderSide(color: context.windowsNeo.border),
+                        right: BorderSide(color: context.windowsNeo.border),
+                      ),
+                    ),
+                    child: content,
                   ),
-                ),
-              ),
-            ),
-            if (_whisperDetailController.mid != null) ...[
-              _buildInputView(theme, containerColor),
-              buildPanelContainer(
-                theme,
-                containerColor,
-              ),
-            ] else
-              SizedBox(height: padding.bottom),
-          ],
-        ),
-      ).constraintWidth(),
+                );
+              },
+            )
+          : content.constraintWidth(),
     );
   }
 
@@ -276,11 +305,17 @@ class _WhisperDetailPageState
   }
 
   Widget _buildInputView(ThemeData theme, Color containerColor) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: containerColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: isWindowsNeo
+            ? BorderRadius.zero
+            : const BorderRadius.vertical(top: Radius.circular(16)),
+        border: isWindowsNeo
+            ? Border(top: BorderSide(color: context.windowsNeo.border))
+            : null,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -316,10 +351,14 @@ class _WhisperDetailPageState
                   decoration: InputDecoration(
                     filled: true,
                     hintText: '发个消息聊聊呗~',
-                    fillColor: theme.colorScheme.surface,
-                    border: const OutlineInputBorder(
-                      borderSide: BorderSide.none,
-                      borderRadius: BorderRadius.all(Radius.circular(6)),
+                    fillColor: isWindowsNeo
+                        ? context.windowsNeo.surface
+                        : theme.colorScheme.surface,
+                    border: OutlineInputBorder(
+                      borderSide: isWindowsNeo
+                          ? BorderSide(color: context.windowsNeo.border)
+                          : BorderSide.none,
+                      borderRadius: BorderRadius.circular(6),
                       gapPadding: 0,
                     ),
                     contentPadding: const EdgeInsets.all(10),

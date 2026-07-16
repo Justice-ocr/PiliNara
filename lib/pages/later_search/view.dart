@@ -4,6 +4,7 @@ import 'package:PiliPlus/models_new/later/list.dart';
 import 'package:PiliPlus/pages/common/search/common_search_page.dart';
 import 'package:PiliPlus/pages/later/widgets/video_card_h_later.dart';
 import 'package:PiliPlus/pages/later_search/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
@@ -62,8 +63,16 @@ class _LaterSearchPageState
 
   @override
   Widget buildList(List<LaterItemModel> list) {
-    return SliverGrid.builder(
-      gridDelegate: gridDelegate,
+    final grid = SliverGrid.builder(
+      gridDelegate: WindowsVideoTabService.enabled
+          ? SliverGridDelegateWithExtentAndRatio(
+              maxCrossAxisExtent: 520,
+              childAspectRatio: 4.2,
+              minHeight: 112,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+            )
+          : gridDelegate,
       itemBuilder: (context, index) {
         if (index == list.length - 1) {
           controller.onLoadMore();
@@ -94,6 +103,11 @@ class _LaterSearchPageState
         );
       },
       itemCount: list.length,
+    );
+    if (!WindowsVideoTabService.enabled) return grid;
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
+      sliver: grid,
     );
   }
 }

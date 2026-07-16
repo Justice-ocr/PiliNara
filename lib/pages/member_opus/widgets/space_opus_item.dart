@@ -3,7 +3,9 @@ import 'package:PiliPlus/common/widgets/stat/stat.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models/common/stat_type.dart';
 import 'package:PiliPlus/models_new/space/space_opus/item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 
 class SpaceOpusItem extends StatelessWidget {
@@ -17,10 +19,17 @@ class SpaceOpusItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasPic = item.cover?.url?.isNotEmpty == true;
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Card(
-      clipBehavior: Clip.hardEdge,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(6)),
+      color: isWindowsNeo ? context.windowsNeo.surface : null,
+      elevation: 0,
+      margin: isWindowsNeo ? EdgeInsets.zero : null,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.all(Radius.circular(6)),
+        side: isWindowsNeo
+            ? BorderSide(color: context.windowsNeo.border)
+            : BorderSide.none,
       ),
       child: InkWell(
         onTap: () => PageUtils.pushDynFromId(id: item.opusId!),

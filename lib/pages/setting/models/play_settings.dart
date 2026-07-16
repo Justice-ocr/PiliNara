@@ -249,11 +249,11 @@ List<SettingsModel> get playSettings => [
   ),
   if (Platform.isWindows)
     const SwitchModel(
-      title: 'Windows 标签页',
-      subtitle: '保留搜索、视频和直播上下文，并在当前标签内浏览用户与动态详情',
+      title: 'Windows Neo 工作区',
+      subtitle: '启用桌面导航、多页面标签和独立页面上下文',
       leading: Icon(Icons.tab_outlined),
       setKey: SettingBoxKey.enableWindowsVideoTabs,
-      defaultVal: false,
+      defaultVal: true,
     ),
   if (Platform.isAndroid) ...[
     SwitchModel(

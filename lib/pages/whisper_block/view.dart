@@ -6,6 +6,8 @@ import 'package:PiliPlus/grpc/bilibili/app/im/v1.pb.dart'
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:PiliPlus/pages/whisper_block/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LengthLimitingTextInputFormatter;
 import 'package:flutter_svg/svg.dart';
@@ -27,9 +29,38 @@ class _WhisperBlockPageState extends State<WhisperBlockPage> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.background
+          : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('消息屏蔽词')),
-      body: Obx(() => _buildBody(theme, _controller.loadingState.value)),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWindowsNeo = WindowsVideoTabService.enabled;
+          final horizontal = isWindowsNeo && constraints.maxWidth > 760
+              ? (constraints.maxWidth - 720) / 2
+              : isWindowsNeo
+              ? 20.0
+              : 0.0;
+          final child = Obx(
+            () => _buildBody(theme, _controller.loadingState.value),
+          );
+          if (!isWindowsNeo) return child;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(horizontal, 16, horizontal, 0),
+            child: Material(
+              color: context.windowsNeo.surface,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+                side: BorderSide(color: context.windowsNeo.border),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: child,
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -148,6 +179,10 @@ class _WhisperBlockPageState extends State<WhisperBlockPage> {
   }
 
   void _onAdd() {
+    if (WindowsVideoTabService.enabled) {
+      _showWindowsAddDialog();
+      return;
+    }
     String keyword = '';
     showModalBottomSheet(
       context: context,
@@ -227,6 +262,42 @@ class _WhisperBlockPageState extends State<WhisperBlockPage> {
           ),
         );
       },
+    );
+  }
+
+  void _showWindowsAddDialog() {
+    String keyword = '';
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('添加消息屏蔽词'),
+        content: SizedBox(
+          width: 380,
+          child: TextFormField(
+            autofocus: true,
+            maxLength: _controller.charLimit,
+            decoration: const InputDecoration(hintText: '请输入'),
+            onChanged: (value) => keyword = value,
+            onFieldSubmitted: (value) {
+              if (value.isNotEmpty) {
+                _controller.onAdd(value);
+              }
+            },
+            inputFormatters: [LengthLimitingTextInputFormatter(20)],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: Get.back, child: const Text('取消')),
+          FilledButton(
+            onPressed: () {
+              if (keyword.isNotEmpty) {
+                _controller.onAdd(keyword);
+              }
+            },
+            child: const Text('添加'),
+          ),
+        ],
+      ),
     );
   }
 }

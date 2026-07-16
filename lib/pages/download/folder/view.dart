@@ -14,7 +14,9 @@ import 'package:PiliPlus/pages/download/utils/cache_export.dart';
 import 'package:PiliPlus/pages/download/widgets/folder_dialog.dart';
 import 'package:PiliPlus/services/download/download_collection_service.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart'
     hide SliverGridDelegateWithMaxCrossAxisExtent;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -49,7 +51,9 @@ class _DownloadFolderPageState extends State<DownloadFolderPage> {
   @override
   void dispose() {
     _progress.dispose();
-    if (Get.isRegistered<DownloadFolderDetailController>(tag: widget.folderId)) {
+    if (Get.isRegistered<DownloadFolderDetailController>(
+      tag: widget.folderId,
+    )) {
       Get.delete<DownloadFolderDetailController>(tag: widget.folderId);
     }
     super.dispose();
@@ -154,6 +158,9 @@ class _DownloadFolderPageState extends State<DownloadFolderPage> {
           }
         },
         child: Scaffold(
+          backgroundColor: WindowsVideoTabService.enabled
+              ? context.windowsNeo.background
+              : null,
           resizeToAvoidBottomInset: false,
           appBar: MultiSelectAppBarWidget(
             ctr: _controller,
@@ -179,15 +186,18 @@ class _DownloadFolderPageState extends State<DownloadFolderPage> {
                 },
                 child: Text(
                   '更新',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ),
               TextButton(
                 style: TextButton.styleFrom(
                   visualDensity: VisualDensity.compact,
                 ),
-                onPressed:
-                    _controller.checkedCount == 0 ? null : _addSelectedToFolder,
+                onPressed: _controller.checkedCount == 0
+                    ? null
+                    : _addSelectedToFolder,
                 child: const Text('添加到'),
               ),
               if (Platform.isAndroid)
@@ -195,8 +205,9 @@ class _DownloadFolderPageState extends State<DownloadFolderPage> {
                   style: TextButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                   ),
-                  onPressed:
-                      _controller.checkedCount == 0 ? null : _exportSelected,
+                  onPressed: _controller.checkedCount == 0
+                      ? null
+                      : _exportSelected,
                   child: const Text('导出'),
                 ),
             ],
@@ -272,49 +283,66 @@ class _DownloadFolderPageState extends State<DownloadFolderPage> {
           body: CustomScrollView(
             slivers: [
               ViewSliverSafeArea(
-                sliver: Obx(() {
-                  if (_controller.entries.isEmpty) {
-                    return const SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 48),
-                        child: Center(
-                          child: Text('文件夹里还没有视频'),
-                        ),
-                      ),
-                    );
-                  }
-                  return SliverGrid.builder(
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      mainAxisSpacing: 2,
-                      mainAxisExtent: 100,
-                      maxCrossAxisExtent: Grid.smallCardWidth * 2,
-                    ),
-                    itemCount: _controller.entries.length,
-                    itemBuilder: (context, index) {
-                      final entry = _controller.entries[index];
-                      return DetailItem(
-                        entry: entry,
-                        progress: _progress,
-                        downloadService: _downloadService,
-                        showTitle: true,
-                        onDeleteRequested: (menuContext) =>
-                            confirmRemoveEntriesFromFolder(
-                          context: menuContext,
-                          collectionService: _collectionService,
-                          downloadService: _downloadService,
-                          folderId: widget.folderId,
-                          entries: [entry],
-                        ),
-                        deleteLabel: '移出文件夹',
-                        deleteConfirmText: '确定从当前文件夹移除？',
-                        controller: _controller,
-                        playContext: DownloadVideoPlayContext.folder(
-                          widget.folderId,
+                sliver: SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    WindowsVideoTabService.enabled ? 18 : 0,
+                    WindowsVideoTabService.enabled ? 16 : 0,
+                    WindowsVideoTabService.enabled ? 18 : 0,
+                    WindowsVideoTabService.enabled ? 100 : 0,
+                  ),
+                  sliver: Obx(() {
+                    if (_controller.entries.isEmpty) {
+                      return const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 48),
+                          child: Center(
+                            child: Text('文件夹里还没有视频'),
+                          ),
                         ),
                       );
-                    },
-                  );
-                }),
+                    }
+                    return SliverGrid.builder(
+                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        mainAxisSpacing: WindowsVideoTabService.enabled
+                            ? 12
+                            : 2,
+                        crossAxisSpacing: WindowsVideoTabService.enabled
+                            ? 12
+                            : 0,
+                        mainAxisExtent: WindowsVideoTabService.enabled
+                            ? 112
+                            : 100,
+                        maxCrossAxisExtent: WindowsVideoTabService.enabled
+                            ? 520
+                            : Grid.smallCardWidth * 2,
+                      ),
+                      itemCount: _controller.entries.length,
+                      itemBuilder: (context, index) {
+                        final entry = _controller.entries[index];
+                        return DetailItem(
+                          entry: entry,
+                          progress: _progress,
+                          downloadService: _downloadService,
+                          showTitle: true,
+                          onDeleteRequested: (menuContext) =>
+                              confirmRemoveEntriesFromFolder(
+                                context: menuContext,
+                                collectionService: _collectionService,
+                                downloadService: _downloadService,
+                                folderId: widget.folderId,
+                                entries: [entry],
+                              ),
+                          deleteLabel: '移出文件夹',
+                          deleteConfirmText: '确定从当前文件夹移除？',
+                          controller: _controller,
+                          playContext: DownloadVideoPlayContext.folder(
+                            widget.folderId,
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                ),
               ),
             ],
           ),

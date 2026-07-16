@@ -3,7 +3,9 @@ import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/models/common/member/search_type.dart';
 import 'package:PiliPlus/pages/member_search/child/view.dart';
 import 'package:PiliPlus/pages/member_search/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -22,7 +24,9 @@ class _MemberSearchPageState extends State<MemberSearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         actions: [
@@ -41,8 +45,30 @@ class _MemberSearchPageState extends State<MemberSearchPage> {
           textAlignVertical: TextAlignVertical.center,
           decoration: InputDecoration(
             hintText: '搜索',
-            visualDensity: .standard,
-            border: InputBorder.none,
+            visualDensity: isWindowsNeo ? .compact : .standard,
+            filled: isWindowsNeo,
+            fillColor: isWindowsNeo ? context.windowsNeo.surfaceRaised : null,
+            border: isWindowsNeo
+                ? OutlineInputBorder(borderRadius: BorderRadius.circular(6))
+                : InputBorder.none,
+            enabledBorder: isWindowsNeo
+                ? OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: BorderSide(color: context.windowsNeo.border),
+                  )
+                : null,
+            focusedBorder: isWindowsNeo
+                ? OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: BorderSide(
+                      color: context.windowsNeo.accent,
+                      width: 1.5,
+                    ),
+                  )
+                : null,
+            contentPadding: isWindowsNeo
+                ? const EdgeInsets.symmetric(horizontal: 12, vertical: 9)
+                : null,
             suffixIcon: IconButton(
               tooltip: '清空',
               icon: const Icon(Icons.clear, size: 22),
@@ -66,32 +92,7 @@ class _MemberSearchPageState extends State<MemberSearchPage> {
                 opacity: _controller.hasData.value ? 1 : 0,
                 child: Column(
                   children: [
-                    TabBar(
-                      controller: _controller.tabController,
-                      tabs: [
-                        Obx(
-                          () => Tab(
-                            text:
-                                '视频 ${_controller.counts[0] != -1 ? _controller.counts[0] : ''}',
-                          ),
-                        ),
-                        Obx(
-                          () => Tab(
-                            text:
-                                '动态 ${_controller.counts[1] != -1 ? _controller.counts[1] : ''}',
-                          ),
-                        ),
-                      ],
-                      onTap: (index) {
-                        if (!_controller.tabController.indexIsChanging) {
-                          if (index == 0) {
-                            _controller.arcCtr.animateToTop();
-                          } else {
-                            _controller.dynCtr.animateToTop();
-                          }
-                        }
-                      },
-                    ),
+                    _buildTabs(),
                     Expanded(
                       child: tabBarView(
                         controller: _controller.tabController,
@@ -125,6 +126,64 @@ class _MemberSearchPageState extends State<MemberSearchPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTabs() {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final tabBar = TabBar(
+      controller: _controller.tabController,
+      isScrollable: isWindowsNeo,
+      tabAlignment: isWindowsNeo ? TabAlignment.start : null,
+      dividerColor: isWindowsNeo ? Colors.transparent : null,
+      dividerHeight: isWindowsNeo ? 0 : null,
+      indicatorSize: isWindowsNeo
+          ? TabBarIndicatorSize.label
+          : TabBarIndicatorSize.tab,
+      indicator: isWindowsNeo
+          ? UnderlineTabIndicator(
+              borderSide: BorderSide(
+                color: context.windowsNeo.accent,
+                width: 2.5,
+              ),
+            )
+          : null,
+      unselectedLabelColor: isWindowsNeo ? context.windowsNeo.muted : null,
+      tabs: [
+        Obx(
+          () => Tab(
+            text:
+                '视频 ${_controller.counts[0] != -1 ? _controller.counts[0] : ''}',
+          ),
+        ),
+        Obx(
+          () => Tab(
+            text:
+                '动态 ${_controller.counts[1] != -1 ? _controller.counts[1] : ''}',
+          ),
+        ),
+      ],
+      onTap: (index) {
+        if (!_controller.tabController.indexIsChanging) {
+          if (index == 0) {
+            _controller.arcCtr.animateToTop();
+          } else {
+            _controller.dynCtr.animateToTop();
+          }
+        }
+      },
+    );
+    if (!isWindowsNeo) return tabBar;
+    return Container(
+      height: 48,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: context.windowsNeo.surface,
+        border: Border(bottom: BorderSide(color: context.windowsNeo.border)),
+      ),
+      alignment: Alignment.centerLeft,
+      child: tabBar,
     );
   }
 }

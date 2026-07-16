@@ -5,6 +5,8 @@ import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models_new/later/list.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
@@ -48,6 +50,8 @@ class ToViewCardItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final radius = BorderRadius.circular(isWindowsNeo ? 6 : 12);
     final hasDuration = item.duration != null && item.duration != 0;
 
     return GestureDetector(
@@ -58,18 +62,23 @@ class ToViewCardItem extends StatelessWidget {
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(12)),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.onInverseSurface.withValues(alpha: 0.4),
-                  offset: const Offset(6, -8),
-                  blurRadius: 0.0,
-                  spreadRadius: 0.0,
-                ),
-              ],
+              borderRadius: radius,
+              border: isWindowsNeo
+                  ? Border.all(color: context.windowsNeo.border)
+                  : null,
+              boxShadow: isWindowsNeo
+                  ? const []
+                  : [
+                      BoxShadow(
+                        color: theme.colorScheme.onInverseSurface.withValues(
+                          alpha: 0.4,
+                        ),
+                        offset: const Offset(6, -8),
+                      ),
+                    ],
             ),
             child: ClipRRect(
-              borderRadius: const BorderRadius.all(Radius.circular(12)),
+              borderRadius: radius,
               child: SizedBox(
                 width: _cardWidth,
                 height: _cardHeight,

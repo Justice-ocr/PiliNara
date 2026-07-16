@@ -32,7 +32,14 @@ import 'package:win32/win32.dart' as kernel32;
 import 'package:window_manager/window_manager.dart';
 
 class MainApp extends StatefulWidget {
-  const MainApp({super.key});
+  const MainApp({
+    super.key,
+    this.controller,
+    this.showNavigation = true,
+  });
+
+  final MainController? controller;
+  final bool showNavigation;
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -45,7 +52,7 @@ class _MainAppState extends PopScopeState<MainApp>
         WidgetsBindingObserver,
         WindowListener,
         TrayListener {
-  final _mainController = Get.put(MainController());
+  late final MainController _mainController;
   late final _setting = GStorage.setting;
   late EdgeInsets _padding;
   late ThemeData theme;
@@ -55,6 +62,10 @@ class _MainAppState extends PopScopeState<MainApp>
 
   @override
   void initState() {
+    _mainController = widget.controller ??
+        (Get.isRegistered<MainController>()
+            ? Get.find<MainController>()
+            : Get.put(MainController()));
     super.initState();
     addObserverMobile(this);
     if (PlatformUtils.isDesktop) {
@@ -456,6 +467,16 @@ class _MainAppState extends PopScopeState<MainApp>
       );
     }
 
+    if (!widget.showNavigation) {
+      return Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: Padding(
+          padding: EdgeInsets.only(right: _padding.right),
+          child: child,
+        ),
+      );
+    }
+
     Widget? bottomNav;
     if (_mainController.useBottomNav) {
       bottomNav = _bottomNav;
@@ -526,9 +547,9 @@ class _MainAppState extends PopScopeState<MainApp>
         userAvatar(theme: theme, mainController: _mainController),
         const SizedBox(height: 8),
         msgBadge(_mainController),
-        IconButton(
+        const IconButton(
           tooltip: '搜索',
-          icon: const Icon(
+          icon: Icon(
             Icons.search_outlined,
             semanticLabel: '搜索',
           ),

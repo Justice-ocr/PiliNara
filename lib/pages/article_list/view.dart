@@ -8,10 +8,12 @@ import 'package:PiliPlus/models_new/article/article_list/article.dart';
 import 'package:PiliPlus/models_new/article/article_list/list.dart';
 import 'package:PiliPlus/pages/article_list/controller.dart';
 import 'package:PiliPlus/pages/article_list/widgets/item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -34,8 +36,11 @@ class _ArticleListPageState extends State<ArticleListPage> with GridMixin {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     padding = MediaQuery.viewPaddingOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Material(
-      color: theme.colorScheme.surface,
+      color: isWindowsNeo
+          ? context.windowsNeo.background
+          : theme.colorScheme.surface,
       child: refreshIndicator(
         onRefresh: _controller.onRefresh,
         child: CustomScrollView(
@@ -44,8 +49,9 @@ class _ArticleListPageState extends State<ArticleListPage> with GridMixin {
             Obx(() => _buildHeader(theme, _controller.list.value)),
             SliverPadding(
               padding: EdgeInsets.only(
-                left: padding.left,
-                right: padding.right,
+                left: isWindowsNeo ? 18 : padding.left,
+                top: isWindowsNeo ? 16 : 0,
+                right: isWindowsNeo ? 18 : padding.right,
                 bottom: padding.bottom + 100,
               ),
               sliver: Obx(
@@ -75,7 +81,15 @@ class _ArticleListPageState extends State<ArticleListPage> with GridMixin {
       Success(:final response) =>
         response != null && response.isNotEmpty
             ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
+                gridDelegate: WindowsVideoTabService.enabled
+                    ? SliverGridDelegateWithExtentAndRatio(
+                        maxCrossAxisExtent: 520,
+                        childAspectRatio: 4.2,
+                        minHeight: 112,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                      )
+                    : gridDelegate,
                 itemBuilder: (context, index) =>
                     ArticleListItem(item: response[index]),
                 itemCount: response.length,
@@ -100,13 +114,16 @@ class _ArticleListPageState extends State<ArticleListPage> with GridMixin {
     return SliverAppBar.medium(
       title: Text(item.name!),
       pinned: true,
+      shape: WindowsVideoTabService.enabled
+          ? Border(bottom: BorderSide(color: context.windowsNeo.border))
+          : null,
       expandedHeight: kToolbarHeight + 127,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           height: 120,
           margin: EdgeInsets.only(
-            left: 12 + padding.left,
-            right: 12,
+            left: WindowsVideoTabService.enabled ? 18 : 12 + padding.left,
+            right: WindowsVideoTabService.enabled ? 18 : 12,
             top: padding.top + kToolbarHeight,
           ),
           child: Row(
@@ -139,8 +156,7 @@ class _ArticleListPageState extends State<ArticleListPage> with GridMixin {
                     const SizedBox(height: 10),
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () =>
-                          PageUtils.toMember(_controller.author!.mid),
+                      onTap: () => PageUtils.toMember(_controller.author!.mid),
                       child: Row(
                         spacing: 10,
                         mainAxisSize: MainAxisSize.min,

@@ -22,6 +22,7 @@ import 'package:PiliPlus/pages/video/widgets/header_control.dart'
     show HeaderControlState;
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
 import 'package:PiliPlus/services/shutdown_timer_service.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/services/pip_overlay_service.dart';
 import 'package:PiliPlus/services/live_pip_overlay_service.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
@@ -37,6 +38,7 @@ import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart' hide DraggableScrollableSheet;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -110,9 +112,50 @@ class _AudioPageState extends State<AudioPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme.of(context);
-    final isPortrait = MediaQuery.sizeOf(context).isPortrait;
+    final size = MediaQuery.sizeOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final isPortrait = isWindowsNeo ? size.width < 760 : size.isPortrait;
     final padding = MediaQuery.viewPaddingOf(context);
+    final content = isPortrait
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _buildInfo(colorScheme, isPortrait)),
+              const SizedBox(height: 25),
+              _buildProgressBar(colorScheme),
+              _buildDuration(colorScheme),
+              _buildControls(),
+            ],
+          )
+        : Row(
+            spacing: 12,
+            children: [
+              Expanded(
+                child: _buildInfo(colorScheme, isPortrait),
+              ),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Obx(() {
+                      final audioItem = _controller.audioItem.value;
+                      if (audioItem != null) {
+                        return _buildActions(audioItem);
+                      }
+                      return const SizedBox.shrink();
+                    }),
+                    const SizedBox(height: 25),
+                    _buildProgressBar(colorScheme),
+                    _buildDuration(colorScheme),
+                    _buildControls(),
+                  ],
+                ),
+              ),
+            ],
+          );
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         actions: [
@@ -163,50 +206,23 @@ class _AudioPageState extends State<AudioPage> {
           const SizedBox(width: 5),
         ],
       ),
-      body: Padding(
-        padding: EdgeInsets.only(
-          left: 20 + padding.left,
-          right: 20 + padding.right,
-          bottom: 30 + padding.bottom,
-        ),
-        child: isPortrait
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: _buildInfo(colorScheme, isPortrait)),
-                  const SizedBox(height: 25),
-                  _buildProgressBar(colorScheme),
-                  _buildDuration(colorScheme),
-                  _buildControls(),
-                ],
-              )
-            : Row(
-                spacing: 12,
-                children: [
-                  Expanded(
-                    child: _buildInfo(colorScheme, isPortrait),
-                  ),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Obx(() {
-                          final audioItem = _controller.audioItem.value;
-                          if (audioItem != null) {
-                            return _buildActions(audioItem);
-                          }
-                          return const SizedBox.shrink();
-                        }),
-                        const SizedBox(height: 25),
-                        _buildProgressBar(colorScheme),
-                        _buildDuration(colorScheme),
-                        _buildControls(),
-                      ],
-                    ),
-                  ),
-                ],
+      body: LayoutBuilder(
+        builder: (context, constraints) => Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            width: isWindowsNeo ? min(1200.0, constraints.maxWidth) : null,
+            height: constraints.maxHeight,
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: isWindowsNeo ? 24 : 20 + padding.left,
+                top: isWindowsNeo ? 16 : 0,
+                right: isWindowsNeo ? 24 : 20 + padding.right,
+                bottom: 30 + padding.bottom,
               ),
+              child: content,
+            ),
+          ),
+        ),
       ),
     );
   }

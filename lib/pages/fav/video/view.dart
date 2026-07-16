@@ -4,6 +4,7 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/fav/fav_folder/list.dart';
 import 'package:PiliPlus/pages/fav/video/controller.dart';
 import 'package:PiliPlus/pages/fav/video/widgets/item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +35,9 @@ class _FavVideoPageState extends State<FavVideoPage>
         slivers: [
           SliverPadding(
             padding: EdgeInsets.only(
-              top: 7,
+              left: WindowsVideoTabService.enabled ? 18 : 0,
+              top: WindowsVideoTabService.enabled ? 16 : 7,
+              right: WindowsVideoTabService.enabled ? 18 : 0,
               bottom: 100 + MediaQuery.viewPaddingOf(context).bottom,
             ),
             sliver: Obx(
@@ -52,7 +55,15 @@ class _FavVideoPageState extends State<FavVideoPage>
       Success(:final response) =>
         response != null && response.isNotEmpty
             ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
+                gridDelegate: WindowsVideoTabService.enabled
+                    ? SliverGridDelegateWithExtentAndRatio(
+                        maxCrossAxisExtent: 520,
+                        childAspectRatio: 4.2,
+                        minHeight: 112,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                      )
+                    : gridDelegate,
                 itemBuilder: (BuildContext context, int index) {
                   if (index == response.length - 1) {
                     _favController.onLoadMore();

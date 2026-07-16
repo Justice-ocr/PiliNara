@@ -3,7 +3,9 @@ import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/models/common/reply/reply_search_type.dart';
 import 'package:PiliPlus/pages/video/reply_search_item/child/view.dart';
 import 'package:PiliPlus/pages/video/reply_search_item/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -35,7 +37,47 @@ class _ReplySearchPageState extends State<ReplySearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final content = Column(
+      children: [
+        TabBar(
+          isScrollable: isWindowsNeo,
+          tabAlignment: isWindowsNeo ? TabAlignment.start : null,
+          dividerColor: isWindowsNeo ? context.windowsNeo.border : null,
+          controller: _controller.tabController,
+          tabs: const [
+            Tab(text: '视频'),
+            Tab(text: '专栏'),
+          ],
+          onTap: (index) {
+            if (!_controller.tabController.indexIsChanging) {
+              if (index == 0) {
+                _controller.videoCtr.animateToTop();
+              } else {
+                _controller.articleCtr.animateToTop();
+              }
+            }
+          },
+        ),
+        Expanded(
+          child: tabBarView(
+            controller: _controller.tabController,
+            children: [
+              ReplySearchChildPage(
+                controller: _controller.videoCtr,
+                searchType: ReplySearchType.video,
+              ),
+              ReplySearchChildPage(
+                controller: _controller.articleCtr,
+                searchType: ReplySearchType.article,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         actions: [
@@ -65,43 +107,14 @@ class _ReplySearchPageState extends State<ReplySearchPage> {
           onSubmitted: (value) => _controller.submit(),
         ),
       ),
-      body: ViewSafeArea(
-        child: Column(
-          children: [
-            TabBar(
-              controller: _controller.tabController,
-              tabs: const [
-                Tab(text: '视频'),
-                Tab(text: '专栏'),
-              ],
-              onTap: (index) {
-                if (!_controller.tabController.indexIsChanging) {
-                  if (index == 0) {
-                    _controller.videoCtr.animateToTop();
-                  } else {
-                    _controller.articleCtr.animateToTop();
-                  }
-                }
-              },
-            ),
-            Expanded(
-              child: tabBarView(
-                controller: _controller.tabController,
-                children: [
-                  ReplySearchChildPage(
-                    controller: _controller.videoCtr,
-                    searchType: ReplySearchType.video,
-                  ),
-                  ReplySearchChildPage(
-                    controller: _controller.articleCtr,
-                    searchType: ReplySearchType.article,
-                  ),
-                ],
+      body: isWindowsNeo
+          ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Center(
+                child: SizedBox(width: 1100, child: content),
               ),
-            ),
-          ],
-        ),
-      ),
+            )
+          : ViewSafeArea(child: content),
     );
   }
 }

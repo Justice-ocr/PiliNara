@@ -5,6 +5,8 @@ import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/pages/common/multi_select/base.dart';
 import 'package:PiliPlus/pages/common/search/common_search_controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -37,6 +39,9 @@ abstract class CommonSearchPageState<S extends StatefulWidget, R, T>
 
   Widget _build(bool multiSelect) {
     return Scaffold(
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.background
+          : null,
       appBar: _buildBar(multiSelect),
       body: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -70,7 +75,12 @@ abstract class CommonSearchPageState<S extends StatefulWidget, R, T>
         decoration: InputDecoration(
           hintText: '搜索',
           visualDensity: .standard,
-          border: InputBorder.none,
+          border: WindowsVideoTabService.enabled
+              ? OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: BorderSide(color: context.windowsNeo.border),
+                )
+              : InputBorder.none,
           suffixIcon: IconButton(
             tooltip: '清空',
             icon: const Icon(Icons.clear, size: 22),

@@ -15,9 +15,11 @@ import 'package:PiliPlus/pages/setting/video_setting.dart';
 import 'package:PiliPlus/pages/setting/widgets/multi_select_dialog.dart';
 import 'package:PiliPlus/pages/settings_search/view.dart';
 import 'package:PiliPlus/pages/webdav/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart' hide ListTile;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -101,7 +103,13 @@ class _SettingPageState extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    _isPortrait = MediaQuery.sizeOf(context).isPortrait;
+    final size = MediaQuery.sizeOf(context);
+    _isPortrait = WindowsVideoTabService.enabled
+        ? size.width < 760
+        : size.isPortrait;
+    if (WindowsVideoTabService.enabled && !_isPortrait) {
+      return _buildWindowsNeo(theme);
+    }
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
@@ -127,6 +135,263 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
+      ),
+    );
+  }
+
+  Widget _buildWindowsNeo(ThemeData theme) {
+    final tokens = context.windowsNeo;
+    final selected = _items.firstWhere((item) => item.type == _type);
+    return Scaffold(
+      backgroundColor: tokens.background,
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(title: const Text('设置')),
+      body: Row(
+        children: [
+          SizedBox(
+            width: 300,
+            child: ColoredBox(
+              color: tokens.sidebar,
+              child: _buildWindowsList(theme),
+            ),
+          ),
+          VerticalDivider(width: 1, color: tokens.border),
+          Expanded(
+            child: Column(
+              children: [
+                Container(
+                  height: 58,
+                  padding: const EdgeInsets.symmetric(horizontal: 22),
+                  color: tokens.surface,
+                  child: Row(
+                    children: [
+                      IconTheme.merge(
+                        data: IconThemeData(color: tokens.accent, size: 21),
+                        child: selected.icon,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              selected.type.title,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if (selected.subtitle case final subtitle?)
+                              Text(
+                                subtitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: tokens.muted,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(height: 1, color: tokens.border),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 920),
+                        child: Material(
+                          color: tokens.surface,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            side: BorderSide(color: tokens.border),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Theme(
+                            data: theme.copyWith(
+                              scaffoldBackgroundColor: tokens.surface,
+                              canvasColor: tokens.surface,
+                            ),
+                            child: _buildSettingPage(
+                              _type,
+                              showAppBar: false,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWindowsList(ThemeData theme) {
+    final tokens = context.windowsNeo;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(10, 12, 10, 24),
+      children: [
+        _buildWindowsSearch(theme),
+        const SizedBox(height: 10),
+        ..._items.take(_items.length - 1).map(_buildWindowsNavItem),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Divider(height: 1, color: tokens.border),
+        ),
+        _buildWindowsActionItem(
+          icon: Icons.switch_account_outlined,
+          title: '切换账号',
+          onTap: () => LoginPageController.switchAccountDialog(context),
+        ),
+        Obx(
+          () => _noAccount.value
+              ? const SizedBox.shrink()
+              : _buildWindowsActionItem(
+                  icon: Icons.logout_outlined,
+                  title: '退出登录',
+                  onTap: () => _logoutDialog(context),
+                  foregroundColor: theme.colorScheme.error,
+                ),
+        ),
+        _buildWindowsNavItem(_items.last),
+      ],
+    );
+  }
+
+  Widget _buildWindowsSearch(ThemeData theme) {
+    final tokens = context.windowsNeo;
+    return Material(
+      color: tokens.surfaceRaised,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(6),
+        side: BorderSide(color: tokens.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const SettingsSearchPage(),
+          ),
+        ),
+        child: SizedBox(
+          height: 38,
+          child: Row(
+            children: [
+              const SizedBox(width: 12),
+              Icon(Icons.search, size: 18, color: tokens.muted),
+              const SizedBox(width: 8),
+              Text(
+                '搜索设置',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: tokens.muted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWindowsNavItem(_SettingsModel item) {
+    final tokens = context.windowsNeo;
+    final selected = item.type == _type;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Material(
+        color: selected ? tokens.accentSurface : Colors.transparent,
+        borderRadius: BorderRadius.circular(4),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => _toPage(item.type),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(
+                  color: selected ? tokens.accent : Colors.transparent,
+                  width: 2.5,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                IconTheme.merge(
+                  data: IconThemeData(
+                    color: selected ? tokens.accent : tokens.muted,
+                    size: 19,
+                  ),
+                  child: item.icon,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        item.type.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (item.subtitle case final subtitle?)
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 11, color: tokens.muted),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWindowsActionItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color? foregroundColor,
+  }) {
+    final tokens = context.windowsNeo;
+    final color = foregroundColor ?? tokens.muted;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(4),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(
+            height: 42,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  Icon(icon, size: 19, color: color),
+                  const SizedBox(width: 10),
+                  Text(title, style: TextStyle(color: foregroundColor)),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

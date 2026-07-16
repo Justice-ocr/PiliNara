@@ -9,11 +9,13 @@ import 'package:PiliPlus/grpc/bilibili/app/im/v1.pb.dart'
     show Session, SessionId, SessionPageType, SessionType, UnreadStyle;
 import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/pages/whisper_secondary/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart' hide ListTile;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -46,13 +48,27 @@ class WhisperSessionItem extends StatelessWidget {
         ? jsonDecode(item.sessionInfo.vipInfo)
         : null;
     final ThemeData theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
 
     return ListTile(
-      safeArea: true,
-      tileColor: item.isPinned
-          ? theme.colorScheme.onInverseSurface.withValues(
-              alpha: theme.isDark ? 0.4 : 0.8,
+      safeArea: !isWindowsNeo,
+      contentPadding: isWindowsNeo
+          ? const EdgeInsets.symmetric(horizontal: 16, vertical: 4)
+          : null,
+      shape: isWindowsNeo
+          ? Border(
+              left: BorderSide(color: context.windowsNeo.border),
+              right: BorderSide(color: context.windowsNeo.border),
             )
+          : null,
+      tileColor: item.isPinned
+          ? isWindowsNeo
+                ? context.windowsNeo.accentSurface
+                : theme.colorScheme.onInverseSurface.withValues(
+                    alpha: theme.isDark ? 0.4 : 0.8,
+                  )
+          : isWindowsNeo
+          ? context.windowsNeo.surface
           : null,
       onLongPress: () => showDialog(
         context: context,
@@ -223,8 +239,7 @@ class WhisperSessionItem extends StatelessWidget {
 
           return GestureDetector(
             onTap: item.sessionInfo.avatar.hasMid()
-                ? () =>
-                      PageUtils.toMember(item.sessionInfo.avatar.mid)
+                ? () => PageUtils.toMember(item.sessionInfo.avatar.mid)
                 : null,
             child: PendantAvatar(
               avatar,

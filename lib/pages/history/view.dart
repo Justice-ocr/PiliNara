@@ -9,11 +9,14 @@ import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/history/list.dart';
+import 'package:PiliPlus/models_new/history/tab.dart';
 import 'package:PiliPlus/pages/history/base_controller.dart';
 import 'package:PiliPlus/pages/history/controller.dart';
 import 'package:PiliPlus/pages/history/widgets/item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart' hide TabBarView;
 import 'package:get/get.dart';
 
@@ -61,6 +64,7 @@ class _HistoryPageState extends State<HistoryPage>
   Widget build(BuildContext context) {
     super.build(context);
     final padding = MediaQuery.viewPaddingOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     Widget child = refreshIndicator(
       onRefresh: _historyController.onRefresh,
       child: CustomScrollView(
@@ -69,7 +73,9 @@ class _HistoryPageState extends State<HistoryPage>
         slivers: [
           SliverPadding(
             padding: EdgeInsets.only(
-              top: 7,
+              left: isWindowsNeo ? 18 : 0,
+              top: isWindowsNeo ? 16 : 7,
+              right: isWindowsNeo ? 18 : 0,
               bottom: padding.bottom + 100,
             ),
             sliver: Obx(
@@ -94,6 +100,9 @@ class _HistoryPageState extends State<HistoryPage>
             }
           },
           child: Scaffold(
+            backgroundColor: isWindowsNeo
+                ? context.windowsNeo.background
+                : null,
             resizeToAvoidBottomInset: false,
             appBar: MultiSelectAppBarWidget(
               visible: enableMultiSelect,
@@ -113,26 +122,7 @@ class _HistoryPageState extends State<HistoryPage>
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TabBar(
-                      controller: _historyController.tabController,
-                      onTap: (index) {
-                        if (!_historyController
-                            .tabController!
-                            .indexIsChanging) {
-                          currCtr().scrollController.animToTop();
-                        } else {
-                          if (enableMultiSelect) {
-                            currCtr(
-                              _historyController.tabController!.previousIndex,
-                            ).handleSelect();
-                          }
-                        }
-                      },
-                      tabs: [
-                        const Tab(text: '全部'),
-                        ...tabs.map((item) => Tab(text: item.name)),
-                      ],
-                    ),
+                    _buildTabs(tabs, enableMultiSelect, isWindowsNeo),
                     Expanded(
                       child: TabBarView<CustomHorizontalDragGestureRecognizer>(
                         physics: enableMultiSelect
@@ -154,6 +144,57 @@ class _HistoryPageState extends State<HistoryPage>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTabs(
+    List<HistoryTab> tabs,
+    bool enableMultiSelect,
+    bool isWindowsNeo,
+  ) {
+    final tabBar = TabBar(
+      controller: _historyController.tabController,
+      onTap: (index) {
+        if (!_historyController.tabController!.indexIsChanging) {
+          currCtr().scrollController.animToTop();
+        } else if (enableMultiSelect) {
+          currCtr(
+            _historyController.tabController!.previousIndex,
+          ).handleSelect();
+        }
+      },
+      tabs: [
+        const Tab(text: '全部'),
+        ...tabs.map((item) => Tab(text: item.name)),
+      ],
+      isScrollable: isWindowsNeo,
+      tabAlignment: isWindowsNeo ? TabAlignment.start : null,
+      dividerColor: isWindowsNeo ? Colors.transparent : null,
+      dividerHeight: isWindowsNeo ? 0 : null,
+      indicatorSize: isWindowsNeo
+          ? TabBarIndicatorSize.label
+          : TabBarIndicatorSize.tab,
+      indicator: isWindowsNeo
+          ? UnderlineTabIndicator(
+              borderSide: BorderSide(
+                color: context.windowsNeo.accent,
+                width: 2.5,
+              ),
+            )
+          : null,
+      unselectedLabelColor: isWindowsNeo ? context.windowsNeo.muted : null,
+    );
+    if (!isWindowsNeo) return tabBar;
+    return Container(
+      height: 48,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: context.windowsNeo.surface,
+        border: Border(bottom: BorderSide(color: context.windowsNeo.border)),
+      ),
+      alignment: Alignment.centerLeft,
+      child: tabBar,
     );
   }
 
@@ -212,7 +253,15 @@ class _HistoryPageState extends State<HistoryPage>
       Success(:final response) =>
         response != null && response.isNotEmpty
             ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
+                gridDelegate: WindowsVideoTabService.enabled
+                    ? SliverGridDelegateWithExtentAndRatio(
+                        maxCrossAxisExtent: 520,
+                        childAspectRatio: 4.2,
+                        minHeight: 112,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                      )
+                    : gridDelegate,
                 itemBuilder: (context, index) {
                   if (index == response.length - 1) {
                     _historyController.onLoadMore();

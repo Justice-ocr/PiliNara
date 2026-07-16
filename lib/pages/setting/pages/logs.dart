@@ -6,12 +6,14 @@ import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/flutter/popup_menu.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/services/logger.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:catcher_2/catcher_2.dart';
 import 'package:catcher_2/utils/log_printer.dart';
 import 'package:flutter/foundation.dart';
@@ -107,7 +109,9 @@ class _LogsPageState extends State<LogsPage> {
   @override
   Widget build(BuildContext context) {
     final padding = MediaQuery.viewPaddingOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('日志'),
@@ -157,28 +161,43 @@ class _LogsPageState extends State<LogsPage> {
       body: logsContent.isNotEmpty || _deviceInfo != null
           ? Padding(
               padding: EdgeInsets.only(
-                left: padding.left + 12,
-                right: padding.right + 12,
+                left: isWindowsNeo ? 18 : padding.left + 12,
+                top: isWindowsNeo ? 16 : 0,
+                right: isWindowsNeo ? 18 : padding.right + 12,
               ),
-              child: CustomScrollView(
-                slivers: [
-                  if (_deviceInfo != null)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const .only(bottom: 12),
-                        child: _InfoCard(info: _deviceInfo!),
-                      ),
-                    ),
-                  SliverPadding(
-                    padding: EdgeInsets.only(bottom: padding.bottom + 100),
-                    sliver: SliverList.separated(
-                      itemCount: logsContent.length,
-                      itemBuilder: (context, index) =>
-                          _ReportCard(report: logsContent[index]),
-                      separatorBuilder: (_, _) => const SizedBox(height: 12),
+              child: LayoutBuilder(
+                builder: (context, constraints) => Align(
+                  alignment: Alignment.topCenter,
+                  child: SizedBox(
+                    width: isWindowsNeo
+                        ? constraints.constrainWidth(960)
+                        : constraints.maxWidth,
+                    height: constraints.maxHeight,
+                    child: CustomScrollView(
+                      slivers: [
+                        if (_deviceInfo != null)
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const .only(bottom: 12),
+                              child: _InfoCard(info: _deviceInfo!),
+                            ),
+                          ),
+                        SliverPadding(
+                          padding: EdgeInsets.only(
+                            bottom: padding.bottom + 100,
+                          ),
+                          sliver: SliverList.separated(
+                            itemCount: logsContent.length,
+                            itemBuilder: (context, index) =>
+                                _ReportCard(report: logsContent[index]),
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(height: 12),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             )
           : scrollableError,
@@ -359,9 +378,17 @@ class _ReportCard extends StatelessWidget {
         Container(
           padding: const .all(12),
           decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: const .all(.circular(8)),
-            border: .all(color: colorScheme.outline.withValues(alpha: 0.5)),
+            color: WindowsVideoTabService.enabled
+                ? context.windowsNeo.surfaceRaised
+                : colorScheme.surface,
+            borderRadius: BorderRadius.circular(
+              WindowsVideoTabService.enabled ? 6 : 8,
+            ),
+            border: Border.all(
+              color: WindowsVideoTabService.enabled
+                  ? context.windowsNeo.border
+                  : colorScheme.outline.withValues(alpha: 0.5),
+            ),
           ),
           child: SelectableText(
             report.item.error.toString(),
@@ -386,9 +413,17 @@ class _ReportCard extends StatelessWidget {
           Container(
             padding: const .all(12),
             decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: const .all(.circular(8)),
-              border: .all(color: colorScheme.outline.withValues(alpha: 0.5)),
+              color: WindowsVideoTabService.enabled
+                  ? context.windowsNeo.surfaceRaised
+                  : colorScheme.surface,
+              borderRadius: BorderRadius.circular(
+                WindowsVideoTabService.enabled ? 6 : 8,
+              ),
+              border: Border.all(
+                color: WindowsVideoTabService.enabled
+                    ? context.windowsNeo.border
+                    : colorScheme.outline.withValues(alpha: 0.5),
+              ),
             ),
             child: SelectableText.rich(
               TextSpan(
@@ -417,6 +452,8 @@ class _ReportCard extends StatelessWidget {
 
 Widget _card(List<Widget> contents) {
   return Card(
+    elevation: 0,
+    margin: WindowsVideoTabService.enabled ? EdgeInsets.zero : null,
     child: Padding(
       padding: const .all(12),
       child: Column(

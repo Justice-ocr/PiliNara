@@ -1,6 +1,8 @@
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/models/common/enum_with_label.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart' hide ListTile;
 
 typedef PopupMenuItemSelected<T> =
@@ -108,7 +110,7 @@ class _PopupListTileState<T> extends State<PopupListTile<T>> {
       case DescPosType.trailing:
         trailing = desc;
     }
-    return ListTile(
+    final child = ListTile(
       dense: widget.dense,
       safeArea: widget.safeArea,
       enabled: widget.enabled,
@@ -117,6 +119,14 @@ class _PopupListTileState<T> extends State<PopupListTile<T>> {
       title: title,
       subtitle: subtitle,
       trailing: trailing,
+    );
+    if (!WindowsVideoTabService.enabled) return child;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.windowsNeo.surface,
+        border: Border(bottom: BorderSide(color: context.windowsNeo.border)),
+      ),
+      child: child,
     );
   }
 }

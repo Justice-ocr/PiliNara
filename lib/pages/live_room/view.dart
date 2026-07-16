@@ -16,8 +16,10 @@ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/keep_alive_wrapper.dart';
 import 'package:PiliPlus/common/widgets/route_aware_mixin.dart';
 import 'package:PiliPlus/common/widgets/scroll_physics.dart';
+import 'package:PiliPlus/http/live.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models/common/live/live_contribution_rank_type.dart';
+import 'package:PiliPlus/models_new/live/live_danmaku/danmaku_msg.dart';
 import 'package:PiliPlus/models_new/live/live_room_info_h5/data.dart';
 import 'package:PiliPlus/models_new/live/live_superchat/item.dart';
 import 'package:PiliPlus/pages/danmaku/danmaku_model.dart';
@@ -54,9 +56,11 @@ import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/features/video/windows_neo_video_layout.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:canvas_danmaku/danmaku_screen.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
 import 'package:flutter/material.dart' hide PageView;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -74,7 +78,11 @@ class LiveRoomPage extends StatefulWidget {
 }
 
 class _LiveRoomPageState extends State<LiveRoomPage>
-    with WidgetsBindingObserver, RouteAware, RouteAwareMixin {
+    with
+        WidgetsBindingObserver,
+        RouteAware,
+        RouteAwareMixin,
+        SingleTickerProviderStateMixin {
   late final fullScreenSCWidth = Pref.fullScreenSCWidth;
   final String heroTag = Utils.generateRandomString(6);
   late final LiveRoomController _liveRoomController;
@@ -84,7 +92,13 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   // 标志位：是否正在进入 PiP 模式
   bool _isEnteringPipMode = false;
   bool _closingFromWindowsLiveTabService = false;
+  bool _windowsTabActive = true;
   int _windowsLivePlayerMountKey = 0;
+  late final TabController _windowsSideTabController;
+  final TextEditingController _windowsDanmakuTextController =
+      TextEditingController();
+  final FocusNode _windowsDanmakuFocusNode = FocusNode();
+  bool _windowsDanmakuSending = false;
 
   late final GlobalKey pageKey = GlobalKey();
   late final GlobalKey chatKey = GlobalKey();
@@ -139,6 +153,10 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       LiveRoomController(heroTag, fromPip: isReturningFromPip),
       tag: heroTag,
     );
+    _windowsSideTabController = TabController(
+      length: _liveRoomController.showSuperChat ? 3 : 2,
+      vsync: this,
+    );
     plPlayerController = _liveRoomController.plPlayerController
       ..addStatusLister(playerListener);
     if (WindowsVideoTabService.enabled) {
@@ -146,6 +164,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       WindowsVideoTabService.registerRoute(
         _liveTabArgs,
         activate: _activateWindowsLiveTab,
+        deactivate: _deactivateWindowsLiveTab,
         close: _closeWindowsLiveTab,
       );
     }
@@ -307,7 +326,9 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   }
 
   void playerListener(PlayerStatus status) {
-    if (WindowsVideoTabService.enabled && status.isPlaying) {
+    if (WindowsVideoTabService.enabled &&
+        _windowsTabActive &&
+        status.isPlaying) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _restoreWindowsLivePlayerSurface();
       });
@@ -327,9 +348,17 @@ class _LiveRoomPageState extends State<LiveRoomPage>
 
   void _activateWindowsLiveTab() {
     if (!mounted) return;
+    _windowsTabActive = true;
+    plPlayerController.visible = true;
     WindowsVideoTabService.setActive(_liveTabArgs);
     plPlayerController.activateAsGlobal();
     PlPlayerController.setPlayCallBack(plPlayerController.play);
+    if (plPlayerController.playerStatus.isPlaying) {
+      _liveRoomController
+        ..danmakuController?.resume()
+        ..startLiveTimer()
+        ..startLiveMsg();
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _restoreWindowsLivePlayerSurface();
     });
@@ -343,8 +372,20 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     }
   }
 
+  void _deactivateWindowsLiveTab() {
+    if (!mounted || !_windowsTabActive) return;
+    _windowsTabActive = false;
+    plPlayerController.visible = false;
+    _liveRoomController
+      ..cancelLiveTimer()
+      ..closeLiveMsg();
+    setState(() {});
+  }
+
   void _restoreWindowsLivePlayerSurface() {
-    if (!WindowsVideoTabService.enabled || !mounted) return;
+    if (!WindowsVideoTabService.enabled || !mounted || !_windowsTabActive) {
+      return;
+    }
     if (!_liveRoomController.isLoaded.value ||
         plPlayerController.videoController == null) {
       return;
@@ -383,7 +424,8 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     final isInLivePip = LivePipOverlayService.isCurrentLiveRoom(
       _liveRoomController.roomId,
     );
-    final keepWindowsTabAlive = WindowsVideoTabService.enabled &&
+    final keepWindowsTabAlive =
+        WindowsVideoTabService.enabled &&
         !_closingFromWindowsLiveTabService &&
         WindowsVideoTabService.has(
           WindowsVideoTabService.keyFromArgs(_liveTabArgs),
@@ -424,6 +466,9 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       Get.delete<LiveRoomController>(tag: heroTag, force: true);
     }
 
+    _windowsSideTabController.dispose();
+    _windowsDanmakuTextController.dispose();
+    _windowsDanmakuFocusNode.dispose();
     super.dispose();
   }
 
@@ -450,6 +495,44 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   late EdgeInsets padding;
   late bool isPortrait;
 
+  late final WindowsNeoTokens _windowsTokens =
+      WindowsNeoTokens.fromTheme(
+        ThemeUtils.darkTheme,
+      ).copyWith(
+        background: const Color(0xFF0B0D0F),
+        sidebar: const Color(0xFF101316),
+        surface: const Color(0xFF14171A),
+        surfaceRaised: const Color(0xFF1B1F23),
+        border: const Color(0xFF343A40),
+        muted: const Color(0xFF9AA4AE),
+        hover: const Color(0xFF252B31),
+        accent: WindowsNeoTokens.mikuCyan,
+        accentSurface: const Color(0xFF173B3A),
+        accentSoft: const Color(0xFF172E2E),
+        ink: const Color(0xFFF3F5F7),
+      );
+
+  ThemeData get _windowsLiveTheme {
+    final base = WindowsNeoTheme.apply(ThemeUtils.darkTheme);
+    final extensions =
+        base.extensions.values
+            .where((item) => item is! WindowsNeoTokens)
+            .toList()
+          ..add(_windowsTokens);
+    return base.copyWith(
+      scaffoldBackgroundColor: _windowsTokens.background,
+      canvasColor: _windowsTokens.surface,
+      dividerColor: _windowsTokens.border,
+      colorScheme: base.colorScheme.copyWith(
+        primary: _windowsTokens.accent,
+        surface: _windowsTokens.surface,
+        onSurface: _windowsTokens.ink,
+        outline: _windowsTokens.border,
+      ),
+      extensions: extensions,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget child;
@@ -461,22 +544,242 @@ class _LiveRoomPageState extends State<LiveRoomPage>
         isPipMode: true,
         needDm: !plPlayerController.pipNoDanmaku,
       );
+    } else if (WindowsVideoTabService.enabled) {
+      child = _windowsTabActive ? childWhenWindowsNeo : const SizedBox.shrink();
     } else {
       child = childWhenDisabled;
     }
     if (plPlayerController.keyboardControl) {
       child = PlayerFocus(
         plPlayerController: plPlayerController,
-        onSendDanmaku: _liveRoomController.onSendDanmaku,
+        onSendDanmaku: WindowsVideoTabService.enabled && !isFullScreen
+            ? _focusWindowsDanmaku
+            : _liveRoomController.onSendDanmaku,
         onRefresh: _liveRoomController.queryLiveUrl,
         child: child,
       );
     }
     return Theme(
-      data: ThemeUtils.darkTheme,
+      data: WindowsVideoTabService.enabled
+          ? _windowsLiveTheme
+          : ThemeUtils.darkTheme,
       child: child,
     );
   }
+
+  Widget get childWhenWindowsNeo => Obx(() {
+    final fullScreen = isFullScreen || plPlayerController.isDesktopPip;
+    return Scaffold(
+      backgroundColor: _windowsTokens.background,
+      resizeToAvoidBottomInset: false,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final height = constraints.maxHeight;
+          if (fullScreen) {
+            return ColoredBox(
+              color: Colors.black,
+              child: SizedBox.expand(
+                child: videoPlayerPanel(
+                  true,
+                  width: width,
+                  height: height,
+                ),
+              ),
+            );
+          }
+          final useSidePanel = WindowsNeoVideoLayout.useSidePanel(
+            width,
+            height,
+          );
+          return Column(
+            children: [
+              SizedBox(
+                height: 56,
+                child: _buildAppBar(
+                  false,
+                  automaticallyImplyLeading: false,
+                  backgroundColor: _windowsTokens.surface,
+                ),
+              ),
+              Divider(height: 1, color: _windowsTokens.border),
+              Expanded(
+                child: useSidePanel
+                    ? _buildWindowsWideLayout(width, height - 57)
+                    : _buildWindowsCompactLayout(width, height - 57),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  });
+
+  Widget _buildWindowsWideLayout(double width, double height) {
+    final sideWidth = WindowsNeoVideoLayout.sidePanelWidth(
+      width,
+      visible: true,
+    );
+    final playerWidth = width - sideWidth;
+    return Row(
+      children: [
+        SizedBox(
+          width: playerWidth,
+          height: height,
+          child: ColoredBox(
+            color: Colors.black,
+            child: videoPlayerPanel(
+              false,
+              width: playerWidth,
+              height: height,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: sideWidth,
+          height: height,
+          child: _buildWindowsSidePanel(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWindowsCompactLayout(double width, double height) {
+    final playerHeight = WindowsNeoVideoLayout.compactPlayerHeight(
+      width,
+      height,
+    );
+    return Column(
+      children: [
+        SizedBox(
+          width: width,
+          height: playerHeight,
+          child: ColoredBox(
+            color: Colors.black,
+            child: videoPlayerPanel(
+              false,
+              width: width,
+              height: playerHeight,
+            ),
+          ),
+        ),
+        Divider(height: 1, color: _windowsTokens.border),
+        Expanded(child: _buildWindowsSidePanel()),
+      ],
+    );
+  }
+
+  Widget _buildWindowsSidePanel() {
+    final showSuperChat = _liveRoomController.showSuperChat;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: _windowsTokens.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.34),
+            blurRadius: 18,
+            offset: const Offset(-4, 0),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 44,
+            child: TabBar(
+              controller: _windowsSideTabController,
+              tabs: [
+                const Tab(text: '\u804a\u5929'),
+                if (showSuperChat)
+                  Tab(
+                    child: Obx(() {
+                      final count = _liveRoomController.superChatMsg.length;
+                      return Text(count == 0 ? 'SC' : 'SC $count');
+                    }),
+                  ),
+                const Tab(text: '\u8d21\u732e\u699c'),
+              ],
+              dividerColor: Colors.transparent,
+              dividerHeight: 0,
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorPadding: const EdgeInsets.symmetric(
+                horizontal: 5,
+                vertical: 5,
+              ),
+              indicator: BoxDecoration(
+                color: _windowsTokens.accentSurface,
+                borderRadius: BorderRadius.circular(7),
+                boxShadow: [
+                  BoxShadow(
+                    color: _windowsTokens.accent.withValues(alpha: 0.12),
+                    blurRadius: 10,
+                  ),
+                ],
+              ),
+              labelStyle: const TextStyle(fontWeight: FontWeight.w700),
+              labelColor: _windowsTokens.ink,
+              unselectedLabelColor: _windowsTokens.muted,
+              overlayColor: WidgetStatePropertyAll(
+                _windowsTokens.hover.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: _windowsTokens.border.withValues(alpha: 0.68),
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _windowsSideTabController,
+              children: [
+                _buildWindowsChatPanel(),
+                if (showSuperChat)
+                  SuperChatPanel(
+                    key: scKey,
+                    controller: _liveRoomController,
+                  ),
+                Obx(() {
+                  _liveRoomController.isLoaded.value;
+                  final ruid = _liveRoomController.ruid;
+                  if (ruid == null) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  return ContributionRankPanel(
+                    key: ValueKey('${_liveRoomController.roomId}-$ruid'),
+                    ruid: ruid,
+                    roomId: _liveRoomController.roomId,
+                  );
+                }),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWindowsChatPanel() => Column(
+    children: [
+      Expanded(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: LiveRoomChatPanel(
+            key: chatKey,
+            isPP: false,
+            roomId: _liveRoomController.roomId,
+            liveRoomController: _liveRoomController,
+            hideSuperChat: true,
+            onAtUser: _insertWindowsMention,
+          ),
+        ),
+      ),
+      _buildWindowsInlineInput(),
+    ],
+  );
 
   Widget videoPlayerPanel(
     bool isFullScreen, {
@@ -487,8 +790,17 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     Alignment alignment = Alignment.center,
     bool needDm = true,
   }) {
-    if (!isFullScreen && !plPlayerController.isDesktopPip) {
-      _liveRoomController.fsSC.value = null;
+    if (!isFullScreen &&
+        !plPlayerController.isDesktopPip &&
+        _liveRoomController.fsSC.value != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted &&
+            !isFullScreen &&
+            !plPlayerController.isDesktopPip &&
+            _liveRoomController.fsSC.value != null) {
+          _liveRoomController.fsSC.value = null;
+        }
+      });
     }
     _liveRoomController.isFullScreen = isFullScreen;
     Widget player = Obx(
@@ -512,7 +824,9 @@ class _LiveRoomPageState extends State<LiveRoomPage>
               title: roomInfoH5?.roomInfo?.title,
               upName: roomInfoH5?.anchorInfo?.baseInfo?.uname,
               plPlayerController: plPlayerController,
-              onSendDanmaku: _liveRoomController.onSendDanmaku,
+              onSendDanmaku: WindowsVideoTabService.enabled && !isFullScreen
+                  ? _focusWindowsDanmaku
+                  : _liveRoomController.onSendDanmaku,
               onPlayAudio: _liveRoomController.queryLiveUrl,
               isPortrait: isPortrait,
               liveController: _liveRoomController,
@@ -877,12 +1191,17 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     }
   }
 
-  PreferredSizeWidget _buildAppBar(bool isFullScreen) {
+  PreferredSizeWidget _buildAppBar(
+    bool isFullScreen, {
+    bool automaticallyImplyLeading = true,
+    Color? backgroundColor,
+  }) {
     return AppBar(
       primary: !plPlayerController.removeSafeArea,
       toolbarHeight: isFullScreen ? 0 : null,
-      backgroundColor: Colors.transparent,
+      backgroundColor: backgroundColor ?? Colors.transparent,
       foregroundColor: Colors.white,
+      automaticallyImplyLeading: automaticallyImplyLeading,
       titleTextStyle: const TextStyle(color: Colors.white),
       title: isFullScreen || plPlayerController.isDesktopPip
           ? null
@@ -895,8 +1214,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                 }
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () =>
-                      PageUtils.toMember(roomInfoH5.roomInfo?.uid),
+                  onTap: () => PageUtils.toMember(roomInfoH5.roomInfo?.uid),
                   child: Row(
                     spacing: 10,
                     mainAxisSize: .min,
@@ -1118,14 +1436,193 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     );
   }
 
+  void _insertWindowsMention(DanmakuMsg item) {
+    final current = _windowsDanmakuTextController.text;
+    final separator = current.isEmpty || current.endsWith(' ') ? '' : ' ';
+    final next = '$current$separator@${item.name} ';
+    _windowsDanmakuTextController.value = TextEditingValue(
+      text: next,
+      selection: TextSelection.collapsed(offset: next.length),
+    );
+    _windowsDanmakuFocusNode.requestFocus();
+  }
+
+  void _focusWindowsDanmaku() => _windowsDanmakuFocusNode.requestFocus();
+
+  Future<void> _sendWindowsDanmaku() async {
+    final message = _windowsDanmakuTextController.text.trim();
+    if (message.isEmpty || _windowsDanmakuSending) return;
+    if (kReleaseMode && !_liveRoomController.isLogin) {
+      SmartDialog.showToast('账号未登录');
+      return;
+    }
+
+    setState(() => _windowsDanmakuSending = true);
+    final res = await LiveHttp.sendLiveMsg(
+      roomId: _liveRoomController.roomId,
+      msg: message,
+    );
+    if (!mounted) return;
+    if (res.isSuccess) {
+      _windowsDanmakuTextController.clear();
+      _windowsDanmakuFocusNode.requestFocus();
+    } else {
+      res.toast();
+    }
+    setState(() => _windowsDanmakuSending = false);
+  }
+
+  Widget _buildWindowsInlineInput() {
+    final tokens = _windowsTokens;
+    return Container(
+      constraints: const BoxConstraints(minHeight: 62, maxHeight: 126),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      decoration: BoxDecoration(
+        color: tokens.surfaceRaised,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.24),
+            blurRadius: 14,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Row(
+        spacing: 6,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Obx(() {
+            final enabled = plPlayerController.enableShowDanmaku.value;
+            return IconButton(
+              tooltip: enabled ? '关闭弹幕' : '开启弹幕',
+              onPressed: () {
+                final newValue = !enabled;
+                plPlayerController.enableShowDanmaku.value = newValue;
+                if (!plPlayerController.tempPlayerConf) {
+                  GStorage.setting.put(
+                    SettingBoxKey.enableShowLiveDanmaku,
+                    newValue,
+                  );
+                }
+              },
+              color: enabled ? tokens.accent : tokens.muted,
+              icon: Icon(
+                enabled ? CustomIcons.dm_on : CustomIcons.dm_off,
+                size: 20,
+              ),
+            );
+          }),
+          Expanded(
+            child: TextField(
+              controller: _windowsDanmakuTextController,
+              focusNode: _windowsDanmakuFocusNode,
+              minLines: 1,
+              maxLines: 4,
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _sendWindowsDanmaku(),
+              style: TextStyle(color: tokens.ink, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: '输入弹幕，按 Enter 发送',
+                hintStyle: TextStyle(color: tokens.muted),
+                filled: true,
+                fillColor: tokens.hover.withValues(alpha: 0.62),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(7),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(7),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(7),
+                  borderSide: BorderSide(
+                    color: tokens.accent.withValues(alpha: 0.85),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: '表情',
+            onPressed: () => _liveRoomController.onSendDanmaku(true),
+            color: tokens.muted,
+            icon: const Icon(Icons.emoji_emotions_outlined, size: 20),
+          ),
+          Builder(
+            builder: (context) => Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(7),
+                onTapDown: _liveRoomController.onLikeTapDown,
+                onTapUp: _liveRoomController.onLikeTapUp,
+                onTapCancel: _liveRoomController.onLikeTapUp,
+                child: Tooltip(
+                  message: '点赞',
+                  child: SizedBox.square(
+                    dimension: 40,
+                    child: Icon(
+                      Icons.thumb_up_off_alt,
+                      size: 20,
+                      color: tokens.muted,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _windowsDanmakuTextController,
+            builder: (context, value, _) {
+              final canSend =
+                  value.text.trim().isNotEmpty && !_windowsDanmakuSending;
+              return IconButton.filled(
+                tooltip: '发送',
+                onPressed: canSend ? _sendWindowsDanmaku : null,
+                style: IconButton.styleFrom(
+                  backgroundColor: tokens.accent,
+                  foregroundColor: const Color(0xFF071312),
+                  disabledBackgroundColor: tokens.hover,
+                  disabledForegroundColor: tokens.muted,
+                ),
+                icon: _windowsDanmakuSending
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.send_rounded, size: 18),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget get _buildInputWidget {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    if (isWindowsNeo) return _buildWindowsInlineInput();
     final child = Container(
       padding: .only(top: 5, left: 10, right: 10, bottom: padding.bottom),
       height: 70 + padding.bottom,
-      decoration: const BoxDecoration(
-        borderRadius: .vertical(top: .circular(20)),
-        border: Border(top: BorderSide(color: Color(0x1AFFFFFF))),
-        color: Color(0x1AFFFFFF),
+      decoration: BoxDecoration(
+        borderRadius: isWindowsNeo
+            ? BorderRadius.zero
+            : const BorderRadius.vertical(top: Radius.circular(20)),
+        border: Border(
+          top: BorderSide(
+            color: isWindowsNeo
+                ? _windowsTokens.border
+                : const Color(0x1AFFFFFF),
+          ),
+        ),
+        color: isWindowsNeo
+            ? _windowsTokens.surfaceRaised
+            : const Color(0x1AFFFFFF),
       ),
       child: GestureDetector(
         onTap: _liveRoomController.onSendDanmaku,

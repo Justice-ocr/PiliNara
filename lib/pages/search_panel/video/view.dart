@@ -5,7 +5,11 @@ import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:PiliPlus/pages/search_panel/video/controller.dart';
 import 'package:PiliPlus/pages/search_panel/view.dart';
-import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/utils/grid.dart'
+    hide SliverGridDelegateWithMaxCrossAxisExtent;
+import 'package:PiliPlus/windows_ui/components/windows_neo_video_search_tile.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -51,9 +55,16 @@ class _SearchVideoPanelState
   @override
   Widget buildHeader(ThemeData theme) {
     return SliverFloatingHeaderWidget(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.surface
+          : theme.colorScheme.surface,
       child: Padding(
-        padding: const .fromLTRB(12, 0, 12, 4),
+        padding: EdgeInsets.fromLTRB(
+          WindowsVideoTabService.enabled ? 16 : 12,
+          0,
+          WindowsVideoTabService.enabled ? 16 : 12,
+          4,
+        ),
         child: Row(
           children: [
             Expanded(
@@ -109,6 +120,29 @@ class _SearchVideoPanelState
 
   @override
   Widget buildList(ThemeData theme, List<SearchVideoItemModel> list) {
+    if (WindowsVideoTabService.enabled) {
+      return SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        sliver: SliverGrid.builder(
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 760,
+            mainAxisExtent: 120,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+          ),
+          itemBuilder: (context, index) {
+            if (index == list.length - 1) controller.onLoadMore();
+            return WindowsNeoVideoSearchTile(
+              videoItem: list[index],
+              onRemove: () => controller.loadingState
+                ..value.data!.removeAt(index)
+                ..refresh(),
+            );
+          },
+          itemCount: list.length,
+        ),
+      );
+    }
     return SliverGrid.builder(
       gridDelegate: gridDelegate,
       itemBuilder: (context, index) {
@@ -127,5 +161,10 @@ class _SearchVideoPanelState
   }
 
   @override
-  Widget get buildLoading => gridSkeleton;
+  Widget get buildLoading => WindowsVideoTabService.enabled
+      ? SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          sliver: gridSkeleton,
+        )
+      : gridSkeleton;
 }

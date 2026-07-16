@@ -4,7 +4,9 @@ import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/select_mask.dart';
 import 'package:PiliPlus/models_new/download/bili_download_entry_info.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 
@@ -30,8 +32,18 @@ class DownloadFolderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Material(
-      type: MaterialType.transparency,
+      type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
+      color: isWindowsNeo ? context.windowsNeo.surface : null,
+      elevation: 0,
+      shape: isWindowsNeo
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+              side: BorderSide(color: context.windowsNeo.border),
+            )
+          : null,
+      clipBehavior: isWindowsNeo ? Clip.antiAlias : Clip.none,
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
@@ -102,7 +114,9 @@ class DownloadFolderCard extends StatelessWidget {
 
   Widget _buildCover(BuildContext context, double width, double height) {
     if (entry case final entry?) {
-      final coverFile = File(path.join(entry.entryDirPath, PathUtils.coverName));
+      final coverFile = File(
+        path.join(entry.entryDirPath, PathUtils.coverName),
+      );
       if (coverFile.existsSync()) {
         return Image.file(
           coverFile,

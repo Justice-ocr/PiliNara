@@ -19,8 +19,10 @@ import 'package:PiliPlus/pages/pgc/widgets/pgc_card_v_timeline.dart';
 import 'package:PiliPlus/pages/pgc_index/controller.dart';
 import 'package:PiliPlus/pages/pgc_index/view.dart';
 import 'package:PiliPlus/pages/pgc_index/widgets/pgc_card_v_pgc_index.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -51,6 +53,10 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
+  bool get _isWindowsNeo => WindowsVideoTabService.enabled;
+
+  double get _posterWidth => _isWindowsNeo ? 150 : Grid.smallCardWidth / 2;
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -66,7 +72,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
             SliverToBoxAdapter(
               child: SizedBox(
                 height:
-                    Grid.smallCardWidth / 2 / 0.75 +
+                    _posterWidth / 0.75 +
                     MediaQuery.textScalerOf(context).scale(96),
                 child: Obx(
                   () => _buildTimeline(theme, controller.timelineState.value),
@@ -115,19 +121,35 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
                               ),
                               splashFactory: NoSplash.splashFactory,
                               padding: const EdgeInsets.only(right: 10),
-                              indicatorPadding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 10,
-                              ),
-                              indicator: BoxDecoration(
-                                color: theme.colorScheme.secondaryContainer,
-                                borderRadius: const BorderRadius.all(
-                                  Radius.circular(20),
-                                ),
-                              ),
-                              indicatorSize: TabBarIndicatorSize.tab,
-                              labelColor:
-                                  theme.colorScheme.onSecondaryContainer,
+                              indicatorPadding: _isWindowsNeo
+                                  ? EdgeInsets.zero
+                                  : const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 10,
+                                    ),
+                              indicator: _isWindowsNeo
+                                  ? UnderlineTabIndicator(
+                                      borderSide: BorderSide(
+                                        color: context.windowsNeo.accent,
+                                        width: 2.5,
+                                      ),
+                                    )
+                                  : BoxDecoration(
+                                      color:
+                                          theme.colorScheme.secondaryContainer,
+                                      borderRadius: const BorderRadius.all(
+                                        Radius.circular(20),
+                                      ),
+                                    ),
+                              indicatorSize: _isWindowsNeo
+                                  ? TabBarIndicatorSize.label
+                                  : TabBarIndicatorSize.tab,
+                              labelColor: _isWindowsNeo
+                                  ? theme.colorScheme.onSurface
+                                  : theme.colorScheme.onSecondaryContainer,
+                              unselectedLabelColor: _isWindowsNeo
+                                  ? context.windowsNeo.muted
+                                  : null,
                               labelStyle:
                                   TabBarTheme.of(
                                     context,
@@ -168,11 +190,15 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
                               padding: EdgeInsets.zero,
                               itemBuilder: (context, index) {
                                 return Container(
-                                  width: Grid.smallCardWidth / 2,
+                                  width: _posterWidth,
                                   margin: EdgeInsets.only(
-                                    left: Style.safeSpace,
+                                    left: _isWindowsNeo
+                                        ? 12
+                                        : Style.safeSpace,
                                     right: index == item.episodes!.length - 1
-                                        ? Style.safeSpace
+                                        ? _isWindowsNeo
+                                              ? 18
+                                              : Style.safeSpace
                                         : 0,
                                   ),
                                   child: PgcCardVTimeline(
@@ -207,9 +233,9 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
   List<Widget> _buildRcmd(ThemeData theme) => [
     _buildRcmdTitle(theme),
     SliverPadding(
-      padding: const EdgeInsets.only(
-        left: Style.safeSpace,
-        right: Style.safeSpace,
+      padding: EdgeInsets.only(
+        left: _isWindowsNeo ? 18 : Style.safeSpace,
+        right: _isWindowsNeo ? 18 : Style.safeSpace,
         bottom: 100,
       ),
       sliver: Obx(
@@ -220,11 +246,11 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
 
   Widget _buildRcmdTitle(ThemeData theme) => SliverToBoxAdapter(
     child: Padding(
-      padding: const EdgeInsets.only(
+      padding: EdgeInsets.only(
         top: 10,
         bottom: 10,
-        left: 16,
-        right: 10,
+        left: _isWindowsNeo ? 18 : 16,
+        right: _isWindowsNeo ? 18 : 10,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -301,11 +327,13 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
   );
 
   late final gridDelegate = SliverGridDelegateWithExtentAndRatio(
-    mainAxisSpacing: Style.cardSpace,
-    crossAxisSpacing: Style.cardSpace,
-    maxCrossAxisExtent: Grid.smallCardWidth * 0.6,
+    mainAxisSpacing: _isWindowsNeo ? 14 : Style.cardSpace,
+    crossAxisSpacing: _isWindowsNeo ? 14 : Style.cardSpace,
+    maxCrossAxisExtent: _isWindowsNeo ? 180 : Grid.smallCardWidth * 0.6,
     childAspectRatio: 0.75,
-    mainAxisExtent: MediaQuery.textScalerOf(context).scale(50),
+    mainAxisExtent: MediaQuery.textScalerOf(context).scale(
+      _isWindowsNeo ? 58 : 50,
+    ),
   );
 
   Widget _buildRcmdBody(LoadingState<List<PgcIndexItem>?> loadingState) {
@@ -339,7 +367,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
                 _buildFollowTitle(theme),
                 SizedBox(
                   height:
-                      Grid.smallCardWidth / 2 / 0.75 +
+                      _posterWidth / 0.75 +
                       MediaQuery.textScalerOf(context).scale(50),
                   child: Obx(
                     () => _buildFollowBody(controller.followState.value),
@@ -352,7 +380,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
   );
 
   Widget _buildFollowTitle(ThemeData theme) => Padding(
-    padding: const EdgeInsets.only(left: 16),
+    padding: EdgeInsets.only(left: _isWindowsNeo ? 18 : 16),
     child: Row(
       children: [
         Obx(
@@ -410,10 +438,14 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
                     controller.queryPgcFollow(false);
                   }
                   return Container(
-                    width: Grid.smallCardWidth / 2,
+                    width: _posterWidth,
                     margin: EdgeInsets.only(
-                      left: Style.safeSpace,
-                      right: index == response.length - 1 ? Style.safeSpace : 0,
+                      left: _isWindowsNeo ? 12 : Style.safeSpace,
+                      right: index == response.length - 1
+                          ? _isWindowsNeo
+                                ? 18
+                                : Style.safeSpace
+                          : 0,
                     ),
                     child: PgcCardV(item: response[index]),
                   );

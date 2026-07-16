@@ -22,6 +22,7 @@ import 'package:PiliPlus/pages/video/introduction/ugc/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/action_item.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/page.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/season.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
@@ -95,11 +96,13 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
     );
     final isPortrait = widget.isPortrait;
     final isHorizontal = !isPortrait && widget.isHorizontal;
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return SliverPadding(
-      padding: const EdgeInsets.only(
-        left: Style.safeSpace,
-        right: Style.safeSpace,
-        top: 10,
+      padding: EdgeInsets.only(
+        left: isWindowsNeo ? 18 : Style.safeSpace,
+        right: isWindowsNeo ? 18 : Style.safeSpace,
+        top: isWindowsNeo ? 16 : 10,
+        bottom: isWindowsNeo ? 18 : 0,
       ),
       sliver: Obx(
         () {

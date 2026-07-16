@@ -14,6 +14,7 @@ import 'package:PiliPlus/pages/live/widgets/live_item_app.dart';
 import 'package:PiliPlus/pages/live_area/view.dart';
 import 'package:PiliPlus/pages/live_follow/view.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
@@ -49,10 +50,15 @@ class _LivePageState extends State<LivePage>
   Widget build(BuildContext context) {
     super.build(context);
     final ThemeData theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Container(
       clipBehavior: Clip.hardEdge,
-      margin: const EdgeInsets.symmetric(horizontal: Style.safeSpace),
-      decoration: const BoxDecoration(borderRadius: Style.mdRadius),
+      margin: isWindowsNeo
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: Style.safeSpace),
+      decoration: BoxDecoration(
+        borderRadius: isWindowsNeo ? BorderRadius.zero : Style.mdRadius,
+      ),
       child: refreshIndicator(
         onRefresh: controller.onRefresh,
         child: CustomScrollView(
@@ -60,10 +66,12 @@ class _LivePageState extends State<LivePage>
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.only(
-                top: Style.cardSpace,
-                bottom: 100,
-              ),
+              padding: isWindowsNeo
+                  ? const EdgeInsets.fromLTRB(18, 18, 18, 100)
+                  : const EdgeInsets.only(
+                      top: Style.cardSpace,
+                      bottom: 100,
+                    ),
               sliver: SliverMainAxisGroup(
                 slivers: [
                   Obx(() => _buildTop(theme, controller.topState.value)),
@@ -176,11 +184,17 @@ class _LivePageState extends State<LivePage>
   }
 
   late final gridDelegate = SliverGridDelegateWithExtentAndRatio(
-    mainAxisSpacing: Style.cardSpace,
-    crossAxisSpacing: Style.cardSpace,
-    maxCrossAxisExtent: Grid.smallCardWidth,
-    childAspectRatio: Style.aspectRatio,
-    mainAxisExtent: textScaler.scale(90),
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 14 : Style.cardSpace,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 14 : Style.cardSpace,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 300
+        : Grid.smallCardWidth,
+    childAspectRatio: WindowsVideoTabService.enabled
+        ? Style.aspectRatio16x9
+        : Style.aspectRatio,
+    mainAxisExtent: textScaler.scale(
+      WindowsVideoTabService.enabled ? 92 : 90,
+    ),
   );
 
   Widget _buildBody(ThemeData theme, LoadingState<List?> loadingState) {

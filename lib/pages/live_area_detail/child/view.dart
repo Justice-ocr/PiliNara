@@ -8,6 +8,7 @@ import 'package:PiliPlus/models_new/live/live_feed_index/card_data_list_item.dar
 import 'package:PiliPlus/pages/live/widgets/live_item_app.dart';
 import 'package:PiliPlus/pages/live_area_detail/child/controller.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -53,9 +54,9 @@ class _LiveAreaChildPageState extends State<LiveAreaChildPage>
         slivers: [
           SliverPadding(
             padding: EdgeInsets.only(
-              left: Style.safeSpace,
-              right: Style.safeSpace,
-              top: Style.safeSpace,
+              left: WindowsVideoTabService.enabled ? 18 : Style.safeSpace,
+              right: WindowsVideoTabService.enabled ? 18 : Style.safeSpace,
+              top: WindowsVideoTabService.enabled ? 16 : Style.safeSpace,
               bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
             ),
             sliver: Obx(
@@ -68,11 +69,17 @@ class _LiveAreaChildPageState extends State<LiveAreaChildPage>
   }
 
   late final gridDelegate = SliverGridDelegateWithExtentAndRatio(
-    mainAxisSpacing: Style.cardSpace,
-    crossAxisSpacing: Style.cardSpace,
-    maxCrossAxisExtent: Grid.smallCardWidth,
-    childAspectRatio: Style.aspectRatio,
-    mainAxisExtent: MediaQuery.textScalerOf(context).scale(90),
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 14 : Style.cardSpace,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 14 : Style.cardSpace,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 300
+        : Grid.smallCardWidth,
+    childAspectRatio: WindowsVideoTabService.enabled
+        ? Style.aspectRatio16x9
+        : Style.aspectRatio,
+    mainAxisExtent: MediaQuery.textScalerOf(
+      context,
+    ).scale(WindowsVideoTabService.enabled ? 92 : 90),
   );
 
   Widget _buildBody(

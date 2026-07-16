@@ -12,10 +12,12 @@ import 'package:PiliPlus/pages/common/fab_mixin.dart'
     show NoBottomPaddingFabLocation;
 import 'package:PiliPlus/pages/match_info/controller.dart';
 import 'package:PiliPlus/pages/video/reply_reply/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -41,23 +43,31 @@ class _MatchInfoPageState extends CommonDynPageState<MatchInfoPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('比赛详情')),
-      body: ViewSafeArea(
-        child: refreshIndicator(
-          onRefresh: controller.onRefresh,
-          child: CustomScrollView(
-            controller: scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              Obx(() => _buildInfo(theme, controller.infoState.value)),
-              buildReplyHeader(theme),
-              Obx(() => replyList(theme, controller.loadingState.value)),
-            ],
+      body:
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: isWindowsNeo ? 18 : 0),
+            child: ViewSafeArea(
+              child: refreshIndicator(
+                onRefresh: controller.onRefresh,
+                child: CustomScrollView(
+                  controller: scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    Obx(() => _buildInfo(theme, controller.infoState.value)),
+                    buildReplyHeader(theme),
+                    Obx(() => replyList(theme, controller.loadingState.value)),
+                  ],
+                ),
+              ),
+            ),
+          ).constraintWidth(
+            constraints: BoxConstraints(maxWidth: isWindowsNeo ? 856 : 625),
           ),
-        ),
-      ).constraintWidth(),
       floatingActionButtonLocation: const NoBottomPaddingFabLocation(),
       floatingActionButton: SlideTransition(
         position: fabAnimation,

@@ -5,9 +5,11 @@ import 'package:PiliPlus/common/widgets/progress_bar/segment_progress_bar.dart';
 import 'package:PiliPlus/pages/common/slide/common_slide_page.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -38,6 +40,9 @@ class _ViewPointsPageState extends State<ViewPointsPage>
   @override
   Widget buildPage(ThemeData theme) {
     return Scaffold(
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.surface
+          : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         primary: false,
@@ -79,7 +84,9 @@ class _ViewPointsPageState extends State<ViewPointsPage>
         ],
         shape: Border(
           bottom: BorderSide(
-            color: theme.colorScheme.outline.withValues(alpha: 0.1),
+            color: WindowsVideoTabService.enabled
+                ? context.windowsNeo.border
+                : theme.colorScheme.outline.withValues(alpha: 0.1),
           ),
         ),
       ),
@@ -134,7 +141,10 @@ class _ViewPointsPageState extends State<ViewPointsPage>
   Widget _buildItem(ThemeData theme, ViewPointSegment segment, bool isCurr) {
     final theme = Theme.of(context);
     return Material(
-      type: MaterialType.transparency,
+      type: WindowsVideoTabService.enabled
+          ? MaterialType.canvas
+          : MaterialType.transparency,
+      color: WindowsVideoTabService.enabled ? context.windowsNeo.surface : null,
       child: InkWell(
         onTap: segment.from != null
             ? () {

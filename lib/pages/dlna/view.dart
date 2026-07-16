@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:math' show max;
 
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:dlna_dart/dlna.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -70,7 +73,13 @@ class _DLNAPageState extends State<DLNAPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final horizontalPadding = max(
+      18.0,
+      (MediaQuery.sizeOf(context).width - 820) / 2,
+    );
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('投屏'),
@@ -86,7 +95,18 @@ class _DLNAPageState extends State<DLNAPage> {
       body: CustomScrollView(
         slivers: [
           if (_isSearching) linearLoading,
-          ViewSliverSafeArea(sliver: _buildBody(colorScheme)),
+          if (isWindowsNeo)
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                16,
+                horizontalPadding,
+                MediaQuery.viewPaddingOf(context).bottom + 100,
+              ),
+              sliver: _buildBody(colorScheme),
+            )
+          else
+            ViewSliverSafeArea(sliver: _buildBody(colorScheme)),
         ],
       ),
     );
@@ -101,13 +121,13 @@ class _DLNAPageState extends State<DLNAPage> {
     }
     if (_deviceList.isNotEmpty) {
       final keys = _deviceList.keys.toList();
-      return SliverList.builder(
+      return SliverList.separated(
         itemCount: keys.length,
         itemBuilder: (context, index) {
           final key = keys[index];
           final device = _deviceList[key]!;
           final isCurr = key == _lastDeviceKey;
-          return ListTile(
+          final tile = ListTile(
             title: Text(
               device.info.friendlyName,
               style: isCurr ? TextStyle(color: colorScheme.primary) : null,
@@ -123,7 +143,12 @@ class _DLNAPageState extends State<DLNAPage> {
               await device.play();
             },
           );
+          if (!WindowsVideoTabService.enabled) return tile;
+          return Material(color: context.windowsNeo.surface, child: tile);
         },
+        separatorBuilder: (_, _) => WindowsVideoTabService.enabled
+            ? Divider(height: 1, color: context.windowsNeo.border)
+            : const SizedBox.shrink(),
       );
     }
     return const SliverToBoxAdapter();

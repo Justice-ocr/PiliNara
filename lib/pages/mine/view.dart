@@ -18,6 +18,7 @@ import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/pages/mine/widgets/history_card_item.dart';
 import 'package:PiliPlus/pages/mine/widgets/item.dart';
 import 'package:PiliPlus/pages/mine/widgets/to_view_card_item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
@@ -27,6 +28,8 @@ import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart' hide ListTile;
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -91,6 +94,9 @@ class _MediaPageState extends CommonPageState<MinePage>
     super.build(context);
     final theme = Theme.of(context);
     final secondary = theme.colorScheme.secondary;
+    if (WindowsVideoTabService.enabled) {
+      return _buildWindowsPage(theme, secondary);
+    }
     return Column(
       children: [
         Padding(
@@ -134,6 +140,142 @@ class _MediaPageState extends CommonPageState<MinePage>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildWindowsPage(ThemeData theme, Color secondary) {
+    return WindowsNeoPage(
+      title: '\u6211\u7684',
+      subtitle: '\u8d26\u6237\u3001\u6536\u85cf\u4e0e\u4e2a\u4eba\u5185\u5bb9',
+      leading: widget.showBackBtn
+          ? const BackButton()
+          : Icon(Icons.person_outline, color: context.windowsNeo.accent),
+      actions: _windowsHeaderActions,
+      child: refreshIndicator(
+        onRefresh: controller.onRefresh,
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 100),
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 22, 18, 12),
+                      child: _buildUserInfo(theme, secondary),
+                    ),
+                    Divider(height: 1, color: context.windowsNeo.border),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 14,
+                      ),
+                      child: _buildWindowsQuickActions(),
+                    ),
+                    for (final card in _mineCards)
+                      switch (card) {
+                        MineCardType.history => Obx(
+                          () => controller.historyLoadingState.value is Loading
+                              ? const SizedBox.shrink()
+                              : _buildHistory(theme, secondary),
+                        ),
+                        MineCardType.fav => Obx(
+                          () => controller.loadingState.value is Loading
+                              ? const SizedBox.shrink()
+                              : _buildFav(theme, secondary),
+                        ),
+                        MineCardType.toView => Obx(
+                          () => controller.toViewLoadingState.value is Loading
+                              ? const SizedBox.shrink()
+                              : _buildToView(theme, secondary),
+                        ),
+                      },
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> get _windowsHeaderActions => [
+    if (GStorage.reply != null)
+      IconButton(
+        tooltip: '\u8bc4\u8bba\u8bb0\u5f55',
+        onPressed: () => Get.toNamed('/myReply'),
+        icon: const Icon(Icons.message_outlined),
+      ),
+    Obx(() {
+      final anonymity = MineController.anonymity.value;
+      return IconButton(
+        tooltip: anonymity ? '\u9000\u51fa\u65e0\u75d5\u6a21\u5f0f' : '\u8fdb\u5165\u65e0\u75d5\u6a21\u5f0f',
+        onPressed: MineController.onChangeAnonymity,
+        icon: Icon(
+          anonymity ? MdiIcons.incognito : MdiIcons.incognitoOff,
+        ),
+      );
+    }),
+    IconButton(
+      tooltip: '\u5207\u6362\u8d26\u53f7',
+      onPressed: () => LoginPageController.switchAccountDialog(context),
+      icon: const Icon(Icons.switch_account_outlined),
+    ),
+    Obx(
+      () => IconButton(
+        tooltip: '\u5207\u6362\u4e3b\u9898',
+        onPressed: controller.onChangeTheme,
+        icon: controller.themeType.value.icon,
+      ),
+    ),
+    IconButton(
+      tooltip: '\u5237\u65b0',
+      onPressed: controller.onRefresh,
+      icon: const Icon(Icons.refresh_outlined),
+    ),
+    IconButton(
+      tooltip: '\u8bbe\u7f6e',
+      onPressed: () => PageUtils.openToolTab(
+        route: '/setting',
+        title: '\u8bbe\u7f6e',
+      ),
+      icon: const Icon(Icons.settings_outlined),
+    ),
+    const SizedBox(width: 6),
+  ];
+
+  Widget _buildWindowsQuickActions() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: controller.list.indexed
+            .map(
+              (entry) => OutlinedButton.icon(
+                onPressed: entry.$1 == 0
+                    ? () => PageUtils.openToolTab(
+                        route: '/download',
+                        title: '\u4e0b\u8f7d',
+                      )
+                    : entry.$2.onTap,
+                icon: Icon(entry.$2.icon, size: 18),
+                label: Text(entry.$2.title),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 38),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  side: BorderSide(color: context.windowsNeo.border),
+                ),
+              ),
+            )
+            .toList(),
+      ),
     );
   }
 
@@ -190,13 +332,13 @@ class _MediaPageState extends CommonPageState<MinePage>
             ),
           ),
         if (!_mainController.hasHome) ...[
-          IconButton(
+          const IconButton(
             iconSize: iconSize,
             padding: padding,
             style: style,
             tooltip: '搜索',
             onPressed: PageUtils.toSearch,
-            icon: const Icon(Icons.search),
+            icon: Icon(Icons.search),
           ),
           msgBadge(_mainController),
         ],

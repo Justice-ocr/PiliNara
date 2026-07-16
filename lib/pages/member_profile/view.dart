@@ -1,4 +1,5 @@
 import 'dart:io' show File;
+import 'dart:math' show max;
 
 import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -11,6 +12,7 @@ import 'package:PiliPlus/models/user/info.dart';
 import 'package:PiliPlus/models_new/account_myinfo/data.dart';
 import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/services/account_service.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/app_sign.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
@@ -21,6 +23,7 @@ import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
@@ -61,7 +64,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('账号资料')),
       body: _buildBody(theme, _loadingState),
@@ -118,18 +123,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
   ) {
     late final divider = Divider(
       height: 1,
-      color: theme.dividerColor.withValues(alpha: 0.1),
+      color: WindowsVideoTabService.enabled
+          ? context.windowsNeo.border
+          : theme.dividerColor.withValues(alpha: 0.1),
     );
 
-    late final divider1 = Divider(
-      thickness: 16,
-      color: theme.dividerColor.withValues(alpha: 0.1),
-    );
+    late final Widget divider1 = WindowsVideoTabService.enabled
+        ? const SizedBox(height: 12)
+        : Divider(
+            thickness: 16,
+            color: theme.dividerColor.withValues(alpha: 0.1),
+          );
 
     return switch (loadingState) {
       Loading() => m3eLoading,
       Success(:final response) => ListView(
         padding: EdgeInsets.only(
+          left: WindowsVideoTabService.enabled
+              ? max(18, (MediaQuery.sizeOf(context).width - 720) / 2)
+              : 0,
+          top: WindowsVideoTabService.enabled ? 16 : 0,
+          right: WindowsVideoTabService.enabled
+              ? max(18, (MediaQuery.sizeOf(context).width - 720) / 2)
+              : 0,
           bottom: MediaQuery.viewPaddingOf(context).bottom + 25,
         ),
         children: [
@@ -433,7 +449,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     GestureTapCallback? onTap,
     bool needIcon = true,
   }) {
-    return ListTile(
+    final child = ListTile(
       onTap: onTap,
       dense: title != '头像',
       leading: Text(
@@ -471,6 +487,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ],
       ),
     );
+    if (!WindowsVideoTabService.enabled) return child;
+    return Material(color: context.windowsNeo.surface, child: child);
   }
 
   Future<void> _pickImg(ThemeData theme) async {

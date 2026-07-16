@@ -33,6 +33,7 @@ import 'package:PiliPlus/pages/member_pgc/view.dart';
 import 'package:PiliPlus/pages/member_shop/view.dart';
 import 'package:PiliPlus/pages/member_video_web/archive/view.dart';
 import 'package:PiliPlus/pages/member_video_web/season_series/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
@@ -42,6 +43,7 @@ import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -96,8 +98,9 @@ class _MemberPageState extends State<MemberPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context).colorScheme;
     final padding = MediaQuery.viewPaddingOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Material(
-      color: theme.surface,
+      color: isWindowsNeo ? context.windowsNeo.background : theme.surface,
       child: Obx(
         () => switch (_userController.loadingState.value) {
           Loading() => m3eLoading,
@@ -112,6 +115,12 @@ class _MemberPageState extends State<MemberPage> {
                   DynamicSliverAppBar.medium(
                     actions: _actions(theme),
                     title: Text(_userController.username ?? ''),
+                    backgroundColor: isWindowsNeo
+                        ? context.windowsNeo.surface
+                        : null,
+                    surfaceTintColor: Colors.transparent,
+                    elevation: 0,
+                    scrolledUnderElevation: 0,
                     flexibleSpace: Obx(
                       () => UserInfoCard(
                         isOwner:
@@ -121,8 +130,7 @@ class _MemberPageState extends State<MemberPage> {
                         images: response.images!,
                         onFollow: () => _userController.onFollow(context),
                         remark: _userController.remark.value,
-                        onEditRemark: () =>
-                            _userController.editRemark(context),
+                        onEditRemark: () => _userController.editRemark(context),
                         live: _userController.live,
                         silence: _userController.silence,
                         headerControllerBuilder: getHeaderController,
@@ -151,22 +159,17 @@ class _MemberPageState extends State<MemberPage> {
             body: _userController.tab2?.isNotEmpty == true
                 ? Padding(
                     padding: .only(left: padding.left, right: padding.right),
-                    child: Column(
-                      children: [
-                        if ((_userController.tab2?.length ?? 0) > 1)
-                          SizedBox(
-                            height: 45,
-                            child: TabBar(
-                              controller: _userController.tabController,
-                              tabs: _userController.tabs,
-                              onTap: _userController.onTapTab,
-                              dividerColor: theme.outline.withValues(
-                                alpha: 0.2,
-                              ),
-                            ),
-                          ),
-                        Expanded(child: _buildBody),
-                      ],
+                    child: ColoredBox(
+                      color: isWindowsNeo
+                          ? context.windowsNeo.background
+                          : Colors.transparent,
+                      child: Column(
+                        children: [
+                          if ((_userController.tab2?.length ?? 0) > 1)
+                            _buildMemberTabs(theme, isWindowsNeo),
+                          Expanded(child: _buildBody),
+                        ],
+                      ),
                     ),
                   )
                 : scrollableError,
@@ -176,6 +179,51 @@ class _MemberPageState extends State<MemberPage> {
             onReload: _userController.onReload,
           ),
         },
+      ),
+    );
+  }
+
+  Widget _buildMemberTabs(ColorScheme theme, bool isWindowsNeo) {
+    if (!isWindowsNeo) {
+      return SizedBox(
+        height: 45,
+        child: TabBar(
+          controller: _userController.tabController,
+          tabs: _userController.tabs,
+          onTap: _userController.onTapTab,
+          dividerColor: theme.outline.withValues(alpha: 0.2),
+        ),
+      );
+    }
+
+    final tokens = context.windowsNeo;
+    return Container(
+      height: 48,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        border: Border(
+          top: BorderSide(color: tokens.border),
+          bottom: BorderSide(color: tokens.border),
+        ),
+      ),
+      alignment: Alignment.centerLeft,
+      child: TabBar(
+        controller: _userController.tabController,
+        tabs: _userController.tabs,
+        onTap: _userController.onTapTab,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        dividerColor: Colors.transparent,
+        dividerHeight: 0,
+        indicatorSize: TabBarIndicatorSize.label,
+        indicator: UnderlineTabIndicator(
+          borderSide: BorderSide(color: tokens.accent, width: 2.5),
+        ),
+        labelColor: theme.onSurface,
+        unselectedLabelColor: tokens.muted,
+        labelPadding: const EdgeInsets.symmetric(horizontal: 14),
       ),
     );
   }
@@ -364,9 +412,11 @@ class _MemberPageState extends State<MemberPage> {
               children: [
                 const Icon(Icons.edit_note, size: 19),
                 const SizedBox(width: 10),
-                Obx(() => Text(
-                  _userController.remark.value.isEmpty ? '添加备注' : '编辑备注',
-                )),
+                Obx(
+                  () => Text(
+                    _userController.remark.value.isEmpty ? '添加备注' : '编辑备注',
+                  ),
+                ),
               ],
             ),
           ),

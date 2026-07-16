@@ -15,11 +15,13 @@ import 'package:PiliPlus/pages/dynamics/widgets/dynamic_panel.dart';
 import 'package:PiliPlus/pages/dynamics_create/view.dart';
 import 'package:PiliPlus/pages/dynamics_detail/controller.dart';
 import 'package:PiliPlus/pages/dynamics_repost/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -80,10 +82,16 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
       () {
         controller.detailVersion.value;
         return Scaffold(
+          backgroundColor: WindowsVideoTabService.enabled
+              ? context.windowsNeo.background
+              : null,
           resizeToAvoidBottomInset: false,
           appBar: _buildAppBar(),
           body: Padding(
-            padding: EdgeInsets.only(left: padding.left, right: padding.right),
+            padding: EdgeInsets.only(
+              left: WindowsVideoTabService.enabled ? 0 : padding.left,
+              right: WindowsVideoTabService.enabled ? 0 : padding.right,
+            ),
             child: isPortrait
                 ? refreshIndicator(
                     onRefresh: controller.onRefresh,
@@ -266,7 +274,10 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
   );
 
   Widget _buildBody(ThemeData theme) {
-    double padding = max(maxWidth / 2 - Grid.smallCardWidth, 0);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    double padding = isWindowsNeo
+        ? max((maxWidth - 820) / 2, 0)
+        : max(maxWidth / 2 - Grid.smallCardWidth, 0);
     Widget child;
     if (isPortrait) {
       child = Padding(
@@ -291,9 +302,10 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
         ),
       );
     } else {
-      padding = padding / 4;
       final flex = controller.ratio[0].toInt();
       final flex1 = controller.ratio[1].toInt();
+      final leftWidth = maxWidth * flex / (flex + flex1);
+      padding = isWindowsNeo ? max((leftWidth - 820) / 2, 20) : padding / 4;
       child = Row(
         children: [
           Expanded(
@@ -305,6 +317,7 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
                 SliverPadding(
                   padding: EdgeInsets.only(
                     left: padding,
+                    right: isWindowsNeo ? padding : 0,
                     bottom: this.padding.bottom + 100,
                   ),
                   sliver: SliverToBoxAdapter(
@@ -321,24 +334,31 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
               ],
             ),
           ),
+          if (isWindowsNeo)
+            VerticalDivider(width: 1, color: context.windowsNeo.border),
           Expanded(
             flex: flex1,
-            child: Padding(
-              padding: EdgeInsets.only(right: padding),
-              child: Scaffold(
-                backgroundColor: Colors.transparent,
-                resizeToAvoidBottomInset: false,
-                body: refreshIndicator(
-                  onRefresh: controller.onRefresh,
-                  child: CustomScrollView(
-                    controller: scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    slivers: [
-                      buildReplyHeader(theme),
-                      Obx(
-                        () => replyList(theme, controller.loadingState.value),
-                      ),
-                    ],
+            child: ColoredBox(
+              color: isWindowsNeo
+                  ? context.windowsNeo.surface
+                  : Colors.transparent,
+              child: Padding(
+                padding: EdgeInsets.only(right: isWindowsNeo ? 0 : padding),
+                child: Scaffold(
+                  backgroundColor: Colors.transparent,
+                  resizeToAvoidBottomInset: false,
+                  body: refreshIndicator(
+                    onRefresh: controller.onRefresh,
+                    child: CustomScrollView(
+                      controller: scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        buildReplyHeader(theme),
+                        Obx(
+                          () => replyList(theme, controller.loadingState.value),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -404,12 +424,14 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
           ),
           Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
+              color: WindowsVideoTabService.enabled
+                  ? context.windowsNeo.surface
+                  : theme.colorScheme.surface,
               border: Border(
                 top: BorderSide(
-                  color: theme.colorScheme.outline.withValues(
-                    alpha: 0.08,
-                  ),
+                  color: WindowsVideoTabService.enabled
+                      ? context.windowsNeo.border
+                      : theme.colorScheme.outline.withValues(alpha: 0.08),
                 ),
               ),
             ),

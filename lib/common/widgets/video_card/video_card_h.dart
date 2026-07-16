@@ -19,6 +19,51 @@ import 'package:get/get.dart';
 class VideoCardH extends StatelessWidget {
   static final RxSet<String> clickedBvids = <String>{}.obs;
 
+  static Future<void> openDetail(HorizontalVideoModel videoItem) async {
+    if (videoItem.isPugv ?? false) {
+      PageUtils.viewPugv(seasonId: videoItem.seasonId);
+      return;
+    }
+
+    if (videoItem.isLive ?? false) {
+      if (videoItem.roomId case final roomId?) {
+        PageUtils.toLiveRoom(roomId);
+      }
+      return;
+    }
+
+    if (videoItem.redirectUrl?.isNotEmpty == true &&
+        PageUtils.viewPgcFromUri(videoItem.redirectUrl!)) {
+      return;
+    }
+
+    int? cid = videoItem.cid;
+    Dimension? dimension = videoItem.dimension;
+    if (cid == null) {
+      if (await SearchHttp.ab2cWithDimension(
+            aid: videoItem.aid,
+            bvid: videoItem.bvid,
+          )
+          case final res?) {
+        cid = res.cid;
+        dimension = res.dimension;
+      }
+    }
+    if (cid != null) {
+      PageUtils.toVideoPage(
+        bvid: videoItem.bvid,
+        cid: cid,
+        cover: videoItem.cover,
+        title: videoItem.title,
+        dimension: dimension,
+      );
+      final key = videoItem.bvid ?? videoItem.aid?.toString();
+      if (key != null && key.isNotEmpty) {
+        clickedBvids.add(key);
+      }
+    }
+  }
+
   const VideoCardH({
     super.key,
     required this.videoItem,
@@ -47,53 +92,7 @@ class VideoCardH extends StatelessWidget {
           InkWell(
             onLongPress: onLongPress,
             onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
-            onTap:
-                onTap ??
-                () async {
-                  if (videoItem.isPugv ?? false) {
-                    PageUtils.viewPugv(seasonId: videoItem.seasonId);
-                    return;
-                  }
-
-                  if (videoItem.isLive ?? false) {
-                    if (videoItem.roomId case final roomId?) {
-                      PageUtils.toLiveRoom(roomId);
-                    }
-                    return;
-                  }
-
-                  if (videoItem.redirectUrl?.isNotEmpty == true &&
-                      PageUtils.viewPgcFromUri(videoItem.redirectUrl!)) {
-                    return;
-                  }
-
-                  int? cid = videoItem.cid;
-                  Dimension? dimension = videoItem.dimension;
-                  if (cid == null) {
-                    if (await SearchHttp.ab2cWithDimension(
-                          aid: videoItem.aid,
-                          bvid: videoItem.bvid,
-                        )
-                        case final res?) {
-                      cid = res.cid;
-                      dimension = res.dimension;
-                    }
-                  }
-                  if (cid != null) {
-                    PageUtils.toVideoPage(
-                      bvid: videoItem.bvid,
-                      cid: cid,
-                      cover: videoItem.cover,
-                      title: videoItem.title,
-                      dimension: dimension,
-                    );
-                    final String? key =
-                        videoItem.bvid ?? videoItem.aid?.toString();
-                    if (key != null && key.isNotEmpty) {
-                      VideoCardH.clickedBvids.add(key);
-                    }
-                  }
-                },
+            onTap: onTap ?? () => openDetail(videoItem),
             child: Padding(
               padding: const .symmetric(
                 horizontal: Style.safeSpace,

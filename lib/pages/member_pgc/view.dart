@@ -5,6 +5,7 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/space/space_archive/item.dart';
 import 'package:PiliPlus/pages/member_pgc/controller.dart';
 import 'package:PiliPlus/pages/member_pgc/widgets/pgc_card_v_member_pgc.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -52,9 +53,9 @@ class _MemberBangumiState extends State<MemberBangumi>
         slivers: [
           SliverPadding(
             padding: EdgeInsets.only(
-              left: Style.safeSpace,
-              right: Style.safeSpace,
-              top: Style.safeSpace,
+              left: WindowsVideoTabService.enabled ? 18 : Style.safeSpace,
+              right: WindowsVideoTabService.enabled ? 18 : Style.safeSpace,
+              top: WindowsVideoTabService.enabled ? 16 : Style.safeSpace,
               bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
             ),
             sliver: Obx(
@@ -67,11 +68,15 @@ class _MemberBangumiState extends State<MemberBangumi>
   }
 
   late final gridDelegate = SliverGridDelegateWithExtentAndRatio(
-    mainAxisSpacing: Style.cardSpace,
-    crossAxisSpacing: Style.cardSpace,
-    maxCrossAxisExtent: Grid.smallCardWidth * 0.6,
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.cardSpace,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.cardSpace,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 220
+        : Grid.smallCardWidth * 0.6,
     childAspectRatio: 0.75,
-    mainAxisExtent: MediaQuery.textScalerOf(context).scale(52),
+    mainAxisExtent: MediaQuery.textScalerOf(
+      context,
+    ).scale(WindowsVideoTabService.enabled ? 64 : 52),
   );
 
   Widget _buildBody(LoadingState<List<SpaceArchiveItem>?> loadingState) {

@@ -6,9 +6,11 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/member/coin_like_arc/item.dart';
 import 'package:PiliPlus/pages/member_coin_arc/controller.dart';
 import 'package:PiliPlus/pages/member_coin_arc/widgets/item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -42,7 +44,9 @@ class _MemberCoinArcPageState extends State<MemberCoinArcPage> {
   @override
   Widget build(BuildContext context) {
     final padding = MediaQuery.viewPaddingOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(
@@ -56,9 +60,9 @@ class _MemberCoinArcPageState extends State<MemberCoinArcPage> {
           slivers: [
             SliverPadding(
               padding: EdgeInsets.only(
-                top: 7,
-                left: Style.safeSpace + padding.left,
-                right: Style.safeSpace + padding.right,
+                top: isWindowsNeo ? 16 : 7,
+                left: isWindowsNeo ? 18 : Style.safeSpace + padding.left,
+                right: isWindowsNeo ? 18 : Style.safeSpace + padding.right,
                 bottom: padding.bottom + 100,
               ),
               sliver: Obx(() => _buildBody(_ctr.loadingState.value)),
@@ -70,11 +74,15 @@ class _MemberCoinArcPageState extends State<MemberCoinArcPage> {
   }
 
   late final gridDelegate = SliverGridDelegateWithExtentAndRatio(
-    mainAxisSpacing: Style.cardSpace,
-    crossAxisSpacing: Style.cardSpace,
-    maxCrossAxisExtent: Grid.smallCardWidth,
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.cardSpace,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.cardSpace,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 300
+        : Grid.smallCardWidth,
     childAspectRatio: Style.aspectRatio,
-    mainAxisExtent: MediaQuery.textScalerOf(context).scale(75),
+    mainAxisExtent: MediaQuery.textScalerOf(
+      context,
+    ).scale(WindowsVideoTabService.enabled ? 86 : 75),
   );
 
   Widget _buildBody(LoadingState<List<CoinLikeArcItem>?> loadingState) {

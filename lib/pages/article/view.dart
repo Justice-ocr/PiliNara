@@ -16,6 +16,7 @@ import 'package:PiliPlus/pages/article/widgets/html_render.dart';
 import 'package:PiliPlus/pages/article/widgets/opus_content.dart';
 import 'package:PiliPlus/pages/common/dyn/common_dyn_page.dart';
 import 'package:PiliPlus/pages/dynamics_repost/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
@@ -25,6 +26,7 @@ import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -80,10 +82,16 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.background
+          : null,
       resizeToAvoidBottomInset: false,
       appBar: _buildAppBar(),
       body: Padding(
-        padding: EdgeInsets.only(left: padding.left, right: padding.right),
+        padding: EdgeInsets.only(
+          left: WindowsVideoTabService.enabled ? 0 : padding.left,
+          right: WindowsVideoTabService.enabled ? 0 : padding.right,
+        ),
         child: _buildPage(theme),
       ),
       floatingActionButtonLocation: floatingActionButtonLocation,
@@ -95,7 +103,10 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
   }
 
   Widget _buildPage(ThemeData theme) {
-    double padding = max(maxWidth / 2 - Grid.smallCardWidth, 0);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    double padding = isWindowsNeo
+        ? max((maxWidth - 820) / 2, 0)
+        : max(maxWidth / 2 - Grid.smallCardWidth, 0);
     if (isPortrait) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: padding),
@@ -120,9 +131,10 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
       );
     }
 
-    padding = padding / 4;
     final flex = controller.ratio[0].toInt();
     final flex1 = controller.ratio[1].toInt();
+    final leftWidth = maxWidth * flex / (flex + flex1);
+    padding = isWindowsNeo ? max((leftWidth - 820) / 2, 20) : padding / 4;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -135,6 +147,7 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
               SliverPadding(
                 padding: EdgeInsets.only(
                   left: padding,
+                  right: isWindowsNeo ? padding : 0,
                   bottom: this.padding.bottom + 100,
                 ),
                 sliver: _buildContent(
@@ -148,25 +161,35 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
           ),
         ),
         VerticalDivider(
-          thickness: 8,
-          color: theme.dividerColor.withValues(alpha: 0.05),
+          width: isWindowsNeo ? 1 : null,
+          thickness: isWindowsNeo ? 1 : 8,
+          color: isWindowsNeo
+              ? context.windowsNeo.border
+              : theme.dividerColor.withValues(alpha: 0.05),
         ),
         Expanded(
           flex: flex1,
-          child: Padding(
-            padding: EdgeInsets.only(right: padding),
-            child: Scaffold(
-              backgroundColor: Colors.transparent,
-              resizeToAvoidBottomInset: false,
-              body: refreshIndicator(
-                onRefresh: controller.onRefresh,
-                child: CustomScrollView(
-                  controller: scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    buildReplyHeader(theme),
-                    Obx(() => replyList(theme, controller.loadingState.value)),
-                  ],
+          child: ColoredBox(
+            color: isWindowsNeo
+                ? context.windowsNeo.surface
+                : Colors.transparent,
+            child: Padding(
+              padding: EdgeInsets.only(right: isWindowsNeo ? 0 : padding),
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                resizeToAvoidBottomInset: false,
+                body: refreshIndicator(
+                  onRefresh: controller.onRefresh,
+                  child: CustomScrollView(
+                    controller: scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      buildReplyHeader(theme),
+                      Obx(
+                        () => replyList(theme, controller.loadingState.value),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -576,12 +599,14 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
             btn,
             Container(
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
+                color: WindowsVideoTabService.enabled
+                    ? context.windowsNeo.surface
+                    : theme.colorScheme.surface,
                 border: Border(
                   top: BorderSide(
-                    color: theme.colorScheme.outline.withValues(
-                      alpha: 0.08,
-                    ),
+                    color: WindowsVideoTabService.enabled
+                        ? context.windowsNeo.border
+                        : theme.colorScheme.outline.withValues(alpha: 0.08),
                   ),
                 ),
               ),

@@ -8,6 +8,7 @@ import 'package:PiliPlus/models/common/live/live_search_type.dart';
 import 'package:PiliPlus/pages/live_search/child/controller.dart';
 import 'package:PiliPlus/pages/live_search/widgets/live_search_room.dart';
 import 'package:PiliPlus/pages/live_search/widgets/live_search_user.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:flutter/material.dart'
     hide SliverGridDelegateWithMaxCrossAxisExtent;
@@ -34,7 +35,11 @@ class _LiveSearchChildPageState extends State<LiveSearchChildPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    double padding = widget.searchType == LiveSearchType.room ? 12 : 0;
+    double padding = WindowsVideoTabService.enabled
+        ? 16
+        : widget.searchType == LiveSearchType.room
+        ? 12
+        : 0;
     return refreshIndicator(
       onRefresh: _controller.onRefresh,
       child: CustomScrollView(
@@ -71,16 +76,26 @@ class _LiveSearchChildPageState extends State<LiveSearchChildPage>
   }
 
   late final roomDelegate = SliverGridDelegateWithExtentAndRatio(
-    mainAxisSpacing: Style.cardSpace,
-    crossAxisSpacing: Style.cardSpace,
-    maxCrossAxisExtent: Grid.smallCardWidth,
-    childAspectRatio: Style.aspectRatio,
-    mainAxisExtent: MediaQuery.textScalerOf(context).scale(60),
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 14 : Style.cardSpace,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 14 : Style.cardSpace,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 300
+        : Grid.smallCardWidth,
+    childAspectRatio: WindowsVideoTabService.enabled
+        ? Style.aspectRatio16x9
+        : Style.aspectRatio,
+    mainAxisExtent: MediaQuery.textScalerOf(
+      context,
+    ).scale(WindowsVideoTabService.enabled ? 92 : 60),
   );
 
   late final userDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
-    maxCrossAxisExtent: Grid.smallCardWidth * 2,
-    mainAxisExtent: 60,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 520
+        : Grid.smallCardWidth * 2,
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : 0,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : 0,
+    mainAxisExtent: WindowsVideoTabService.enabled ? 72 : 60,
   );
 
   Widget _buildBody(LoadingState<List?> loadingState) {

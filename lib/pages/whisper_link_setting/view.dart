@@ -4,9 +4,11 @@ import 'package:PiliPlus/models_new/msg/im_user_infos/datum.dart';
 import 'package:PiliPlus/models_new/msg/msg_dnd/uid_setting.dart';
 import 'package:PiliPlus/models_new/msg/session_ss/data.dart';
 import 'package:PiliPlus/pages/whisper_link_setting/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -37,56 +39,88 @@ class _WhisperLinkSettingPageState extends State<WhisperLinkSettingPage> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     final divider = Divider(
-      height: 12,
-      thickness: 12,
-      color: theme.colorScheme.outline.withValues(alpha: 0.1),
+      height: isWindowsNeo ? 1 : 12,
+      thickness: isWindowsNeo ? 1 : 12,
+      color: isWindowsNeo
+          ? context.windowsNeo.border
+          : theme.colorScheme.outline.withValues(alpha: 0.1),
     );
     final divider2 = Divider(
       height: 1,
       indent: 16,
-      color: theme.colorScheme.outline.withValues(alpha: 0.1),
+      color: isWindowsNeo
+          ? context.windowsNeo.border
+          : theme.colorScheme.outline.withValues(alpha: 0.1),
     );
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('聊天设置')),
-      body: ListView(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
-        ),
-        children: [
-          divider,
-          Obx(
-            () => _buildUserInfo(theme, divider, _controller.userState.value),
-          ),
-          Obx(
-            () => _buildSessionSs(
-              theme,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final horizontal = isWindowsNeo && constraints.maxWidth > 760
+              ? (constraints.maxWidth - 720) / 2
+              : isWindowsNeo
+              ? 20.0
+              : 0.0;
+          final child = ListView(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
+            ),
+            children: [
               divider,
+              Obx(
+                () =>
+                    _buildUserInfo(theme, divider, _controller.userState.value),
+              ),
+              Obx(
+                () => _buildSessionSs(
+                  theme,
+                  divider,
+                  divider2,
+                  _controller.sessionSs.value,
+                ),
+              ),
+              Obx(
+                () {
+                  if (_controller.sessionSs.value case Success(
+                    :final response,
+                  )) {
+                    return _buildBlockItem(response.followStatus == 128);
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
               divider2,
-              _controller.sessionSs.value,
+              ListTile(
+                dense: true,
+                onTap: _controller.report,
+                title: const Text('举报', style: TextStyle(fontSize: 14)),
+                trailing: Icon(
+                  Icons.keyboard_arrow_right,
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+              divider,
+            ],
+          );
+          if (!isWindowsNeo) return child;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(horizontal, 16, horizontal, 0),
+            child: Material(
+              color: context.windowsNeo.surface,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+                side: BorderSide(color: context.windowsNeo.border),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: child,
             ),
-          ),
-          Obx(
-            () {
-              if (_controller.sessionSs.value case Success(:final response)) {
-                return _buildBlockItem(response.followStatus == 128);
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-          divider2,
-          ListTile(
-            dense: true,
-            onTap: _controller.report,
-            title: const Text('举报', style: TextStyle(fontSize: 14)),
-            trailing: Icon(
-              Icons.keyboard_arrow_right,
-              color: theme.colorScheme.outline,
-            ),
-          ),
-          divider,
-        ],
+          );
+        },
       ),
     );
   }

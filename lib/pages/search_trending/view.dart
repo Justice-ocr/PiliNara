@@ -8,12 +8,14 @@ import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/search/search_trending/list.dart';
 import 'package:PiliPlus/pages/search_trending/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/color_utils.dart';
 import 'package:PiliPlus/utils/extension/context_ext.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide ListTile;
@@ -61,57 +63,66 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
     final padding = MediaQuery.viewPaddingOf(context);
     final size = context.mediaQuerySize;
     final maxWidth = size.width - padding.horizontal;
-    final width = size.isPortrait ? maxWidth : min(640.0, maxWidth * 0.6);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final width = isWindowsNeo
+        ? min(820.0, maxWidth - 36)
+        : size.isPortrait
+        ? maxWidth
+        : min(640.0, maxWidth * 0.6);
     final height = width * 528 / 1125;
     _offset = height - 56 - padding.top;
     listener();
     return Scaffold(
-      extendBody: true,
-      extendBodyBehindAppBar: true,
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      extendBody: !isWindowsNeo,
+      extendBodyBehindAppBar: !isWindowsNeo,
       resizeToAvoidBottomInset: false,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(56),
-        child: Obx(
-          () {
-            final scrollRatio = _scrollRatio.value;
-            final flag = maxWidth > width || scrollRatio >= 0.5;
-            return AppBar(
-              title: Opacity(
-                opacity: scrollRatio,
-                child: Text(
-                  'bilibili热搜',
-                  style: TextStyle(
-                    color: flag ? null : Colors.white,
-                  ),
-                ),
-              ),
-              backgroundColor: theme.colorScheme.surface.withValues(
-                alpha: scrollRatio,
-              ),
-              foregroundColor: flag ? null : Colors.white,
-              systemOverlayStyle: flag
-                  ? null
-                  : const SystemUiOverlayStyle(
-                      statusBarBrightness: Brightness.dark,
-                      statusBarIconBrightness: Brightness.light,
-                    ),
-              shape: scrollRatio == 1
-                  ? Border(
-                      bottom: BorderSide(
-                        color: theme.colorScheme.outline.withValues(
-                          alpha: 0.1,
+      appBar: isWindowsNeo
+          ? AppBar(title: const Text('bilibili热搜'))
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(56),
+              child: Obx(
+                () {
+                  final scrollRatio = _scrollRatio.value;
+                  final flag = maxWidth > width || scrollRatio >= 0.5;
+                  return AppBar(
+                    title: Opacity(
+                      opacity: scrollRatio,
+                      child: Text(
+                        'bilibili热搜',
+                        style: TextStyle(
+                          color: flag ? null : Colors.white,
                         ),
                       ),
-                    )
-                  : null,
-            );
-          },
-        ),
-      ),
+                    ),
+                    backgroundColor: theme.colorScheme.surface.withValues(
+                      alpha: scrollRatio,
+                    ),
+                    foregroundColor: flag ? null : Colors.white,
+                    systemOverlayStyle: flag
+                        ? null
+                        : const SystemUiOverlayStyle(
+                            statusBarBrightness: Brightness.dark,
+                            statusBarIconBrightness: Brightness.light,
+                          ),
+                    shape: scrollRatio == 1
+                        ? Border(
+                            bottom: BorderSide(
+                              color: theme.colorScheme.outline.withValues(
+                                alpha: 0.1,
+                              ),
+                            ),
+                          )
+                        : null,
+                  );
+                },
+              ),
+            ),
       body: Padding(
         padding: EdgeInsets.only(
-          left: padding.left,
-          right: padding.right,
+          left: isWindowsNeo ? 18 : padding.left,
+          top: isWindowsNeo ? 16 : 0,
+          right: isWindowsNeo ? 18 : padding.right,
         ),
         child: Center(
           child: SizedBox(
@@ -152,8 +163,10 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
   ) {
     late final divider = Divider(
       height: 1,
-      indent: 48,
-      color: theme.colorScheme.outline.withValues(alpha: 0.1),
+      indent: WindowsVideoTabService.enabled ? 0 : 48,
+      color: WindowsVideoTabService.enabled
+          ? context.windowsNeo.border
+          : theme.colorScheme.outline.withValues(alpha: 0.1),
     );
     return switch (loadingState) {
       Loading() => linearLoading,
@@ -165,6 +178,9 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
                   final item = response[index];
                   return ListTile(
                     dense: true,
+                    tileColor: WindowsVideoTabService.enabled
+                        ? context.windowsNeo.surface
+                        : null,
                     onTap: () => Get.toNamed(
                       '/searchResult',
                       parameters: {

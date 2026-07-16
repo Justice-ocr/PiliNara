@@ -22,6 +22,7 @@ import 'package:PiliPlus/pages/member/widget/header_layout_widget.dart';
 import 'package:PiliPlus/pages/member/widget/medal_widget.dart';
 import 'package:PiliPlus/pages/member_guard/view.dart';
 import 'package:PiliPlus/pages/member_upower_rank/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
@@ -35,6 +36,7 @@ import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
@@ -83,11 +85,94 @@ class UserInfoCard extends StatelessWidget {
     final isLight = colorScheme.isLight;
     final width = context.width;
     final isPortrait = width < 600;
+    if (WindowsVideoTabService.enabled) {
+      return ViewSafeArea(
+        top: false,
+        child: width >= 760
+            ? _buildWindowsNeo(context, colorScheme, isLight, width)
+            : DecoratedBox(
+                decoration: BoxDecoration(
+                  color: context.windowsNeo.surface,
+                  border: Border(
+                    bottom: BorderSide(color: context.windowsNeo.border),
+                  ),
+                ),
+                child: _buildV(context, colorScheme, isLight, width),
+              ),
+      );
+    }
     return ViewSafeArea(
       top: !isPortrait,
       child: isPortrait
           ? _buildV(context, colorScheme, isLight, width)
           : _buildH(context, colorScheme, isLight),
+    );
+  }
+
+  Widget _buildWindowsNeo(
+    BuildContext context,
+    ColorScheme scheme,
+    bool isLight,
+    double width,
+  ) {
+    final tokens = context.windowsNeo;
+    final imgUrls = images.collectionTopSimple?.top?.imgUrls;
+    final header = imgUrls != null && imgUrls.isNotEmpty
+        ? _buildCollectionHeader(context, scheme, isLight, imgUrls, width)
+        : _buildHeader(
+            context,
+            isLight,
+            width,
+            (isLight || images.nightImgurl.isNullOrEmpty
+                    ? images.imgUrl
+                    : images.nightImgurl)
+                .http2https,
+          );
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        border: Border(bottom: BorderSide(color: tokens.border)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          header,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 18),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Transform.translate(
+                  offset: const Offset(0, -30),
+                  child: _buildAvatar(scheme),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: _buildLeft(context, scheme, isLight, false),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 24),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 340),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: _buildRight(scheme),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (card.prInfo?.content?.isNotEmpty ?? false)
+            buildPrInfo(context, scheme, isLight, card.prInfo!),
+        ],
+      ),
     );
   }
 

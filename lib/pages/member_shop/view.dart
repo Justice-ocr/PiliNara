@@ -6,6 +6,7 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/space/space_shop/item.dart';
 import 'package:PiliPlus/pages/member_shop/controller.dart';
 import 'package:PiliPlus/pages/member_shop/widgets/item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
 import 'package:flutter/material.dart';
@@ -50,9 +51,9 @@ class _MemberShopState extends State<MemberShop>
         slivers: [
           SliverPadding(
             padding: EdgeInsets.only(
-              top: 12,
-              left: Style.safeSpace,
-              right: Style.safeSpace,
+              top: WindowsVideoTabService.enabled ? 16 : 12,
+              left: WindowsVideoTabService.enabled ? 18 : Style.safeSpace,
+              right: WindowsVideoTabService.enabled ? 18 : Style.safeSpace,
               bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
             ),
             sliver: Obx(() => _buildBody(_controller.loadingState.value)),
@@ -65,10 +66,21 @@ class _MemberShopState extends State<MemberShop>
   @override
   bool get wantKeepAlive => true;
 
+  void _openMore() {
+    if (_controller.clickUrl case final clickUrl?) {
+      final url = Uri.parse(clickUrl).queryParameters['url'];
+      if (url case final url?) {
+        Get.toNamed('/webview', parameters: {'url': url});
+      }
+    }
+  }
+
   late final gridDelegate = SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-    maxCrossAxisExtent: Grid.smallCardWidth,
-    mainAxisSpacing: Style.safeSpace,
-    crossAxisSpacing: Style.safeSpace,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 300
+        : Grid.smallCardWidth,
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.safeSpace,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.safeSpace,
   );
 
   Widget _buildBody(LoadingState<List<SpaceShopItem>?> loadingState) {
@@ -102,25 +114,19 @@ class _MemberShopState extends State<MemberShop>
                 child: Padding(
                   padding: const EdgeInsets.only(top: 25),
                   child: Center(
-                    child: FilledButton.tonal(
-                      onPressed: () {
-                        if (_controller.clickUrl case final clickUrl?) {
-                          final url = Uri.parse(
-                            clickUrl,
-                          ).queryParameters['url'];
-                          if (url case final url?) {
-                            Get.toNamed(
-                              '/webview',
-                              parameters: {'url': url},
-                            );
-                          }
-                        }
-                      },
-                      style: FilledButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      child: Text(_controller.showMoreDesc ?? ''),
-                    ),
+                    child: WindowsVideoTabService.enabled
+                        ? FilledButton.tonalIcon(
+                            onPressed: _openMore,
+                            icon: const Icon(Icons.open_in_new, size: 18),
+                            label: Text(_controller.showMoreDesc ?? ''),
+                          )
+                        : FilledButton.tonal(
+                            onPressed: _openMore,
+                            style: FilledButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            child: Text(_controller.showMoreDesc ?? ''),
+                          ),
                   ),
                 ),
               ),

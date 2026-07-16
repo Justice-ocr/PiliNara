@@ -8,7 +8,9 @@ import 'package:PiliPlus/pages/common/multi_select/base.dart'
     show BaseMultiSelectMixin;
 import 'package:PiliPlus/pages/download/detail/widgets/item.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart'
     hide SliverGridDelegateWithMaxCrossAxisExtent;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -42,6 +44,9 @@ class _DownloadingPageState extends State<DownloadingPage>
           }
         },
         child: Scaffold(
+          backgroundColor: WindowsVideoTabService.enabled
+              ? context.windowsNeo.background
+              : null,
           resizeToAvoidBottomInset: false,
           appBar: MultiSelectAppBarWidget(
             ctr: this,
@@ -66,37 +71,54 @@ class _DownloadingPageState extends State<DownloadingPage>
           body: CustomScrollView(
             slivers: [
               ViewSliverSafeArea(
-                sliver: Obx(() {
-                  if (_waitDownloadQueue.isNotEmpty) {
-                    return SliverGrid.builder(
-                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                        mainAxisSpacing: 2,
-                        mainAxisExtent: 100,
-                        maxCrossAxisExtent: Grid.smallCardWidth * 2,
-                      ),
-                      itemCount: _waitDownloadQueue.length,
-                      itemBuilder: (context, index) {
-                        final entry = _waitDownloadQueue[index];
-                        final isCurr = entry.cid == _downloadService.curCid;
-                        return DetailItem(
-                          entry: entry,
-                          downloadService: _downloadService,
-                          showTitle: true,
-                          isCurr: isCurr,
-                          onDelete: () => _downloadService.deleteDownload(
+                sliver: SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    WindowsVideoTabService.enabled ? 18 : 0,
+                    WindowsVideoTabService.enabled ? 16 : 0,
+                    WindowsVideoTabService.enabled ? 18 : 0,
+                    WindowsVideoTabService.enabled ? 100 : 0,
+                  ),
+                  sliver: Obx(() {
+                    if (_waitDownloadQueue.isNotEmpty) {
+                      return SliverGrid.builder(
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          mainAxisSpacing: WindowsVideoTabService.enabled
+                              ? 12
+                              : 2,
+                          crossAxisSpacing: WindowsVideoTabService.enabled
+                              ? 12
+                              : 0,
+                          mainAxisExtent: WindowsVideoTabService.enabled
+                              ? 112
+                              : 100,
+                          maxCrossAxisExtent: WindowsVideoTabService.enabled
+                              ? 520
+                              : Grid.smallCardWidth * 2,
+                        ),
+                        itemCount: _waitDownloadQueue.length,
+                        itemBuilder: (context, index) {
+                          final entry = _waitDownloadQueue[index];
+                          final isCurr = entry.cid == _downloadService.curCid;
+                          return DetailItem(
                             entry: entry,
-                            removeQueue: true,
-                            downloadNext:
-                                isCurr &&
-                                entry.status == DownloadStatus.downloading,
-                          ),
-                          controller: this,
-                        );
-                      },
-                    );
-                  }
-                  return const HttpError();
-                }),
+                            downloadService: _downloadService,
+                            showTitle: true,
+                            isCurr: isCurr,
+                            onDelete: () => _downloadService.deleteDownload(
+                              entry: entry,
+                              removeQueue: true,
+                              downloadNext:
+                                  isCurr &&
+                                  entry.status == DownloadStatus.downloading,
+                            ),
+                            controller: this,
+                          );
+                        },
+                      );
+                    }
+                    return const HttpError();
+                  }),
+                ),
               ),
             ],
           ),

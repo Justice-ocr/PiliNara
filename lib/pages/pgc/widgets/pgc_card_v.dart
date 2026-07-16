@@ -1,4 +1,3 @@
-import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -6,6 +5,8 @@ import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models_new/fav/fav_pgc/list.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 
 // 视频卡片 - 垂直布局
@@ -19,14 +20,22 @@ class PgcCardV extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final radius = BorderRadius.circular(isWindowsNeo ? 6 : 10);
     void onLongPress() => imageSaveDialog(
       title: item.title,
       cover: item.cover,
     );
     return Card(
-      shape: const RoundedRectangleBorder(borderRadius: Style.mdRadius),
+      clipBehavior: isWindowsNeo ? Clip.antiAlias : Clip.none,
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: isWindowsNeo
+            ? BorderSide(color: context.windowsNeo.border)
+            : BorderSide.none,
+      ),
       child: InkWell(
-        borderRadius: Style.mdRadius,
+        borderRadius: radius,
         onLongPress: onLongPress,
         onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
         onTap: () => PageUtils.viewPgc(seasonId: item.seasonId),

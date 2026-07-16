@@ -171,7 +171,6 @@ class LiveRoomController extends GetxController {
       'mediaTabType': WindowsMediaTabType.live.name,
     };
     if (WindowsVideoTabService.enabled) {
-      WindowsVideoTabService.upsert(tabArgs, type: WindowsMediaTabType.live);
       plPlayerController =
           WindowsVideoTabService.takePlayer<PlPlayerController>(tabArgs) ??
           PlPlayerController.createDetached(isLive: true);

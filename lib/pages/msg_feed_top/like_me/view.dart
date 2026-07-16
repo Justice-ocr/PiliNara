@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:PiliPlus/common/skeleton/msg_feed_top.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
@@ -12,9 +14,11 @@ import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models_new/msg/msg_like/item.dart';
 import 'package:PiliPlus/pages/msg_feed_top/like_me/controller.dart';
 import 'package:PiliPlus/pages/whisper_settings/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart' hide ListTile;
 import 'package:get/get.dart';
 
@@ -31,7 +35,13 @@ class _LikeMePageState extends State<LikeMePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final horizontalPadding = max(
+      18.0,
+      (MediaQuery.sizeOf(context).width - 960) / 2,
+    );
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('收到的赞'),
@@ -58,6 +68,9 @@ class _LikeMePageState extends State<LikeMePage> {
           slivers: [
             SliverPadding(
               padding: EdgeInsets.only(
+                left: isWindowsNeo ? horizontalPadding : 0,
+                top: isWindowsNeo ? 16 : 0,
+                right: isWindowsNeo ? horizontalPadding : 0,
                 bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
               ),
               sliver: Obx(
@@ -72,10 +85,12 @@ class _LikeMePageState extends State<LikeMePage> {
 
   Widget _buildBody(ThemeData theme, LoadingState loadingState) {
     late final divider = Divider(
-      indent: 72,
-      endIndent: 20,
-      height: 6,
-      color: Colors.grey.withValues(alpha: 0.1),
+      indent: WindowsVideoTabService.enabled ? 0 : 72,
+      endIndent: WindowsVideoTabService.enabled ? 0 : 20,
+      height: WindowsVideoTabService.enabled ? 1 : 6,
+      color: WindowsVideoTabService.enabled
+          ? context.windowsNeo.border
+          : Colors.grey.withValues(alpha: 0.1),
     );
     return switch (loadingState) {
       Loading() => SliverList.builder(
@@ -249,7 +264,10 @@ class _LikeMePageState extends State<LikeMePage> {
       },
     );
     return ListTile(
-      safeArea: true,
+      safeArea: !WindowsVideoTabService.enabled,
+      tileColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.surface
+          : null,
       onTap: () {
         String? nativeUri = item.item?.nativeUri;
         bool isInvalid =

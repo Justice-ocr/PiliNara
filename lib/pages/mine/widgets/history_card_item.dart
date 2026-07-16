@@ -5,6 +5,8 @@ import 'package:PiliPlus/models_new/history/list.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:PiliPlus/http/search.dart';
@@ -30,7 +32,7 @@ class HistoryCardItem extends StatelessWidget {
 
   bool get _isVideo => !_isArticle && !_isLive && !_isPgc && !_isCheese;
 
-  void _onTap() async {
+  Future<void> _onTap() async {
     final business = item.history.business;
     if (_isArticle) {
       PageUtils.toDupNamed(
@@ -83,6 +85,8 @@ class HistoryCardItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final radius = BorderRadius.circular(isWindowsNeo ? 6 : 12);
     final hasDuration = item.duration != null && item.duration != 0;
     final coverSrc = item.cover?.isNotEmpty == true
         ? item.cover
@@ -97,20 +101,23 @@ class HistoryCardItem extends StatelessWidget {
           // 封面区域
           DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(12)),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.onInverseSurface.withValues(
-                    alpha: 0.4,
-                  ),
-                  offset: const Offset(6, -8),
-                  blurRadius: 0.0,
-                  spreadRadius: 0.0,
-                ),
-              ],
+              borderRadius: radius,
+              border: isWindowsNeo
+                  ? Border.all(color: context.windowsNeo.border)
+                  : null,
+              boxShadow: isWindowsNeo
+                  ? const []
+                  : [
+                      BoxShadow(
+                        color: theme.colorScheme.onInverseSurface.withValues(
+                          alpha: 0.4,
+                        ),
+                        offset: const Offset(6, -8),
+                      ),
+                    ],
             ),
             child: ClipRRect(
-              borderRadius: const BorderRadius.all(Radius.circular(12)),
+              borderRadius: radius,
               child: SizedBox(
                 width: _cardWidth,
                 height: _cardHeight,

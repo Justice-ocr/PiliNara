@@ -8,9 +8,11 @@ import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/dynamic_panel.dart';
 import 'package:PiliPlus/pages/dynamics_tab/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
+import 'package:PiliPlus/windows_ui/features/dynamics/windows_neo_dynamics_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:waterfall_flow/waterfall_flow.dart'
@@ -77,12 +79,35 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.only(bottom: 100),
-            sliver: buildPage(
-              Obx(() => _buildBody(controller.loadingState.value)),
-            ),
+            sliver: WindowsVideoTabService.enabled
+                ? _buildWindowsPage(
+                    Obx(() => _buildBody(controller.loadingState.value)),
+                  )
+                : buildPage(
+                    Obx(() => _buildBody(controller.loadingState.value)),
+                  ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildWindowsPage(Widget child) {
+    return SliverLayoutBuilder(
+      builder: (context, constraints) {
+        final available = constraints.crossAxisExtent;
+        final horizontal = WindowsNeoDynamicsLayout.horizontalPadding(
+          available,
+        );
+        return SliverPadding(
+          padding: EdgeInsets.only(
+            left: horizontal,
+            right: horizontal,
+            top: 18,
+          ),
+          sliver: child,
+        );
+      },
     );
   }
 
@@ -91,55 +116,67 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
       Loading() => dynSkeleton,
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? GlobalData().dynamicsWaterfallFlow
-                  ? SliverWaterfallFlow(
-                      gridDelegate: dynGridDelegate,
-                      delegate: SliverChildBuilderDelegate(
-                        (_, index) {
-                          if (index == response.length - 1) {
-                            controller.onLoadMore();
-                          }
-                          final item = response[index];
-                          return DynamicPanel(
-                            item: item,
-                            onRemove: (idStr) =>
-                                controller.onRemove(index, idStr),
-                            onBlock: () => controller.onBlock(index),
-                            onUnfold: () => controller.onUnfold(item, index),
-                            onUpdate: (newItem) {
-                              response[index] = newItem;
-                              controller.loadingState.refresh();
-                            },
-                          );
-                        },
-                        childCount: response.length,
-                      ),
-                    )
-                  : SliverList.builder(
-                      itemBuilder: (context, index) {
-                        if (index == response.length - 1) {
-                          controller.onLoadMore();
-                        }
-                        final item = response[index];
-                        return DynamicPanel(
-                          item: item,
-                          onRemove: (idStr) =>
-                              controller.onRemove(index, idStr),
-                          onBlock: () => controller.onBlock(index),
-                          onUnfold: () => controller.onUnfold(item, index),
-                          onUpdate: (newItem) {
-                            response[index] = newItem;
-                            controller.loadingState.refresh();
-                          },
-                        );
-                      },
-                      itemCount: response.length,
-                    )
+            ? _buildLoaded(response)
             : HttpError(onReload: controller.onReload),
       Error(:final errMsg) => HttpError(
         errMsg: errMsg,
         onReload: controller.onReload,
       ),
     };
+  }
+
+  Widget _buildLoaded(List<DynamicItemModel> response) {
+    if (WindowsVideoTabService.enabled) {
+      return SliverLayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.crossAxisExtent;
+          final crossAxisCount = WindowsNeoDynamicsLayout.crossAxisCount(
+            width,
+          );
+          return SliverWaterfallFlow(
+            gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: WindowsNeoDynamicsLayout.gridSpacing,
+              mainAxisSpacing: WindowsNeoDynamicsLayout.gridSpacing,
+            ),
+            delegate: _buildDelegate(response),
+          );
+        },
+      );
+    }
+    if (GlobalData().dynamicsWaterfallFlow) {
+      return SliverWaterfallFlow(
+        gridDelegate: dynGridDelegate,
+        delegate: _buildDelegate(response),
+      );
+    }
+    return SliverList.builder(
+      itemBuilder: (_, index) => _buildItem(response, index),
+      itemCount: response.length,
+    );
+  }
+
+  SliverChildBuilderDelegate _buildDelegate(
+    List<DynamicItemModel> response,
+  ) => SliverChildBuilderDelegate(
+    (_, index) => _buildItem(response, index),
+    childCount: response.length,
+  );
+
+  Widget _buildItem(List<DynamicItemModel> response, int index) {
+    if (index == response.length - 1) {
+      controller.onLoadMore();
+    }
+    final item = response[index];
+    return DynamicPanel(
+      item: item,
+      onRemove: (idStr) => controller.onRemove(index, idStr),
+      onBlock: () => controller.onBlock(index),
+      onUnfold: () => controller.onUnfold(item, index),
+      onUpdate: (newItem) {
+        response[index] = newItem;
+        controller.loadingState.refresh();
+      },
+    );
   }
 }

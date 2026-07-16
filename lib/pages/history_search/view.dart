@@ -3,6 +3,7 @@ import 'package:PiliPlus/models_new/history/list.dart';
 import 'package:PiliPlus/pages/common/search/common_search_page.dart';
 import 'package:PiliPlus/pages/history/widgets/item.dart';
 import 'package:PiliPlus/pages/history_search/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter/material.dart';
@@ -32,8 +33,16 @@ class _HistorySearchPageState
 
   @override
   Widget buildList(List<HistoryItemModel> list) {
-    return SliverGrid.builder(
-      gridDelegate: gridDelegate,
+    final grid = SliverGrid.builder(
+      gridDelegate: WindowsVideoTabService.enabled
+          ? SliverGridDelegateWithExtentAndRatio(
+              maxCrossAxisExtent: 520,
+              childAspectRatio: 4.2,
+              minHeight: 112,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+            )
+          : gridDelegate,
       itemBuilder: (context, index) {
         if (index == list.length - 1) {
           controller.onLoadMore();
@@ -47,6 +56,11 @@ class _HistorySearchPageState
         );
       },
       itemCount: list.length,
+    );
+    if (!WindowsVideoTabService.enabled) return grid;
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
+      sliver: grid,
     );
   }
 }

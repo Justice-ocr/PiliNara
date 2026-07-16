@@ -1,9 +1,13 @@
+import 'dart:math' show max;
+
 import 'package:PiliPlus/common/widgets/reorder_mixin.dart';
 import 'package:PiliPlus/http/follow.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/member/tags.dart';
 import 'package:PiliPlus/pages/follow/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -36,33 +40,25 @@ class _FollowTagSortPageState extends State<FollowTagSortPage>
 
   @override
   Widget build(BuildContext context) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('关注分组排序'),
         actions: _customTags.isNotEmpty
             ? [
-                TextButton(
-                  onPressed: () async {
-                    final res = await FollowHttp.sortFollowTag(
-                      tagids: _customTags.map((e) => e.tagid).join(','),
-                    );
-                    if (res.isSuccess) {
-                      SmartDialog.showToast('排序完成');
-                      final tabs = _defTags + _customTags;
-                      widget.controller
-                        ..tabs.value = tabs
-                        ..onInitTab()
-                        ..followState.value = Success(tabs.hashCode);
-                      if (mounted) {
-                        Get.back();
-                      }
-                    } else {
-                      res.toast();
-                    }
-                  },
-                  child: const Text('完成'),
-                ),
+                if (isWindowsNeo)
+                  IconButton(
+                    tooltip: '保存排序',
+                    onPressed: _saveOrder,
+                    icon: const Icon(Icons.save_outlined),
+                  )
+                else
+                  TextButton(
+                    onPressed: _saveOrder,
+                    child: const Text('完成'),
+                  ),
                 const SizedBox(width: 16),
               ]
             : null,
@@ -77,11 +73,19 @@ class _FollowTagSortPageState extends State<FollowTagSortPage>
   }
 
   Widget get _buildBody {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final horizontalPadding = max(
+      18.0,
+      (MediaQuery.sizeOf(context).width - 720) / 2,
+    );
     return ReorderableListView.builder(
       onReorderItem: onReorderItem,
       proxyDecorator: proxyDecorator,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.only(
+        left: isWindowsNeo ? horizontalPadding : 0,
+        top: isWindowsNeo ? 16 : 0,
+        right: isWindowsNeo ? horizontalPadding : 0,
         bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
       ),
       header: Column(
@@ -98,9 +102,10 @@ class _FollowTagSortPageState extends State<FollowTagSortPage>
     MemberTagItemModel item, {
     bool enabled = true,
   }) {
-    return ListTile(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final child = ListTile(
       textColor: enabled ? null : scheme.outline,
-      key: ValueKey(item.tagid),
+      key: isWindowsNeo ? null : ValueKey(item.tagid),
       leading: enabled
           ? const Icon(Icons.group_outlined)
           : Icon(
@@ -112,5 +117,39 @@ class _FollowTagSortPageState extends State<FollowTagSortPage>
       title: Text('${item.name} (${item.count})'),
       subtitle: item.tip?.isNotEmpty == true ? Text(item.tip!) : null,
     );
+    if (!isWindowsNeo) return child;
+    return Padding(
+      key: ValueKey(item.tagid),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: context.windowsNeo.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
+          side: BorderSide(color: context.windowsNeo.border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: child,
+      ),
+    );
+  }
+
+  Future<void> _saveOrder() async {
+    final res = await FollowHttp.sortFollowTag(
+      tagids: _customTags.map((e) => e.tagid).join(','),
+    );
+    if (res.isSuccess) {
+      SmartDialog.showToast('排序完成');
+      final tabs = _defTags + _customTags;
+      widget.controller
+        ..tabs.value = tabs
+        ..onInitTab()
+        ..followState.value = Success(tabs.hashCode);
+      if (mounted) {
+        Get.back();
+      }
+    } else {
+      res.toast();
+    }
   }
 }

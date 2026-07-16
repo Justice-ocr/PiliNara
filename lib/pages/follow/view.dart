@@ -9,11 +9,13 @@ import 'package:PiliPlus/pages/follow/child/child_controller.dart';
 import 'package:PiliPlus/pages/follow/child/child_view.dart';
 import 'package:PiliPlus/pages/follow/controller.dart';
 import 'package:PiliPlus/pages/follow_tag_sort/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/parse_int.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LengthLimitingTextInputFormatter;
 import 'package:get/get.dart';
@@ -49,6 +51,9 @@ class _FollowPageState extends State<FollowPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.background
+          : null,
       resizeToAvoidBottomInset: false,
       appBar: _buildAppBar,
       body: _followController.isOwner
@@ -130,54 +135,85 @@ class _FollowPageState extends State<FollowPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ViewSafeArea(
-            child: TabBar(
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              controller: _followController.tabController,
-              tabs: List.generate(_followController.tabs.length, (index) {
-                return Obx(() {
-                  final item = _followController.tabs[index];
-                  int? count = item.count;
-                  if (BiliUtils.isCustomFollowTag(item.tagid)) {
-                    return GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onLongPress: () {
-                        Feedback.forLongPress(context);
-                        _onHandleTag(index, item);
-                      },
-                      onSecondaryTap: PlatformUtils.isMobile
-                          ? null
-                          : () => _onHandleTag(index, item),
-                      child: Tab(
-                        child: Row(
-                          children: [
-                            Text(
-                              '${item.name}${count != null ? '($count)' : ''} ',
-                            ),
-                            const Icon(Icons.menu, size: 18),
-                          ],
-                        ),
+            child: Container(
+              height: WindowsVideoTabService.enabled ? 48 : null,
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(
+                horizontal: WindowsVideoTabService.enabled ? 18 : 0,
+              ),
+              decoration: WindowsVideoTabService.enabled
+                  ? BoxDecoration(
+                      color: context.windowsNeo.surface,
+                      border: Border(
+                        bottom: BorderSide(color: context.windowsNeo.border),
                       ),
+                    )
+                  : null,
+              alignment: Alignment.centerLeft,
+              child: TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                controller: _followController.tabController,
+                dividerColor: WindowsVideoTabService.enabled
+                    ? Colors.transparent
+                    : null,
+                dividerHeight: WindowsVideoTabService.enabled ? 0 : null,
+                indicatorSize: WindowsVideoTabService.enabled
+                    ? TabBarIndicatorSize.label
+                    : TabBarIndicatorSize.tab,
+                indicator: WindowsVideoTabService.enabled
+                    ? UnderlineTabIndicator(
+                        borderSide: BorderSide(
+                          color: context.windowsNeo.accent,
+                          width: 2.5,
+                        ),
+                      )
+                    : null,
+                unselectedLabelColor: WindowsVideoTabService.enabled
+                    ? context.windowsNeo.muted
+                    : null,
+                tabs: List.generate(_followController.tabs.length, (index) {
+                  return Obx(() {
+                    final item = _followController.tabs[index];
+                    int? count = item.count;
+                    if (BiliUtils.isCustomFollowTag(item.tagid)) {
+                      return GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onLongPress: () {
+                          Feedback.forLongPress(context);
+                          _onHandleTag(index, item);
+                        },
+                        onSecondaryTap: PlatformUtils.isMobile
+                            ? null
+                            : () => _onHandleTag(index, item),
+                        child: Tab(
+                          child: Row(
+                            children: [
+                              Text(
+                                '${item.name}${count != null ? '($count)' : ''} ',
+                              ),
+                              const Icon(Icons.menu, size: 18),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return Tab(
+                      text: '${item.name}${count != null ? '($count)' : ''}',
                     );
+                  });
+                }),
+                onTap: (value) {
+                  if (!_followController.tabController!.indexIsChanging) {
+                    final item = _followController.tabs[value];
+                    try {
+                      Get.find<FollowChildController>(
+                        tag: '$_tag${item.tagid}',
+                      ).animateToTop();
+                    } catch (_) {}
                   }
-                  return Tab(
-                    text: '${item.name}${count != null ? '($count)' : ''}',
-                  );
-                });
-              }),
-              onTap: (value) {
-                if (!_followController.tabController!.indexIsChanging) {
-                  final item = _followController.tabs[value];
-                  // if (_isCustomTag(item.tagid)) {
-                  //   _onHandleTag(value, item);
-                  // }
-                  try {
-                    Get.find<FollowChildController>(
-                      tag: '$_tag${item.tagid}',
-                    ).animateToTop();
-                  } catch (_) {}
-                }
-              },
+                },
+              ),
             ),
           ),
           Expanded(

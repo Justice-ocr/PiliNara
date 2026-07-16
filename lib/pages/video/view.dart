@@ -71,6 +71,8 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/features/video/windows_neo_video_layout.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
@@ -190,7 +192,6 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     final String? targetContextKey = PipOverlayService.contextKeyFromArgs(
       _routeArgs,
     );
-    WindowsVideoTabService.upsert(_routeArgs);
 
     // 如果有直播间 PiP 在运行，关闭它（采用非销毁式，避免干扰视频播放器单例）
     if (LivePipOverlayService.isInPipMode && !fromPip) {
@@ -281,6 +282,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       WindowsVideoTabService.registerRoute(
         videoDetailController.args,
         activate: _activateWindowsVideoTab,
+        deactivate: _deactivateWindowsVideoTab,
         close: _closeWindowsVideoTab,
       );
     }
@@ -677,7 +679,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     final isCurrentVideoInPip =
         isInAppPip &&
         PipOverlayService.savedVideoContextKey == currentVideoContextKey;
-    final keepWindowsTabAlive = WindowsVideoTabService.enabled &&
+    final keepWindowsTabAlive =
+        WindowsVideoTabService.enabled &&
         !_closingFromWindowsVideoTabService &&
         WindowsVideoTabService.has(
           WindowsVideoTabService.keyFromArgs(videoDetailController.args),
@@ -759,6 +762,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     WindowsVideoTabService.setActive(videoDetailController.args);
     videoDetailController.plPlayerController.activateAsGlobal();
     plPlayerController = videoDetailController.plPlayerController;
+    plPlayerController!.visible = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _restoreWindowsVideoPlayerSurface();
     });
@@ -774,8 +778,18 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     didPopNext();
   }
 
+  void _deactivateWindowsVideoTab() {
+    if (!mounted) return;
+    isShowing = false;
+    _syncWindowsVideoTabProgress();
+    videoDetailController.plPlayerController.visible = false;
+    videoDetailController.videoState.value = false;
+  }
+
   void _restoreWindowsVideoPlayerSurface() {
     if (!WindowsVideoTabService.enabled || !mounted) return;
+    final id = WindowsVideoTabService.keyFromArgs(videoDetailController.args);
+    if (WindowsVideoTabService.activeId.value != id) return;
     if (!videoDetailController.autoPlay ||
         plPlayerController?.videoController == null) {
       return;
@@ -1903,59 +1917,60 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
   Widget _moreBtn(Color color, {List<Shadow>? shadows}) =>
       StaticPopupMenuButton(
-    icon: Icon(
-      size: 22,
-      Icons.more_vert,
-      color: color,
-      shadows: shadows,
-    ),
-    itemBuilder: (BuildContext context) => <PopupMenuEntry>[
-      if (WindowsVideoTabService.enabled)
-        PopupMenuItem(
-          onTap: _showWindowsVideoTabs,
-          child: Obx(
-            () => Text(
-              '标签页 (${WindowsVideoTabService.tabCount})',
+        icon: Icon(
+          size: 22,
+          Icons.more_vert,
+          color: color,
+          shadows: shadows,
+        ),
+        itemBuilder: (BuildContext context) => <PopupMenuEntry>[
+          if (WindowsVideoTabService.enabled)
+            PopupMenuItem(
+              onTap: _showWindowsVideoTabs,
+              child: Obx(
+                () => Text(
+                  '标签页 (${WindowsVideoTabService.tabCount})',
+                ),
+              ),
             ),
+          PopupMenuItem(
+            onTap: introController.viewLater,
+            child: const Text('稍后再看'),
           ),
-        ),
-      PopupMenuItem(
-        onTap: introController.viewLater,
-        child: const Text('稍后再看'),
-      ),
-      if (videoDetailController.epId == null)
-        PopupMenuItem(
-          onTap: () => videoDetailController.showNoteList(context),
-          child: const Text('查看笔记'),
-        ),
-      if (!videoDetailController.isFileSource)
-        PopupMenuItem(
-          onTap: () => videoDetailController.onDownload(this.context),
-          child: const Text('缓存视频'),
-        ),
-      if (videoDetailController.cover.value.isNotEmpty)
-        PopupMenuItem(
-          onTap: () =>
-              ImageUtils.downloadImg([videoDetailController.cover.value]),
-          child: const Text('保存封面'),
-        ),
-      if (!videoDetailController.isFileSource && videoDetailController.isUgc)
-        PopupMenuItem(
-          onTap: videoDetailController.toAudioPage,
-          child: const Text('听音频'),
-        ),
-      PopupMenuItem(
-        onTap: () {
-          if (!Accounts.main.isLogin) {
-            SmartDialog.showToast('账号未登录');
-          } else {
-            PageUtils.reportVideo(videoDetailController.aid);
-          }
-        },
-        child: const Text('举报'),
-      ),
-    ],
-  );
+          if (videoDetailController.epId == null)
+            PopupMenuItem(
+              onTap: () => videoDetailController.showNoteList(context),
+              child: const Text('查看笔记'),
+            ),
+          if (!videoDetailController.isFileSource)
+            PopupMenuItem(
+              onTap: () => videoDetailController.onDownload(this.context),
+              child: const Text('缓存视频'),
+            ),
+          if (videoDetailController.cover.value.isNotEmpty)
+            PopupMenuItem(
+              onTap: () =>
+                  ImageUtils.downloadImg([videoDetailController.cover.value]),
+              child: const Text('保存封面'),
+            ),
+          if (!videoDetailController.isFileSource &&
+              videoDetailController.isUgc)
+            PopupMenuItem(
+              onTap: videoDetailController.toAudioPage,
+              child: const Text('听音频'),
+            ),
+          PopupMenuItem(
+            onTap: () {
+              if (!Accounts.main.isLogin) {
+                SmartDialog.showToast('账号未登录');
+              } else {
+                PageUtils.reportVideo(videoDetailController.aid);
+              }
+            },
+            child: const Text('举报'),
+          ),
+        ],
+      );
 
   void _showWindowsVideoTabs() {
     _syncWindowsVideoTabProgress();
@@ -2158,6 +2173,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     Widget child;
     if (videoDetailController.plPlayerController.isPipMode) {
       child = plPlayer(width: maxWidth, height: maxHeight, isPipMode: true);
+    } else if (WindowsVideoTabService.enabled) {
+      child = childWhenWindowsNeo;
     } else if (!videoDetailController.horizontalScreen) {
       child = childWhenDisabled;
     } else if (maxWidth / maxHeight >= kScreenRatio) {
@@ -2186,6 +2203,163 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     return videoDetailController.plPlayerController.darkVideoPage
         ? Theme(data: themeData, child: child)
         : child;
+  }
+
+  Widget get childWhenWindowsNeo => Obx(() {
+    final isFullScreen = this.isFullScreen;
+    return Scaffold(
+      key: videoDetailController.childKey,
+      backgroundColor: context.windowsNeo.background,
+      resizeToAvoidBottomInset: false,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final height = constraints.maxHeight;
+          if (isFullScreen) {
+            return ColoredBox(
+              color: Colors.black,
+              child: SizedBox.expand(
+                child: videoPlayer(width: width, height: height),
+              ),
+            );
+          }
+          final useSidePanel = WindowsNeoVideoLayout.useSidePanel(
+            width,
+            height,
+          );
+          return useSidePanel
+              ? _buildWindowsWideLayout(width, height)
+              : _buildWindowsCompactLayout(width, height);
+        },
+      ),
+    );
+  });
+
+  Widget _buildWindowsWideLayout(double width, double height) {
+    final showRelated =
+        videoDetailController.isUgc && videoDetailController.showRelatedVideo;
+    final showSeason = _shouldShowSeasonPanel;
+    final hasSidePanel =
+        showRelated || videoDetailController.showReply || showSeason;
+    final sideWidth = WindowsNeoVideoLayout.sidePanelWidth(
+      width,
+      visible: hasSidePanel,
+    );
+    final mainWidth = width - sideWidth - (hasSidePanel ? 1 : 0);
+    final playerHeight = WindowsNeoVideoLayout.widePlayerHeight(
+      mainWidth,
+      height,
+    );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: mainWidth,
+          height: height,
+          child: Column(
+            children: [
+              SizedBox(
+                width: mainWidth,
+                height: playerHeight,
+                child: videoPlayer(width: mainWidth, height: playerHeight),
+              ),
+              Divider(height: 1, color: context.windowsNeo.border),
+              Expanded(
+                child: videoIntro(
+                  width: mainWidth,
+                  height: height - playerHeight - 1,
+                  needRelated: false,
+                  needCtr: false,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (hasSidePanel) ...[
+          VerticalDivider(width: 1, color: context.windowsNeo.border),
+          SizedBox(
+            width: sideWidth,
+            height: height,
+            child: ColoredBox(
+              color: context.windowsNeo.surface,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  buildTabBar(
+                    introText: '\u76f8\u5173\u89c6\u9891',
+                    showIntro: showRelated,
+                  ),
+                  Expanded(
+                    child: tabBarView(
+                      controller: videoDetailController.tabCtr,
+                      children: [
+                        if (showRelated)
+                          KeepAliveWrapper(
+                            child: CustomScrollView(
+                              key: const PageStorageKey(RelatedVideoPanel),
+                              controller:
+                                  videoDetailController.effectiveIntroScrollCtr,
+                              slivers: [
+                                RelatedVideoPanel(
+                                  key: videoRelatedKey,
+                                  heroTag: heroTag,
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (videoDetailController.showReply) videoReplyPanel(),
+                        if (showSeason) seasonPanel,
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildWindowsCompactLayout(double width, double height) {
+    final playerHeight = WindowsNeoVideoLayout.compactPlayerHeight(
+      width,
+      height,
+    );
+    return Column(
+      children: [
+        SizedBox(
+          width: width,
+          height: playerHeight,
+          child: videoPlayer(width: width, height: playerHeight),
+        ),
+        Divider(height: 1, color: context.windowsNeo.border),
+        Expanded(
+          child: ColoredBox(
+            color: context.windowsNeo.surface,
+            child: Column(
+              children: [
+                buildTabBar(),
+                Expanded(
+                  child: tabBarView(
+                    controller: videoDetailController.tabCtr,
+                    children: [
+                      videoIntro(
+                        width: width,
+                        height: height - playerHeight - 46,
+                      ),
+                      if (videoDetailController.showReply) videoReplyPanel(),
+                      if (_shouldShowSeasonPanel) seasonPanel,
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget buildTabBar({
@@ -2217,9 +2391,23 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
 
     final flag = !needIndicator || tabs.length == 1;
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     Widget tabBar() => TabBar(
-      labelColor: flag ? themeData.colorScheme.onSurface : null,
-      indicator: flag ? const BoxDecoration() : null,
+      labelColor: flag || isWindowsNeo ? themeData.colorScheme.onSurface : null,
+      unselectedLabelColor: isWindowsNeo ? context.windowsNeo.muted : null,
+      indicator: flag
+          ? const BoxDecoration()
+          : isWindowsNeo
+          ? UnderlineTabIndicator(
+              borderSide: BorderSide(
+                color: context.windowsNeo.accent,
+                width: 2.5,
+              ),
+            )
+          : null,
+      indicatorSize: isWindowsNeo
+          ? TabBarIndicatorSize.label
+          : TabBarIndicatorSize.tab,
       padding: EdgeInsets.zero,
       controller: videoDetailController.tabCtr,
       labelStyle:
@@ -2266,9 +2454,12 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
     return DecoratedBox(
       decoration: BoxDecoration(
+        color: isWindowsNeo ? context.windowsNeo.surface : null,
         border: Border(
           bottom: BorderSide(
-            color: themeData.dividerColor.withValues(alpha: 0.1),
+            color: isWindowsNeo
+                ? context.windowsNeo.border
+                : themeData.dividerColor.withValues(alpha: 0.1),
           ),
         ),
       ),

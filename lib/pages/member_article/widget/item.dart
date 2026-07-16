@@ -4,8 +4,10 @@ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/stat/stat.dart';
 import 'package:PiliPlus/models/common/stat_type.dart';
 import 'package:PiliPlus/models_new/space/space_article/item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 
 class MemberArticleItem extends StatelessWidget {
@@ -16,13 +18,23 @@ class MemberArticleItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     final outline = theme.colorScheme.outline;
     void onLongPress() => imageSaveDialog(
       title: item.title,
       cover: item.originImageUrls?.firstOrNull,
     );
     return Material(
-      type: MaterialType.transparency,
+      type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
+      color: isWindowsNeo ? context.windowsNeo.surface : null,
+      elevation: 0,
+      shape: isWindowsNeo
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+              side: BorderSide(color: context.windowsNeo.border),
+            )
+          : null,
+      clipBehavior: isWindowsNeo ? Clip.antiAlias : Clip.none,
       child: InkWell(
         onTap: () {
           if (item.uri?.isNotEmpty == true) {

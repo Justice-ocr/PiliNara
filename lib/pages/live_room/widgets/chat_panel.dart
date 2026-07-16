@@ -6,11 +6,13 @@ import 'package:PiliPlus/models_new/live/live_danmaku/danmaku_msg.dart';
 import 'package:PiliPlus/models_new/live/live_superchat/item.dart';
 import 'package:PiliPlus/pages/live_room/controller.dart';
 import 'package:PiliPlus/pages/live_room/superchat/superchat_card.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/pages/member/widget/medal_widget.dart';
 import 'package:PiliPlus/pages/video/widgets/header_control.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -23,12 +25,14 @@ class LiveRoomChatPanel extends StatelessWidget {
     required this.liveRoomController,
     required this.isPP,
     required this.onAtUser,
+    this.hideSuperChat = false,
   });
 
   final int roomId;
   final LiveRoomController liveRoomController;
   final bool isPP;
   final ValueChanged<DanmakuMsg> onAtUser;
+  final bool hideSuperChat;
 
   bool get disableAutoScroll => liveRoomController.disableAutoScroll.value;
 
@@ -36,6 +40,8 @@ class LiveRoomChatPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     late final bg = isPP
         ? Colors.black.withValues(alpha: 0.4)
+        : WindowsVideoTabService.enabled
+        ? context.windowsNeo.hover
         : const Color(0x15FFFFFF);
     late final nameColor = isPP
         ? Colors.white.withValues(alpha: 0.9)
@@ -48,98 +54,113 @@ class LiveRoomChatPanel extends StatelessWidget {
     return Stack(
       children: [
         Obx(
-          () => ListView.separated(
-            key: const PageStorageKey(LiveRoomChatPanel),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            controller: liveRoomController.scrollController,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemCount: liveRoomController.builtLength =
-                liveRoomController.messages.length,
-            physics: const ClampingScrollPhysics(),
-            itemBuilder: (_, index) {
-              final item = liveRoomController.messages[index];
-              if (item is DanmakuMsg) {
-                WidgetSpan? medal;
-                if (item.medalInfo case final medalInfo?) {
-                  try {
-                    medal = WidgetSpan(
-                      child: Padding(
-                        padding: const .only(right: 4),
-                        child: MedalWidget.fromMedalInfo(
-                          medal: medalInfo,
-                          padding: MedalWidget.mediumPadding,
-                        ),
-                      ),
-                    );
-                  } catch (e, s) {
-                    if (kDebugMode) {
-                      Utils.reportError(e, s);
-                    }
-                  }
-                }
-                return Align(
-                  alignment: Alignment.centerLeft,
-                  child: Builder(
-                    builder: (itemContext) {
-                      return Container(
-                        padding: const .symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: bg,
-                          borderRadius: const .all(.circular(14)),
-                        ),
-                        child: Text.rich(
-                          TextSpan(
-                            children: [
-                              ?medal,
-                              TextSpan(
-                                text: '${item.name}: ',
-                                style: TextStyle(
-                                  color: nameColor,
-                                  fontSize: 14,
-                                ),
-                                recognizer: item.extra.mid == 0
-                                    ? null
-                                    : (NoDeadlineTapGestureRecognizer()
-                                        ..onTapUp = (e) => _showMsgMenu(
-                                          context,
-                                          itemContext,
-                                          e,
-                                          item,
-                                        )),
-                              ),
-                              if (item.reply case final reply?)
-                                TextSpan(
-                                  text: '@${reply.name} ',
-                                  style: TextStyle(
-                                    color: primary,
-                                    fontSize: 14,
-                                  ),
-                                  recognizer: NoDeadlineTapGestureRecognizer()
-                                    ..onTap = () =>
-                                        PageUtils.toMember(reply.mid),
-                                ),
-                              _buildMsg(devicePixelRatio, item),
-                            ],
+          () {
+            final allMessages = liveRoomController.messages;
+            liveRoomController.builtLength = allMessages.length;
+            final visibleMessages = hideSuperChat
+                ? allMessages
+                      .where((item) => item is! SuperChatItem)
+                      .toList(growable: false)
+                : allMessages;
+            return ListView.separated(
+              key: const PageStorageKey(LiveRoomChatPanel),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              controller: liveRoomController.scrollController,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemCount: visibleMessages.length,
+              physics: const ClampingScrollPhysics(),
+              itemBuilder: (_, index) {
+                final item = visibleMessages[index];
+                if (item is DanmakuMsg) {
+                  WidgetSpan? medal;
+                  if (item.medalInfo case final medalInfo?) {
+                    try {
+                      medal = WidgetSpan(
+                        child: Padding(
+                          padding: const .only(right: 4),
+                          child: MedalWidget.fromMedalInfo(
+                            medal: medalInfo,
+                            padding: MedalWidget.mediumPadding,
                           ),
                         ),
                       );
-                    },
-                  ),
-                );
-              }
-              if (item is SuperChatItem) {
-                return SuperChatCard(
-                  item: item,
-                  persistentSC: true,
-                  superChatTimeType: liveRoomController.superChatTimeType,
-                  onReport: () => liveRoomController.reportSC(item),
-                );
-              }
-              throw item.runtimeType;
-            },
-          ),
+                    } catch (e, s) {
+                      if (kDebugMode) {
+                        Utils.reportError(e, s);
+                      }
+                    }
+                  }
+                  return Align(
+                    alignment: Alignment.centerLeft,
+                    child: Builder(
+                      builder: (itemContext) {
+                        return Container(
+                          padding: const .symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: bg,
+                            borderRadius: BorderRadius.circular(
+                              WindowsVideoTabService.enabled ? 4 : 14,
+                            ),
+                          ),
+                          child: Text.rich(
+                            TextSpan(
+                              children: [
+                                ?medal,
+                                TextSpan(
+                                  text: '${item.name}: ',
+                                  style: TextStyle(
+                                    color: nameColor,
+                                    fontSize: 14,
+                                  ),
+                                  recognizer: item.extra.mid == 0
+                                      ? null
+                                      : (NoDeadlineTapGestureRecognizer()
+                                          ..onTapUp = (e) => _showMsgMenu(
+                                            context,
+                                            itemContext,
+                                            e,
+                                            item,
+                                          )),
+                                ),
+                                if (item.reply case final reply?)
+                                  TextSpan(
+                                    text: '@${reply.name} ',
+                                    style: TextStyle(
+                                      color: primary,
+                                      fontSize: 14,
+                                    ),
+                                    recognizer: NoDeadlineTapGestureRecognizer()
+                                      ..onTap = () =>
+                                          PageUtils.toMember(reply.mid),
+                                  ),
+                                _buildMsg(devicePixelRatio, item),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                }
+                if (item is SuperChatItem) {
+                  return SuperChatCard(
+                    item: item,
+                    persistentSC: true,
+                    superChatTimeType: liveRoomController.superChatTimeType,
+                    onReport: () => liveRoomController.reportSC(item),
+                  );
+                }
+                throw item.runtimeType;
+              },
+            );
+          },
         ),
-        if (kDebugMode && liveRoomController.showSuperChat) ...[
+        if (kDebugMode &&
+            liveRoomController.showSuperChat &&
+            !hideSuperChat) ...[
           Positioned(
             top: 50,
             right: 0,
@@ -166,7 +187,7 @@ class LiveRoomChatPanel extends StatelessWidget {
             ),
           ),
         ],
-        if (liveRoomController.showSuperChat)
+        if (liveRoomController.showSuperChat && !hideSuperChat)
           Positioned(
             top: 12,
             right: 12,

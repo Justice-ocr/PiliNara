@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:PiliPlus/common/skeleton/msg_feed_sys_msg_.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
@@ -7,10 +9,12 @@ import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/msg/msg_sys/data.dart';
 import 'package:PiliPlus/pages/msg_feed_top/sys_msg/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart' hide ListTile;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -32,7 +36,13 @@ class _SysMsgPageState extends State<SysMsgPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final horizontalPadding = max(
+      18.0,
+      (MediaQuery.sizeOf(context).width - 960) / 2,
+    );
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('系统通知')),
       body: refreshIndicator(
@@ -42,6 +52,9 @@ class _SysMsgPageState extends State<SysMsgPage> {
           slivers: [
             SliverPadding(
               padding: EdgeInsets.only(
+                left: isWindowsNeo ? horizontalPadding : 0,
+                top: isWindowsNeo ? 16 : 0,
+                right: isWindowsNeo ? horizontalPadding : 0,
                 bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
               ),
               sliver: Obx(
@@ -59,10 +72,12 @@ class _SysMsgPageState extends State<SysMsgPage> {
     LoadingState<List<MsgSysItem>?> loadingState,
   ) {
     late final divider = Divider(
-      indent: 72,
-      endIndent: 20,
-      height: 6,
-      color: Colors.grey.withValues(alpha: 0.1),
+      indent: WindowsVideoTabService.enabled ? 0 : 72,
+      endIndent: WindowsVideoTabService.enabled ? 0 : 20,
+      height: WindowsVideoTabService.enabled ? 1 : 6,
+      color: WindowsVideoTabService.enabled
+          ? context.windowsNeo.border
+          : Colors.grey.withValues(alpha: 0.1),
     );
     return switch (loadingState) {
       Loading() => SliverSafeArea(
@@ -86,7 +101,10 @@ class _SysMsgPageState extends State<SysMsgPage> {
                     onConfirm: () => _sysMsgController.onRemove(item.id, index),
                   );
                   return ListTile(
-                    safeArea: true,
+                    safeArea: !WindowsVideoTabService.enabled,
+                    tileColor: WindowsVideoTabService.enabled
+                        ? context.windowsNeo.surface
+                        : null,
                     onLongPress: onLongPress,
                     onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
                     title: Text(

@@ -15,11 +15,13 @@ import 'package:PiliPlus/pages/common/fab_mixin.dart'
 import 'package:PiliPlus/pages/dynamics_repost/view.dart';
 import 'package:PiliPlus/pages/fav_detail/controller.dart';
 import 'package:PiliPlus/pages/fav_detail/widget/fav_video_card.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -62,6 +64,9 @@ class _FavDetailPageState extends State<FavDetailPage> with GridMixin {
             }
           },
           child: Scaffold(
+            backgroundColor: WindowsVideoTabService.enabled
+                ? context.windowsNeo.background
+                : null,
             resizeToAvoidBottomInset: false,
             floatingActionButtonLocation: const NoRightMarginFabLocation(),
             floatingActionButton: Padding(
@@ -109,8 +114,11 @@ class _FavDetailPageState extends State<FavDetailPage> with GridMixin {
                   _buildHeader(enableMultiSelect, theme),
                   SliverPadding(
                     padding: EdgeInsets.only(
-                      left: padding.left,
-                      right: padding.right,
+                      left: WindowsVideoTabService.enabled ? 18 : padding.left,
+                      top: WindowsVideoTabService.enabled ? 16 : 0,
+                      right: WindowsVideoTabService.enabled
+                          ? 18
+                          : padding.right,
                       bottom: padding.bottom + 100,
                     ),
                     sliver: Obx(
@@ -132,6 +140,11 @@ class _FavDetailPageState extends State<FavDetailPage> with GridMixin {
 
   Widget _buildHeader(bool enableMultiSelect, ThemeData theme) {
     return SliverAppBar.medium(
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.surface
+          : null,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
       leadingWidth: enableMultiSelect ? 125 : null,
       leading: enableMultiSelect
           ? Row(
@@ -479,7 +492,15 @@ class _FavDetailPageState extends State<FavDetailPage> with GridMixin {
       Success(:final response) =>
         response != null && response.isNotEmpty
             ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
+                gridDelegate: WindowsVideoTabService.enabled
+                    ? SliverGridDelegateWithExtentAndRatio(
+                        maxCrossAxisExtent: 520,
+                        childAspectRatio: 4.2,
+                        minHeight: 112,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                      )
+                    : gridDelegate,
                 itemBuilder: (context, index) {
                   if (index == response.length) {
                     _favDetailController.onLoadMore();

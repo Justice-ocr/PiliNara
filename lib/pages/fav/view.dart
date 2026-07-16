@@ -7,7 +7,9 @@ import 'package:PiliPlus/pages/fav/cheese/controller.dart';
 import 'package:PiliPlus/pages/fav/topic/controller.dart';
 import 'package:PiliPlus/pages/fav/video/controller.dart';
 import 'package:PiliPlus/pages/fav_folder_sort/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -52,6 +54,9 @@ class _FavPageState extends State<FavPage> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.background
+          : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('我的收藏'),
@@ -126,11 +131,53 @@ class _FavPageState extends State<FavPage> with SingleTickerProviderStateMixin {
           ),
           const SizedBox(width: 6),
         ],
-        bottom: TabBar(
+        bottom: _buildTabs(),
+      ),
+      body: ViewSafeArea(
+        child: tabBarView(
+          controller: _tabController,
+          children: FavTabType.values.map((item) => item.page).toList(),
+        ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildTabs() {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(48),
+      child: Container(
+        height: 48,
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: isWindowsNeo ? 18 : 0),
+        decoration: isWindowsNeo
+            ? BoxDecoration(
+                color: context.windowsNeo.surface,
+                border: Border(
+                  bottom: BorderSide(color: context.windowsNeo.border),
+                ),
+              )
+            : null,
+        alignment: Alignment.centerLeft,
+        child: TabBar(
           controller: _tabController,
           isScrollable: true,
           tabAlignment: TabAlignment.start,
           tabs: FavTabType.values.map((item) => Tab(text: item.title)).toList(),
+          dividerColor: isWindowsNeo ? Colors.transparent : null,
+          dividerHeight: isWindowsNeo ? 0 : null,
+          indicatorSize: isWindowsNeo
+              ? TabBarIndicatorSize.label
+              : TabBarIndicatorSize.tab,
+          indicator: isWindowsNeo
+              ? UnderlineTabIndicator(
+                  borderSide: BorderSide(
+                    color: context.windowsNeo.accent,
+                    width: 2.5,
+                  ),
+                )
+              : null,
+          unselectedLabelColor: isWindowsNeo ? context.windowsNeo.muted : null,
           onTap: (index) {
             try {
               if (!_tabController.indexIsChanging) {
@@ -150,12 +197,6 @@ class _FavPageState extends State<FavPage> with SingleTickerProviderStateMixin {
               }
             } catch (_) {}
           },
-        ),
-      ),
-      body: ViewSafeArea(
-        child: tabBarView(
-          controller: _tabController,
-          children: FavTabType.values.map((item) => item.page).toList(),
         ),
       ),
     );

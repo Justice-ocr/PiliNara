@@ -10,9 +10,11 @@ import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models/common/stat_type.dart';
 import 'package:PiliPlus/models_new/later/list.dart';
 import 'package:PiliPlus/pages/later/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
@@ -34,6 +36,7 @@ class VideoCardHLater extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final enableMultiSelect = ctr.enableMultiSelect.value;
+    final isWindowsNeo = WindowsVideoTabService.enabled;
 
     final onLongPress = enableMultiSelect
         ? null
@@ -42,7 +45,16 @@ class VideoCardHLater extends StatelessWidget {
             ..onSelect(videoItem);
 
     return Material(
-      type: MaterialType.transparency,
+      type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
+      color: isWindowsNeo ? context.windowsNeo.surface : null,
+      elevation: 0,
+      shape: isWindowsNeo
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+              side: BorderSide(color: context.windowsNeo.border),
+            )
+          : null,
+      clipBehavior: isWindowsNeo ? Clip.antiAlias : Clip.none,
       child: InkWell(
         onLongPress: onLongPress,
         onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,

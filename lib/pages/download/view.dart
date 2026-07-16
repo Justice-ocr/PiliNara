@@ -19,8 +19,10 @@ import 'package:PiliPlus/pages/download/widgets/folder_card.dart';
 import 'package:PiliPlus/pages/download/widgets/folder_dialog.dart';
 import 'package:PiliPlus/services/download/download_collection_service.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart'
     hide SliverGridDelegateWithMaxCrossAxisExtent;
@@ -29,8 +31,7 @@ import 'package:get/get.dart';
 
 enum _DownloadTab {
   videos('全部视频'),
-  folders('文件夹')
-  ;
+  folders('文件夹');
 
   final String label;
   const _DownloadTab(this.label);
@@ -359,6 +360,9 @@ class _DownloadPageState extends State<DownloadPage>
           }
         },
         child: Scaffold(
+          backgroundColor: WindowsVideoTabService.enabled
+              ? context.windowsNeo.background
+              : null,
           resizeToAvoidBottomInset: false,
           appBar: MultiSelectAppBarWidget(
             ctr: activeMultiSelectCtr,
@@ -476,21 +480,7 @@ class _DownloadPageState extends State<DownloadPage>
                 ],
                 const SizedBox(width: 6),
               ],
-              bottom: TabBar(
-                controller: _tabController,
-                tabs: [
-                  Tab(
-                    child: Obx(
-                      () => Text('全部视频(${_controller.allVideos.length})'),
-                    ),
-                  ),
-                  Tab(
-                    child: Obx(
-                      () => Text('文件夹(${_controller.folders.length})'),
-                    ),
-                  ),
-                ],
-              ),
+              bottom: _buildDownloadTabs(),
             ),
           ),
           body: TabBarView(
@@ -505,10 +495,66 @@ class _DownloadPageState extends State<DownloadPage>
     });
   }
 
+  PreferredSizeWidget _buildDownloadTabs() {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(48),
+      child: Container(
+        height: 48,
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: isWindowsNeo ? 18 : 0),
+        decoration: isWindowsNeo
+            ? BoxDecoration(
+                color: context.windowsNeo.surface,
+                border: Border(
+                  bottom: BorderSide(color: context.windowsNeo.border),
+                ),
+              )
+            : null,
+        alignment: Alignment.centerLeft,
+        child: TabBar(
+          controller: _tabController,
+          isScrollable: isWindowsNeo,
+          tabAlignment: isWindowsNeo ? TabAlignment.start : null,
+          dividerColor: isWindowsNeo ? Colors.transparent : null,
+          dividerHeight: isWindowsNeo ? 0 : null,
+          indicatorSize: isWindowsNeo
+              ? TabBarIndicatorSize.label
+              : TabBarIndicatorSize.tab,
+          indicator: isWindowsNeo
+              ? UnderlineTabIndicator(
+                  borderSide: BorderSide(
+                    color: context.windowsNeo.accent,
+                    width: 2.5,
+                  ),
+                )
+              : null,
+          unselectedLabelColor: isWindowsNeo ? context.windowsNeo.muted : null,
+          tabs: [
+            Tab(
+              child: Obx(
+                () => Text('全部视频(${_controller.allVideos.length})'),
+              ),
+            ),
+            Tab(
+              child: Obx(
+                () => Text('文件夹(${_controller.folders.length})'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildAllVideosTab() {
     final padding = MediaQuery.viewPaddingOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Padding(
-      padding: EdgeInsets.only(left: padding.left, right: padding.right),
+      padding: EdgeInsets.only(
+        left: isWindowsNeo ? 18 : padding.left,
+        right: isWindowsNeo ? 18 : padding.right,
+      ),
       child: CustomScrollView(
         slivers: [
           Obx(() {
@@ -522,18 +568,24 @@ class _DownloadPageState extends State<DownloadPage>
             }
             return SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 7),
+                padding: EdgeInsets.only(
+                  top: isWindowsNeo ? 16 : 0,
+                  bottom: isWindowsNeo ? 14 : 7,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(left: 12, bottom: 7),
+                      padding: EdgeInsets.only(
+                        left: isWindowsNeo ? 0 : 12,
+                        bottom: 7,
+                      ),
                       child: Text(
                         '正在缓存 (${_downloadService.waitDownloadQueue.length})',
                       ),
                     ),
                     SizedBox(
-                      height: 100,
+                      height: isWindowsNeo ? 112 : 100,
                       child: DetailItem(
                         entry: entry,
                         progress: _progress,
@@ -560,13 +612,20 @@ class _DownloadPageState extends State<DownloadPage>
             }
             return SliverPadding(
               padding: EdgeInsets.only(
-                top: _downloadService.waitDownloadQueue.isNotEmpty ? 0 : 7,
+                top: _downloadService.waitDownloadQueue.isNotEmpty
+                    ? 0
+                    : isWindowsNeo
+                    ? 16
+                    : 7,
               ),
               sliver: SliverGrid.builder(
                 gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  mainAxisSpacing: 2,
-                  mainAxisExtent: 100,
-                  maxCrossAxisExtent: Grid.smallCardWidth * 2,
+                  mainAxisSpacing: isWindowsNeo ? 12 : 2,
+                  crossAxisSpacing: isWindowsNeo ? 12 : 0,
+                  mainAxisExtent: isWindowsNeo ? 112 : 100,
+                  maxCrossAxisExtent: isWindowsNeo
+                      ? 520
+                      : Grid.smallCardWidth * 2,
                 ),
                 itemCount: _controller.allVideos.length,
                 itemBuilder: (context, index) {
@@ -605,8 +664,12 @@ class _DownloadPageState extends State<DownloadPage>
 
   Widget _buildFoldersTab() {
     final padding = MediaQuery.viewPaddingOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Padding(
-      padding: EdgeInsets.only(left: padding.left, right: padding.right),
+      padding: EdgeInsets.only(
+        left: isWindowsNeo ? 18 : padding.left,
+        right: isWindowsNeo ? 18 : padding.right,
+      ),
       child: CustomScrollView(
         slivers: [
           Obx(() {
@@ -630,12 +693,18 @@ class _DownloadPageState extends State<DownloadPage>
               );
             }
             return SliverPadding(
-              padding: EdgeInsets.only(top: 7, bottom: padding.bottom + 100),
+              padding: EdgeInsets.only(
+                top: isWindowsNeo ? 16 : 7,
+                bottom: padding.bottom + 100,
+              ),
               sliver: SliverGrid.builder(
                 gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  mainAxisSpacing: 2,
-                  mainAxisExtent: 100,
-                  maxCrossAxisExtent: Grid.smallCardWidth * 2,
+                  mainAxisSpacing: isWindowsNeo ? 12 : 2,
+                  crossAxisSpacing: isWindowsNeo ? 12 : 0,
+                  mainAxisExtent: isWindowsNeo ? 112 : 100,
+                  maxCrossAxisExtent: isWindowsNeo
+                      ? 520
+                      : Grid.smallCardWidth * 2,
                 ),
                 itemCount: _controller.folders.length,
                 itemBuilder: (context, index) {

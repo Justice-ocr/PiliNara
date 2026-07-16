@@ -9,9 +9,11 @@ import 'package:PiliPlus/models/user/danmaku_block.dart';
 import 'package:PiliPlus/models/user/danmaku_rule.dart';
 import 'package:PiliPlus/pages/danmaku_block/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -44,7 +46,9 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('弹幕屏蔽'),
@@ -55,13 +59,17 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
             onPressed: () => showImportExportDialog<List<dynamic>>(
               context,
               title: '弹幕屏蔽规则',
-              onExport: () => Utils.jsonEncoder.convert(_controller.exportRules()),
+              onExport: () =>
+                  Utils.jsonEncoder.convert(_controller.exportRules()),
               onImport: _controller.importDanmakuFilter,
               localFileName: () => 'danmaku_block',
             ),
           ),
         ],
         bottom: TabBar(
+          isScrollable: isWindowsNeo,
+          tabAlignment: isWindowsNeo ? TabAlignment.start : null,
+          dividerColor: isWindowsNeo ? context.windowsNeo.border : null,
           controller: _controller.tabController,
           tabs: DmBlockType.values
               .map(
@@ -79,8 +87,10 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
         children: DmBlockType.values
             .map(
               (e) => KeepAliveWrapper(
-                child: Obx(
-                  () => tabViewBuilder(e.index, _controller.rules[e.index]),
+                child: _windowsTabView(
+                  Obx(
+                    () => tabViewBuilder(e.index, _controller.rules[e.index]),
+                  ),
                 ),
               ),
             )
@@ -99,9 +109,11 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
     if (list.isEmpty) {
       return scrollableError;
     }
-    return ListView.builder(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return ListView.separated(
       itemCount: list.length,
       padding: EdgeInsets.only(
+        top: isWindowsNeo ? 16 : 0,
         bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
       ),
       itemBuilder: (context, itemIndex) {
@@ -120,7 +132,7 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
             ),
           ),
         );
-        return ListTile(
+        final tile = ListTile(
           title: Text(
             item.filter,
             style: Theme.of(context).textTheme.bodyMedium,
@@ -145,7 +157,22 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
                   ],
                 ),
         );
+        if (!isWindowsNeo) return tile;
+        return Material(color: context.windowsNeo.surface, child: tile);
       },
+      separatorBuilder: (_, _) => isWindowsNeo
+          ? Divider(height: 1, color: context.windowsNeo.border)
+          : const SizedBox.shrink(),
+    );
+  }
+
+  Widget _windowsTabView(Widget child) {
+    if (!WindowsVideoTabService.enabled) return child;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Center(
+        child: SizedBox(width: 820, child: child),
+      ),
     );
   }
 

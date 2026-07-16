@@ -16,6 +16,7 @@ import 'package:PiliPlus/services/download/download_collection_service.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/services/logger.dart';
 import 'package:PiliPlus/services/service_locator.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/app_font.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
 import 'package:PiliPlus/utils/calc_window_position.dart';
@@ -174,7 +175,9 @@ void main() async {
     final windowOptions = WindowOptions(
       minimumSize: const Size(400, 720),
       skipTaskbar: false,
-      titleBarStyle: Pref.showWindowTitleBar
+      titleBarStyle: WindowsVideoTabService.enabled
+          ? TitleBarStyle.hidden
+          : Pref.showWindowTitleBar
           ? TitleBarStyle.normal
           : TitleBarStyle.hidden,
       title: Constants.appName,

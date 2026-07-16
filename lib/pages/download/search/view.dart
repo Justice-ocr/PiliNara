@@ -6,6 +6,7 @@ import 'package:PiliPlus/pages/common/search/common_search_page.dart';
 import 'package:PiliPlus/pages/download/detail/widgets/item.dart';
 import 'package:PiliPlus/pages/download/search/controller.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:flutter/material.dart'
     hide SliverGridDelegateWithMaxCrossAxisExtent;
@@ -84,11 +85,14 @@ class _DownloadSearchPageState
   @override
   Widget buildList(List<BiliDownloadEntryInfo> list) {
     if (list.isNotEmpty) {
-      return SliverGrid.builder(
+      final grid = SliverGrid.builder(
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          mainAxisSpacing: 2,
-          mainAxisExtent: 100,
-          maxCrossAxisExtent: Grid.smallCardWidth * 2,
+          mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : 2,
+          crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : 0,
+          mainAxisExtent: WindowsVideoTabService.enabled ? 112 : 100,
+          maxCrossAxisExtent: WindowsVideoTabService.enabled
+              ? 520
+              : Grid.smallCardWidth * 2,
         ),
         itemBuilder: (context, index) {
           final entry = list[index];
@@ -103,6 +107,11 @@ class _DownloadSearchPageState
           );
         },
         itemCount: list.length,
+      );
+      if (!WindowsVideoTabService.enabled) return grid;
+      return SliverPadding(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
+        sliver: grid,
       );
     }
     return const HttpError();

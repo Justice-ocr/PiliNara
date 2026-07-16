@@ -9,6 +9,7 @@ import 'package:PiliPlus/grpc/bilibili/app/interfaces/v1.pb.dart' show Arc;
 import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models/common/stat_type.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/em.dart';
@@ -17,6 +18,7 @@ import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:fixnum/fixnum.dart' show Int64;
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -31,6 +33,7 @@ class SearchArchiveGrpc extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     final arc = item.archive;
     final bvid = IdUtils.av2bv(arc.aid.toInt());
     final regTitle = Em.regTitle(arc.title);
@@ -41,7 +44,16 @@ class SearchArchiveGrpc extends StatelessWidget {
       cover: arc.pic,
     );
     return Material(
-      type: MaterialType.transparency,
+      type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
+      color: isWindowsNeo ? context.windowsNeo.surface : null,
+      elevation: 0,
+      shape: isWindowsNeo
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+              side: BorderSide(color: context.windowsNeo.border),
+            )
+          : null,
+      clipBehavior: isWindowsNeo ? Clip.antiAlias : Clip.none,
       child: Stack(
         clipBehavior: Clip.none,
         children: [

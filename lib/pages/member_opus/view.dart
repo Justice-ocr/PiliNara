@@ -7,6 +7,7 @@ import 'package:PiliPlus/models_new/space/space_opus/item.dart';
 import 'package:PiliPlus/pages/common/fab_mixin.dart';
 import 'package:PiliPlus/pages/member_opus/controller.dart';
 import 'package:PiliPlus/pages/member_opus/widgets/space_opus_item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
 import 'package:flutter/material.dart';
@@ -54,6 +55,7 @@ class _MemberOpusState extends State<MemberOpus>
   Widget build(BuildContext context) {
     super.build(context);
     final bottom = MediaQuery.viewPaddingOf(context).bottom;
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Stack(
       clipBehavior: .none,
       children: [
@@ -74,9 +76,9 @@ class _MemberOpusState extends State<MemberOpus>
               slivers: [
                 SliverPadding(
                   padding: EdgeInsets.only(
-                    top: widget.isSingle ? 12 : 0,
-                    left: Style.safeSpace,
-                    right: Style.safeSpace,
+                    top: isWindowsNeo ? 16 : (widget.isSingle ? 12 : 0),
+                    left: isWindowsNeo ? 18 : Style.safeSpace,
+                    right: isWindowsNeo ? 18 : Style.safeSpace,
                     bottom: bottom + 100,
                   ),
                   sliver: Obx(() => _buildBody(_controller.loadingState.value)),
@@ -147,9 +149,11 @@ class _MemberOpusState extends State<MemberOpus>
   }
 
   late final gridDelegate = SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-    maxCrossAxisExtent: Grid.smallCardWidth,
-    mainAxisSpacing: Style.safeSpace,
-    crossAxisSpacing: Style.safeSpace,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 360
+        : Grid.smallCardWidth,
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.safeSpace,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.safeSpace,
   );
 
   Widget _buildBody(LoadingState<List<SpaceOpusItemModel>?> loadingState) {

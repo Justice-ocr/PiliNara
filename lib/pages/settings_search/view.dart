@@ -9,8 +9,10 @@ import 'package:PiliPlus/pages/setting/models/privacy_settings.dart';
 import 'package:PiliPlus/pages/setting/models/recommend_settings.dart';
 import 'package:PiliPlus/pages/setting/models/style_settings.dart';
 import 'package:PiliPlus/pages/setting/models/video_settings.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:waterfall_flow/waterfall_flow.dart'
@@ -62,6 +64,9 @@ class _SettingsSearchPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.background
+          : null,
       appBar: AppBar(
         actions: [
           IconButton(
@@ -82,30 +87,51 @@ class _SettingsSearchPageState
           controller: _textEditingController,
           textAlignVertical: TextAlignVertical.center,
           onChanged: ctr!.add,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             isDense: true,
-            hintText: '鎼滅储',
-            visualDensity: .standard,
-            border: InputBorder.none,
+            hintText: WindowsVideoTabService.enabled ? '搜索设置' : '鎼滅储',
+            visualDensity: VisualDensity.standard,
+            border: WindowsVideoTabService.enabled
+                ? OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: BorderSide(color: context.windowsNeo.border),
+                  )
+                : InputBorder.none,
           ),
         ),
       ),
       body: CustomScrollView(
         slivers: [
           ViewSliverSafeArea(
-            sliver: Obx(
-              () => _list.isEmpty
-                  ? const HttpError()
-                  : SliverWaterfallFlow(
-                      gridDelegate:
-                          SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: Grid.smallCardWidth * 2,
-                          ),
-                      delegate: SliverChildBuilderDelegate(
-                        (_, index) => _list[index].widget,
-                        childCount: _list.length,
+            sliver: SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                WindowsVideoTabService.enabled ? 20 : 0,
+                WindowsVideoTabService.enabled ? 16 : 0,
+                WindowsVideoTabService.enabled ? 20 : 0,
+                WindowsVideoTabService.enabled ? 100 : 0,
+              ),
+              sliver: Obx(
+                () => _list.isEmpty
+                    ? const HttpError()
+                    : SliverWaterfallFlow(
+                        gridDelegate:
+                            SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: WindowsVideoTabService.enabled
+                                  ? 440
+                                  : Grid.smallCardWidth * 2,
+                              mainAxisSpacing: WindowsVideoTabService.enabled
+                                  ? 12
+                                  : 0,
+                              crossAxisSpacing: WindowsVideoTabService.enabled
+                                  ? 12
+                                  : 0,
+                            ),
+                        delegate: SliverChildBuilderDelegate(
+                          (_, index) => _list[index].widget,
+                          childCount: _list.length,
+                        ),
                       ),
-                    ),
+              ),
             ),
           ),
         ],

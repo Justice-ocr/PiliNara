@@ -24,7 +24,7 @@ import 'package:PiliPlus/pages/common/slide/common_slide_page.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/page.dart';
-import 'package:PiliPlus/models/common/account_type.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
@@ -34,6 +34,7 @@ import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide TabBarView;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -213,8 +214,13 @@ class _EpisodePanelState extends State<EpisodePanel>
 
   @override
   Widget buildPage(ThemeData theme) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Material(
-      color: showTitle ? theme.colorScheme.surface : null,
+      color: isWindowsNeo
+          ? context.windowsNeo.surface
+          : showTitle
+          ? theme.colorScheme.surface
+          : null,
       type: showTitle ? MaterialType.canvas : MaterialType.transparency,
       child: Column(
         children: [
@@ -226,7 +232,23 @@ class _EpisodePanelState extends State<EpisodePanel>
               isScrollable: true,
               tabs: widget.list.map((item) => Tab(text: item.title)).toList(),
               dividerHeight: 1,
-              dividerColor: theme.dividerColor.withValues(alpha: 0.1),
+              dividerColor: isWindowsNeo
+                  ? context.windowsNeo.border
+                  : theme.dividerColor.withValues(alpha: 0.1),
+              indicatorSize: isWindowsNeo
+                  ? TabBarIndicatorSize.label
+                  : TabBarIndicatorSize.tab,
+              indicator: isWindowsNeo
+                  ? UnderlineTabIndicator(
+                      borderSide: BorderSide(
+                        color: context.windowsNeo.accent,
+                        width: 2.5,
+                      ),
+                    )
+                  : null,
+              unselectedLabelColor: isWindowsNeo
+                  ? context.windowsNeo.muted
+                  : null,
             ),
           Expanded(child: enableSlide ? slideList(theme) : buildList(theme)),
         ],
@@ -432,7 +454,10 @@ class _EpisodePanelState extends State<EpisodePanel>
       child: SizedBox(
         height: 98,
         child: Material(
-          type: MaterialType.transparency,
+          color:
+              WindowsVideoTabService.enabled && isCurrentIndex
+              ? context.windowsNeo.accentSurface
+              : Colors.transparent,
           child: InkWell(
             onTap: () {
               if (episode.badge == "会员" &&
@@ -633,9 +658,14 @@ class _EpisodePanelState extends State<EpisodePanel>
     height: 45,
     padding: EdgeInsets.symmetric(horizontal: showTitle ? 14 : 6),
     decoration: BoxDecoration(
+      color: WindowsVideoTabService.enabled
+          ? context.windowsNeo.surface
+          : null,
       border: Border(
         bottom: BorderSide(
-          color: theme.dividerColor.withValues(alpha: 0.1),
+          color: WindowsVideoTabService.enabled
+              ? context.windowsNeo.border
+              : theme.dividerColor.withValues(alpha: 0.1),
         ),
       ),
     ),

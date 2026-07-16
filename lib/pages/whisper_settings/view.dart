@@ -5,6 +5,8 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/pages/whisper_block/view.dart';
 import 'package:PiliPlus/pages/whisper_settings/controller.dart';
 import 'package:PiliPlus/pages/whisper_settings/widgets/item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -39,11 +41,40 @@ class _WhisperSettingsPageState extends State<WhisperSettingsPage> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.background
+          : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Obx(() => Text(_controller.title.value)),
       ),
-      body: Obx(() => _buildBody(theme, _controller.loadingState.value)),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWindowsNeo = WindowsVideoTabService.enabled;
+          final horizontal = isWindowsNeo && constraints.maxWidth > 760
+              ? (constraints.maxWidth - 720) / 2
+              : isWindowsNeo
+              ? 20.0
+              : 0.0;
+          final child = Obx(
+            () => _buildBody(theme, _controller.loadingState.value),
+          );
+          if (!isWindowsNeo) return child;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(horizontal, 16, horizontal, 0),
+            child: Material(
+              color: context.windowsNeo.surface,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+                side: BorderSide(color: context.windowsNeo.border),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: child,
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -158,7 +189,9 @@ class _WhisperSettingsPageState extends State<WhisperSettingsPage> {
   ) {
     late final divider = Divider(
       height: 1,
-      color: theme.colorScheme.outline.withValues(alpha: 0.1),
+      color: WindowsVideoTabService.enabled
+          ? context.windowsNeo.border
+          : theme.colorScheme.outline.withValues(alpha: 0.1),
     );
     return switch (loadingState) {
       Loading() => const SizedBox.shrink(),

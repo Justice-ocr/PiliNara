@@ -13,7 +13,9 @@ import 'package:PiliPlus/pages/common/slide/common_slide_page.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/post_panel/popup_menu_text.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
@@ -191,6 +193,9 @@ class _PostPanelState extends State<PostPanel>
   @override
   Widget buildPage(ThemeData theme) {
     return Scaffold(
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.surface
+          : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         primary: false,
@@ -336,8 +341,13 @@ class _PostPanelState extends State<PostPanel>
           ),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: theme.colorScheme.onInverseSurface,
-            borderRadius: const BorderRadius.all(Radius.circular(12)),
+            color: WindowsVideoTabService.enabled
+                ? context.windowsNeo.surfaceRaised
+                : theme.colorScheme.onInverseSurface,
+            borderRadius: const BorderRadius.all(Radius.circular(6)),
+            border: WindowsVideoTabService.enabled
+                ? Border.all(color: context.windowsNeo.border)
+                : null,
           ),
           child: Builder(
             builder: (context) => Column(
