@@ -301,7 +301,7 @@ class _PlayerFocusState extends State<PlayerFocus> {
 
           case LogicalKeyboardKey.bracketLeft:
             if (introController case final introController?) {
-              if (!introController.prevPlay()) {
+              if (!introController.prevPlay(manual: true)) {
                 SmartDialog.showToast('已经是第一集了');
               }
             }
@@ -309,7 +309,7 @@ class _PlayerFocusState extends State<PlayerFocus> {
 
           case LogicalKeyboardKey.bracketRight:
             if (introController case final introController?) {
-              if (!introController.nextPlay()) {
+              if (!introController.nextPlay(manual: true)) {
                 SmartDialog.showToast('已经是最后一集了');
               }
             }
