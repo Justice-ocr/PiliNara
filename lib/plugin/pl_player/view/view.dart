@@ -100,6 +100,7 @@ class PLVideoPlayer extends StatefulWidget {
     this.showEpisodes,
     this.showViewPoints,
     this.isPipMode = false,
+    this.isInAppPip = false,
     this.fill = Colors.black,
     this.alignment = Alignment.center,
     super.key,
@@ -124,6 +125,7 @@ class PLVideoPlayer extends StatefulWidget {
   showEpisodes;
   final VoidCallback? showViewPoints;
   final bool isPipMode;
+  final bool isInAppPip;
   final Color fill;
   final Alignment alignment;
 
@@ -1484,7 +1486,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         if (widget.danmuWidget case final danmaku?)
           Positioned.fill(top: 4, child: danmaku),
 
-        if (!isLive)
+        if (!isLive && !widget.isInAppPip)
           Positioned.fill(
             child: IgnorePointer(
               ignoring: !plPlayerController.enableDragSubtitle,
