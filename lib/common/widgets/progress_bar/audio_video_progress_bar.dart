@@ -500,6 +500,29 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
     );
   }
 
+  void _onHoverStart(PointerEnterEvent event) {
+    if (onHoverStart != null) {
+      onHoverStart!(_detailsFromLocalPosition(event.localPosition));
+    }
+  }
+
+  void _onHoverUpdate(PointerHoverEvent event) {
+    if (onHoverUpdate != null) {
+      onHoverUpdate!(_detailsFromLocalPosition(event.localPosition));
+    }
+  }
+
+  void _onHoverEnd(PointerExitEvent event) => onHoverEnd?.call();
+
+  ThumbDragDetails _detailsFromLocalPosition(Offset localPosition) {
+    final value = _thumbValueFromLocalPosition(localPosition);
+    return ThumbDragDetails(
+      timeStamp: _durationFromValue(value),
+      globalPosition: localToGlobal(localPosition),
+      localPosition: localPosition,
+    );
+  }
+
   void _finishDrag() {
     _userIsDraggingThumb = false;
     markNeedsPaint();
@@ -533,9 +556,10 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
     // start of the line (and after the end of the line). The cap radius is
     // equal to half of the line width, which in this case is the bar height.
     final barCapRadius = _barHeight / 2;
-    double barStart = barCapRadius;
-    double barEnd = size.width - barCapRadius;
+    final barStart = barCapRadius;
+    final barEnd = size.width - barCapRadius;
     final barWidth = barEnd - barStart;
+    if (barWidth <= 0) return 0.0;
     final position = (dx - barStart).clamp(0.0, barWidth);
     return position / barWidth;
   }

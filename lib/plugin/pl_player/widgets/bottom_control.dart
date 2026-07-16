@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:PiliPlus/common/widgets/progress_bar/audio_video_progress_bar.dart';
 import 'package:PiliPlus/common/widgets/progress_bar/segment_progress_bar.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
@@ -47,6 +49,14 @@ class BottomControl extends StatelessWidget {
     controller
       ..onSeekEnd()
       ..seekTo(Duration(milliseconds: milliseconds), isSeek: false);
+  }
+
+  void onHoverStart(ThumbDragDetails duration) {
+    controller.onDesktopProgressHoverStart(duration.timeStamp);
+  }
+
+  void onHoverUpdate(ThumbDragDetails duration) {
+    controller.onDesktopProgressHoverUpdate(duration.timeStamp);
   }
 
   @override

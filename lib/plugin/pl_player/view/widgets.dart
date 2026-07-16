@@ -183,9 +183,9 @@ Widget buildSeekPreviewWidget(
                 0,
                 data.image.length - 1,
               );
-              int align = index % totalPerImage;
-              int x = align % imgXLen;
-              int y = align ~/ imgYLen;
+              final align = index % totalPerImage;
+              final x = align % imgXLen;
+              final y = align ~/ imgXLen;
               final url = data.image[pageIndex];
 
               return ClipRRect(

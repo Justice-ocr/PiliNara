@@ -2206,6 +2206,9 @@ class PlPlayerController with BlockConfigMixin {
         0,
         (response.index.where((item) => item <= seconds).length - 2),
       );
+    } else {
+      showPreview.value = false;
+      previewIndex.value = null;
     }
   }
 

@@ -1763,8 +1763,16 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                             ),
                             style: textStyle,
                           ),
-                        ],
-                      ),
+                          style: textStyle,
+                        ),
+                        const Text('/', style: textStyle),
+                        Text(
+                          DurationUtils.formatDuration(
+                            plPlayerController.duration.value.inSeconds,
+                          ),
+                          style: textStyle,
+                        ),
+                      ],
                     ),
                   );
 
