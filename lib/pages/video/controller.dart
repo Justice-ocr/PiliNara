@@ -448,11 +448,15 @@ class VideoDetailController extends GetxController
           (a, b) => a > b ? a : b,
         );
       }
-      if (plPlayerController.cacheVideoQa != targetQa) {
+      // Fullscreen and windowed presets can both resolve to the same available
+      // stream quality. Reload only when the player would actually change.
+      if (currentVideoQa.value?.code == targetQa) {
         plPlayerController.cacheVideoQa = targetQa;
-        currentVideoQa.value = VideoQuality.fromCode(targetQa);
-        updatePlayer();
+        return;
       }
+      plPlayerController.cacheVideoQa = targetQa;
+      currentVideoQa.value = VideoQuality.fromCode(targetQa);
+      updatePlayer();
     };
   }
 
