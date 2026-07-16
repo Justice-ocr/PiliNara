@@ -460,6 +460,27 @@ abstract final class DynamicsHttp {
     }
   }
 
+  static Future<LoadingState<TopicCardList?>> topicFold({
+    required Object topicId,
+    required int sortBy,
+  }) async {
+    final res = await Request().get(
+      Api.topicFold,
+      queryParameters: {
+        'topic_id': topicId,
+        'sort_by': sortBy,
+      },
+    );
+    if (res.data['code'] == 0) {
+      final list = res.data['data']?['topic_card_list'];
+      if (list == null) {
+        return const Success(null);
+      }
+      return Success(TopicCardList.fromJson(list));
+    }
+    return Error(res.data['message']);
+  }
+
   static Future<LoadingState<ArticleListData>> articleList({
     required Object id,
   }) async {
