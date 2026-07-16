@@ -8,10 +8,12 @@ import 'package:PiliPlus/common/widgets/view_insets_safe_area.dart';
 import 'package:PiliPlus/http/fav.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/msg.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/file_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/services.dart' show LengthLimitingTextInputFormatter;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -107,13 +109,26 @@ class _CreateFavPageState extends State<CreateFavPage> {
           const SizedBox(width: 16),
         ],
       ),
-      body: _mediaId != null
-          ? _titleController.text.isNotEmpty
-                ? _buildBody(theme)
-                : _errMsg?.isNotEmpty == true
-                ? scrollErrorWidget(errMsg: _errMsg, onReload: _getFolderInfo)
-                : m3eLoading
-          : _buildBody(theme),
+      body: isWindowsNeo
+          ? Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: Material(
+                    color: context.windowsNeo.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      side: BorderSide(color: context.windowsNeo.border),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: body,
+                  ),
+                ),
+              ),
+            )
+          : body,
     );
   }
 
@@ -263,7 +278,9 @@ class _CreateFavPageState extends State<CreateFavPage> {
               },
             ),
           ListTile(
-            tileColor: theme.colorScheme.onInverseSurface,
+            tileColor: WindowsVideoTabService.enabled
+                ? context.windowsNeo.surface
+                : theme.colorScheme.onInverseSurface,
             title: Row(
               children: [
                 SizedBox(

@@ -21,7 +21,8 @@ class FollowTypeItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final child = SizedBox(
       height: 66,
       child: InkWell(
         onTap: onTap ?? () => PageUtils.toMember(item.mid),
@@ -69,6 +70,17 @@ class FollowTypeItem extends StatelessWidget {
           ),
         ),
       ),
+    );
+    if (!isWindowsNeo) return child;
+    return Material(
+      color: context.windowsNeo.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(6),
+        side: BorderSide(color: context.windowsNeo.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: child,
     );
   }
 }

@@ -40,6 +40,9 @@ class _DownloadVideoSortPageState extends State<DownloadVideoSortPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.background
+          : null,
       appBar: AppBar(
         title: Text(widget.title),
         actions: [
@@ -56,27 +59,46 @@ class _DownloadVideoSortPageState extends State<DownloadVideoSortPage> {
           const SizedBox(width: 16),
         ],
       ),
-      body: ReorderableListView.builder(
-        itemCount: _sortList.length,
-        onReorder: _onReorder,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding:
-            MediaQuery.viewPaddingOf(context).copyWith(top: 0) +
-            const EdgeInsets.only(bottom: 100),
-        itemBuilder: (context, index) {
-          final entry = _sortList[index];
-          return SizedBox(
-            key: Key(entry.cid.toString()),
-            height: 100,
-            child: DetailItem(
-              entry: entry,
-              downloadService: _downloadService,
-              showTitle: true,
-              onDelete: () {},
-              controller: _controller,
-              enableTap: false,
-              showMoreButton: false,
-            ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWindowsNeo = WindowsVideoTabService.enabled;
+          final horizontal = isWindowsNeo && constraints.maxWidth > 800
+              ? (constraints.maxWidth - 760) / 2
+              : isWindowsNeo
+              ? 20.0
+              : 0.0;
+          return ReorderableListView.builder(
+            itemCount: _sortList.length,
+            // Preserve the existing adjusted-index contract for persistence.
+            // ignore: deprecated_member_use
+            onReorder: _onReorder,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding:
+                MediaQuery.viewPaddingOf(context).copyWith(
+                  left: isWindowsNeo ? horizontal : null,
+                  top: isWindowsNeo ? 16 : 0,
+                  right: isWindowsNeo ? horizontal : null,
+                ) +
+                const EdgeInsets.only(bottom: 100),
+            itemBuilder: (context, index) {
+              final entry = _sortList[index];
+              return Padding(
+                key: Key(entry.cid.toString()),
+                padding: EdgeInsets.only(bottom: isWindowsNeo ? 12 : 0),
+                child: SizedBox(
+                  height: isWindowsNeo ? 112 : 100,
+                  child: DetailItem(
+                    entry: entry,
+                    downloadService: _downloadService,
+                    showTitle: true,
+                    onDelete: () {},
+                    controller: _controller,
+                    enableTap: false,
+                    showMoreButton: false,
+                  ),
+                ),
+              );
+            },
           );
         },
       ),

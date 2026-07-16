@@ -11,6 +11,7 @@ import 'package:PiliPlus/models_new/search/search_rcmd/data.dart';
 import 'package:PiliPlus/pages/search/controller.dart';
 import 'package:PiliPlus/pages/search/widgets/hot_keyword.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/em.dart' show Em;
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
@@ -47,7 +48,10 @@ class _SearchPageState extends State<SearchPage> {
     super.didChangeDependencies();
     theme = Theme.of(context);
     padding = MediaQuery.viewPaddingOf(context);
-    isPortrait = MediaQuery.sizeOf(context).isPortrait;
+    final size = MediaQuery.sizeOf(context);
+    isPortrait = WindowsVideoTabService.enabled
+        ? size.width < 760
+        : size.isPortrait;
   }
 
   @override

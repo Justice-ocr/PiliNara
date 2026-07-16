@@ -19,6 +19,7 @@ import 'package:PiliPlus/models_new/music/bgm_detail.dart';
 import 'package:PiliPlus/pages/common/dyn/common_dyn_page.dart';
 import 'package:PiliPlus/pages/music/controller.dart';
 import 'package:PiliPlus/pages/music/video/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
@@ -31,6 +32,7 @@ import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -53,6 +55,16 @@ class _MusicDetailPageState extends CommonDynPageState<MusicDetailPage> {
 
   @override
   dynamic get arguments => null;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (WindowsVideoTabService.enabled) {
+      final width = MediaQuery.sizeOf(context).width;
+      maxWidth = min(1400.0, width);
+      isPortrait = width < 760;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

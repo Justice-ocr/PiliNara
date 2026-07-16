@@ -20,12 +20,22 @@ class FavArticleItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Material(
-      type: MaterialType.transparency,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          InkWell(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Material(
+          type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
+          color: isWindowsNeo ? context.windowsNeo.surface : null,
+          elevation: 0,
+          shape: isWindowsNeo
+              ? RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  side: BorderSide(color: context.windowsNeo.border),
+                )
+              : null,
+          clipBehavior: isWindowsNeo ? Clip.antiAlias : Clip.none,
+          child: InkWell(
             onTap: () => Get.toNamed(
               '/articlePage',
               parameters: {
@@ -108,18 +118,18 @@ class FavArticleItem extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            right: 12,
-            bottom: -6,
-            child: iconButton(
-              iconSize: 18,
-              onPressed: onDelete,
-              icon: const Icon(Icons.clear),
-              iconColor: theme.colorScheme.outline,
-            ),
+        ),
+        Positioned(
+          right: 12,
+          bottom: -6,
+          child: iconButton(
+            iconSize: 18,
+            onPressed: onDelete,
+            icon: const Icon(Icons.clear),
+            iconColor: theme.colorScheme.outline,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

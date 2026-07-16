@@ -13,10 +13,12 @@ import 'package:PiliPlus/pages/common/fab_mixin.dart';
 import 'package:PiliPlus/pages/main_reply/controller.dart';
 import 'package:PiliPlus/pages/video/reply/widgets/reply_item_grpc.dart';
 import 'package:PiliPlus/pages/video/reply_reply/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -78,10 +80,22 @@ class _MainReplyPageState extends State<MainReplyPage>
                 Obx(
                   () => _buildBody(colorScheme, _controller.loadingState.value),
                 ),
-              ],
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    buildReplyHeader(colorScheme),
+                    Obx(
+                      () => _buildBody(
+                        colorScheme,
+                        _controller.loadingState.value,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ).constraintWidth(
+              constraints: BoxConstraints(maxWidth: isWindowsNeo ? 856 : 625),
             ),
-          ),
-        ).constraintWidth(),
       ),
       fab: SlideTransition(
         position: fabAnimation,
@@ -176,7 +190,9 @@ class _MainReplyPageState extends State<MainReplyPage>
   Widget buildReplyHeader(ColorScheme colorScheme) {
     final secondary = colorScheme.secondary;
     return SliverFloatingHeaderWidget(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.surface
+          : colorScheme.surface,
       child: Padding(
         padding: const .fromLTRB(12, 2.5, 6, 2.5),
         child: Row(

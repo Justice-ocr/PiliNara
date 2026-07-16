@@ -6,6 +6,7 @@ import 'package:PiliPlus/pages/common/search/common_search_page.dart';
 import 'package:PiliPlus/pages/download/detail/widgets/item.dart';
 import 'package:PiliPlus/pages/download/search/controller.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -100,6 +101,11 @@ class _DownloadSearchPageState
           );
         },
         itemCount: list.length,
+      );
+      if (!WindowsVideoTabService.enabled) return grid;
+      return SliverPadding(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
+        sliver: grid,
       );
     }
     return const HttpError();

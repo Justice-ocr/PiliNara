@@ -10,6 +10,7 @@ import 'package:PiliPlus/models/user/danmaku_block.dart';
 import 'package:PiliPlus/models/user/danmaku_rule.dart';
 import 'package:PiliPlus/pages/danmaku_block/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
@@ -62,7 +63,8 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
             onPressed: () => showImportExportDialog<List<dynamic>>(
               context,
               title: '弹幕屏蔽规则',
-              onExport: () => Utils.jsonEncoder.convert(_controller.exportRules()),
+              onExport: () =>
+                  Utils.jsonEncoder.convert(_controller.exportRules()),
               onImport: _controller.importDanmakuFilter,
               localFileName: () => 'danmaku_block',
             ),
@@ -120,7 +122,8 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
     if (list.isEmpty) {
       return scrollableError;
     }
-    return ListView.builder(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return ListView.separated(
       itemCount: list.length,
       padding: .only(bottom: padding.bottom + 100),
       itemBuilder: (context, itemIndex) {
@@ -139,7 +142,7 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
             ),
           ),
         );
-        return ListTile(
+        final tile = ListTile(
           title: Text(
             item.filter,
             style: Theme.of(context).textTheme.bodyMedium,
@@ -164,7 +167,22 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
                   ],
                 ),
         );
+        if (!isWindowsNeo) return tile;
+        return Material(color: context.windowsNeo.surface, child: tile);
       },
+      separatorBuilder: (_, _) => isWindowsNeo
+          ? Divider(height: 1, color: context.windowsNeo.border)
+          : const SizedBox.shrink(),
+    );
+  }
+
+  Widget _windowsTabView(Widget child) {
+    if (!WindowsVideoTabService.enabled) return child;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Center(
+        child: SizedBox(width: 820, child: child),
+      ),
     );
   }
 

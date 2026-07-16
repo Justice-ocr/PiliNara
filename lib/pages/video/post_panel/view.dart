@@ -14,6 +14,7 @@ import 'package:PiliPlus/pages/common/slide/common_slide_page.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/post_panel/popup_menu_text.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
@@ -326,8 +327,13 @@ class _PostPanelState extends State<PostPanel>
           ),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: theme.colorScheme.onInverseSurface,
-            borderRadius: const BorderRadius.all(Radius.circular(12)),
+            color: WindowsVideoTabService.enabled
+                ? context.windowsNeo.surfaceRaised
+                : theme.colorScheme.onInverseSurface,
+            borderRadius: const BorderRadius.all(Radius.circular(6)),
+            border: WindowsVideoTabService.enabled
+                ? Border.all(color: context.windowsNeo.border)
+                : null,
           ),
           child: Builder(
             builder: (context) => Column(

@@ -42,7 +42,7 @@ class _NormalItemState extends State<NormalItem> {
         ),
       );
     }
-    return ListTile(
+    final child = ListTile(
       contentPadding: widget.contentPadding,
       onTap: widget.onTap == null
           ? null
@@ -54,6 +54,14 @@ class _NormalItemState extends State<NormalItem> {
       subtitle: subtitle,
       leading: widget.leading,
       trailing: widget.getTrailing?.call(theme),
+    );
+    if (!WindowsVideoTabService.enabled) return child;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.windowsNeo.surface,
+        border: Border(bottom: BorderSide(color: context.windowsNeo.border)),
+      ),
+      child: child,
     );
   }
 

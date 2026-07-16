@@ -9,6 +9,7 @@ import 'package:PiliPlus/models_new/space/space_opus/item.dart';
 import 'package:PiliPlus/pages/common/fab_mixin.dart';
 import 'package:PiliPlus/pages/member_opus/controller.dart';
 import 'package:PiliPlus/pages/member_opus/widgets/space_opus_item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
 import 'package:get/get.dart';
@@ -132,9 +133,11 @@ class _MemberOpusState extends State<MemberOpus>
   }
 
   late final gridDelegate = SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-    maxCrossAxisExtent: Grid.smallCardWidth,
-    mainAxisSpacing: Style.safeSpace,
-    crossAxisSpacing: Style.safeSpace,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 360
+        : Grid.smallCardWidth,
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.safeSpace,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.safeSpace,
   );
 
   Widget _buildBody(LoadingState<List<SpaceOpusItemModel>?> loadingState) {

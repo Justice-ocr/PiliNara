@@ -12,6 +12,7 @@ import 'package:PiliPlus/models/common/stat_type.dart';
 import 'package:PiliPlus/models_new/fav/fav_detail/media.dart';
 import 'package:PiliPlus/pages/audio/view.dart';
 import 'package:PiliPlus/pages/fav_detail/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
@@ -39,6 +40,7 @@ class FavVideoCardH extends StatelessWidget {
     final isOwner = !isSort && ctr!.isOwner;
     late final enableMultiSelect = ctr?.enableMultiSelect.value ?? false;
     final colorScheme = ColorScheme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
 
     final onLongPress = isSort || enableMultiSelect
         ? null
@@ -55,7 +57,16 @@ class FavVideoCardH extends StatelessWidget {
           );
 
     return Material(
-      type: MaterialType.transparency,
+      type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
+      color: isWindowsNeo ? context.windowsNeo.surface : null,
+      elevation: 0,
+      shape: isWindowsNeo
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+              side: BorderSide(color: context.windowsNeo.border),
+            )
+          : null,
+      clipBehavior: isWindowsNeo ? Clip.antiAlias : Clip.none,
       child: InkWell(
         onTap: isSort
             ? null

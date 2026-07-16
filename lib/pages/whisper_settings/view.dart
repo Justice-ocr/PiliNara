@@ -44,7 +44,33 @@ class _WhisperSettingsPageState extends State<WhisperSettingsPage> {
       appBar: AppBar(
         title: Obx(() => Text(_controller.title.value)),
       ),
-      body: Obx(() => _buildBody(theme, _controller.loadingState.value)),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWindowsNeo = WindowsVideoTabService.enabled;
+          final horizontal = isWindowsNeo && constraints.maxWidth > 760
+              ? (constraints.maxWidth - 720) / 2
+              : isWindowsNeo
+              ? 20.0
+              : 0.0;
+          final child = Obx(
+            () => _buildBody(theme, _controller.loadingState.value),
+          );
+          if (!isWindowsNeo) return child;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(horizontal, 16, horizontal, 0),
+            child: Material(
+              color: context.windowsNeo.surface,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+                side: BorderSide(color: context.windowsNeo.border),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: child,
+            ),
+          );
+        },
+      ),
     );
   }
 

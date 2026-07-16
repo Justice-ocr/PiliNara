@@ -8,6 +8,7 @@ import 'package:PiliPlus/grpc/bilibili/app/im/v1.pb.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/pages/whisper/controller.dart';
 import 'package:PiliPlus/pages/whisper/widgets/item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/extension/three_dot_ext.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
@@ -94,18 +95,37 @@ class _WhisperPageState extends State<WhisperPage> {
           const SizedBox(width: 5),
         ],
       ),
-      body: refreshIndicator(
-        onRefresh: _controller.onRefresh,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            _buildTopItems(theme, padding),
-            SliverPadding(
-              padding: EdgeInsets.only(bottom: padding.bottom + 100),
-              sliver: Obx(() => _buildBody(_controller.loadingState.value)),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final horizontalPadding = isWindowsNeo
+              ? constraints.maxWidth > 1000
+                    ? (constraints.maxWidth - 960) / 2
+                    : 20.0
+              : 0.0;
+          return refreshIndicator(
+            onRefresh: _controller.onRefresh,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                _buildTopItems(
+                  theme,
+                  padding,
+                  horizontalPadding: horizontalPadding,
+                ),
+                SliverPadding(
+                  padding: EdgeInsets.only(
+                    left: horizontalPadding,
+                    right: horizontalPadding,
+                    bottom: padding.bottom + 100,
+                  ),
+                  sliver: Obx(
+                    () => _buildBody(_controller.loadingState.value),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -156,9 +176,19 @@ class _WhisperPageState extends State<WhisperPage> {
     }
   }
 
-  Widget _buildTopItems(ThemeData theme, EdgeInsets padding) {
+  Widget _buildTopItems(
+    ThemeData theme,
+    EdgeInsets padding, {
+    required double horizontalPadding,
+  }) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return SliverPadding(
-      padding: EdgeInsets.only(left: padding.left, right: padding.right),
+      padding: EdgeInsets.only(
+        left: isWindowsNeo ? horizontalPadding : padding.left,
+        top: isWindowsNeo ? 16 : 0,
+        right: isWindowsNeo ? horizontalPadding : padding.right,
+        bottom: isWindowsNeo ? 14 : 0,
+      ),
       sliver: SliverToBoxAdapter(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -211,10 +241,99 @@ class _WhisperPageState extends State<WhisperPage> {
                 }
                 _controller.unreadCounts[index] = 0;
                 Get.toNamed(item.route);
-              },
-            );
-          }),
+              }
+
+              if (!isWindowsNeo) {
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onTap,
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Obx(
+                          () {
+                            final count = _controller.unreadCounts[index];
+                            return Badge(
+                              isLabelVisible: count > 0,
+                              label: Text(" $count "),
+                              alignment: Alignment.topRight,
+                              child: CircleAvatar(
+                                radius: 22,
+                                backgroundColor:
+                                    theme.colorScheme.onInverseSurface,
+                                child: Icon(
+                                  item.icon,
+                                  size: 20,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          item.name,
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return Expanded(
+                child: InkWell(
+                  onTap: onTap,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Obx(
+                          () => _buildWindowsTopIcon(index, item.icon),
+                        ),
+                        const SizedBox(width: 9),
+                        Flexible(
+                          child: Text(
+                            item.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildWindowsTopIcon(int index, IconData icon) {
+    final count = _controller.unreadCounts[index];
+    return Badge(
+      isLabelVisible: count > 0,
+      label: Text(" $count "),
+      alignment: Alignment.topRight,
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: context.windowsNeo.accentSurface,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        alignment: Alignment.center,
+        child: Icon(icon, size: 18, color: context.windowsNeo.accent),
       ),
     );
   }

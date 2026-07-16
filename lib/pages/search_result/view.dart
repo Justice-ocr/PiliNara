@@ -81,18 +81,7 @@ class _SearchResultPageState extends State<SearchResultPage>
           ),
         ),
         title: GestureDetector(
-          onTap: () {
-            if (_isFromSearch) {
-              Get.back();
-            } else {
-              final parameters = {'text': _searchResultController.keyword};
-              if (WindowsVideoTabService.enabled) {
-                PageUtils.toSearch(parameters: parameters);
-              } else {
-                Get.offNamed('/search', parameters: parameters);
-              }
-            }
-          },
+          onTap: _openSearch,
           behavior: HitTestBehavior.opaque,
           child: SizedBox(
             width: double.infinity,
@@ -108,61 +97,94 @@ class _SearchResultPageState extends State<SearchResultPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TabBar(
-              overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-              splashFactory: NoSplash.splashFactory,
-              padding: const EdgeInsets.only(top: 4, left: 8, right: 8),
-              controller: _tabController,
-              tabs: SearchType.values
-                  .map(
-                    (item) => Obx(
-                      () {
-                        int count = _searchResultController.count[item.index];
-                        return Tab(
-                          text:
-                              '${item.label}${count != -1 ? ' ${count > 99 ? '99+' : count}' : ''}',
-                        );
-                      },
-                    ),
-                  )
-                  .toList(),
-              isScrollable: true,
-              indicatorWeight: 0,
-              indicatorPadding: const EdgeInsets.symmetric(
-                horizontal: 3,
-                vertical: 8,
-              ),
-              indicator: BoxDecoration(
+            _buildTabBar(theme),
+            Expanded(child: _buildTabView()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openSearch() {
+    if (_isFromSearch) {
+      Get.back();
+    } else {
+      final parameters = {'text': _searchResultController.keyword};
+      if (WindowsVideoTabService.enabled) {
+        PageUtils.toSearch(parameters: parameters);
+      } else {
+        Get.offNamed('/search', parameters: parameters);
+      }
+    }
+  }
+
+  Widget _buildTabBar(ThemeData theme, {bool desktop = false}) {
+    return SizedBox(
+      height: desktop ? 44 : null,
+      child: TabBar(
+        overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+        splashFactory: NoSplash.splashFactory,
+        padding: EdgeInsets.symmetric(horizontal: desktop ? 14 : 8),
+        controller: _tabController,
+        tabs: SearchType.values
+            .map(
+              (item) => Obx(() {
+                final count = _searchResultController.count[item.index];
+                final countLabel = count == -1
+                    ? ''
+                    : ' ${count > 99 ? '99+' : count}';
+                return Tab(text: '${_labelForType(item)}$countLabel');
+              }),
+            )
+            .toList(),
+        isScrollable: true,
+        indicatorSize: desktop
+            ? TabBarIndicatorSize.label
+            : TabBarIndicatorSize.tab,
+        indicatorPadding: desktop
+            ? EdgeInsets.zero
+            : const EdgeInsets.symmetric(horizontal: 3, vertical: 8),
+        indicator: desktop
+            ? UnderlineTabIndicator(
+                borderSide: BorderSide(
+                  color: context.windowsNeo.accent,
+                  width: 2.5,
+                ),
+              )
+            : BoxDecoration(
                 color: theme.colorScheme.secondaryContainer,
                 borderRadius: const BorderRadius.all(Radius.circular(20)),
               ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              labelColor: theme.colorScheme.onSecondaryContainer,
-              labelStyle:
-                  TabBarTheme.of(
-                    context,
-                  ).labelStyle?.copyWith(fontSize: 13) ??
-                  const TextStyle(fontSize: 13),
-              dividerColor: Colors.transparent,
-              dividerHeight: 0,
-              unselectedLabelColor: theme.colorScheme.outline,
-              tabAlignment: TabAlignment.start,
-              onTap: (index) {
-                if (!_tabController.indexIsChanging) {
-                  if (_searchResultController.toTopIndex.value == index) {
-                    _searchResultController.toTopIndex.refresh();
-                  } else {
-                    _searchResultController.toTopIndex.value = index;
-                  }
-                }
-              },
-            ),
-            Expanded(
-              child: tabBarView(
-                controller: _tabController,
-                children: SearchType.values
-                    .map(
-                      (item) => switch (item) {
+        labelColor: desktop
+            ? theme.colorScheme.onSurface
+            : theme.colorScheme.onSecondaryContainer,
+        labelStyle: theme.textTheme.bodySmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+        dividerColor: Colors.transparent,
+        dividerHeight: 0,
+        unselectedLabelColor: desktop
+            ? context.windowsNeo.muted
+            : theme.colorScheme.outline,
+        tabAlignment: TabAlignment.start,
+        onTap: (index) {
+          if (!_tabController.indexIsChanging) {
+            if (_searchResultController.toTopIndex.value == index) {
+              _searchResultController.toTopIndex.refresh();
+            } else {
+              _searchResultController.toTopIndex.value = index;
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildTabView() => tabBarView(
+    controller: _tabController,
+    children: SearchType.values
+        .map(
+          (item) => switch (item) {
                         // SearchType.all => SearchAllPanel(
                         //   tag: _tag,
                         //   searchType: item,
@@ -194,14 +216,17 @@ class _SearchResultPageState extends State<SearchResultPage>
                           searchType: item,
                           keyword: _searchResultController.keyword,
                         ),
-                      },
-                    )
-                    .toList(),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+          },
+        )
+        .toList(),
+  );
+
+  String _labelForType(SearchType type) => switch (type) {
+    SearchType.video => '视频',
+    SearchType.media_bangumi => '番剧',
+    SearchType.media_ft => '影视',
+    SearchType.live_room => '直播',
+    SearchType.bili_user => '用户',
+    SearchType.article => '专栏',
+  };
 }

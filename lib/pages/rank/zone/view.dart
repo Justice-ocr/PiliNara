@@ -5,6 +5,7 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/model_hot_video_item.dart';
 import 'package:PiliPlus/pages/rank/zone/controller.dart';
 import 'package:PiliPlus/pages/rank/zone/widget/pgc_rank_item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -38,6 +39,28 @@ class _ZonePageState extends State<ZonePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    if (WindowsVideoTabService.enabled) {
+      return refreshIndicator(
+        onRefresh: controller.onRefresh,
+        child: CustomScrollView(
+          controller: controller.scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                context.windowsNeo.pagePadding,
+                context.windowsNeo.spaceMd,
+                context.windowsNeo.pagePadding,
+                100,
+              ),
+              sliver: Obx(
+                () => _buildDesktopBody(controller.loadingState.value),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return refreshIndicator(
       key: controller.refreshKey,
       onRefresh: controller.onRefresh,
@@ -52,6 +75,46 @@ class _ZonePageState extends State<ZonePage>
         ],
       ),
     );
+  }
+
+  Widget _buildDesktopBody(LoadingState<List<dynamic>?> loadingState) {
+    final tokens = context.windowsNeo;
+    final delegate = SliverGridDelegateWithMaxCrossAxisExtent(
+      maxCrossAxisExtent: 680,
+      mainAxisExtent: tokens.horizontalCardHeight,
+      mainAxisSpacing: tokens.gridGap,
+      crossAxisSpacing: tokens.gridGap,
+    );
+    return switch (loadingState) {
+      Loading() => SliverGrid.builder(
+        gridDelegate: delegate,
+        itemCount: 10,
+        itemBuilder: (_, _) => const WindowsNeoHorizontalTileSkeleton(),
+      ),
+      Success(:final response) =>
+        response != null && response.isNotEmpty
+            ? SliverGrid.builder(
+                gridDelegate: delegate,
+                itemCount: response.length,
+                itemBuilder: (context, index) {
+                  final item = response[index];
+                  if (item is HotVideoItemModel) {
+                    return WindowsNeoHorizontalVideoTile(
+                      videoItem: item,
+                      onRemove: () => controller.loadingState
+                        ..value.data!.removeAt(index)
+                        ..refresh(),
+                    );
+                  }
+                  return WindowsNeoPgcRankTile(item: item);
+                },
+              )
+            : HttpError(onReload: controller.onReload),
+      Error(:final errMsg) => HttpError(
+        errMsg: errMsg,
+        onReload: controller.onReload,
+      ),
+    };
   }
 
   Widget _buildBody(LoadingState<List<dynamic>?> loadingState) {

@@ -14,7 +14,9 @@ import 'package:PiliPlus/pages/video/reply/controller.dart';
 import 'package:PiliPlus/pages/video/reply/vote/reply_vote_item.dart';
 import 'package:PiliPlus/pages/video/reply/widgets/reply_item_grpc.dart';
 import 'package:PiliPlus/pages/video/reply_reply/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -43,6 +45,8 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
         FabMixin {
   late ColorScheme colorScheme;
   late VideoReplyController _videoReplyController;
+  ReplyInfo? _windowsReplyDetail;
+  int? _windowsReplyDetailId;
 
   String get heroTag => widget.heroTag;
 
@@ -235,6 +239,14 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
   // 展示二级回复
   void replyReply(ReplyInfo replyItem, int? id) {
     EasyThrottle.throttle('replyReply', const Duration(milliseconds: 500), () {
+      if (WindowsVideoTabService.enabled) {
+        if (!mounted) return;
+        setState(() {
+          _windowsReplyDetail = replyItem;
+          _windowsReplyDetailId = id;
+        });
+        return;
+      }
       int oid = replyItem.oid.toInt();
       int rpid = replyItem.id.toInt();
       MiniScaffold.of(context).showBottomSheet(
@@ -251,6 +263,14 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
           upMid: _videoReplyController.upMid,
         ),
       );
+    });
+  }
+
+  void _closeWindowsReplyDetail() {
+    if (!mounted) return;
+    setState(() {
+      _windowsReplyDetail = null;
+      _windowsReplyDetailId = null;
     });
   }
 }

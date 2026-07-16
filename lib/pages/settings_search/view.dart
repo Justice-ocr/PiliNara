@@ -12,6 +12,7 @@ import 'package:PiliPlus/pages/setting/models/privacy_settings.dart';
 import 'package:PiliPlus/pages/setting/models/recommend_settings.dart';
 import 'package:PiliPlus/pages/setting/models/style_settings.dart';
 import 'package:PiliPlus/pages/setting/models/video_settings.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
 import 'package:get/get.dart';
@@ -86,11 +87,16 @@ class _SettingsSearchPageState
           controller: _textEditingController,
           textAlignVertical: TextAlignVertical.center,
           onChanged: ctr!.add,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             isDense: true,
-            hintText: '鎼滅储',
-            visualDensity: .standard,
-            border: InputBorder.none,
+            hintText: WindowsVideoTabService.enabled ? '搜索设置' : '鎼滅储',
+            visualDensity: VisualDensity.standard,
+            border: WindowsVideoTabService.enabled
+                ? OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: BorderSide(color: context.windowsNeo.border),
+                  )
+                : InputBorder.none,
           ),
         ),
       ),

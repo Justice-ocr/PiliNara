@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
@@ -30,14 +32,33 @@ class LoginDevicesPageState extends State<LoginDevicesPage> {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            ViewSliverSafeArea(
-              sliver: Obx(
-                () => _buildBody(colorScheme, _controller.loadingState.value),
+            if (isWindowsNeo)
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  16,
+                  horizontalPadding,
+                  MediaQuery.viewPaddingOf(context).bottom + 100,
+                ),
+                sliver: Obx(
+                  () => _buildBody(
+                    colorScheme,
+                    _controller.loadingState.value,
+                  ),
+                ),
+              )
+            else
+              ViewSliverSafeArea(
+                sliver: Obx(
+                  () => _buildBody(
+                    colorScheme,
+                    _controller.loadingState.value,
+                  ),
+                ),
               ),
-            ),
           ],
         ),
-      ).constraintWidth(),
+      ),
     );
   }
 
@@ -75,6 +96,9 @@ class LoginDevicesPageState extends State<LoginDevicesPage> {
     final style = TextStyle(fontSize: 13, color: colorScheme.outline);
     return ListTile(
       dense: true,
+      visualDensity: WindowsVideoTabService.enabled
+          ? VisualDensity.standard
+          : null,
       title: Text(
         item.deviceName ?? '',
         style: const TextStyle(fontSize: 14),

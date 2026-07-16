@@ -74,7 +74,12 @@ abstract class CommonSearchPageState<S extends StatefulWidget, R, T>
         decoration: InputDecoration(
           hintText: '搜索',
           visualDensity: .standard,
-          border: InputBorder.none,
+          border: WindowsVideoTabService.enabled
+              ? OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: BorderSide(color: context.windowsNeo.border),
+                )
+              : InputBorder.none,
           suffixIcon: IconButton(
             tooltip: '清空',
             icon: const Icon(Icons.clear, size: 22),

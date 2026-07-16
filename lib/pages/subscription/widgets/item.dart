@@ -4,6 +4,7 @@ import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models_new/sub/sub/list.dart';
 import 'package:PiliPlus/pages/subscription_detail/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -21,6 +22,7 @@ class SubItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     String heroTag = Utils.makeHeroTag(item.id);
     final type = switch (item.type) {
       11 => '收藏夹',
@@ -32,7 +34,15 @@ class SubItem extends StatelessWidget {
       cover: item.cover,
     );
     return Material(
-      type: MaterialType.transparency,
+      type: isWindowsNeo ? MaterialType.canvas : MaterialType.transparency,
+      color: isWindowsNeo ? context.windowsNeo.surface : null,
+      shape: isWindowsNeo
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+              side: BorderSide(color: context.windowsNeo.border),
+            )
+          : null,
+      clipBehavior: isWindowsNeo ? Clip.antiAlias : Clip.none,
       child: InkWell(
         onTap: () {
           if (item.state == 1) {

@@ -7,6 +7,7 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/space/space_audio/item.dart';
 import 'package:PiliPlus/pages/member_audio/controller.dart';
 import 'package:PiliPlus/pages/member_audio/widgets/item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -49,6 +50,9 @@ class _MemberAudioState extends State<MemberAudio>
         slivers: [
           SliverPadding(
             padding: EdgeInsets.only(
+              left: WindowsVideoTabService.enabled ? 18 : 0,
+              top: WindowsVideoTabService.enabled ? 16 : 0,
+              right: WindowsVideoTabService.enabled ? 18 : 0,
               bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
             ),
             sliver: Obx(
@@ -74,9 +78,16 @@ class _MemberAudioState extends State<MemberAudio>
             ? SliverMainAxisGroup(
                 slivers: [
                   SliverFloatingHeaderWidget(
-                    backgroundColor: colorScheme.surface,
+                    backgroundColor: WindowsVideoTabService.enabled
+                        ? context.windowsNeo.surface
+                        : colorScheme.surface,
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 2.5, 8, 2.5),
+                      padding: EdgeInsets.fromLTRB(
+                        WindowsVideoTabService.enabled ? 12 : 14,
+                        2.5,
+                        WindowsVideoTabService.enabled ? 12 : 8,
+                        2.5,
+                      ),
                       child: Row(
                         children: [
                           Text(

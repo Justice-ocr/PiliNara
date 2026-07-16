@@ -10,6 +10,7 @@ import 'package:PiliPlus/models_new/video/video_note_list/list.dart';
 import 'package:PiliPlus/pages/common/slide/common_slide_page.dart';
 import 'package:PiliPlus/pages/video/note/controller.dart';
 import 'package:PiliPlus/pages/webview/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
@@ -138,11 +139,15 @@ class _NoteListPageState extends State<NoteListPage>
             bottom: MediaQuery.viewPaddingOf(context).bottom + 6,
           ),
           decoration: BoxDecoration(
-            color: theme.hoverColor,
+            color: WindowsVideoTabService.enabled
+                ? context.windowsNeo.surfaceRaised
+                : theme.hoverColor,
             border: Border(
               top: BorderSide(
                 width: 0.5,
-                color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                color: WindowsVideoTabService.enabled
+                    ? context.windowsNeo.border
+                    : theme.colorScheme.outline.withValues(alpha: 0.1),
               ),
             ),
           ),
@@ -215,7 +220,10 @@ class _NoteListPageState extends State<NoteListPage>
 
   Widget _itemWidget(ThemeData theme, VideoNoteItemModel item) {
     return Material(
-      type: MaterialType.transparency,
+      type: WindowsVideoTabService.enabled
+          ? MaterialType.canvas
+          : MaterialType.transparency,
+      color: WindowsVideoTabService.enabled ? context.windowsNeo.surface : null,
       child: InkWell(
         onTap: () => Get.toNamed(
           '/articlePage',
@@ -245,8 +253,7 @@ class _NoteListPageState extends State<NoteListPage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     GestureDetector(
-                      onTap: () =>
-                          PageUtils.toMember(item.author!.mid),
+                      onTap: () => PageUtils.toMember(item.author!.mid),
                       child: Row(
                         children: [
                           Text(

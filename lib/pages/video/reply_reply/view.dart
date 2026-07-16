@@ -15,11 +15,13 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/pages/common/slide/common_slide_page.dart';
 import 'package:PiliPlus/pages/video/reply/widgets/reply_item_grpc.dart';
 import 'package:PiliPlus/pages/video/reply_reply/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/parse_string.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:fixnum/fixnum.dart' show Int64;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -41,6 +43,7 @@ class VideoReplyReplyPanel extends CommonSlidePage {
     this.isNested = false,
     this.heroTag,
     this.upMid,
+    this.onClose,
   });
   final int? id;
   final int oid;
@@ -52,6 +55,7 @@ class VideoReplyReplyPanel extends CommonSlidePage {
   final bool isNested;
   final String? heroTag;
   final Int64? upMid;
+  final VoidCallback? onClose;
 
   @override
   State<VideoReplyReplyPanel> createState() => _VideoReplyReplyPanelState();
@@ -87,18 +91,23 @@ class VideoReplyReplyPanel extends CommonSlidePage {
             ),
           ],
         ),
-        body: ViewSafeArea(
-          child: VideoReplyReplyPanel(
-            enableSlide: false,
-            oid: oid,
-            rpid: rootId,
-            isVideoDetail: false,
-            replyType: type,
-            firstFloor: null,
-            id: rpId,
-            heroTag: heroTag,
-          ),
-        ).constraintWidth(),
+        body:
+            ViewSafeArea(
+              child: VideoReplyReplyPanel(
+                enableSlide: false,
+                oid: oid,
+                rpid: rootId,
+                isVideoDetail: false,
+                replyType: type,
+                firstFloor: null,
+                id: rpId,
+                heroTag: heroTag,
+              ),
+            ).constraintWidth(
+              constraints: BoxConstraints(
+                maxWidth: WindowsVideoTabService.enabled ? 856 : 625,
+              ),
+            ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:PiliPlus/common/widgets/pendant_avatar.dart';
 import 'package:PiliPlus/models_new/follow/list.dart';
 import 'package:PiliPlus/pages/share/view.dart' show UserModel;
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
@@ -48,7 +49,8 @@ class FollowItem extends StatelessWidget {
       );
     }
     return Material(
-      type: .transparency,
+      type: WindowsVideoTabService.enabled ? .canvas : .transparency,
+      color: WindowsVideoTabService.enabled ? context.windowsNeo.surface : null,
       child: InkWell(
         onTap: () {
           if (onSelect != null) {

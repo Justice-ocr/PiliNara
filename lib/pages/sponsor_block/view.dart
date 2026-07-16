@@ -9,12 +9,14 @@ import 'package:PiliPlus/models/common/sponsor_block/segment_type.dart';
 import 'package:PiliPlus/models/common/sponsor_block/skip_type.dart';
 import 'package:PiliPlus/models_new/sponsor_block/user_info.dart';
 import 'package:PiliPlus/pages/setting/slide_color_picker.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/filtering_text.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -497,6 +499,7 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
 
     const titleStyle = TextStyle(fontSize: 15);
 
@@ -507,7 +510,9 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
 
     final divider = Divider(
       height: 1,
-      color: theme.colorScheme.outline.withValues(alpha: 0.1),
+      color: isWindowsNeo
+          ? context.windowsNeo.border
+          : theme.colorScheme.outline.withValues(alpha: 0.1),
     );
 
     final sliverDivider = SliverToBoxAdapter(child: divider);
@@ -515,7 +520,9 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
     final dividerL = SliverToBoxAdapter(
       child: Divider(
         thickness: 16,
-        color: theme.colorScheme.outline.withValues(alpha: 0.1),
+        color: isWindowsNeo
+            ? context.windowsNeo.background
+            : theme.colorScheme.outline.withValues(alpha: 0.1),
       ),
     );
 
@@ -566,8 +573,63 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
             child: SizedBox(
               height: 55 + MediaQuery.viewPaddingOf(context).bottom,
             ),
+            sliverDivider,
+            SliverToBoxAdapter(child: _blockToastItem(titleStyle)),
+            sliverDivider,
+            SliverToBoxAdapter(
+              child: _blockTrackItem(titleStyle, subTitleStyle),
+            ),
+            sliverDivider,
+            SliverToBoxAdapter(
+              child: _blockUserInfo(theme, titleStyle, subTitleStyle),
+            ),
+            dividerL,
+            SliverList.separated(
+              itemCount: _blockSettings.length,
+              itemBuilder: (context, index) =>
+                  _buildItem(theme, index, _blockSettings[index]),
+              separatorBuilder: (context, index) => divider,
+            ),
+            dividerL,
+            SliverToBoxAdapter(
+              child: _userIdItem(theme, titleStyle, subTitleStyle),
+            ),
+            sliverDivider,
+            SliverToBoxAdapter(
+              child: _blockServerItem(theme, titleStyle, subTitleStyle),
+            ),
+            dividerL,
+            SliverToBoxAdapter(child: _aboutItem(titleStyle, subTitleStyle)),
+            dividerL,
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 55 + MediaQuery.viewPaddingOf(context).bottom,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _windowsBody(Widget child) {
+    if (!WindowsVideoTabService.enabled) return child;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 720),
+          child: Material(
+            color: context.windowsNeo.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+              side: BorderSide(color: context.windowsNeo.border),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: child,
           ),
-        ],
+        ),
       ),
     );
   }

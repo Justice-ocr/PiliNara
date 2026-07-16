@@ -30,7 +30,7 @@ class HistoryCardItem extends StatelessWidget {
 
   bool get _isVideo => !_isArticle && !_isLive && !_isPgc && !_isCheese;
 
-  void _onTap() async {
+  Future<void> _onTap() async {
     final business = item.history.business;
     if (_isArticle) {
       PageUtils.toDupNamed(
@@ -83,6 +83,8 @@ class HistoryCardItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final radius = BorderRadius.circular(isWindowsNeo ? 6 : 12);
     final hasDuration = item.duration != null && item.duration != 0;
     final coverSrc = item.cover?.isNotEmpty == true
         ? item.cover
@@ -97,20 +99,23 @@ class HistoryCardItem extends StatelessWidget {
           // 封面区域
           DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(12)),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.onInverseSurface.withValues(
-                    alpha: 0.4,
-                  ),
-                  offset: const Offset(6, -8),
-                  blurRadius: 0.0,
-                  spreadRadius: 0.0,
-                ),
-              ],
+              borderRadius: radius,
+              border: isWindowsNeo
+                  ? Border.all(color: context.windowsNeo.border)
+                  : null,
+              boxShadow: isWindowsNeo
+                  ? const []
+                  : [
+                      BoxShadow(
+                        color: theme.colorScheme.onInverseSurface.withValues(
+                          alpha: 0.4,
+                        ),
+                        offset: const Offset(6, -8),
+                      ),
+                    ],
             ),
             child: ClipRRect(
-              borderRadius: const BorderRadius.all(Radius.circular(12)),
+              borderRadius: radius,
               child: SizedBox(
                 width: _cardWidth,
                 height: _cardHeight,

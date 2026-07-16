@@ -2,6 +2,7 @@ import 'package:PiliPlus/pages/download/view.dart';
 import 'package:PiliPlus/pages/article/view.dart';
 import 'package:PiliPlus/pages/dynamics_detail/view.dart';
 import 'package:PiliPlus/pages/live_room/view.dart';
+import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/pages/main/view.dart';
 import 'package:PiliPlus/pages/member/view.dart';
 import 'package:PiliPlus/pages/search/view.dart';
@@ -10,6 +11,7 @@ import 'package:PiliPlus/pages/setting/view.dart';
 import 'package:PiliPlus/pages/video/view.dart';
 import 'package:PiliPlus/pages/whisper/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/windows_ui/shell/windows_neo_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -22,9 +24,14 @@ class WindowsMediaTabsPage extends StatefulWidget {
 }
 
 class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
+  late final MainController _mainController;
+
   @override
   void initState() {
     super.initState();
+    _mainController = Get.isRegistered<MainController>()
+        ? Get.find<MainController>()
+        : Get.put(MainController());
     WindowsVideoTabService.ensureHomeTab();
     WindowsVideoTabService.setHostMounted(true);
   }
@@ -75,22 +82,27 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
             shift: true,
           ): () => WindowsVideoTabService.selectRelative(-1),
           const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true):
-              () => WindowsVideoTabService.popActiveTab(),
+              WindowsVideoTabService.popActiveTab,
         },
         child: Focus(
           autofocus: true,
-          child: Scaffold(
-            body: Column(
+          child: WindowsNeoShell(
+            mainController: _mainController,
+            tabs: tabs,
+            activeTab: tabs[activeIndex],
+            child: IndexedStack(
+              index: activeIndex,
               children: [
-                const WindowsMediaTabBar(),
-                Expanded(
-                  child: IndexedStack(
-                    index: activeIndex,
-                    children: [
-                      for (final item in tabs) _buildTabNavigator(item),
-                    ],
+                for (var index = 0; index < tabs.length; index++)
+                  TickerMode(
+                    enabled: index == activeIndex,
+                    child: ExcludeFocus(
+                      excluding: index != activeIndex,
+                      child: RepaintBoundary(
+                        child: _buildTabNavigator(tabs[index]),
+                      ),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -159,7 +171,10 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
   };
 
   Widget _buildRootPage(WindowsVideoTabItem item) => switch (item.type) {
-    WindowsMediaTabType.home => const MainApp(),
+    WindowsMediaTabType.home => MainApp(
+      controller: _mainController,
+      showNavigation: false,
+    ),
     WindowsMediaTabType.search => SearchResultPage(arguments: item.arguments),
     WindowsMediaTabType.live => LiveRoomPage(arguments: item.arguments),
     WindowsMediaTabType.video => VideoDetailPageV(arguments: item.arguments),

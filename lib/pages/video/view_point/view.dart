@@ -6,6 +6,7 @@ import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/pages/common/slide/common_slide_page.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -128,7 +129,10 @@ class _ViewPointsPageState extends State<ViewPointsPage>
     bool isCurr,
   ) {
     return Material(
-      type: MaterialType.transparency,
+      type: WindowsVideoTabService.enabled
+          ? MaterialType.canvas
+          : MaterialType.transparency,
+      color: WindowsVideoTabService.enabled ? context.windowsNeo.surface : null,
       child: InkWell(
         onTap: segment.from != null
             ? () {

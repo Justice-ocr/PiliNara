@@ -51,9 +51,16 @@ class _SearchVideoPanelState
   @override
   Widget buildHeader(ThemeData theme) {
     return SliverFloatingHeaderWidget(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.surface
+          : theme.colorScheme.surface,
       child: Padding(
-        padding: const .fromLTRB(12, 0, 12, 4),
+        padding: EdgeInsets.fromLTRB(
+          WindowsVideoTabService.enabled ? 16 : 12,
+          0,
+          WindowsVideoTabService.enabled ? 16 : 12,
+          4,
+        ),
         child: Row(
           children: [
             Expanded(
@@ -109,6 +116,29 @@ class _SearchVideoPanelState
 
   @override
   Widget buildList(ThemeData theme, List<SearchVideoItemModel> list) {
+    if (WindowsVideoTabService.enabled) {
+      return SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        sliver: SliverGrid.builder(
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 760,
+            mainAxisExtent: 120,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+          ),
+          itemBuilder: (context, index) {
+            if (index == list.length - 1) controller.onLoadMore();
+            return WindowsNeoVideoSearchTile(
+              videoItem: list[index],
+              onRemove: () => controller.loadingState
+                ..value.data!.removeAt(index)
+                ..refresh(),
+            );
+          },
+          itemCount: list.length,
+        ),
+      );
+    }
     return SliverGrid.builder(
       gridDelegate: gridDelegate,
       itemBuilder: (context, index) {
@@ -127,5 +157,10 @@ class _SearchVideoPanelState
   }
 
   @override
-  Widget get buildLoading => gridSkeleton;
+  Widget get buildLoading => WindowsVideoTabService.enabled
+      ? SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          sliver: gridSkeleton,
+        )
+      : gridSkeleton;
 }

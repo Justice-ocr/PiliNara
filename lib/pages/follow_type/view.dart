@@ -8,6 +8,7 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/follow/list.dart';
 import 'package:PiliPlus/pages/follow/widgets/follow_item.dart';
 import 'package:PiliPlus/pages/follow_type/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart'
@@ -29,11 +30,24 @@ abstract class FollowTypePageState<T extends StatefulWidget> extends State<T> {
           physics: const AlwaysScrollableScrollPhysics(),
           // controller: controller.scrollController,
           slivers: [
-            ViewSliverSafeArea(
-              sliver: Obx(
-                () => _buildBody(theme, controller.loadingState.value),
+            if (isWindowsNeo)
+              SliverPadding(
+                padding: EdgeInsets.only(
+                  left: 18,
+                  top: 16,
+                  right: 18,
+                  bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
+                ),
+                sliver: Obx(
+                  () => _buildBody(theme, controller.loadingState.value),
+                ),
+              )
+            else
+              ViewSliverSafeArea(
+                sliver: Obx(
+                  () => _buildBody(theme, controller.loadingState.value),
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -41,8 +55,12 @@ abstract class FollowTypePageState<T extends StatefulWidget> extends State<T> {
   }
 
   late final gridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
-    maxCrossAxisExtent: Grid.smallCardWidth * 2,
-    mainAxisExtent: 66,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 520
+        : Grid.smallCardWidth * 2,
+    mainAxisExtent: WindowsVideoTabService.enabled ? 76 : 66,
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : 0,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : 0,
   );
 
   Widget _buildBody(

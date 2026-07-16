@@ -8,6 +8,7 @@ import 'package:PiliPlus/grpc/bilibili/app/im/v1.pb.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/pages/whisper/widgets/item.dart';
 import 'package:PiliPlus/pages/whisper_secondary/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/three_dot_ext.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -73,19 +74,34 @@ class _WhisperSecPageState extends State<WhisperSecPage> {
           }),
         ],
       ),
-      body: refreshIndicator(
-        onRefresh: _controller.onRefresh,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
-              ),
-              sliver: Obx(() => _buildBody(_controller.loadingState.value)),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWindowsNeo = WindowsVideoTabService.enabled;
+          final horizontal = isWindowsNeo && constraints.maxWidth > 1000
+              ? (constraints.maxWidth - 960) / 2
+              : isWindowsNeo
+              ? 20.0
+              : 0.0;
+          return refreshIndicator(
+            onRefresh: _controller.onRefresh,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverPadding(
+                  padding: EdgeInsets.only(
+                    left: horizontal,
+                    top: isWindowsNeo ? 16 : 0,
+                    right: horizontal,
+                    bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
+                  ),
+                  sliver: Obx(
+                    () => _buildBody(_controller.loadingState.value),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

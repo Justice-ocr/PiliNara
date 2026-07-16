@@ -16,6 +16,7 @@ import 'package:PiliPlus/pages/common/multi_select/base.dart';
 import 'package:PiliPlus/pages/download/downloading/view.dart';
 import 'package:PiliPlus/pages/download/utils/open_download_entry.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
@@ -81,6 +82,7 @@ class DetailItem extends StatelessWidget {
     final cid = entry.source?.cid ?? entry.pageData?.cid;
     final canDel = onDelete != null || onDeleteRequested != null;
     final enableMultiSelect = controller.enableMultiSelect.value;
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     void onLongPress() {
       if (enableMultiSelect) {
         return;
@@ -89,7 +91,16 @@ class DetailItem extends StatelessWidget {
     }
 
     return Material(
-      type: MaterialType.transparency,
+      type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
+      color: isWindowsNeo ? context.windowsNeo.surface : null,
+      elevation: 0,
+      shape: isWindowsNeo
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+              side: BorderSide(color: context.windowsNeo.border),
+            )
+          : null,
+      clipBehavior: isWindowsNeo ? Clip.antiAlias : Clip.none,
       child: InkWell(
         onTap: enableTap
             ? () async {
@@ -634,12 +645,15 @@ class _ExportDialog extends StatelessWidget {
                   return Column(
                     children: [
                       LinearProgressIndicator(
+                        // Keep the existing cross-platform export appearance.
+                        // ignore: deprecated_member_use
                         year2023: true,
                         value: progress,
                         minHeight: 4,
                         borderRadius: BorderRadius.circular(2),
                         color: theme.colorScheme.primary,
-                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                        backgroundColor:
+                            theme.colorScheme.surfaceContainerHighest,
                       ),
                       const SizedBox(height: 6),
                       Text(

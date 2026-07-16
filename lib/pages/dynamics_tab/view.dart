@@ -8,6 +8,7 @@ import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/dynamic_panel.dart';
 import 'package:PiliPlus/pages/dynamics_tab/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
@@ -59,12 +60,35 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.only(bottom: 100),
-            sliver: buildPage(
-              Obx(() => _buildBody(controller.loadingState.value)),
-            ),
+            sliver: WindowsVideoTabService.enabled
+                ? _buildWindowsPage(
+                    Obx(() => _buildBody(controller.loadingState.value)),
+                  )
+                : buildPage(
+                    Obx(() => _buildBody(controller.loadingState.value)),
+                  ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildWindowsPage(Widget child) {
+    return SliverLayoutBuilder(
+      builder: (context, constraints) {
+        final available = constraints.crossAxisExtent;
+        final horizontal = WindowsNeoDynamicsLayout.horizontalPadding(
+          available,
+        );
+        return SliverPadding(
+          padding: EdgeInsets.only(
+            left: horizontal,
+            right: horizontal,
+            top: 18,
+          ),
+          sliver: child,
+        );
+      },
     );
   }
 

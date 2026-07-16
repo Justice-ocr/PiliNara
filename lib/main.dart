@@ -185,7 +185,9 @@ void main() async {
     final windowOptions = WindowOptions(
       minimumSize: const Size(400, 720),
       skipTaskbar: false,
-      titleBarStyle: Pref.showWindowTitleBar
+      titleBarStyle: WindowsVideoTabService.enabled
+          ? TitleBarStyle.hidden
+          : Pref.showWindowTitleBar
           ? TitleBarStyle.normal
           : TitleBarStyle.hidden,
       title: Constants.appName,

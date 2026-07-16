@@ -52,7 +52,14 @@ class _FavFolderSortPageState extends State<FavFolderSortPage>
           const SizedBox(width: 16),
         ],
       ),
-      body: _buildBody,
+      body: isWindowsNeo
+          ? Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
+              child: Center(
+                child: SizedBox(width: 820, child: _buildBody),
+              ),
+            )
+          : _buildBody,
     );
   }
 

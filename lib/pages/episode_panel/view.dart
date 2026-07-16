@@ -216,8 +216,13 @@ class EpisodePanelState extends State<EpisodePanel>
 
   @override
   Widget buildPage(ThemeData theme) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Material(
-      color: showTitle ? theme.colorScheme.surface : null,
+      color: isWindowsNeo
+          ? context.windowsNeo.surface
+          : showTitle
+          ? theme.colorScheme.surface
+          : null,
       type: showTitle ? MaterialType.canvas : MaterialType.transparency,
       child: Column(
         children: [
@@ -229,7 +234,23 @@ class EpisodePanelState extends State<EpisodePanel>
               isScrollable: true,
               tabs: widget.list.map((item) => Tab(text: item.title)).toList(),
               dividerHeight: 1,
-              dividerColor: theme.dividerColor.withValues(alpha: 0.1),
+              dividerColor: isWindowsNeo
+                  ? context.windowsNeo.border
+                  : theme.dividerColor.withValues(alpha: 0.1),
+              indicatorSize: isWindowsNeo
+                  ? TabBarIndicatorSize.label
+                  : TabBarIndicatorSize.tab,
+              indicator: isWindowsNeo
+                  ? UnderlineTabIndicator(
+                      borderSide: BorderSide(
+                        color: context.windowsNeo.accent,
+                        width: 2.5,
+                      ),
+                    )
+                  : null,
+              unselectedLabelColor: isWindowsNeo
+                  ? context.windowsNeo.muted
+                  : null,
             ),
           Expanded(child: enableSlide ? slideList(theme) : buildList(theme)),
         ],
@@ -658,9 +679,14 @@ class EpisodePanelState extends State<EpisodePanel>
     height: 45,
     padding: EdgeInsets.symmetric(horizontal: showTitle ? 14 : 6),
     decoration: BoxDecoration(
+      color: WindowsVideoTabService.enabled
+          ? context.windowsNeo.surface
+          : null,
       border: Border(
         bottom: BorderSide(
-          color: theme.dividerColor.withValues(alpha: 0.1),
+          color: WindowsVideoTabService.enabled
+              ? context.windowsNeo.border
+              : theme.dividerColor.withValues(alpha: 0.1),
         ),
       ),
     ),

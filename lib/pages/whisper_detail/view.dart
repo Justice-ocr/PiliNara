@@ -21,6 +21,7 @@ import 'package:PiliPlus/pages/emote/view.dart';
 import 'package:PiliPlus/pages/whisper_detail/controller.dart';
 import 'package:PiliPlus/pages/whisper_detail/widget/chat_item.dart';
 import 'package:PiliPlus/pages/whisper_link_setting/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/file_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
@@ -57,9 +58,12 @@ class _WhisperDetailPageState
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final padding = MediaQuery.viewPaddingOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     late final containerColor = ElevationOverlay.colorWithOverlay(
-      theme.colorScheme.surface,
-      theme.hoverColor,
+      isWindowsNeo
+          ? context.windowsNeo.surfaceRaised
+          : theme.colorScheme.surface,
+      isWindowsNeo ? context.windowsNeo.hover : theme.hoverColor,
       1,
     );
     return SimpleScaffold(
@@ -269,11 +273,17 @@ class _WhisperDetailPageState
   }
 
   Widget _buildInputView(ThemeData theme, Color containerColor) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: containerColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: isWindowsNeo
+            ? BorderRadius.zero
+            : const BorderRadius.vertical(top: Radius.circular(16)),
+        border: isWindowsNeo
+            ? Border(top: BorderSide(color: context.windowsNeo.border))
+            : null,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -309,10 +319,14 @@ class _WhisperDetailPageState
                   decoration: InputDecoration(
                     filled: true,
                     hintText: '发个消息聊聊呗~',
-                    fillColor: theme.colorScheme.surface,
-                    border: const OutlineInputBorder(
-                      borderSide: BorderSide.none,
-                      borderRadius: BorderRadius.all(Radius.circular(6)),
+                    fillColor: isWindowsNeo
+                        ? context.windowsNeo.surface
+                        : theme.colorScheme.surface,
+                    border: OutlineInputBorder(
+                      borderSide: isWindowsNeo
+                          ? BorderSide(color: context.windowsNeo.border)
+                          : BorderSide.none,
+                      borderRadius: BorderRadius.circular(6),
                       gapPadding: 0,
                     ),
                     contentPadding: const EdgeInsets.all(10),

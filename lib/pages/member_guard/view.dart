@@ -59,16 +59,34 @@ class _MemberGuardState extends State<MemberGuard> {
       appBar: AppBar(
         title: Text('$_userName的舰队${_count == null ? '' : '($_count)'}'),
       ),
-      body: refreshIndicator(
-        onRefresh: _controller.onRefresh,
-        child: CustomScrollView(
-          slivers: [
-            ViewSliverSafeArea(
-              sliver: Obx(() => _buildBody(_controller.loadingState.value)),
+      body:
+          refreshIndicator(
+            onRefresh: _controller.onRefresh,
+            child: CustomScrollView(
+              slivers: [
+                if (isWindowsNeo)
+                  SliverPadding(
+                    padding: EdgeInsets.only(
+                      left: 18,
+                      top: 16,
+                      right: 18,
+                      bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
+                    ),
+                    sliver: Obx(
+                      () => _buildBody(_controller.loadingState.value),
+                    ),
+                  )
+                else
+                  ViewSliverSafeArea(
+                    sliver: Obx(
+                      () => _buildBody(_controller.loadingState.value),
+                    ),
+                  ),
+              ],
             ),
-          ],
-        ),
-      ).constraintWidth(),
+          ).constraintWidth(
+            constraints: BoxConstraints(maxWidth: isWindowsNeo ? 820 : 625),
+          ),
     );
   }
 
@@ -91,18 +109,25 @@ class _MemberGuardState extends State<MemberGuard> {
                     }
 
                     final item = response[index];
-                    return ListTile(
-                      safeArea: false,
-                      visualDensity: .comfortable,
-                      onTap: () => PageUtils.toMember(item.uid),
-                      leading: _avatar(item.face, 32, item.guardLevel),
-                      title: Text(
-                        item.username,
-                        style: const TextStyle(fontSize: 14),
+                    return Material(
+                      color: WindowsVideoTabService.enabled
+                          ? context.windowsNeo.surface
+                          : Colors.transparent,
+                      child: ListTile(
+                        safeArea: false,
+                        visualDensity: .comfortable,
+                        onTap: () => PageUtils.toMember(item.uid),
+                        leading: _avatar(item.face, 32, item.guardLevel),
+                        title: Text(
+                          item.username,
+                          style: const TextStyle(fontSize: 14),
+                        ),
                       ),
                     );
                   },
-                  separatorBuilder: (_, _) => const SizedBox(height: 4),
+                  separatorBuilder: (_, _) => WindowsVideoTabService.enabled
+                      ? Divider(height: 1, color: context.windowsNeo.border)
+                      : const SizedBox(height: 4),
                 ),
               ),
           ],
@@ -162,14 +187,25 @@ class _MemberGuardState extends State<MemberGuard> {
     } else {
       third = const SizedBox.shrink();
     }
+    Widget child = Row(
+      children: [
+        Expanded(child: second),
+        Expanded(child: first),
+        Expanded(child: third),
+      ],
+    );
+    if (WindowsVideoTabService.enabled) {
+      child = DecoratedBox(
+        decoration: BoxDecoration(
+          color: context.windowsNeo.surface,
+          border: Border.all(color: context.windowsNeo.border),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: child,
+      );
+    }
     return SliverToBoxAdapter(
-      child: Row(
-        children: [
-          Expanded(child: second),
-          Expanded(child: first),
-          Expanded(child: third),
-        ],
-      ),
+      child: child,
     );
   }
 

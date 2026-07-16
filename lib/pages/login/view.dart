@@ -17,6 +17,7 @@ import 'package:PiliPlus/utils/image_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -198,7 +199,9 @@ class _LoginPageState extends State<LoginPage> {
             inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r"\s"))],
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.cookie_outlined),
-              border: const UnderlineInputBorder(),
+              border: WindowsVideoTabService.enabled
+                  ? null
+                  : const UnderlineInputBorder(),
               labelText: 'Cookie',
               suffixIcon: IconButton(
                 onPressed: _loginPageCtr.cookieTextController.clear,
@@ -270,7 +273,9 @@ class _LoginPageState extends State<LoginPage> {
             inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r"\s"))],
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.account_box),
-              border: const UnderlineInputBorder(),
+              border: WindowsVideoTabService.enabled
+                  ? null
+                  : const UnderlineInputBorder(),
               labelText: '账号',
               hintText: '邮箱/手机号',
               suffixIcon: IconButton(
@@ -290,7 +295,9 @@ class _LoginPageState extends State<LoginPage> {
             autofillHints: const [AutofillHints.password],
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.password),
-              border: const UnderlineInputBorder(),
+              border: WindowsVideoTabService.enabled
+                  ? null
+                  : const UnderlineInputBorder(),
               labelText: '密码',
               suffixIcon: IconButton(
                 onPressed: _loginPageCtr.passwordTextController.clear,
@@ -410,11 +417,17 @@ class _LoginPageState extends State<LoginPage> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: DecoratedBox(
-            decoration: UnderlineTabIndicator(
-              borderSide: BorderSide(
-                color: theme.colorScheme.outline.withValues(alpha: 0.4),
-              ),
-            ),
+            decoration: WindowsVideoTabService.enabled
+                ? BoxDecoration(
+                    color: context.windowsNeo.surfaceRaised,
+                    border: Border.all(color: context.windowsNeo.border),
+                    borderRadius: BorderRadius.circular(6),
+                  )
+                : UnderlineTabIndicator(
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outline.withValues(alpha: 0.4),
+                    ),
+                  ),
             child: Row(
               children: [
                 const SizedBox(width: 12),
@@ -490,11 +503,17 @@ class _LoginPageState extends State<LoginPage> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: DecoratedBox(
-            decoration: UnderlineTabIndicator(
-              borderSide: BorderSide(
-                color: theme.colorScheme.outline.withValues(alpha: 0.4),
-              ),
-            ),
+            decoration: WindowsVideoTabService.enabled
+                ? BoxDecoration(
+                    color: context.windowsNeo.surfaceRaised,
+                    border: Border.all(color: context.windowsNeo.border),
+                    borderRadius: BorderRadius.circular(6),
+                  )
+                : UnderlineTabIndicator(
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outline.withValues(alpha: 0.4),
+                    ),
+                  ),
             child: Row(
               children: [
                 Expanded(
@@ -556,6 +575,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     padding =
         MediaQuery.viewPaddingOf(context).copyWith(top: 0) +
         const EdgeInsets.only(bottom: 25);
@@ -655,6 +675,120 @@ class _LoginPageState extends State<LoginPage> {
     return SingleChildScrollView(
       padding: padding,
       child: child.constraintWidth(),
+    );
+  }
+
+  Widget _buildWindowsNeo(ThemeData theme) {
+    final tokens = context.windowsNeo;
+    const destinations = [
+      (Icons.password, '账号密码', '使用密码与官方接口登录'),
+      (Icons.sms_outlined, '短信验证', '通过手机号验证码登录'),
+      (Icons.qr_code, '扫码登录', '使用 bilibili App 扫码'),
+      (Icons.cookie_outlined, 'Cookie', '仅使用 Web 端能力'),
+    ];
+    padding = const EdgeInsets.fromLTRB(24, 18, 24, 32);
+    return Scaffold(
+      backgroundColor: tokens.background,
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: '关闭',
+          icon: const Icon(Icons.close_outlined),
+          onPressed: Get.back,
+        ),
+        title: const Text('登录'),
+      ),
+      body: Row(
+        children: [
+          SizedBox(
+            width: 250,
+            child: ColoredBox(
+              color: tokens.sidebar,
+              child: AnimatedBuilder(
+                animation: _loginPageCtr.tabController,
+                builder: (context, _) => ListView.separated(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: destinations.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 4),
+                  itemBuilder: (context, index) {
+                    final destination = destinations[index];
+                    final selected = _loginPageCtr.tabController.index == index;
+                    return ListTile(
+                      selected: selected,
+                      selectedTileColor: tokens.accentSurface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      leading: Icon(
+                        destination.$1,
+                        color: selected ? tokens.accent : tokens.muted,
+                      ),
+                      title: Text(
+                        destination.$2,
+                        style: TextStyle(
+                          fontWeight: selected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                      ),
+                      subtitle: Text(
+                        destination.$3,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onTap: () => _loginPageCtr.tabController.animateTo(index),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+          VerticalDivider(width: 1, color: tokens.border),
+          Expanded(
+            child: NotificationListener<ScrollStartNotification>(
+              onNotification: (notification) {
+                if (notification.metrics.axis == Axis.horizontal) {
+                  FocusScope.of(context).unfocus();
+                }
+                return false;
+              },
+              child: tabBarView(
+                controller: _loginPageCtr.tabController,
+                children: [
+                  _windowsTabView(loginByPassword(theme)),
+                  _windowsTabView(loginBySmS(theme)),
+                  _windowsTabView(loginByQRCode(theme)),
+                  _windowsTabView(loginByCookie(theme)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _windowsTabView(Widget child) {
+    final tokens = context.windowsNeo;
+    return SingleChildScrollView(
+      padding: padding,
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 720),
+          child: Material(
+            color: tokens.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+              side: BorderSide(color: tokens.border),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              child: child,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

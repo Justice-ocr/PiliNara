@@ -9,6 +9,7 @@ import 'package:PiliPlus/pages/common/multi_select/base.dart'
     show BaseMultiSelectMixin;
 import 'package:PiliPlus/pages/download/detail/widgets/item.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -81,18 +82,24 @@ class _DownloadingPageState extends State<DownloadingPage>
                           isCurr: isCurr,
                           onDelete: () => _downloadService.deleteDownload(
                             entry: entry,
-                            removeQueue: true,
-                            downloadNext:
-                                isCurr &&
-                                entry.status == DownloadStatus.downloading,
-                          ),
-                          controller: this,
-                        );
-                      },
-                    );
-                  }
-                  return const HttpError();
-                }),
+                            downloadService: _downloadService,
+                            showTitle: true,
+                            isCurr: isCurr,
+                            onDelete: () => _downloadService.deleteDownload(
+                              entry: entry,
+                              removeQueue: true,
+                              downloadNext:
+                                  isCurr &&
+                                  entry.status == DownloadStatus.downloading,
+                            ),
+                            controller: this,
+                          );
+                        },
+                      );
+                    }
+                    return const HttpError();
+                  }),
+                ),
               ),
             ],
           ),

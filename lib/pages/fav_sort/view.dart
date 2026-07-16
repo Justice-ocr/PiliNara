@@ -5,6 +5,7 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/fav/fav_detail/media.dart';
 import 'package:PiliPlus/pages/fav_detail/controller.dart';
 import 'package:PiliPlus/pages/fav_detail/widget/fav_video_card.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -77,7 +78,14 @@ class _FavSortPageState extends State<FavSortPage> with ReorderMixin {
           const SizedBox(width: 16),
         ],
       ),
-      body: _buildBody,
+      body: isWindowsNeo
+          ? Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
+              child: Center(
+                child: SizedBox(width: 820, child: _buildBody),
+              ),
+            )
+          : _buildBody,
     );
   }
 

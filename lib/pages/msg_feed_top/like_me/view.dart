@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:PiliPlus/common/skeleton/msg_feed_top.dart';
 import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
@@ -15,6 +17,7 @@ import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models_new/msg/msg_like/item.dart';
 import 'package:PiliPlus/pages/msg_feed_top/like_me/controller.dart';
 import 'package:PiliPlus/pages/whisper_settings/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -60,6 +63,9 @@ class _LikeMePageState extends State<LikeMePage> {
           slivers: [
             SliverPadding(
               padding: EdgeInsets.only(
+                left: isWindowsNeo ? horizontalPadding : 0,
+                top: isWindowsNeo ? 16 : 0,
+                right: isWindowsNeo ? horizontalPadding : 0,
                 bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
               ),
               sliver: Obx(
@@ -241,7 +247,10 @@ class _LikeMePageState extends State<LikeMePage> {
       },
     );
     return ListTile(
-      safeArea: true,
+      safeArea: !WindowsVideoTabService.enabled,
+      tileColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.surface
+          : null,
       onTap: () {
         String? nativeUri = item.item?.nativeUri;
         bool isInvalid =

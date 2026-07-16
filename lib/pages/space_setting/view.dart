@@ -23,7 +23,26 @@ class _SpaceSettingPageState extends State<SpaceSettingPage> {
     final theme = Theme.of(context);
     return SimpleScaffold(
       appBar: AppBar(title: const Text('空间设置')),
-      body: Obx(() => _buildBody(theme, _controller.loadingState.value)),
+      body: isWindowsNeo
+          ? Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: Material(
+                    color: context.windowsNeo.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      side: BorderSide(color: context.windowsNeo.border),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: body,
+                  ),
+                ),
+              ),
+            )
+          : body,
     );
   }
 
@@ -44,14 +63,20 @@ class _SpaceSettingPageState extends State<SpaceSettingPage> {
                   final padding = MediaQuery.viewPaddingOf(context);
                   final divider = Divider(
                     height: 1,
-                    indent: max(16, padding.left),
-                    color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                    indent: WindowsVideoTabService.enabled
+                        ? 0
+                        : max(16, padding.left),
+                    color: WindowsVideoTabService.enabled
+                        ? context.windowsNeo.border
+                        : theme.colorScheme.outline.withValues(alpha: 0.1),
                   );
                   final dividerL = SliverToBoxAdapter(
                     child: Divider(
                       height: 12,
                       thickness: 12,
-                      color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                      color: WindowsVideoTabService.enabled
+                          ? context.windowsNeo.background
+                          : theme.colorScheme.outline.withValues(alpha: 0.1),
                     ),
                   );
                   return CustomScrollView(

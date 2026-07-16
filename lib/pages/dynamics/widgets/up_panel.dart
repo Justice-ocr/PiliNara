@@ -26,6 +26,7 @@ class UpPanel extends StatefulWidget {
 
   final FollowUpModel upData;
   final DynamicsController dynamicsController;
+  final bool? horizontal;
 
   @override
   State<UpPanel> createState() => _UpPanelState();
@@ -33,7 +34,8 @@ class UpPanel extends StatefulWidget {
 
 class _UpPanelState extends State<UpPanel> {
   late final controller = widget.dynamicsController;
-  late final isTop = controller.upPanelPosition == UpPanelPosition.top;
+  bool get isTop =>
+      widget.horizontal ?? controller.upPanelPosition == UpPanelPosition.top;
 
   void toFollowPage() => Get.to(const LiveFollowPage());
 

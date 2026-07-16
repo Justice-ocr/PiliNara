@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' show max;
 
 import 'package:PiliPlus/build_config.dart';
 import 'package:PiliPlus/common/assets.dart';
@@ -12,6 +13,7 @@ import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/services/logger.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
@@ -95,8 +97,13 @@ class _AboutPageState extends State<AboutPage> {
       appBar: showAppBar ? AppBar(title: const Text('关于')) : null,
       body: ListView(
         padding: EdgeInsets.only(
-          left: showAppBar ? padding.left : 0,
-          right: showAppBar ? padding.right : 0,
+          left: isWindowsNeo
+              ? windowsHorizontalPadding
+              : (showAppBar ? padding.left : 0),
+          top: isWindowsNeo ? 16 : 0,
+          right: isWindowsNeo
+              ? windowsHorizontalPadding
+              : (showAppBar ? padding.right : 0),
           bottom: padding.bottom + 100,
         ),
         children: [
@@ -109,8 +116,8 @@ class _AboutPageState extends State<AboutPage> {
             },
             onSecondaryTap: PlatformUtils.isDesktop ? _showDialog : null,
             child: Image.asset(
-              width: 150,
-              height: 150,
+              width: isWindowsNeo ? 120 : 150,
+              height: isWindowsNeo ? 120 : 150,
               excludeFromSemantics: true,
               cacheWidth: 150.cacheSize(context),
               Assets.logo,
@@ -170,7 +177,9 @@ Commit Hash: ${BuildConfig.commitHash}''',
           Divider(
             thickness: 1,
             height: 30,
-            color: theme.colorScheme.outlineVariant,
+            color: isWindowsNeo
+                ? context.windowsNeo.border
+                : theme.colorScheme.outlineVariant,
           ),
           ListTile(
             onTap: () => PageUtils.launchURL(Constants.sourceCodeUrl),

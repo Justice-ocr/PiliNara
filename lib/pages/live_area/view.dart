@@ -11,6 +11,7 @@ import 'package:PiliPlus/models_new/live/live_area_list/area_list.dart';
 import 'package:PiliPlus/pages/live_area/controller.dart';
 import 'package:PiliPlus/pages/live_area_detail/view.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:flutter_sortable_wrap/sortable_wrap.dart';
 import 'package:get/get.dart';
@@ -49,25 +50,24 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
               ]
             : null,
       ),
-      body: Padding(
-        padding: EdgeInsets.only(left: padding.left, right: padding.right),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (_controller.isLogin)
-              Obx(() => _buildFavWidget(theme, _controller.favState.value)),
-            Expanded(
-              child: Obx(
-                () => _buildBody(
-                  theme,
-                  padding.bottom,
-                  _controller.loadingState.value,
+      body: isWindowsNeo
+          ? Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1100),
+                  child: content,
                 ),
               ),
+            )
+          : Padding(
+              padding: EdgeInsets.only(
+                left: padding.left,
+                right: padding.right,
+              ),
+              child: content,
             ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -86,6 +86,9 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
                   TabBar(
                     isScrollable: true,
                     tabAlignment: TabAlignment.start,
+                    dividerColor: WindowsVideoTabService.enabled
+                        ? context.windowsNeo.border
+                        : null,
                     controller: _controller.tabController,
                     tabs: response.map((e) => Tab(text: e.name)).toList(),
                   ),
@@ -103,8 +106,11 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
                                         bottom: bottom + 100,
                                       ),
                                       gridDelegate:
-                                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                                            maxCrossAxisExtent: 100,
+                                          SliverGridDelegateWithMaxCrossAxisExtent(
+                                            maxCrossAxisExtent:
+                                                WindowsVideoTabService.enabled
+                                                ? 120
+                                                : 100,
                                             mainAxisSpacing: 10,
                                             crossAxisSpacing: 10,
                                             mainAxisExtent: 80,
@@ -167,7 +173,12 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
   ) {
     if (loadingState case Success(:final response)) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: EdgeInsets.fromLTRB(
+          WindowsVideoTabService.enabled ? 0 : 12,
+          0,
+          WindowsVideoTabService.enabled ? 0 : 12,
+          WindowsVideoTabService.enabled ? 12 : 0,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

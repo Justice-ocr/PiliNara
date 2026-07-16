@@ -8,6 +8,7 @@ import 'package:PiliPlus/models_new/space/space_season_series/season.dart'
 import 'package:PiliPlus/pages/member_season_series/controller.dart';
 import 'package:PiliPlus/pages/member_season_series/widget/season_series_card.dart';
 import 'package:PiliPlus/pages/member_video/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -49,6 +50,9 @@ class _SeasonSeriesPageState extends State<SeasonSeriesPage>
       slivers: [
         SliverPadding(
           padding: EdgeInsets.only(
+            left: WindowsVideoTabService.enabled ? 18 : 0,
+            top: WindowsVideoTabService.enabled ? 16 : 0,
+            right: WindowsVideoTabService.enabled ? 18 : 0,
             bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
           ),
           sliver: Obx(
@@ -65,7 +69,15 @@ class _SeasonSeriesPageState extends State<SeasonSeriesPage>
       Success(:final response) =>
         response != null && response.isNotEmpty
             ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
+                gridDelegate: WindowsVideoTabService.enabled
+                    ? SliverGridDelegateWithExtentAndRatio(
+                        maxCrossAxisExtent: 520,
+                        childAspectRatio: 4.2,
+                        minHeight: 112,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                      )
+                    : gridDelegate,
                 itemBuilder: (context, index) {
                   if (index == response.length - 1) {
                     _controller.onLoadMore();

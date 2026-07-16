@@ -1,6 +1,7 @@
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/flutter/popup_menu.dart';
 import 'package:PiliPlus/models/common/enum_with_label.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
 import 'package:material_ui/material_ui.dart' as material show PopupMenuItem;
@@ -171,6 +172,14 @@ class _PopupListTileState<T> extends State<PopupListTile<T>> {
           ),
         ),
       ),
+    );
+    if (!WindowsVideoTabService.enabled) return child;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.windowsNeo.surface,
+        border: Border(bottom: BorderSide(color: context.windowsNeo.border)),
+      ),
+      child: child,
     );
   }
 }

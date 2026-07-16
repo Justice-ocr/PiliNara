@@ -5,6 +5,7 @@ import 'package:PiliPlus/models/common/member/search_type.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/dynamic_panel.dart';
 import 'package:PiliPlus/pages/member_search/child/controller.dart';
 import 'package:PiliPlus/pages/member_search/child/widgets/search_archive_grpc.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
@@ -42,7 +43,13 @@ class _MemberSearchChildPageState extends State<MemberSearchChildPage>
         slivers: [
           SliverPadding(
             padding: EdgeInsets.only(
-              top: widget.searchType == MemberSearchType.archive ? 7 : 0,
+              left: WindowsVideoTabService.enabled ? 18 : 0,
+              top: WindowsVideoTabService.enabled
+                  ? 12
+                  : widget.searchType == MemberSearchType.archive
+                  ? 7
+                  : 0,
+              right: WindowsVideoTabService.enabled ? 18 : 0,
               bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
             ),
             sliver: switch (widget.searchType) {
@@ -73,7 +80,15 @@ class _MemberSearchChildPageState extends State<MemberSearchChildPage>
         response != null && response.isNotEmpty
             ? switch (widget.searchType) {
                 MemberSearchType.archive => SliverGrid.builder(
-                  gridDelegate: gridDelegate,
+                  gridDelegate: WindowsVideoTabService.enabled
+                      ? SliverGridDelegateWithExtentAndRatio(
+                          maxCrossAxisExtent: 520,
+                          childAspectRatio: 4.2,
+                          minHeight: 112,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                        )
+                      : gridDelegate,
                   itemBuilder: (context, index) {
                     if (index == response.length - 1) {
                       _controller.onLoadMore();

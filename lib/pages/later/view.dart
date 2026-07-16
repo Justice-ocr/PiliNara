@@ -10,6 +10,7 @@ import 'package:PiliPlus/models/common/later_view_type.dart';
 import 'package:PiliPlus/models_new/later/list.dart';
 import 'package:PiliPlus/pages/later/base_controller.dart';
 import 'package:PiliPlus/pages/later/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
@@ -114,24 +115,7 @@ class _LaterPageState extends State<LaterPage>
             body: ViewSafeArea(
               child: Column(
                 children: [
-                  TabBar(
-                    // isScrollable: true,
-                    // tabAlignment: TabAlignment.start,
-                    controller: _tabController,
-                    tabs: LaterViewType.values.map((item) {
-                      final count = _baseCtr.counts[item.index];
-                      return Tab(
-                        text: '${item.title}${count != -1 ? '($count)' : ''}',
-                      );
-                    }).toList(),
-                    onTap: (_) {
-                      if (!_tabController.indexIsChanging) {
-                        currCtr().scrollController.animToTop();
-                      } else if (enableMultiSelect) {
-                        currCtr(_tabController.previousIndex).handleSelect();
-                      }
-                    },
-                  ),
+                  _buildTabs(enableMultiSelect),
                   Expanded(
                     child: TabBarView(
                       physics: enableMultiSelect
@@ -151,6 +135,52 @@ class _LaterPageState extends State<LaterPage>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTabs(bool enableMultiSelect) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final tabBar = TabBar(
+      controller: _tabController,
+      tabs: LaterViewType.values.map((item) {
+        final count = _baseCtr.counts[item.index];
+        return Tab(text: '${item.title}${count != -1 ? '($count)' : ''}');
+      }).toList(),
+      onTap: (_) {
+        if (!_tabController.indexIsChanging) {
+          currCtr().scrollController.animToTop();
+        } else if (enableMultiSelect) {
+          currCtr(_tabController.previousIndex).handleSelect();
+        }
+      },
+      isScrollable: isWindowsNeo,
+      tabAlignment: isWindowsNeo ? TabAlignment.start : null,
+      dividerColor: isWindowsNeo ? Colors.transparent : null,
+      dividerHeight: isWindowsNeo ? 0 : null,
+      indicatorSize: isWindowsNeo
+          ? TabBarIndicatorSize.label
+          : TabBarIndicatorSize.tab,
+      indicator: isWindowsNeo
+          ? UnderlineTabIndicator(
+              borderSide: BorderSide(
+                color: context.windowsNeo.accent,
+                width: 2.5,
+              ),
+            )
+          : null,
+      unselectedLabelColor: isWindowsNeo ? context.windowsNeo.muted : null,
+    );
+    if (!isWindowsNeo) return tabBar;
+    return Container(
+      height: 48,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: context.windowsNeo.surface,
+        border: Border(bottom: BorderSide(color: context.windowsNeo.border)),
+      ),
+      alignment: Alignment.centerLeft,
+      child: tabBar,
     );
   }
 

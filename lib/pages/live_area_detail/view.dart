@@ -56,7 +56,10 @@ class _LiveAreaDetailPageState extends State<LiveAreaDetailPage> {
         ],
       ),
       body: Padding(
-        padding: EdgeInsets.only(left: padding.left, right: padding.right),
+        padding: EdgeInsets.only(
+          left: isWindowsNeo ? 0 : padding.left,
+          right: isWindowsNeo ? 0 : padding.right,
+        ),
         child: Obx(
           () =>
               _buildBody(theme, padding.bottom, _controller.loadingState.value),
@@ -85,6 +88,9 @@ class _LiveAreaDetailPageState extends State<LiveAreaDetailPage> {
                           isScrollable: true,
                           tabAlignment: TabAlignment.start,
                           dividerColor: Colors.transparent,
+                          indicatorSize: WindowsVideoTabService.enabled
+                              ? TabBarIndicatorSize.label
+                              : null,
                           controller: _controller.tabController,
                           tabs: response
                               .map((e) => Tab(text: e.name ?? ''))
@@ -188,6 +194,56 @@ class _LiveAreaDetailPageState extends State<LiveAreaDetailPage> {
     double bottom,
     List<AreaItem> list,
   ) {
+    if (WindowsVideoTabService.enabled) {
+      showDialog<void>(
+        context: context,
+        builder: (context) => Dialog(
+          child: SizedBox(
+            width: 720,
+            height: 600,
+            child: Column(
+              children: [
+                AppBar(
+                  automaticallyImplyLeading: false,
+                  title: Text(widget.parentName),
+                  actions: [
+                    IconButton(
+                      tooltip: '关闭',
+                      onPressed: Get.back,
+                      icon: const Icon(Icons.close),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                ),
+                Divider(height: 1, color: context.windowsNeo.border),
+                Expanded(
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(18),
+                    itemCount: list.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 120,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          mainAxisExtent: 80,
+                        ),
+                    itemBuilder: (_, index) => _tagItem(
+                      theme: theme,
+                      item: list[index],
+                      onTap: () {
+                        Get.back();
+                        _controller.tabController?.index = index;
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      return;
+    }
     showModalBottomSheet(
       context: context,
       useSafeArea: true,

@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
@@ -29,9 +31,24 @@ class _DynTopicRcmdPageState extends State<DynTopicRcmdPage> {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            ViewSliverSafeArea(
-              sliver: Obx(() => _buildBody(_controller.loadingState.value)),
-            ),
+            if (isWindowsNeo)
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  16,
+                  horizontalPadding,
+                  MediaQuery.viewPaddingOf(context).bottom + 100,
+                ),
+                sliver: Obx(
+                  () => _buildBody(_controller.loadingState.value),
+                ),
+              )
+            else
+              ViewSliverSafeArea(
+                sliver: Obx(
+                  () => _buildBody(_controller.loadingState.value),
+                ),
+              ),
           ],
         ),
       ),
@@ -43,7 +60,7 @@ class _DynTopicRcmdPageState extends State<DynTopicRcmdPage> {
       Loading() => linearLoading,
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? SliverList.builder(
+            ? SliverList.separated(
                 itemCount: response.length,
                 itemBuilder: (context, index) {
                   return DynTopicItem(
@@ -57,6 +74,9 @@ class _DynTopicRcmdPageState extends State<DynTopicRcmdPage> {
                     ),
                   );
                 },
+                separatorBuilder: (_, _) => WindowsVideoTabService.enabled
+                    ? Divider(height: 1, color: context.windowsNeo.border)
+                    : const SizedBox.shrink(),
               )
             : HttpError(onReload: _controller.onReload),
       Error(:final errMsg) => HttpError(

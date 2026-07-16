@@ -81,6 +81,8 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/features/video/windows_neo_video_layout.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, clampDouble;
 import 'package:flutter/services.dart' show SystemChrome;
@@ -405,6 +407,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       WindowsVideoTabService.registerRoute(
         videoDetailController.args,
         activate: _activateWindowsVideoTab,
+        deactivate: _deactivateWindowsVideoTab,
         close: _closeWindowsVideoTab,
       );
     }
@@ -801,7 +804,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     final isCurrentVideoInPip =
         isInAppPip &&
         PipOverlayService.savedVideoContextKey == currentVideoContextKey;
-    final keepWindowsTabAlive = WindowsVideoTabService.enabled &&
+    final keepWindowsTabAlive =
+        WindowsVideoTabService.enabled &&
         !_closingFromWindowsVideoTabService &&
         WindowsVideoTabService.has(
           WindowsVideoTabService.keyFromArgs(videoDetailController.args),
@@ -885,6 +889,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     WindowsVideoTabService.setActive(videoDetailController.args);
     videoDetailController.plPlayerController.activateAsGlobal();
     plPlayerController = videoDetailController.plPlayerController;
+    plPlayerController!.visible = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _restoreWindowsVideoPlayerSurface();
     });
@@ -900,8 +905,18 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     didPopNext();
   }
 
+  void _deactivateWindowsVideoTab() {
+    if (!mounted) return;
+    isShowing = false;
+    _syncWindowsVideoTabProgress();
+    videoDetailController.plPlayerController.visible = false;
+    videoDetailController.videoState.value = false;
+  }
+
   void _restoreWindowsVideoPlayerSurface() {
     if (!WindowsVideoTabService.enabled || !mounted) return;
+    final id = WindowsVideoTabService.keyFromArgs(videoDetailController.args);
+    if (WindowsVideoTabService.activeId.value != id) return;
     if (!videoDetailController.autoPlay ||
         plPlayerController?.videoController == null) {
       return;
@@ -1999,59 +2014,60 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
   Widget _moreBtn(Color color, {List<Shadow>? shadows}) =>
       StaticPopupMenuButton(
-    icon: Icon(
-      size: 22,
-      Icons.more_vert,
-      color: color,
-      shadows: shadows,
-    ),
-    itemBuilder: (BuildContext context) => <PopupMenuEntry>[
-      if (WindowsVideoTabService.enabled)
-        PopupMenuItem(
-          onTap: _showWindowsVideoTabs,
-          child: Obx(
-            () => Text(
-              '标签页 (${WindowsVideoTabService.tabCount})',
+        icon: Icon(
+          size: 22,
+          Icons.more_vert,
+          color: color,
+          shadows: shadows,
+        ),
+        itemBuilder: (BuildContext context) => <PopupMenuEntry>[
+          if (WindowsVideoTabService.enabled)
+            PopupMenuItem(
+              onTap: _showWindowsVideoTabs,
+              child: Obx(
+                () => Text(
+                  '标签页 (${WindowsVideoTabService.tabCount})',
+                ),
+              ),
             ),
+          PopupMenuItem(
+            onTap: introController.viewLater,
+            child: const Text('稍后再看'),
           ),
-        ),
-      PopupMenuItem(
-        onTap: introController.viewLater,
-        child: const Text('稍后再看'),
-      ),
-      if (videoDetailController.epId == null)
-        PopupMenuItem(
-          onTap: () => videoDetailController.showNoteList(context),
-          child: const Text('查看笔记'),
-        ),
-      if (!videoDetailController.isFileSource)
-        PopupMenuItem(
-          onTap: () => videoDetailController.onDownload(this.context),
-          child: const Text('缓存视频'),
-        ),
-      if (videoDetailController.cover.value.isNotEmpty)
-        PopupMenuItem(
-          onTap: () =>
-              ImageUtils.downloadImg([videoDetailController.cover.value]),
-          child: const Text('保存封面'),
-        ),
-      if (!videoDetailController.isFileSource && videoDetailController.isUgc)
-        PopupMenuItem(
-          onTap: videoDetailController.toAudioPage,
-          child: const Text('听音频'),
-        ),
-      PopupMenuItem(
-        onTap: () {
-          if (!Accounts.main.isLogin) {
-            SmartDialog.showToast('账号未登录');
-          } else {
-            PageUtils.reportVideo(videoDetailController.aid);
-          }
-        },
-        child: const Text('举报'),
-      ),
-    ],
-  );
+          if (videoDetailController.epId == null)
+            PopupMenuItem(
+              onTap: () => videoDetailController.showNoteList(context),
+              child: const Text('查看笔记'),
+            ),
+          if (!videoDetailController.isFileSource)
+            PopupMenuItem(
+              onTap: () => videoDetailController.onDownload(this.context),
+              child: const Text('缓存视频'),
+            ),
+          if (videoDetailController.cover.value.isNotEmpty)
+            PopupMenuItem(
+              onTap: () =>
+                  ImageUtils.downloadImg([videoDetailController.cover.value]),
+              child: const Text('保存封面'),
+            ),
+          if (!videoDetailController.isFileSource &&
+              videoDetailController.isUgc)
+            PopupMenuItem(
+              onTap: videoDetailController.toAudioPage,
+              child: const Text('听音频'),
+            ),
+          PopupMenuItem(
+            onTap: () {
+              if (!Accounts.main.isLogin) {
+                SmartDialog.showToast('账号未登录');
+              } else {
+                PageUtils.reportVideo(videoDetailController.aid);
+              }
+            },
+            child: const Text('举报'),
+          ),
+        ],
+      );
 
   void _showWindowsVideoTabs() {
     _syncWindowsVideoTabProgress();
@@ -2258,6 +2274,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     Widget child;
     if (videoDetailController.plPlayerController.isPipMode) {
       child = plPlayer(width: maxWidth, height: maxHeight, isPipMode: true);
+    } else if (WindowsVideoTabService.enabled) {
+      child = childWhenWindowsNeo;
     } else if (!videoDetailController.horizontalScreen) {
       child = childWhenDisabled;
     } else if (maxWidth / maxHeight >= kScreenRatio) {
@@ -2413,6 +2431,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
     return DecoratedBox(
       decoration: BoxDecoration(
+        color: isWindowsNeo ? context.windowsNeo.surface : null,
         border: Border(
           bottom: BorderSide(
             color: theme.dividerColor.withValues(alpha: 0.1),

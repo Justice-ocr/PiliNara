@@ -2,6 +2,7 @@ import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models_new/space/space_shop/item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -17,6 +18,7 @@ class MemberShopItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     final belowLabels = item.belowLabels?.map((e) => e.title).join('|');
     return Card(
       shape: const RoundedRectangleBorder(borderRadius: .all(.circular(6))),

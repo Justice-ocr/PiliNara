@@ -3,6 +3,7 @@ import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/pages/log_table/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -22,18 +23,22 @@ class _LogPageState<T> extends State<LogPage<T>> {
     final padding = MediaQuery.viewPaddingOf(context);
     return SimpleScaffold(
       appBar: AppBar(title: Text(_controller.title)),
-      body: CustomScrollView(
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.only(
-              left: 10 + padding.left,
-              right: 10 + padding.right,
-              bottom: padding.bottom + 100,
-            ),
-            sliver: Obx(() => _buildBody(_controller.loadingState.value)),
+      body:
+          CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.only(
+                  left: isWindowsNeo ? 18 : 10 + padding.left,
+                  top: isWindowsNeo ? 16 : 0,
+                  right: isWindowsNeo ? 18 : 10 + padding.right,
+                  bottom: padding.bottom + 100,
+                ),
+                sliver: Obx(() => _buildBody(_controller.loadingState.value)),
+              ),
+            ],
+          ).constraintWidth(
+            constraints: BoxConstraints(maxWidth: isWindowsNeo ? 996 : 680),
           ),
-        ],
-      ).constraintWidth(constraints: const BoxConstraints(maxWidth: 680)),
     );
   }
 
@@ -45,9 +50,9 @@ class _LogPageState<T> extends State<LogPage<T>> {
             ? Builder(
                 builder: (context) {
                   final them = Theme.of(context);
-                  final outline = them.colorScheme.outline.withValues(
-                    alpha: 0.1,
-                  );
+                  final outline = WindowsVideoTabService.enabled
+                      ? context.windowsNeo.border
+                      : them.colorScheme.outline.withValues(alpha: 0.1);
                   final divider = Divider(
                     height: 1,
                     color: outline,
@@ -64,7 +69,9 @@ class _LogPageState<T> extends State<LogPage<T>> {
                       sliverDivider,
                       SliverToBoxAdapter(
                         child: ColoredBox(
-                          color: them.colorScheme.onInverseSurface,
+                          color: WindowsVideoTabService.enabled
+                              ? context.windowsNeo.surfaceRaised
+                              : them.colorScheme.onInverseSurface,
                           child: _item(
                             _controller.header,
                             dividerV,

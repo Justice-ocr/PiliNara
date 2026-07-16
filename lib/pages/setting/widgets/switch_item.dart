@@ -1,5 +1,6 @@
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -127,8 +128,9 @@ class _SetSwitchItemState extends State<SetSwitchItem> {
       trailing: trailing,
     );
 
+    Widget result;
     if (widget.isSplit) {
-      return Row(
+      result = Row(
         children: [
           Expanded(child: child(null)),
           SizedBox(
@@ -144,8 +146,16 @@ class _SetSwitchItemState extends State<SetSwitchItem> {
           ),
         ],
       );
+    } else {
+      result = child(switchBtn);
     }
-
-    return child(switchBtn);
+    if (!WindowsVideoTabService.enabled) return result;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.windowsNeo.surface,
+        border: Border(bottom: BorderSide(color: context.windowsNeo.border)),
+      ),
+      child: result,
+    );
   }
 }

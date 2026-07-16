@@ -9,12 +9,14 @@ import 'package:PiliPlus/common/widgets/sliver/trending_header.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/search/search_trending/list.dart';
 import 'package:PiliPlus/pages/search_trending/controller.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/color_utils.dart';
 import 'package:PiliPlus/utils/extension/context_ext.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:get/get.dart';
@@ -39,7 +41,12 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
     final padding = MediaQuery.viewPaddingOf(context);
     final size = context.mediaQuerySize;
     final maxWidth = size.width - padding.horizontal;
-    final width = size.isPortrait ? maxWidth : min(640.0, maxWidth * 0.6);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final width = isWindowsNeo
+        ? min(820.0, maxWidth - 36)
+        : size.isPortrait
+        ? maxWidth
+        : min(640.0, maxWidth * 0.6);
     final height = width * 528 / 1125;
     _offset = height - 56 - padding.top;
     return Material(
