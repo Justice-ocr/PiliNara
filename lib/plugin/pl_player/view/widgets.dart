@@ -1,5 +1,8 @@
 part of 'view.dart';
 
+const double desktopProgressHorizontalInset = 20.0;
+const double desktopProgressBarHeight = 3.5;
+
 Widget buildDmChart(
   Color color,
   List<double> dmTrend,
@@ -266,7 +269,11 @@ class _DesktopProgressPreviewLayoutDelegate extends SingleChildLayoutDelegate {
     final left = (anchorCenter - childSize.width / 2)
         .clamp(margin, maxLeft)
         .toDouble();
-    return Offset(left, size.height - bottom - childSize.height);
+    final maxTop = math.max(margin, size.height - childSize.height - margin);
+    final top = (size.height - bottom - childSize.height)
+        .clamp(margin, maxTop)
+        .toDouble();
+    return Offset(left, top);
   }
 
   @override
