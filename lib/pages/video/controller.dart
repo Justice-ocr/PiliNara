@@ -1071,6 +1071,9 @@ class VideoDetailController extends GetxController
       final isWiFi = await ConnectivityUtils.isWiFi;
       final fsQa = isWiFi ? Pref.defaultVideoQa : Pref.defaultVideoQaCellular;
       final halfScreenQa = Pref.defaultVideoQaHalfScreen;
+      final fullScreenQa = isWiFi
+          ? Pref.defaultVideoQa
+          : Pref.defaultVideoQaCellular;
       plPlayerController
         // 半屏与蜂窝是两个正交的画质上限，同时命中取较低者（docs/adr/0002）
         ..cacheVideoQa = !plPlayerController.isFullScreen.value &&

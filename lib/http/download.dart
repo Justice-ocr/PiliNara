@@ -72,8 +72,7 @@ abstract final class DownloadHttp {
           ..typeTag = targetVideoQa.toString()
           ..videoQuality = targetVideoQa
           ..preferedVideoQuality = targetVideoQa
-          ..qualityPithyDescription =
-              targetSupportFormats.newDesc ??
+          ..qualityPithyDescription = targetSupportFormats.newDesc ??
               VideoQuality.fromCode(targetVideoQa).desc;
 
         /// 取出符合当前画质的videoList
@@ -106,9 +105,8 @@ abstract final class DownloadHttp {
         final List<AudioItem>? audioDashList = dash.audio;
         if (audioDashList != null && audioDashList.isNotEmpty) {
           final preferAudioQa = Pref.defaultAudioQa;
-          final List<int> audioIds = audioDashList
-              .map((map) => map.id!)
-              .toList();
+          final List<int> audioIds =
+              audioDashList.map((map) => map.id!).toList();
           int closestNumber = audioIds.findClosestTarget(
             (e) => e <= preferAudioQa,
             (a, b) => a > b ? a : b,

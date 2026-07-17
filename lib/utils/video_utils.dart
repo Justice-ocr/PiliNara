@@ -14,6 +14,21 @@ abstract final class VideoUtils {
 
   static const _proxyTf = 'proxy-tf-all-ws.bilivideo.com';
 
+  /// Returns the first preferred codec available in [codecs], falling back to
+  /// the stream's first advertised codec. Keeping this policy in one place
+  /// makes playback and download selection behave identically.
+  static VideoDecodeFormatType selectCodec(
+    List<String> codecs,
+    List<VideoDecodeFormatType> preferCodecs,
+  ) {
+    for (final preferred in preferCodecs) {
+      if (codecs.any(preferred.codes.any)) {
+        return preferred;
+      }
+    }
+    return VideoDecodeFormatType.fromString(codecs.first);
+  }
+
   static final _mirrorRegex = RegExp(
     r'^https?://(?:upos-\w+-(?!302)\w+|(?:upos|proxy)-tf-[^/]+)\.(?:bilivideo|akamaized)\.(?:com|net)/upgcxcode',
   );
