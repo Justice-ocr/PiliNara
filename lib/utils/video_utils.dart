@@ -20,7 +20,7 @@ abstract final class VideoUtils {
     List<VideoDecodeFormatType> preferCodecs,
   ) {
     for (final preferred in preferCodecs) {
-      if (codecs.any(preferred.codes.any)) {
+      if (codecs.any((codec) => preferred.codes.any(codec.startsWith))) {
         return preferred;
       }
     }
