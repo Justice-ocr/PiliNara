@@ -71,6 +71,7 @@ import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
@@ -176,9 +177,8 @@ class VideoDetailController extends GetxController
 
   Box setting = GStorage.setting;
 
-  // 预设的解码格式
-  late String cacheDecode = Pref.defaultDecode; // def avc
-  late String cacheSecondDecode = Pref.secondDecode; // def av1
+  // 预设的解码格式，顺序代表回退优先级。
+  late List<VideoDecodeFormatType> preferCodecs = Pref.preferCodecs;
 
   bool get showReply => isFileSource
       ? false
@@ -448,16 +448,36 @@ class VideoDetailController extends GetxController
           (a, b) => a > b ? a : b,
         );
       }
-      // Fullscreen and windowed presets can both resolve to the same available
-      // stream quality. Reload only when the player would actually change.
-      if (currentVideoQa.value?.code == targetQa) {
-        plPlayerController.cacheVideoQa = targetQa;
+      // Never downgrade an already selected/manual quality merely because the
+      // fullscreen preset is lower. This avoids a needless reload and flicker.
+      final currentQa = currentVideoQa.value?.code;
+      if (currentQa != null && targetQa <= currentQa) {
+        plPlayerController.cacheVideoQa = currentQa;
         return;
       }
       plPlayerController.cacheVideoQa = targetQa;
       currentVideoQa.value = VideoQuality.fromCode(targetQa);
       updatePlayer();
     };
+  }
+
+  /// Persists a manual quality choice in the setting that corresponds to the
+  /// current playback context. Windows has no half-screen/mobile-network
+  /// split, so it consistently updates the desktop default quality.
+  Future<void> persistVideoQa(int quality) async {
+    if (plPlayerController.tempPlayerConf) return;
+    final String key;
+    if (!PlatformUtils.isMobile) {
+      key = SettingBoxKey.defaultVideoQa;
+    } else if (!plPlayerController.isFullScreen.value &&
+        Pref.defaultVideoQaHalfScreen != null) {
+      key = SettingBoxKey.defaultVideoQaHalfScreen;
+    } else {
+      key = await ConnectivityUtils.isWiFi
+          ? SettingBoxKey.defaultVideoQa
+          : SettingBoxKey.defaultVideoQaCellular;
+    }
+    await GStorage.setting.put(key, quality);
   }
 
   @override
@@ -872,23 +892,19 @@ class VideoDetailController extends GetxController
     }
 
     final currentDecodeFormats = this.currentDecodeFormats.codes;
-    final defaultDecodeFormats = VideoDecodeFormatType.fromString(
-      cacheDecode,
-    ).codes;
-    final secondDecodeFormats = VideoDecodeFormatType.fromString(
-      cacheSecondDecode,
-    ).codes;
-
     VideoItem? video;
+    var bestIndex = preferCodecs.length;
     for (final i in videoList) {
       final codec = i.codecs!;
       if (currentDecodeFormats.any(codec.startsWith)) {
-        video = i;
-        break;
-      } else if (defaultDecodeFormats.any(codec.startsWith)) {
-        video = i;
-      } else if (video == null && secondDecodeFormats.any(codec.startsWith)) {
-        video = i;
+        return i;
+      }
+      for (var index = 0; index < bestIndex; index++) {
+        if (preferCodecs[index].codes.any(codec.startsWith)) {
+          bestIndex = index;
+          video = i;
+          break;
+        }
       }
     }
     return video ?? videoList.first;
@@ -1069,13 +1085,14 @@ class VideoDetailController extends GetxController
     if (plPlayerController.cacheVideoQa == null) {
       final isWiFi = await ConnectivityUtils.isWiFi;
       final halfScreenQa = Pref.defaultVideoQaHalfScreen;
+      final fullScreenQa = isWiFi
+          ? Pref.defaultVideoQa
+          : Pref.defaultVideoQaCellular;
       plPlayerController
         ..cacheVideoQa = !plPlayerController.isFullScreen.value &&
                 halfScreenQa != null
-            ? halfScreenQa
-            : isWiFi
-                ? Pref.defaultVideoQa
-                : Pref.defaultVideoQaCellular
+            ? min(halfScreenQa, fullScreenQa)
+            : fullScreenQa
         ..cacheAudioQa = isWiFi
             ? Pref.defaultAudioQa
             : Pref.defaultAudioQaCellular;
@@ -1197,27 +1214,10 @@ class VideoDetailController extends GetxController
             orElse: () => supportFormats.first,
           )
           .codecs!;
-      // 默认从设置中取AV1
-      currentDecodeFormats = VideoDecodeFormatType.fromString(cacheDecode);
-      VideoDecodeFormatType secondDecodeFormats =
-          VideoDecodeFormatType.fromString(cacheSecondDecode);
-      // 当前视频没有对应格式返回第一个
-      int flag = 0;
-      for (final e in supportDecodeFormats) {
-        if (currentDecodeFormats.codes.any(e.startsWith)) {
-          flag = 1;
-          break;
-        } else if (secondDecodeFormats.codes.any(e.startsWith)) {
-          flag = 2;
-        }
-      }
-      if (flag == 2) {
-        currentDecodeFormats = secondDecodeFormats;
-      } else if (flag == 0) {
-        currentDecodeFormats = VideoDecodeFormatType.fromString(
-          supportDecodeFormats.first,
-        );
-      }
+      currentDecodeFormats = VideoUtils.selectCodec(
+        supportDecodeFormats,
+        preferCodecs,
+      );
 
       /// 取出符合当前解码格式的videoItem
       firstVideo = videosList.firstWhere(

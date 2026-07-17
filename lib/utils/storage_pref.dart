@@ -459,15 +459,39 @@ abstract final class Pref {
     defaultValue: AudioQuality.k192.code,
   );
 
-  static String get defaultDecode => _setting.get(
-    SettingBoxKey.defaultDecode,
-    defaultValue: VideoDecodeFormatType.AVC.codes.first,
-  );
+  /// Ordered codec preferences. Legacy primary/secondary selections are
+  /// migrated once so existing users keep their playback choice.
+  static List<VideoDecodeFormatType> get preferCodecs {
+    if (_setting.get(SettingBoxKey.defaultDecode) case final String primary) {
+      final secondary = _setting.get(SettingBoxKey.secondDecode);
+      final codecs = <VideoDecodeFormatType>[
+        VideoDecodeFormatType.fromCode(primary),
+        if (secondary case final String value when value != primary)
+          VideoDecodeFormatType.fromCode(value),
+      ];
+      _setting
+        ..deleteAll(const [
+          SettingBoxKey.defaultDecode,
+          SettingBoxKey.secondDecode,
+        ])
+        ..put(SettingBoxKey.preferCodecs, codecs.map((e) => e.name).toList());
+      return codecs;
+    }
 
-  static String get secondDecode => _setting.get(
-    SettingBoxKey.secondDecode,
-    defaultValue: VideoDecodeFormatType.AV1.codes.first,
-  );
+    final stored = _setting.get(SettingBoxKey.preferCodecs);
+    if (stored is List) {
+      final codecs = stored
+          .whereType<String>()
+          .map((name) => VideoDecodeFormatType.values.where((e) => e.name == name))
+          .expand((items) => items)
+          .toList();
+      if (codecs.isNotEmpty) return codecs;
+    }
+    return const <VideoDecodeFormatType>[
+      VideoDecodeFormatType.AVC,
+      VideoDecodeFormatType.AV1,
+    ];
+  }
 
   static String get hardwareDecoding => _setting.get(
     SettingBoxKey.hardwareDecoding,

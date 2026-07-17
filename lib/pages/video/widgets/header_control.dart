@@ -962,15 +962,7 @@ class HeaderControlState extends State<HeaderControl>
 
                         SmartDialog.showToast("画质已变为：${newQa.desc}");
 
-                        // update
-                        if (!plPlayerController.tempPlayerConf) {
-                          setting.put(
-                            await ConnectivityUtils.isWiFi
-                                ? SettingBoxKey.defaultVideoQa
-                                : SettingBoxKey.defaultVideoQaCellular,
-                            quality,
-                          );
-                        }
+                        videoDetailCtr.persistVideoQa(quality);
                       },
                       // 可能包含会员解锁画质
                       enabled: index >= totalQaSam - usefulQaSam,

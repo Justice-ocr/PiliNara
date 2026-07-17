@@ -1,4 +1,5 @@
 import 'package:PiliPlus/models/common/video/cdn_type.dart';
+import 'package:PiliPlus/models/common/video/video_decode_type.dart';
 import 'package:PiliPlus/models_new/live/live_room_play_info/codec.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -10,6 +11,21 @@ abstract final class VideoUtils {
   static bool disableAudioCDN = Pref.disableAudioCDN;
 
   static const _proxyTf = 'proxy-tf-all-ws.bilivideo.com';
+
+  /// Returns the first preferred codec available in [codecs], falling back to
+  /// the stream's first advertised codec. Keeping this policy in one place
+  /// makes playback and download selection behave identically.
+  static VideoDecodeFormatType selectCodec(
+    List<String> codecs,
+    List<VideoDecodeFormatType> preferCodecs,
+  ) {
+    for (final preferred in preferCodecs) {
+      if (codecs.any(preferred.codes.any)) {
+        return preferred;
+      }
+    }
+    return VideoDecodeFormatType.fromString(codecs.first);
+  }
 
   static final _mirrorRegex = RegExp(
     r'^https?://(?:upos-\w+-(?!302)\w+|(?:upos|proxy)-tf-[^/]+)\.(?:bilivideo|akamaized)\.(?:com|net)/upgcxcode',
@@ -78,15 +94,15 @@ abstract final class VideoUtils {
 
     return mcdnUpgcxcode == null
         ? mcdnTf == null
-              ? last
-              : Uri(
-                  scheme: 'https',
-                  host: _proxyTf,
-                  queryParameters: {'url': mcdnTf},
-                ).toString()
+            ? last
+            : Uri(
+                scheme: 'https',
+                host: _proxyTf,
+                queryParameters: {'url': mcdnTf},
+              ).toString()
         : Uri.parse(mcdnUpgcxcode)
-              .replace(host: defaultCDNService.host ?? CDNService.ali.host)
-              .toString();
+            .replace(host: defaultCDNService.host ?? CDNService.ali.host)
+            .toString();
   }
 
   static String getLiveCdnUrl(CodecItem e, {int index = 0}) {

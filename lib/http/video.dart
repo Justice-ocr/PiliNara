@@ -38,6 +38,7 @@ import 'package:PiliPlus/utils/recommend_filter.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:PiliPlus/utils/subtitle_utils.dart';
 import 'package:PiliPlus/utils/video_tag_filter.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/parse_int.dart';
@@ -920,10 +921,17 @@ abstract final class VideoHttp {
     return sb.toString();
   }
 
-  static Future<String?> vttSubtitles(String subtitleUrl) async {
+  static Future<String?> vttSubtitles(
+    String subtitleUrl, {
+    SubtitleFormat format = SubtitleFormat.vtt,
+  }) async {
     final res = await Request().get("https:$subtitleUrl");
     if (res.data?['body'] case List list) {
-      return compute<List, String>(processList, list);
+      return switch (format) {
+        SubtitleFormat.json => null,
+        SubtitleFormat.vtt => compute<List, String>(SubtitleUtils.bccToVtt, list),
+        SubtitleFormat.srt => compute<List, String>(SubtitleUtils.bccToSrt, list),
+      };
     }
     return null;
   }

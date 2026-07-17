@@ -2,7 +2,7 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/video.dart';
 import 'package:PiliPlus/models/common/account_type.dart';
 import 'package:PiliPlus/models/common/video/audio_quality.dart';
-import 'package:PiliPlus/models/common/video/video_decode_type.dart';
+
 import 'package:PiliPlus/models/common/video/video_quality.dart';
 import 'package:PiliPlus/models/common/video/video_type.dart';
 import 'package:PiliPlus/models/video/play/url.dart';
@@ -57,9 +57,8 @@ abstract final class DownloadHttp {
         }
 
         /// 取出符合当前画质的videoList
-        final List<VideoItem> videosList = videoList
-            .where((e) => e.quality.code == targetVideoQa)
-            .toList();
+        final List<VideoItem> videosList =
+            videoList.where((e) => e.quality.code == targetVideoQa).toList();
 
         /// 优先顺序 设置中指定解码格式 -> 当前可选的首个解码格式
         final List<FormatItem> supportFormats = response.supportFormats!;
@@ -74,35 +73,13 @@ abstract final class DownloadHttp {
           ..typeTag = targetVideoQa.toString()
           ..videoQuality = targetVideoQa
           ..preferedVideoQuality = targetVideoQa
-          ..qualityPithyDescription =
-              targetSupportFormats.newDesc ??
+          ..qualityPithyDescription = targetSupportFormats.newDesc ??
               VideoQuality.fromCode(targetVideoQa).desc;
 
-        String preferDecode = Pref.defaultDecode; // def avc
-        String preferSecondDecode = Pref.secondDecode; // def av1
-
-        // 默认从设置中取AV1
-        VideoDecodeFormatType currentDecodeFormats =
-            VideoDecodeFormatType.fromString(preferDecode);
-        VideoDecodeFormatType secondDecodeFormats =
-            VideoDecodeFormatType.fromString(preferSecondDecode);
-        // 当前视频没有对应格式返回第一个
-        int flag = 0;
-        for (final e in supportDecodeFormats) {
-          if (currentDecodeFormats.codes.any(e.startsWith)) {
-            flag = 1;
-            break;
-          } else if (secondDecodeFormats.codes.any(e.startsWith)) {
-            flag = 2;
-          }
-        }
-        if (flag == 2) {
-          currentDecodeFormats = secondDecodeFormats;
-        } else if (flag == 0) {
-          currentDecodeFormats = VideoDecodeFormatType.fromString(
-            supportDecodeFormats.first,
-          );
-        }
+        final currentDecodeFormats = VideoUtils.selectCodec(
+          supportDecodeFormats,
+          Pref.preferCodecs,
+        );
 
         /// 取出符合当前解码格式的videoItem
         final videoDash = videosList.firstWhere(
@@ -129,9 +106,8 @@ abstract final class DownloadHttp {
         final List<AudioItem>? audioDashList = dash.audio;
         if (audioDashList != null && audioDashList.isNotEmpty) {
           final preferAudioQa = Pref.defaultAudioQa;
-          final List<int> audioIds = audioDashList
-              .map((map) => map.id!)
-              .toList();
+          final List<int> audioIds =
+              audioDashList.map((map) => map.id!).toList();
           int closestNumber = audioIds.findClosestTarget(
             (e) => e <= preferAudioQa,
             (a, b) => a > b ? a : b,

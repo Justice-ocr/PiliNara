@@ -297,10 +297,32 @@ double _desktopPreviewAnchorCenter({
   final availableWidth = math.max(0.0, maxWidth - margin * 2);
   final width = anchorWidth.clamp(0.0, availableWidth).toDouble();
   final maxLeft = math.max(margin, maxWidth - width - margin);
-  final left = (maxWidth * previewValue - width / 2)
+  final anchorCenter = _desktopProgressHoverCenter(
+    maxWidth: maxWidth,
+    previewValue: previewValue,
+  );
+  final left = (anchorCenter - width / 2)
       .clamp(margin, maxLeft)
       .toDouble();
   return left + width / 2;
+}
+
+double _desktopProgressHoverCenter({
+  required double maxWidth,
+  required double previewValue,
+}) {
+  final trackWidth = math.max(
+    0.0,
+    maxWidth - desktopProgressHorizontalInset * 2,
+  );
+  final availableWidth = math.max(
+    0.0,
+    trackWidth - desktopProgressBarHeight,
+  );
+  final value = previewValue.clamp(0.0, 1.0).toDouble();
+  return desktopProgressHorizontalInset +
+      desktopProgressBarHeight / 2 +
+      value * availableWidth;
 }
 
 class _SeekPreviewPlaceholder extends StatelessWidget {

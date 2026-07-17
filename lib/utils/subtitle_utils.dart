@@ -1,4 +1,10 @@
 // Logic inspired by BiliRoamingX.
+enum SubtitleFormat {
+  json,
+  vtt,
+  srt,
+}
+
 abstract final class SubtitleUtils {
   static String _vttTimecode(num seconds) {
     final int h = seconds ~/ 3600;

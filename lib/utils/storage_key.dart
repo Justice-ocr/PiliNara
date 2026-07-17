@@ -11,6 +11,7 @@ abstract final class SettingBoxKey {
       fullScreenMode = 'fullScreenMode',
       defaultDecode = 'defaultDecode',
       secondDecode = 'secondDecode',
+      preferCodecs = 'preferCodecs',
       defaultToastOp = 'defaultToastOp',
       defaultPicQa = 'defaultPicQa',
       enableHA = 'enableHA',
