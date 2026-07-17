@@ -33,6 +33,7 @@ class PlayerFocus extends StatefulWidget {
   final ValueGetter<bool>? canPlay;
   final ValueGetter<bool>? onSkipSegment;
   final VoidCallback? onRefresh;
+  final ValueGetter<bool>? shouldIgnoreShortcuts;
 
   /// 外部持有的焦点节点：供页面在点击/悬停视频区时抢回焦点（恢复方向键音量控制）
   final FocusNode? focusNode;
@@ -55,6 +56,7 @@ class _PlayerFocusState extends State<PlayerFocus> {
   ValueGetter<bool>? get canPlay => widget.canPlay;
   ValueGetter<bool>? get onSkipSegment => widget.onSkipSegment;
   VoidCallback? get onRefresh => widget.onRefresh;
+  ValueGetter<bool>? get shouldIgnoreShortcuts => widget.shouldIgnoreShortcuts;
 
   @override
   void initState() {

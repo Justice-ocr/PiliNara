@@ -627,6 +627,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
             ? _focusWindowsDanmaku
             : _liveRoomController.onSendDanmaku,
         onRefresh: _liveRoomController.queryLiveUrl,
+        shouldIgnoreShortcuts: () => _windowsDanmakuFocusNode.hasFocus,
         child: child,
       );
     }
@@ -1532,8 +1533,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   void _focusWindowsDanmaku() => _windowsDanmakuFocusNode.requestFocus();
 
   KeyEventResult _handleWindowsDanmakuKey(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.enter) {
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
       _sendWindowsDanmaku();
       return KeyEventResult.handled;
     }

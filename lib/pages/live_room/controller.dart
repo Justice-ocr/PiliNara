@@ -145,6 +145,8 @@ class LiveRoomController extends GetxController {
   String? videoUrl;
   bool? isPlaying;
   late bool isFullScreen = false;
+  bool _recoveringLivePlayback = false;
+  late final PlayCallback _livePlaybackRecoveryCallback = _recoverLivePlayback;
 
   final superChatType = Pref.superChatType;
   late final showSuperChat = superChatType != SuperChatType.disable;
@@ -214,6 +216,7 @@ class LiveRoomController extends GetxController {
     } else {
       plPlayerController = PlPlayerController.getInstance(isLive: true);
     }
+    _bindLivePlaybackRecovery();
 
     scrollController = ScrollController()..addListener(listener);
     final account = Accounts.main;
@@ -258,6 +261,7 @@ class LiveRoomController extends GetxController {
     if (!WindowsVideoTabService.enabled &&
         plPlayerController.videoPlayerController == null) {
       plPlayerController = PlPlayerController.ensureInstance(isLive: true);
+      _bindLivePlaybackRecovery();
     }
 
     // 确保播放器处于直播模式
@@ -282,6 +286,25 @@ class LiveRoomController extends GetxController {
             await plPlayerController.play();
           }
         });
+  }
+
+  void _bindLivePlaybackRecovery() {
+    plPlayerController.onLivePlaybackInterrupted =
+        _livePlaybackRecoveryCallback;
+  }
+
+  Future<void> _recoverLivePlayback() async {
+    if (_recoveringLivePlayback || isClosed) return;
+    if (plPlayerController.videoPlayerController?.state.playing == true) {
+      return;
+    }
+
+    _recoveringLivePlayback = true;
+    try {
+      await queryLiveUrl();
+    } finally {
+      _recoveringLivePlayback = false;
+    }
   }
 
   Future<void> queryLiveUrl({bool autoFullScreenFlag = false}) async {

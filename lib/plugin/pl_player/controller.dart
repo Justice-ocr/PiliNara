@@ -146,6 +146,10 @@ class PlPlayerController with BlockConfigMixin {
   final RxBool isNativePip = false.obs;
   bool isLive = false;
 
+  PlayCallback? onLivePlaybackInterrupted;
+  Timer? _liveRecoveryTimer;
+  bool _liveRecoveryRunning = false;
+
   bool _isVertical = false;
 
   final Rx<VideoFitType> videoFit = Rx(.contain);
@@ -1077,6 +1081,46 @@ class PlPlayerController with BlockConfigMixin {
     return null;
   }
 
+  void _scheduleLivePlaybackRecovery() {
+    if (!isLive ||
+        _liveRecoveryTimer != null ||
+        _liveRecoveryRunning ||
+        _videoPlayerController == null) {
+      return;
+    }
+    _liveRecoveryTimer = Timer(const Duration(seconds: 3), () {
+      _liveRecoveryTimer = null;
+      unawaited(_recoverLivePlayback());
+    });
+  }
+
+  Future<void> _recoverLivePlayback() async {
+    if (!isLive || _liveRecoveryRunning) return;
+    final player = _videoPlayerController;
+    if (player == null || player.state.playing) return;
+
+    _liveRecoveryRunning = true;
+    try {
+      final refresh = onLivePlaybackInterrupted;
+      if (refresh != null) {
+        await refresh();
+      } else {
+        await refreshPlayer();
+      }
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('live playback recovery failed: $error\n$stackTrace');
+      }
+    } finally {
+      _liveRecoveryRunning = false;
+    }
+  }
+
+  void cancelLivePlaybackRecovery() {
+    _liveRecoveryTimer?.cancel();
+    _liveRecoveryTimer = null;
+  }
+
   // 开始播放
   Future<void> _initializePlayer() async {
     if (_playerCount == 0) return;
@@ -1206,11 +1250,7 @@ class PlPlayerController with BlockConfigMixin {
           return;
         }
         if (isLive) {
-          if (event.startsWith('tcp: ffurl_read returned ') ||
-              event.startsWith("Failed to open https://") ||
-              event.startsWith("Can not open external file https://")) {
-            Future.delayed(const Duration(milliseconds: 3000), refreshPlayer);
-          }
+          _scheduleLivePlaybackRecovery();
           return;
         }
         if (event.startsWith("Failed to open https://") ||
@@ -1367,6 +1407,7 @@ class PlPlayerController with BlockConfigMixin {
   /// 播放视频
   Future<void> play({bool repeat = false, bool hideControls = true}) async {
     if (_playerCount == 0) return;
+    cancelLivePlaybackRecovery();
     // 播放时自动隐藏控制条
     final showControlsOnNextPlay = _consumeShowControlsOnNextPlay();
     controls = !hideControls || showControlsOnNextPlay;
@@ -1382,6 +1423,7 @@ class PlPlayerController with BlockConfigMixin {
 
   /// 暂停播放
   Future<void> pause({bool notify = true, bool isInterrupt = false}) async {
+    cancelLivePlaybackRecovery();
     await _videoPlayerController?.pause();
     playerStatus.value = PlayerStatus.paused;
 
@@ -2026,6 +2068,9 @@ class PlPlayerController with BlockConfigMixin {
       _heartDuration = 0;
       return;
     }
+
+    cancelLivePlaybackRecovery();
+    onLivePlaybackInterrupted = null;
 
     _playerCount = 0;
     if (removeSafeArea) {
