@@ -62,6 +62,8 @@ import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:canvas_danmaku/danmaku_screen.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
 import 'package:flutter/material.dart' hide PageView;
+import 'package:flutter/services.dart'
+    show KeyDownEvent, KeyEvent, KeyEventResult, LogicalKeyboardKey;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
@@ -97,7 +99,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   late final TabController _windowsSideTabController;
   final TextEditingController _windowsDanmakuTextController =
       TextEditingController();
-  final FocusNode _windowsDanmakuFocusNode = FocusNode();
+  late final FocusNode _windowsDanmakuFocusNode;
   bool _windowsDanmakuSending = false;
 
   late final GlobalKey pageKey = GlobalKey();
@@ -116,6 +118,10 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   @override
   void initState() {
     super.initState();
+    _windowsDanmakuFocusNode = FocusNode(
+      debugLabel: 'windows-live-danmaku-input',
+      onKeyEvent: _handleWindowsDanmakuKey,
+    );
     addObserverMobile(this);
     final args = _routeArgs;
     if (args is Map) {
@@ -1452,6 +1458,15 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   }
 
   void _focusWindowsDanmaku() => _windowsDanmakuFocusNode.requestFocus();
+
+  KeyEventResult _handleWindowsDanmakuKey(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.enter) {
+      _sendWindowsDanmaku();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
 
   Future<void> _sendWindowsDanmaku() async {
     final message = _windowsDanmakuTextController.text.trim();

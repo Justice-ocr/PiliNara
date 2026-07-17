@@ -77,6 +77,11 @@ class _PlayerFocusState extends State<PlayerFocus> {
     return Focus(
       focusNode: _focusNode,
       onKeyEvent: (node, event) {
+        // Text inputs own Enter and arrow keys. Letting player shortcuts bubble
+        // into an active editor prevents caret movement and keyboard submit.
+        if (_isEditableTextFocused) {
+          return KeyEventResult.ignored;
+        }
         final handled = _handleKey(event);
         if (handled || PlayerFocus._shouldHandle(event.logicalKey)) {
           return KeyEventResult.handled;
@@ -93,6 +98,13 @@ class _PlayerFocusState extends State<PlayerFocus> {
 
   bool get isFullScreen => plPlayerController.isFullScreen.value;
   bool get hasPlayer => plPlayerController.videoPlayerController != null;
+
+  bool get _isEditableTextFocused {
+    final focusContext = FocusManager.instance.primaryFocus?.context;
+    return focusContext != null &&
+        (focusContext.widget is EditableText ||
+            focusContext.findAncestorWidgetOfExactType<EditableText>() != null);
+  }
 
   void _setVolume({required bool isIncrease}) {
     final volume = isIncrease
