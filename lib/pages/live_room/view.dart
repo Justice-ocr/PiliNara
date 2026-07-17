@@ -63,7 +63,7 @@ import 'package:canvas_danmaku/danmaku_screen.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
 import 'package:flutter/material.dart' hide PageView;
 import 'package:flutter/services.dart'
-    show KeyDownEvent, KeyEvent, KeyEventResult, LogicalKeyboardKey;
+    show KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
@@ -566,6 +566,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
             ? _focusWindowsDanmaku
             : _liveRoomController.onSendDanmaku,
         onRefresh: _liveRoomController.queryLiveUrl,
+        shouldIgnoreShortcuts: () => _windowsDanmakuFocusNode.hasFocus,
         child: child,
       );
     }
@@ -1460,8 +1461,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   void _focusWindowsDanmaku() => _windowsDanmakuFocusNode.requestFocus();
 
   KeyEventResult _handleWindowsDanmakuKey(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.enter) {
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
       _sendWindowsDanmaku();
       return KeyEventResult.handled;
     }

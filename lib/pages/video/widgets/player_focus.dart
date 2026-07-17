@@ -24,6 +24,7 @@ class PlayerFocus extends StatefulWidget {
     this.canPlay,
     this.onSkipSegment,
     this.onRefresh,
+    this.shouldIgnoreShortcuts,
   });
 
   final Widget child;
@@ -33,6 +34,7 @@ class PlayerFocus extends StatefulWidget {
   final ValueGetter<bool>? canPlay;
   final ValueGetter<bool>? onSkipSegment;
   final VoidCallback? onRefresh;
+  final ValueGetter<bool>? shouldIgnoreShortcuts;
 
   @override
   State<PlayerFocus> createState() => _PlayerFocusState();
@@ -55,6 +57,7 @@ class _PlayerFocusState extends State<PlayerFocus> {
   ValueGetter<bool>? get canPlay => widget.canPlay;
   ValueGetter<bool>? get onSkipSegment => widget.onSkipSegment;
   VoidCallback? get onRefresh => widget.onRefresh;
+  ValueGetter<bool>? get shouldIgnoreShortcuts => widget.shouldIgnoreShortcuts;
 
   @override
   void initState() {
@@ -77,9 +80,11 @@ class _PlayerFocusState extends State<PlayerFocus> {
     return Focus(
       focusNode: _focusNode,
       onKeyEvent: (node, event) {
-        // Text inputs own Enter and arrow keys. Letting player shortcuts bubble
-        // into an active editor prevents caret movement and keyboard submit.
-        if (_isEditableTextFocused) {
+        // A page can explicitly identify its text editor. This is more reliable
+        // than inspecting the focus tree, whose node context may be the Focus
+        // wrapper rather than the EditableText widget on desktop.
+        if ((shouldIgnoreShortcuts?.call() ?? false) ||
+            _isEditableTextFocused) {
           return KeyEventResult.ignored;
         }
         final handled = _handleKey(event);
