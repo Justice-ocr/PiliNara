@@ -147,6 +147,7 @@ class LiveRoomController extends GetxController {
   late bool isFullScreen = false;
   bool _recoveringLivePlayback = false;
   late final PlayCallback _livePlaybackRecoveryCallback = _recoverLivePlayback;
+  StreamSubscription<(int, int)>? _sizeSub;
 
   final superChatType = Pref.superChatType;
   late final showSuperChat = superChatType != SuperChatType.disable;

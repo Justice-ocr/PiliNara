@@ -220,6 +220,7 @@ class PlPlayerController with BlockConfigMixin {
   /// 全屏方向
   // ignore: unnecessary_getters_setters
   bool get isVertical => _isVertical;
+  set isVertical(bool value) => _isVertical = value;
 
   set isVertical(bool value) {
     _isVertical = value;
