@@ -80,6 +80,53 @@ class _DynamicDetailPageState
     future.whenComplete(_stopRefresh);
   }
 
+  void _showReactions() {
+    final size = MediaQuery.sizeOf(context);
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      constraints: BoxConstraints(
+        maxWidth: WindowsVideoTabService.enabled ? 620 : double.infinity,
+      ),
+      builder: (context) => SizedBox(
+        height: min(size.height * 0.82, 720),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 10, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Obx(
+                      () => Text(
+                        '赞与转发 ${_reactionController.count.value < 0 ? '' : NumUtils.numFormat(_reactionController.count.value)}',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: '关闭',
+                    onPressed: Navigator.of(context).pop,
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: DynReactPage(
+                id: controller.dynItem.idStr,
+                controller: _reactionController,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   dynamic get arguments => {'item': controller.dynItem};
 
