@@ -65,6 +65,7 @@ class _ZonePageState extends State<ZonePage>
       );
     }
     return refreshIndicator(
+      key: controller.refreshKey,
       onRefresh: controller.onRefresh,
       child: CustomScrollView(
         controller: controller.scrollController,

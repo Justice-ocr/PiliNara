@@ -15,6 +15,7 @@ import 'package:PiliPlus/models_new/space/space/tab2.dart';
 import 'package:PiliPlus/pages/common/common_data_controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
+import 'package:PiliPlus/utils/extension/nested_scroll_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
@@ -64,7 +65,7 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
 
   final String? fromViewAid;
 
-  final key = GlobalKey<ExtendedNestedScrollViewState>();
+  final scrollKey = GlobalKey<ExtendedNestedScrollViewState>();
 
   @override
   void onInit() {
@@ -313,13 +314,8 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
   }
 
   void onTapTab(int value) {
-    if (tabController?.indexIsChanging == false &&
-        key.currentState?.outerController.hasClients == true) {
-      key.currentState!.outerController.animateTo(
-        key.currentState!.outerController.offset,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
+    if (tabController?.indexIsChanging == false) {
+      scrollKey.currentState?.animToTop();
     }
   }
 

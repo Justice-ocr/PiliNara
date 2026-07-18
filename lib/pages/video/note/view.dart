@@ -11,7 +11,6 @@ import 'package:PiliPlus/pages/webview/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
-import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
@@ -132,7 +131,7 @@ class _NoteListPageState extends State<NoteListPage>
     );
     if (_isNested) {
       child = ExtendedVisibilityDetector(
-        uniqueKey: const Key('note-list'),
+        uniqueKey: const ValueKey(NoteListPage),
         child: child,
       );
     }
@@ -279,13 +278,10 @@ class _NoteListPageState extends State<NoteListPage>
                             ),
                           ),
                           const SizedBox(width: 6),
-                          Image.asset(
-                            BiliUtils.levelName(
-                              item.author!.level!,
-                              isSeniorMember: item.author!.isSeniorMember == 1,
-                            ),
+                          BiliUtils.levelPicture(
+                            item.author!.level!,
+                            isSeniorMember: item.author!.isSeniorMember == 1,
                             height: 11,
-                            cacheHeight: 11.cacheSize(context),
                           ),
                         ],
                       ),

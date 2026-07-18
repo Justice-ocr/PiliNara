@@ -190,6 +190,7 @@ abstract final class Api {
   // 删除评论
   // https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/comment/action.md
   static const String replyDel = '/x/v2/reply/del';
+  static const String replyReport = '/x/v2/reply/report';
 
   // 用户(被)关注数、投稿数
   // https://api.bilibili.com/x/relation/stat?vmid=697166795
@@ -202,6 +203,7 @@ abstract final class Api {
 
   // 获取用户信息
   static const String userInfo = '/x/web-interface/nav';
+  static const String memberWebAccount = '/x/member/web/account';
 
   // 获取当前用户状态
   static const String userStatOwner = '/x/web-interface/nav/stat';
@@ -229,6 +231,8 @@ abstract final class Api {
   // https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/all?timezone_offset=-480&type=video&page=1&features=itemOpusStyle
   // https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/all?host_mid=548196587&offset=&page=1&features=itemOpusStyle
   static const String followDynamic = '/x/polymer/web-dynamic/v1/feed/all';
+  static const String dynReaction =
+      '/x/polymer/web-dynamic/v1/detail/reaction';
 
   // 动态点赞
   // static const String likeDynamic =

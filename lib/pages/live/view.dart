@@ -60,6 +60,7 @@ class _LivePageState extends State<LivePage>
         borderRadius: isWindowsNeo ? BorderRadius.zero : Style.mdRadius,
       ),
       child: refreshIndicator(
+        key: controller.refreshKey,
         onRefresh: controller.onRefresh,
         child: CustomScrollView(
           controller: controller.scrollController,

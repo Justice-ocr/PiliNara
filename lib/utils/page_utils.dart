@@ -296,6 +296,7 @@ abstract final class PageUtils {
     DynamicItemModel item, {
     bool isPush = false,
     ValueChanged<DynamicItemModel>? onUpdate,
+    bool viewComment = false,
   }) async {
     feedBack();
 
@@ -331,6 +332,7 @@ abstract final class PageUtils {
           arguments: {
             'item': item,
             if (onUpdate != null) 'onUpdate': onUpdate,
+            if (viewComment) 'viewComment': true,
           },
         );
       }

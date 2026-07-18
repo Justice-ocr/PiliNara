@@ -348,6 +348,7 @@ class LiveRoomChatPanel extends StatelessWidget {
     showMenu(
       context: context,
       position: RelativeRect.fromLTRB(dx, dy, dx, 0),
+      clipBehavior: Clip.antiAlias,
       items: <PopupMenuEntry<Never>>[
         CustomPopupMenuItem(
           height: 38,
@@ -357,7 +358,7 @@ class LiveRoomChatPanel extends StatelessWidget {
           ),
         ),
         const CustomPopupMenuDivider(height: 1),
-        PopupMenuItem(
+        CustomPopupMenuItem(
           height: 38,
           onTap: () => Utils.copyText(Utils.jsonEncoder.convert(item.toJson())),
           child: const Text(
@@ -365,7 +366,7 @@ class LiveRoomChatPanel extends StatelessWidget {
             style: TextStyle(fontSize: 13),
           ),
         ),
-        PopupMenuItem(
+        CustomPopupMenuItem(
           height: 38,
           onTap: () => PageUtils.toMember(item.extra.mid),
           child: const Text(
@@ -373,7 +374,7 @@ class LiveRoomChatPanel extends StatelessWidget {
             style: TextStyle(fontSize: 13),
           ),
         ),
-        PopupMenuItem(
+        CustomPopupMenuItem(
           height: 38,
           onTap: () => onAtUser(item),
           child: const Text(
@@ -381,7 +382,7 @@ class LiveRoomChatPanel extends StatelessWidget {
             style: TextStyle(fontSize: 13),
           ),
         ),
-        PopupMenuItem(
+        CustomPopupMenuItem(
           height: 38,
           onTap: () async {
             if (!liveRoomController.isLogin) return;
@@ -401,7 +402,7 @@ class LiveRoomChatPanel extends StatelessWidget {
             style: TextStyle(fontSize: 13),
           ),
         ),
-        PopupMenuItem(
+        CustomPopupMenuItem(
           height: 38,
           onTap: () => HeaderControl.reportLiveDanmaku(
             context,

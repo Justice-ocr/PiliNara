@@ -15,7 +15,7 @@ abstract final class VideoUtils {
   /// Returns the first preferred codec available in [codecs], falling back to
   /// the stream's first advertised codec. Keeping this policy in one place
   /// makes playback and download selection behave identically.
-  static VideoDecodeFormatType selectCodec(
+  static VideoDecodeFormatType selectCodecLegacy(
     List<String> codecs,
     List<VideoDecodeFormatType> preferCodecs,
   ) {
@@ -108,5 +108,29 @@ abstract final class VideoUtils {
   static String getLiveCdnUrl(CodecItem e, {int index = 0}) {
     final urlInfo = e.urlInfo.getOrFirst(index);
     return (liveCdnUrl ?? urlInfo.host) + e.baseUrl + urlInfo.extra;
+  }
+
+  static VideoDecodeFormatType selectCodec(
+    Iterable<String> codecs,
+    List<VideoDecodeFormatType> preferCodecs,
+  ) {
+    if (preferCodecs.isNotEmpty) {
+      int bestIndex = preferCodecs.length;
+      for (final e in codecs) {
+        for (int i = 0; i < bestIndex; i++) {
+          if (preferCodecs[i].codes.any(e.startsWith)) {
+            bestIndex = i;
+            if (bestIndex == 0) {
+              return preferCodecs[0];
+            }
+            break;
+          }
+        }
+      }
+      if (bestIndex < preferCodecs.length) {
+        return preferCodecs[bestIndex];
+      }
+    }
+    return VideoDecodeFormatType.fromString(codecs.first);
   }
 }

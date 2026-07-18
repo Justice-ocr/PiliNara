@@ -78,6 +78,7 @@ abstract final class SettingBoxKey {
       defaultDynamicType = 'defaultDynamicType',
       showDynInteraction = 'showDynInteraction',
       enableHotKey = 'enableHotKey',
+      enableCurrentPageRefresh = 'enableCurrentPageRefresh',
       enableSearchRcmd = 'enableSearchRcmd',
       enableQuickFav = 'enableQuickFav',
       enableWordRe = 'enableWordRe',

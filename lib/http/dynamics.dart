@@ -4,6 +4,7 @@ import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/common/widgets/pair.dart';
 import 'package:PiliPlus/http/api.dart';
 import 'package:PiliPlus/http/constants.dart';
+import 'package:PiliPlus/http/error_msg.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/reply.dart';
@@ -11,6 +12,7 @@ import 'package:PiliPlus/models/common/dynamic/dynamics_type.dart';
 import 'package:PiliPlus/models/common/reply/reply_option_type.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/models/dynamics/up.dart';
+import 'package:PiliPlus/models_new/follow/data.dart';
 import 'package:PiliPlus/models/dynamics/vote_model.dart';
 import 'package:PiliPlus/models_new/article/article_info/data.dart';
 import 'package:PiliPlus/models_new/article/article_list/data.dart';
@@ -18,6 +20,7 @@ import 'package:PiliPlus/models_new/article/article_view/data.dart';
 import 'package:PiliPlus/models_new/bubble/data.dart';
 import 'package:PiliPlus/models_new/dynamic/dyn_mention/data.dart';
 import 'package:PiliPlus/models_new/dynamic/dyn_mention/group.dart';
+import 'package:PiliPlus/models_new/dynamic/dyn_reaction/data.dart';
 import 'package:PiliPlus/models_new/dynamic/dyn_reserve/data.dart';
 import 'package:PiliPlus/models_new/dynamic/dyn_reserve_info/data.dart';
 import 'package:PiliPlus/models_new/dynamic/dyn_topic_feed/topic_card_list.dart';
@@ -32,19 +35,14 @@ import 'package:dio/dio.dart';
 abstract final class DynamicsHttp {
   @pragma('vm:notify-debugger-on-exception')
   static Future<LoadingState<DynamicsDataModel>> followDynamic({
-    DynamicsTabType type = DynamicsTabType.all,
+    int? hostMid,
     String? offset,
-    int? mid,
     Set<int>? tempBannedList,
+    DynamicsTabType type = .all,
   }) async {
     Map<String, dynamic> data = {
-      if (type == DynamicsTabType.up)
-        'host_mid': mid
-      else ...{
-        'type': type.name,
-        'timezone_offset': '-480',
-      },
-      'offset': offset,
+      if (type == .up) 'host_mid': hostMid else 'type': type.name,
+      'offset': ?offset,
       'features': Constants.dynFeatures,
     };
     final res = await Request().get(Api.followDynamic, queryParameters: data);
@@ -60,7 +58,7 @@ abstract final class DynamicsHttp {
           return await followDynamic(
             type: type,
             offset: data.offset,
-            mid: mid,
+            hostMid: hostMid,
             tempBannedList: tempBannedList,
           );
         }
@@ -92,7 +90,7 @@ abstract final class DynamicsHttp {
     final res = await Request().get(
       Api.dynUplist,
       queryParameters: {
-        'offset': offset,
+        'offset': ?offset,
         'platform': 'web',
         'web_location': 333.1365,
       },
@@ -101,6 +99,29 @@ abstract final class DynamicsHttp {
       return Success(DynUpList.fromJson(res.data['data']));
     } else {
       return Error(res.data['message']);
+    }
+  }
+
+  static Future<LoadingState<FollowData>> followings({
+    int? vmid,
+    int? pn,
+    int ps = 20,
+    String orderType = '', // ''=>最近关注，'attention'=>最常访问
+  }) async {
+    final res = await Request().get(
+      Api.followings,
+      queryParameters: {
+        'vmid': vmid,
+        'pn': pn,
+        'ps': ps,
+        'order': 'desc',
+        'order_type': orderType,
+      },
+    );
+    if (res.data['code'] == 0) {
+      return Success(FollowData.fromJson(res.data['data']));
+    } else {
+      return Error(errorMsg[res.data['code']] ?? res.data['message']);
     }
   }
 
@@ -436,7 +457,7 @@ abstract final class DynamicsHttp {
 
   static Future<LoadingState<TopicCardList?>> topicFeed({
     required Object topicId,
-    required String offset,
+    String? offset,
     required int sortBy,
   }) async {
     final res = await Request().get(
@@ -444,17 +465,42 @@ abstract final class DynamicsHttp {
       queryParameters: {
         'topic_id': topicId,
         'sort_by': sortBy,
-        'offset': offset,
+        'offset': ?offset,
         'page_size': 20,
         'source': 'Web',
         'features': Constants.dynFeatures,
       },
     );
     if (res.data['code'] == 0) {
-      TopicCardList? data = res.data['data']?['topic_card_list'] == null
-          ? null
-          : TopicCardList.fromJson(res.data['data']['topic_card_list']);
-      return Success(data);
+      final list = res.data['data']?['topic_card_list'];
+      if (list == null) {
+        return const Success(null);
+      } else {
+        return Success(TopicCardList.fromJson(list));
+      }
+    } else {
+      return Error(res.data['message']);
+    }
+  }
+
+  static Future<LoadingState<TopicCardList?>> topicFoldLegacy({
+    required Object topicId,
+    required int sortBy,
+  }) async {
+    final res = await Request().get(
+      Api.topicFold,
+      queryParameters: {
+        'topic_id': topicId,
+        'sort_by': sortBy,
+      },
+    );
+    if (res.data['code'] == 0) {
+      final list = res.data['data']?['topic_card_list'];
+      if (list == null) {
+        return const Success(null);
+      } else {
+        return Success(TopicCardList.fromJson(list));
+      }
     } else {
       return Error(res.data['message']);
     }
@@ -824,6 +870,25 @@ abstract final class DynamicsHttp {
     );
     if (res.data['code'] == 0) {
       return Success(BubbleData.fromJson(res.data['data']));
+    } else {
+      return Error(res.data['message']);
+    }
+  }
+
+  static Future<LoadingState<DynReactionData>> dynReaction({
+    required Object id,
+    String? offset,
+  }) async {
+    final res = await Request().get(
+      Api.dynReaction,
+      queryParameters: {
+        'id': id,
+        'offset': ?offset,
+        'web_location': 333.1369,
+      },
+    );
+    if (res.data['code'] == 0) {
+      return Success(DynReactionData.fromJson(res.data['data']));
     } else {
       return Error(res.data['message']);
     }

@@ -6,8 +6,8 @@ import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-mixin GridMixin<T extends StatefulWidget> on State<T> {
-  late final gridDelegate = Grid.videoCardHDelegate(context);
+mixin GridMixin {
+  late final gridDelegate = Grid.videoCardHDelegate();
 
   Widget get gridSkeleton => SliverGrid.builder(
     gridDelegate: gridDelegate,
@@ -19,14 +19,15 @@ mixin GridMixin<T extends StatefulWidget> on State<T> {
 abstract final class Grid {
   static final double smallCardWidth = Pref.smallCardWidth;
 
-  static SliverGridDelegateWithExtentAndRatio videoCardHDelegate(
-    BuildContext context, {
-    double minHeight = 90,
-  }) => SliverGridDelegateWithExtentAndRatio(
+  static SliverGridDelegateWithExtentAndRatio videoCardHDelegate([
+    BuildContext? context,
+  ]) => SliverGridDelegateWithExtentAndRatio(
     mainAxisSpacing: 2,
     maxCrossAxisExtent: Grid.smallCardWidth * 2,
     childAspectRatio: Style.aspectRatio * 2.2,
-    minHeight: MediaQuery.textScalerOf(context).scale(minHeight),
+    minHeight: context == null
+        ? 90
+        : MediaQuery.textScalerOf(context).scale(90),
   );
 }
 
@@ -132,7 +133,8 @@ class SliverGridDelegateWithExtentAndRatio extends SliverGridDelegate {
         oldDelegate.mainAxisSpacing != mainAxisSpacing ||
         oldDelegate.crossAxisSpacing != crossAxisSpacing ||
         oldDelegate.childAspectRatio != childAspectRatio ||
-        oldDelegate.mainAxisExtent != mainAxisExtent;
+        oldDelegate.mainAxisExtent != mainAxisExtent ||
+        oldDelegate.minHeight != minHeight;
     if (flag) layoutCache = null;
     return flag;
   }

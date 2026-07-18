@@ -62,7 +62,7 @@ class _ViewPointsPageState extends State<ViewPointsPage>
               child: Switch(
                 value: videoDetailController.showVP.value,
                 onChanged: (value) {
-                  videoDetailController.showVP.value = value;
+                  videoDetailController.showVP.call(value);
                   if (plPlayerController?.tempPlayerConf != true) {
                     GStorage.setting.put(
                       SettingBoxKey.showViewPointsOverlay,
@@ -126,20 +126,23 @@ class _ViewPointsPageState extends State<ViewPointsPage>
           }
         }
         final isCurr = currentIndex == index;
-        return _buildItem(theme, segment, isCurr);
+        return _buildItem(theme.colorScheme, segment, isCurr);
       },
     );
     if (_isNested) {
       return ExtendedVisibilityDetector(
-        uniqueKey: const Key('viewpoints'),
+        uniqueKey: const ValueKey(ViewPointsPage),
         child: child,
       );
     }
     return child;
   }
 
-  Widget _buildItem(ThemeData theme, ViewPointSegment segment, bool isCurr) {
-    final theme = Theme.of(context);
+  Widget _buildItem(
+    ColorScheme colorScheme,
+    ViewPointSegment segment,
+    bool isCurr,
+  ) {
     return Material(
       type: WindowsVideoTabService.enabled
           ? MaterialType.canvas
@@ -156,17 +159,14 @@ class _ViewPointsPageState extends State<ViewPointsPage>
               }
             : null,
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Style.safeSpace,
-            vertical: 5,
-          ),
+          padding: const .symmetric(horizontal: Style.safeSpace, vertical: 5),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               NetworkImgLayer(
                 src: segment.url,
-                width: 140.8,
-                height: 88,
+                width: 160,
+                height: 100,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -182,14 +182,14 @@ class _ViewPointsPageState extends State<ViewPointsPage>
                       style: isCurr
                           ? TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
+                              color: colorScheme.primary,
                             )
                           : null,
                     ),
                     Text(
                       '${segment.from != null ? DurationUtils.formatDuration(segment.from) : ''} - '
                       '${segment.to != null ? DurationUtils.formatDuration(segment.to) : ''}',
-                      style: TextStyle(color: theme.colorScheme.outline),
+                      style: TextStyle(color: colorScheme.outline),
                     ),
                   ],
                 ),

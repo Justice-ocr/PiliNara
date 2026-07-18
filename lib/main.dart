@@ -117,8 +117,6 @@ void main() async {
     ..put(DownloadCollectionService());
   HttpOverrides.global = _CustomHttpOverrides();
 
-  CacheManager.autoClearCache();
-
   if (PlatformUtils.isMobile) {
     if (Platform.isAndroid) MaxScreenSize.init();
     await Future.wait([

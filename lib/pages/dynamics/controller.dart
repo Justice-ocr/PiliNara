@@ -6,6 +6,7 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/dynamic/dynamics_type.dart';
 import 'package:PiliPlus/models/dynamics/up.dart';
 import 'package:PiliPlus/models_new/follow/data.dart';
+import 'package:PiliPlus/models_new/follow/list.dart';
 import 'package:PiliPlus/pages/common/common_controller.dart';
 import 'package:PiliPlus/pages/dynamics_tab/controller.dart';
 import 'package:PiliPlus/services/account_service.dart';
@@ -106,7 +107,7 @@ class DynamicsController extends GetxController
 
     if (res case Success(:final response)) {
       _upPage++;
-      final list = response.list;
+      final list = response.list ?? const <FollowItemModel>[];
       if (list.isEmpty) {
         _upEnd = true;
       }
@@ -152,7 +153,7 @@ class DynamicsController extends GetxController
       final second = res.elementAtOrNull(1);
       if (second case final Success<FollowData> j) {
         final data1 = j.response;
-        final list1 = data1.list;
+        final list1 = data1.list ?? const <FollowItemModel>[];
 
         _upPage++;
         if (list1.isEmpty || list1.length >= (data1.total ?? 0)) {
@@ -204,9 +205,11 @@ class DynamicsController extends GetxController
   }
 
   @override
-  void animateToTop() {
-    controller?.animateToTop();
-    scrollController.animToTop();
+  Future<void> animateToTop() async {
+    await Future.wait([
+      if (controller case final ctr?) ctr.animateToTop(),
+      scrollController.animToTop(),
+    ]);
   }
 
   @override

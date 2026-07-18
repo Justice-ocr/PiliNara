@@ -86,9 +86,9 @@ class LocalIntroController extends CommonIntroController {
     if (this.index.value != 0) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
         try {
-          if (videoDetailCtr.scrollKey.currentState?.mounted ?? false) {
-            (videoDetailCtr.scrollKey.currentState!.innerController
-                    as ExtendedNestedScrollController)
+          final state = videoDetailCtr.scrollKey.currentState;
+          if (state != null && state.mounted) {
+            (state.innerController as ExtendedNestedScrollController)
                 .nestedPositions
                 .first
                 .localJumpTo(_offset);
@@ -103,7 +103,7 @@ class LocalIntroController extends CommonIntroController {
   }
 
   final index = (-1).obs;
-  double get _offset => index * 100 + 7 - 35;
+  double get _offset => index * 112 + 7 - 35;
   final list = RxList<BiliDownloadEntryInfo>();
 
   @override

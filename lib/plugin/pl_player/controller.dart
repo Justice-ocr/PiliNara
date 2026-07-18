@@ -234,6 +234,9 @@ class PlPlayerController with BlockConfigMixin {
   late final RxBool _enableShowLiveDanmaku = Pref.enableShowLiveDanmaku.obs;
   RxBool get enableShowDanmaku =>
       isLive ? _enableShowLiveDanmaku : _enableShowDanmaku;
+  RxBool get enableShowLiveDanmaku => _enableShowLiveDanmaku;
+  int get positionInMilliseconds => position.inMilliseconds;
+  int get durationInMilliseconds => duration.value.inMilliseconds;
 
   late final bool autoPiP = Pref.autoPiP;
   bool get isPipMode =>

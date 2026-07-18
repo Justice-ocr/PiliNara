@@ -64,6 +64,7 @@ class _HotPageState extends State<HotPage>
       return WindowsNeoHot(controller: controller);
     }
     return refreshIndicator(
+      key: controller.refreshKey,
       onRefresh: controller.onRefresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
