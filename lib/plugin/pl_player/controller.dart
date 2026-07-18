@@ -228,6 +228,7 @@ class PlPlayerController with BlockConfigMixin {
 
   /// 全屏方向
   bool get isVertical => _isVertical;
+  set isVertical(bool value) => _isVertical = value;
 
   /// 弹幕开关
   late final RxBool _enableShowDanmaku = Pref.enableShowDanmaku.obs;

@@ -133,6 +133,7 @@ class LiveRoomController extends GetxController {
   late bool isFullScreen = false;
   bool _recoveringLivePlayback = false;
   late final PlayCallback _livePlaybackRecoveryCallback = _recoverLivePlayback;
+  StreamSubscription<(int, int)>? _sizeSub;
 
   final superChatType = Pref.superChatType;
   late final showSuperChat = superChatType != SuperChatType.disable;
@@ -377,7 +378,26 @@ class LiveRoomController extends GetxController {
     currentQnDesc.value =
         LiveQuality.fromCode(currentQn)?.desc ?? currentQn.toString();
     videoUrl = VideoUtils.getLiveCdnUrl(item, index: liveUrlIndex);
-    return playerInit();
+    return playerInit()?.whenComplete(_startSizeSub);
+  }
+
+  void _onSizeChanged((int, int) value) {
+    final vertical = value.$2 > value.$1;
+    isPortrait.value = vertical;
+    plPlayerController.isVertical = vertical;
+  }
+
+  void _startSizeSub() {
+    if (isPortrait.value) return;
+    _stopSizeSub();
+    _sizeSub = plPlayerController.videoPlayerController?.stream.size.listen(
+      _onSizeChanged,
+    );
+  }
+
+  void _stopSizeSub() {
+    _sizeSub?.cancel();
+    _sizeSub = null;
   }
 
   String? _preferredCastUrl() {
@@ -628,6 +648,7 @@ class LiveRoomController extends GetxController {
 
   @override
   void onClose() {
+    _stopSizeSub();
     if (identical(
       plPlayerController.onLivePlaybackInterrupted,
       _livePlaybackRecoveryCallback,
