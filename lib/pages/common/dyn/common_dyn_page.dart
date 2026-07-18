@@ -9,6 +9,7 @@ import 'package:PiliPlus/grpc/bilibili/main/community/reply/v1.pb.dart'
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/pages/common/dyn/common_dyn_controller.dart';
 import 'package:PiliPlus/pages/common/fab_mixin.dart';
+import 'package:PiliPlus/pages/video/reply/vote/reply_vote_item.dart';
 import 'package:PiliPlus/pages/video/reply/widgets/reply_item_grpc.dart';
 import 'package:PiliPlus/pages/video/reply_reply/view.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
@@ -116,8 +117,20 @@ abstract class CommonDynPageState<T extends StatefulWidget> extends State<T>
       Success(:final response) =>
         response != null && response.isNotEmpty
             ? SliverList.builder(
-                itemCount: response.length + 1,
+                itemCount:
+                    response.length + 1 + (controller.voteCard == null ? 0 : 1),
                 itemBuilder: (context, index) {
+                  final voteCard = controller.voteCard;
+                  if (voteCard != null) {
+                    if (index == 0) {
+                      return buildVoteCard(
+                        context,
+                        theme.colorScheme,
+                        voteCard,
+                      );
+                    }
+                    index--;
+                  }
                   if (index == response.length) {
                     controller.onLoadMore();
                     return Container(

@@ -10,6 +10,8 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/reply/reply_option_type.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/pages/common/dyn/common_dyn_page.dart';
+import 'package:PiliPlus/pages/common/dyn/reaction/controller.dart';
+import 'package:PiliPlus/pages/common/dyn/reaction/view.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/author_panel.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/dynamic_panel.dart';
 import 'package:PiliPlus/pages/dynamics_create/view.dart';
@@ -44,6 +46,7 @@ class DynamicDetailPage extends StatefulWidget {
 class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
   @override
   late final DynamicDetailController controller;
+  late final DynReactController _reactionController;
 
   @override
   void initState() {
@@ -56,7 +59,62 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
       ),
       tag: widget.controllerTag ?? item.idStr.toString(),
     );
+    final stat = item.modules.moduleStat;
+    _reactionController = Get.putOrFind(
+      () => DynReactController(
+        item.idStr.toString(),
+        count: (stat?.like?.count ?? -1) + (stat?.forward?.count ?? -1),
+      ),
+      tag: item.idStr.toString(),
+    );
     super.initState();
+  }
+
+  void _showReactions() {
+    final size = MediaQuery.sizeOf(context);
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      constraints: BoxConstraints(
+        maxWidth: WindowsVideoTabService.enabled ? 620 : double.infinity,
+      ),
+      builder: (context) => SizedBox(
+        height: min(size.height * 0.82, 720),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 10, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Obx(
+                      () => Text(
+                        '赞与转发 ${_reactionController.count.value < 0 ? '' : NumUtils.numFormat(_reactionController.count.value)}',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: '关闭',
+                    onPressed: Navigator.of(context).pop,
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: DynReactPage(
+                id: controller.dynItem.idStr,
+                controller: _reactionController,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -475,6 +533,14 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
                     onPressed: (_) => ShareUtils.shareText(
                       '${HttpString.dynamicShareBaseUrl}/${controller.dynItem.idStr}',
                     ),
+                  ),
+                ),
+                Expanded(
+                  child: textIconButton(
+                    icon: Icons.people_alt_outlined,
+                    text: '赞与转发',
+                    stat: null,
+                    onPressed: (_) => _showReactions(),
                   ),
                 ),
                 Expanded(
