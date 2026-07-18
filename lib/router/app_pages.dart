@@ -55,19 +55,12 @@ import 'package:PiliPlus/pages/popular_series/view.dart';
 import 'package:PiliPlus/pages/search/view.dart';
 import 'package:PiliPlus/pages/search_result/view.dart';
 import 'package:PiliPlus/pages/search_trending/view.dart';
-import 'package:PiliPlus/pages/setting/dynamics_setting.dart';
-import 'package:PiliPlus/pages/setting/extra_setting.dart';
 import 'package:PiliPlus/pages/setting/pages/bar_set.dart';
 import 'package:PiliPlus/pages/setting/pages/color_select.dart';
 import 'package:PiliPlus/pages/setting/pages/display_mode.dart';
 import 'package:PiliPlus/pages/setting/pages/font_size_select.dart';
 import 'package:PiliPlus/pages/setting/pages/logs.dart';
 import 'package:PiliPlus/pages/setting/pages/play_speed_set.dart';
-import 'package:PiliPlus/pages/setting/play_setting.dart';
-import 'package:PiliPlus/pages/setting/privacy_setting.dart';
-import 'package:PiliPlus/pages/setting/recommend_setting.dart';
-import 'package:PiliPlus/pages/setting/style_setting.dart';
-import 'package:PiliPlus/pages/setting/video_setting.dart';
 import 'package:PiliPlus/pages/setting/view.dart';
 import 'package:PiliPlus/pages/settings_search/view.dart';
 import 'package:PiliPlus/pages/space_setting/view.dart';
@@ -84,98 +77,83 @@ import 'package:get/get.dart';
 class Routes {
   static final List<GetPage<dynamic>> getPages = [
     GetPage(name: '/', page: () => const MainApp()),
-    // 棣栭〉(鎺ㄨ崘)
+    // 首页(推荐)
     GetPage(name: '/home', page: () => const HomePage()),
-    // 鐑棬
+    // 热门
     GetPage(name: '/hot', page: () => const HotPage()),
-    // 瑙嗛璇︽儏
+    // 视频详情
     GetPage(name: '/videoV', page: () => const VideoDetailPageV()),
     //
     GetPage(name: '/webview', page: () => const WebviewPage()),
-    // 璁剧疆
+    // 设置
     GetPage(name: '/setting', page: () => const SettingPage()),
     //
     GetPage(name: '/fav', page: () => const FavPage()),
     //
     GetPage(name: '/favDetail', page: () => const FavDetailPage()),
-    // 绋嶅悗鍐嶇湅
+    // 稍后再看
     GetPage(name: '/later', page: () => const LaterPage()),
-    // 鍘嗗彶璁板綍
+    // 历史记录
     GetPage(name: '/history', page: () => const HistoryPage()),
-    // 鎼滅储椤甸潰
+    // 搜索页面
     GetPage(name: '/search', page: () => const SearchPage()),
-    // 鎼滅储缁撴灉
+    // 搜索结果
     GetPage(name: '/searchResult', page: () => const SearchResultPage()),
-    // 鍔ㄦ€?
+    // 动态
     GetPage(name: '/dynamics', page: () => const DynamicsPage()),
-    // 鍔ㄦ€佽鎯?
+    // 动态详情
     GetPage(name: '/dynamicDetail', page: () => const DynamicDetailPage()),
-    // 鍏虫敞
+    // 关注
     GetPage(name: '/follow', page: () => const FollowPage()),
-    // 绮変笣
+    // 粉丝
     GetPage(name: '/fan', page: () => const FansPage()),
-    // 鐩存挱璇︽儏
+    // 直播详情
     GetPage(name: '/liveRoom', page: () => const LiveRoomPage()),
-    // 鐢ㄦ埛涓績
+    // 用户中心
     GetPage(name: '/member', page: () => const MemberPage()),
     GetPage(name: '/memberSearch', page: () => const MemberSearchPage()),
-    // 鎺ㄨ崘娴佽缃?
-    GetPage(name: '/recommendSetting', page: () => const RecommendSetting()),
-    // 鍔ㄦ€佹祦璁剧疆
-    GetPage(name: '/dynamicsSetting', page: () => const DynamicsSetting()),
-    // 闊宠棰戣缃?
-    GetPage(name: '/videoSetting', page: () => const VideoSetting()),
-    // 鎾斁鍣ㄨ缃?
-    GetPage(name: '/playSetting', page: () => const PlaySetting()),
-    // 澶栬璁剧疆
-    GetPage(name: '/styleSetting', page: () => const StyleSetting()),
-    // 闅愮璁剧疆
-    GetPage(name: '/privacySetting', page: () => const PrivacySetting()),
     // 屏蔽与豁免
     GetPage(name: '/blockSetting', page: () => const BlockSetting()),
-    // 鍏跺畠璁剧疆
-    GetPage(name: '/extraSetting', page: () => const ExtraSetting()),
     //
     GetPage(name: '/blackListPage', page: () => const BlackListPage()),
     GetPage(name: '/colorSetting', page: () => const ColorSelectPage()),
     GetPage(name: '/fontSizeSetting', page: () => const FontSizeSelectPage()),
-    // 灞忓箷甯х巼
+    // 屏幕帧率
     GetPage(name: '/displayModeSetting', page: () => const SetDisplayMode()),
-    // 鍏充簬
+    // 关于
     GetPage(name: '/about', page: () => const AboutPage()),
-    //
     GetPage(name: '/articlePage', page: () => const ArticlePage()),
 
-    // 鍘嗗彶璁板綍鎼滅储
+    // 历史记录搜索
     GetPage(name: '/playSpeedSet', page: () => const PlaySpeedPage()),
-    // 鏀惰棌鎼滅储
+    // 收藏搜索
     GetPage(name: '/favSearch', page: () => const FavSearchPage()),
     GetPage(name: '/historySearch', page: () => const HistorySearchPage()),
     GetPage(name: '/laterSearch', page: () => const LaterSearchPage()),
     GetPage(name: '/followSearch', page: () => const FollowSearchPage()),
-    // 娑堟伅椤甸潰
+    // 消息页面
     GetPage(name: '/whisper', page: () => const WhisperPage()),
-    // 绉佷俊璇︽儏
+    // 私信详情
     GetPage(name: '/whisperDetail', page: () => const WhisperDetailPage()),
-    // 鍥炲鎴戠殑
+    // 回复我的
     GetPage(name: '/replyMe', page: () => const ReplyMePage()),
-    // @鎴戠殑
+    // @我的
     GetPage(name: '/atMe', page: () => const AtMePage()),
-    // 鏀跺埌鐨勮禐
+    // 收到的赞
     GetPage(name: '/likeMe', page: () => const LikeMePage()),
-    // 绯荤粺娑堟伅
+    // 系统消息
     GetPage(name: '/sysMsg', page: () => const SysMsgPage()),
-    // 鐧诲綍椤甸潰
+    // 登录页面
     GetPage(name: '/loginPage', page: () => const LoginPage()),
-    // 鐢ㄦ埛鍔ㄦ€?
+    // 用户动态
     GetPage(name: '/memberDynamics', page: () => const MemberDynamicsPage()),
-    // 鏃ュ織
+    // 日志
     GetPage(name: '/logs', page: () => const LogsPage()),
-    // 璁㈤槄
+    // 订阅
     GetPage(name: '/subscription', page: () => const SubPage()),
-    // 璁㈤槄璇︽儏
+    // 订阅详情
     GetPage(name: '/subDetail', page: () => const SubDetailPage()),
-    // 寮瑰箷灞忚斀绠＄悊
+    // 弹幕屏蔽管理
     GetPage(name: '/danmakuBlock', page: () => const DanmakuBlockPage()),
     GetPage(name: '/sponsorBlock', page: () => const SponsorBlockPage()),
     GetPage(name: '/aiSetting', page: () => const AiSettingPage()),

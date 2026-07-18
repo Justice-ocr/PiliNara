@@ -1,5 +1,5 @@
-﻿name: Bug 鍙嶉
-description: 鎻忚堪浣犳墍閬囧埌鐨刡ug
+name: Bug 反馈
+description: 描述你所遇到的bug
 labels: [ "bug" ]
 title: "[Bug] "
 body:
@@ -7,19 +7,19 @@ body:
   - type: checkboxes
     id: checklist
     attributes:
-      label: 妫€鏌ユ竻鍗?
+      label: 检查清单
       options:
-        - label: 鎼滅储浜?[鍘嗗彶 issue](https://github.com/Justice-ocr/PiliNara/issues?q=is%3Aissue) 锛屽苟鏈彂鐜扮浉鍚岄棶棰?
+        - label: 搜索了 [历史 issue](https://github.com/Justice-ocr/PiliNara/issues?q=is%3Aissue) ，并未发现相同问题
           required: true
-        - label: 姝ｅ湪浣跨敤鏈€鏂扮増鏈€?
+        - label: 正在使用最新版本。
           required: true
-        - label: 宸叉帓闄ょ綉缁滈棶棰?
+        - label: 已排除网络问题
           required: true
-        - label: 宸叉帓闄よ处鍙烽棶棰?
+        - label: 已排除账号问题
           required: true
-        - label: 宸叉帓闄よ缃棶棰?
+        - label: 已排除设置问题
           required: true
-        - label: 涓婃父鐗堟湰鏄惁鏈夌浉鍚岀殑闂锛堟湁鐨勮瘽寤鸿鍘籟涓婃父Issue](https://github.com/bggRGjQaUbCoE/PiliPlus/issues)杩涜鍙嶉
+        - label: 上游版本是否有相同的问题（有的话建议去[上游Issue](https://github.com/bggRGjQaUbCoE/PiliPlus/issues)进行反馈
           required: true
   
   - type: checkboxes
@@ -33,42 +33,42 @@ body:
   - type: textarea
     id: version
     attributes:
-      label: 鐗堟湰鍙?
+      label: 版本号
     validations:
       required: true
 
   - type: textarea
     id: steps
     attributes:
-      label: 澶嶇幇姝ラ
-      description: 璇锋彁渚涘鐜拌闂鎵€闇€鐨勫叿浣撴楠ゃ€?
+      label: 复现步骤
+      description: 请提供复现该问题所需的具体步骤。
     validations:
       required: true
 
   - type: textarea
     id: expected
     attributes:
-      label: 棰勬湡琛屼负
-      description: 璇锋弿杩颁綘鏈熸湜鐨勬纭涓烘垨缁撴灉銆?
+      label: 预期行为
+      description: 请描述你期望的正确行为或结果。
     validations:
       required: true
 
   - type: textarea
     id: actual
     attributes:
-      label: 瀹為檯琛屼负
-      description: 璇锋弿杩板疄闄呯殑琛屼负鎴栫粨鏋溿€?
+      label: 实际行为
+      description: 请描述实际的行为或结果。
     validations:
       required: true
 
   - type: textarea
     id: log
     attributes:
-      label: 閿欒鏃ュ織
-      description: 璇锋彁渚涜缃?>鍏充簬->閿欒鏃ュ織涓殑鍐呭锛岀矘璐村湪涓嬫柟浠ｇ爜妗嗕腑銆傚鏋滄病鏈夛紝璇锋彁渚涙偍鐨刟pp鐗堟湰鍙枫€佺郴缁熺増鏈€佽澶囧瀷鍙风瓑鐩稿叧淇℃伅銆?
+      label: 错误日志
+      description: 请提供设置->关于->错误日志中的内容，粘贴在下方代码框中。如果没有，请提供您的app版本号、系统版本、设备型号等相关信息。
 
   - type: textarea
     id: info
     attributes:
-      label: 鐩稿叧淇℃伅
-      description: 璇疯ˉ鍏呮埅鍥俱€佸綍灞忋€丅V鍙风瓑鍏朵粬鏈夊姪浜庤В鍐抽棶棰樼殑淇℃伅銆?
+      label: 相关信息
+      description: 请补充截图、录屏、BV号等其他有助于解决问题的信息。

@@ -3,7 +3,6 @@ import 'package:PiliPlus/models/common/rcmd_mode.dart';
 import 'package:PiliPlus/pages/rcmd/controller.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
 import 'package:PiliPlus/pages/setting/widgets/select_dialog.dart';
-import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/recommend_filter.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -107,7 +106,7 @@ List<SettingsModel> get recommendSettings => [
             event.key == SettingBoxKey.rcmdMode ||
             event.key == SettingBoxKey.removeBlockedRcmd,
       ),
-      builder: (_, __) => Switch(
+      builder: (_, _) => Switch(
         value: Pref.removeBlockedRcmd,
         onChanged: Pref.rcmdMode != RcmdMode.web
             ? (value) {
@@ -128,8 +127,16 @@ List<SettingsModel> get recommendSettings => [
     },
   ),
   SwitchModel(
-    title: '过滤器也应用于相关视频',
-    subtitle: '视频详情页的相关视频也进行过滤¹',
+    title: '已关注UP豁免推荐过滤',
+    subtitle: '推荐中已关注用户发布的内容不会被过滤',
+    leading: const Icon(Icons.favorite_border_outlined),
+    setKey: SettingBoxKey.exemptFilterForFollowed,
+    defaultVal: true,
+    onChanged: (value) => RecommendFilter.exemptFilterForFollowed = value,
+  ),
+  SwitchModel(
+    title: '过滤器也应用于详情页相关视频',
+    subtitle: '其它（如热门视频、搜索等）均不受过滤器影响，无法豁免相关视频中的已关注UP',
     leading: const Icon(Icons.explore_outlined),
     setKey: SettingBoxKey.applyFilterToRelatedVideos,
     defaultVal: true,
@@ -158,6 +165,29 @@ List<SettingsModel> get recommendSettings => [
     setKey: SettingBoxKey.applyFilterToSearch,
     defaultVal: false,
     onChanged: (value) => RecommendFilter.applyFilterToSearch = value,
+  ),
+  WidgetModel(
+    searchTitle: '推荐过滤说明',
+    searchSubtitle: '手动搜索、链接跳转不受过滤器影响',
+    child: Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        return ListTile(
+          dense: true,
+          subtitle: Text(
+            '¹ 由于接口未提供关注信息，无法豁免相关视频中的已关注Up。\n\n'
+            '* 手动搜索、链接跳转等均不受过滤器影响。\n'
+            '* 推荐流屏蔽用户优先于白名单生效。\n'
+            '* 白名单用户与动态流/评论区共享，白名单优先于常规过滤。\n'
+            '* 设定较严苛的条件可导致推荐项数锐减或多次请求，请酌情选择。\n'
+            '* 后续可能会增加更多过滤条件，敬请期待。',
+            style: theme.textTheme.labelSmall!.copyWith(
+              color: theme.colorScheme.outline.withValues(alpha: 0.7),
+            ),
+          ),
+        );
+      },
+    ),
   ),
 ];
 

@@ -91,9 +91,21 @@ List<SettingsModel> get videoSettings => [
       getSubtitle: () {
         final qa = Pref.defaultVideoQaHalfScreen;
         if (qa == null) {
-          return '跟随全屏默认画质（${VideoQuality.fromCode(Pref.defaultVideoQa).desc}）';
+          return '跟随全屏画质'
+              '（WiFi ${VideoQuality.fromCode(Pref.defaultVideoQa).desc}'
+              '｜蜂窝 ${VideoQuality.fromCode(Pref.defaultVideoQaCellular).desc}）';
         }
-        return '当前画质：${VideoQuality.fromCode(qa).desc}';
+        // 半屏实际画质 = min(半屏设置, 当前网络的全屏画质)，被夹持时提示实际值
+        final clamped = [
+          if (Pref.defaultVideoQa < qa)
+            'WiFi 下实际 ${VideoQuality.fromCode(Pref.defaultVideoQa).desc}',
+          if (Pref.defaultVideoQaCellular < qa)
+            '蜂窝下实际 ${VideoQuality.fromCode(Pref.defaultVideoQaCellular).desc}',
+        ];
+        final desc = VideoQuality.fromCode(qa).desc;
+        return clamped.isEmpty
+            ? '当前画质：$desc'
+            : '当前画质：$desc（${clamped.join('｜')}）';
       },
       onTap: _showVideoQaHalfScreenDialog,
     ),
@@ -142,15 +154,8 @@ List<SettingsModel> get videoSettings => [
     title: '首选解码格式',
     leading: const Icon(Icons.movie_creation_outlined),
     getSubtitle: () =>
-        '首选解码格式：${VideoDecodeFormatType.fromCode(Pref.defaultDecode).description}，请根据设备支持情况与需求调整',
-    onTap: _showDecodeDialog,
-  ),
-  NormalModel(
-    title: '次选解码格式',
-    getSubtitle: () =>
-        '非杜比视频次选：${VideoDecodeFormatType.fromCode(Pref.secondDecode).description}，仍无则选择首个提供的解码格式',
-    leading: const Icon(Icons.swap_horizontal_circle_outlined),
-    onTap: _showSecondDecodeDialog,
+        '首选解码格式：${(Pref.preferCodecs.map((i) => i.name).join(","))}，请根据设备支持情况与需求调整',
+    onTap: _showCodecsDialog,
   ),
   if (kDebugMode || Platform.isAndroid)
     NormalModel(
@@ -290,7 +295,7 @@ Future<void> _showVideoQaHalfScreenDialog(
       title: '半屏默认画质',
       value: currentQa ?? -1,
       values: [
-        (-1, '跟随全屏默认画质'),
+        (-1, '跟随全屏画质'),
         ...VideoQuality.values.map((e) => (e.code, e.desc)),
       ],
     ),
@@ -397,42 +402,23 @@ Future<void> _showLiveCellularQaDialog(
   }
 }
 
-Future<void> _showDecodeDialog(
+Future<void> _showCodecsDialog(
   BuildContext context,
   VoidCallback setState,
 ) async {
-  final res = await showDialog<String>(
+  final res = await showDialog<List<VideoDecodeFormatType>>(
     context: context,
-    builder: (context) => SelectDialog<String>(
-      title: '默认解码格式',
-      value: Pref.defaultDecode,
-      values: VideoDecodeFormatType.values
-          .map((e) => (e.codes.first, e.description))
-          .toList(),
+    builder: (context) => OrderedMultiSelectDialog<VideoDecodeFormatType>(
+      title: '首选解码格式',
+      initValues: Pref.preferCodecs,
+      values: {for (final e in VideoDecodeFormatType.values) e: e.name},
     ),
   );
-  if (res != null) {
-    await GStorage.setting.put(SettingBoxKey.defaultDecode, res);
-    setState();
-  }
-}
-
-Future<void> _showSecondDecodeDialog(
-  BuildContext context,
-  VoidCallback setState,
-) async {
-  final res = await showDialog<String>(
-    context: context,
-    builder: (context) => SelectDialog<String>(
-      title: '次选解码格式',
-      value: Pref.secondDecode,
-      values: VideoDecodeFormatType.values
-          .map((e) => (e.codes.first, e.description))
-          .toList(),
-    ),
-  );
-  if (res != null) {
-    await GStorage.setting.put(SettingBoxKey.secondDecode, res);
+  if (res != null && res.isNotEmpty) {
+    await GStorage.setting.put(
+      SettingBoxKey.preferCodecs,
+      res.map((i) => i.name).toList(),
+    );
     setState();
   }
 }
