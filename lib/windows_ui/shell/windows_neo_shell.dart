@@ -270,19 +270,41 @@ class _WindowsNeoTitleBar extends StatelessWidget {
               ),
             Expanded(
               child: DragToMoveArea(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: mode == WindowsNeoLayoutMode.expanded
-                      ? Padding(
-                          padding: const EdgeInsets.only(left: 6),
-                          child: Text(
-                            'Windows 工作区',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: tokens.muted,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: mode == WindowsNeoLayoutMode.expanded
+                          ? Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: Text(
+                                'Windows 工作区',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: tokens.muted,
+                                ),
+                              ),
+                            )
+                          : const SizedBox.expand(),
+                    ),
+                    if (mode == WindowsNeoLayoutMode.expanded)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 18),
+                          child: IgnorePointer(
+                            child: Text(
+                              '39',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: tokens.accent.withValues(alpha: 0.20),
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0,
+                              ),
                             ),
                           ),
-                        )
-                      : const SizedBox.expand(),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -966,8 +988,9 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                     curve: Curves.easeOutCubic,
                     decoration: BoxDecoration(
                       color: active
-                          ? tokens.surface
+                          ? null
                           : tokens.surface.withValues(alpha: 0.34),
+                      gradient: active ? tokens.workspaceTabGradient : null,
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                         color: active

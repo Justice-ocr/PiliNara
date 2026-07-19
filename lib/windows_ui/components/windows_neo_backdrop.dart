@@ -25,6 +25,11 @@ class WindowsNeoBackdrop extends StatelessWidget {
                       ? 0.09
                       : 0.045,
                 ),
+                motifColor: WindowsNeoTokens.iceCyan.withValues(
+                  alpha: Theme.of(context).brightness == Brightness.dark
+                      ? 0.065
+                      : 0.045,
+                ),
               ),
             ),
           ),
@@ -39,10 +44,12 @@ class _WindowsNeoDotGrid extends CustomPainter {
   const _WindowsNeoDotGrid({
     required this.dotColor,
     required this.watermarkColor,
+    required this.motifColor,
   });
 
   final Color dotColor;
   final Color watermarkColor;
+  final Color motifColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -71,6 +78,35 @@ class _WindowsNeoDotGrid extends CustomPainter {
       weight: FontWeight.w700,
       letterSpacing: 7,
     );
+    _paintRhythmLines(canvas, size);
+  }
+
+  void _paintRhythmLines(Canvas canvas, Size size) {
+    final linePaint = Paint()
+      ..color = motifColor
+      ..strokeWidth = 1
+      ..strokeCap = StrokeCap.round;
+    final startX = size.width - 310;
+    final startY = size.height - 82;
+    for (var index = 0; index < 4; index++) {
+      final y = startY + index * 10;
+      canvas.drawLine(
+        Offset(startX, y),
+        Offset(size.width - 28, y - 24),
+        linePaint,
+      );
+    }
+
+    final beatPaint = Paint()
+      ..color = motifColor
+      ..style = PaintingStyle.fill;
+    for (final beat in const [0.18, 0.46, 0.74]) {
+      final x = startX + 282 * beat;
+      final y = startY + 22 - 24 * beat;
+      canvas
+        ..drawCircle(Offset(x, y), 3.2, beatPaint)
+        ..drawLine(Offset(x + 3, y), Offset(x + 3, y - 18), linePaint);
+    }
   }
 
   void _paintWordmark(
@@ -105,5 +141,6 @@ class _WindowsNeoDotGrid extends CustomPainter {
   @override
   bool shouldRepaint(covariant _WindowsNeoDotGrid oldDelegate) =>
       oldDelegate.dotColor != dotColor ||
-      oldDelegate.watermarkColor != watermarkColor;
+      oldDelegate.watermarkColor != watermarkColor ||
+      oldDelegate.motifColor != motifColor;
 }

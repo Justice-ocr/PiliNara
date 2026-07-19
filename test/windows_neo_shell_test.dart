@@ -58,5 +58,19 @@ void main() {
     expect(homeSize.height, WindowsNeoWorkspaceTab.height);
     expect(downloadSize.height, WindowsNeoWorkspaceTab.height);
     expect(homeSize.height, downloadSize.height);
+
+    final activeContainers = tester
+        .widgetList<AnimatedContainer>(
+          find.descendant(
+            of: find.byKey(const Key('download-tab')),
+            matching: find.byType(AnimatedContainer),
+          ),
+        )
+        .where(
+          (container) =>
+              container.decoration is BoxDecoration &&
+              (container.decoration! as BoxDecoration).gradient != null,
+        );
+    expect(activeContainers, hasLength(1));
   });
 }

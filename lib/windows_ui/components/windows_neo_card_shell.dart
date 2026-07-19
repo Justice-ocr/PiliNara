@@ -51,22 +51,47 @@ class _WindowsNeoCardShellState extends State<WindowsNeoCardShell> {
             ),
             boxShadow: highlighted ? tokens.cardHoverShadow : tokens.cardShadow,
           ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: tokens.cardRadius,
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: widget.onTap,
-              onLongPress: widget.onLongPress,
-              onSecondaryTap: widget.onSecondaryTap,
-              onFocusChange: (focused) {
-                if (_focused != focused) setState(() => _focused = focused);
-              },
-              focusColor: tokens.accentSoft,
-              splashColor: tokens.accent.withValues(alpha: 0.06),
-              highlightColor: tokens.accentSoft,
-              child: widget.child,
-            ),
+          child: Stack(
+            fit: StackFit.passthrough,
+            children: [
+              Material(
+                color: Colors.transparent,
+                borderRadius: tokens.cardRadius,
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: widget.onTap,
+                  onLongPress: widget.onLongPress,
+                  onSecondaryTap: widget.onSecondaryTap,
+                  onFocusChange: (focused) {
+                    if (_focused != focused) setState(() => _focused = focused);
+                  },
+                  focusColor: tokens.accentSoft,
+                  splashColor: tokens.accent.withValues(alpha: 0.06),
+                  highlightColor: tokens.accentSoft,
+                  child: widget.child,
+                ),
+              ),
+              Positioned(
+                top: 0,
+                left: tokens.spaceLg,
+                right: tokens.spaceLg,
+                height: highlighted ? 2 : 1,
+                child: IgnorePointer(
+                  child: AnimatedOpacity(
+                    duration: context.windowsNeoDuration(tokens.motionFast),
+                    opacity: highlighted ? 0.82 : 0.42,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: tokens.cardAccentGradient,
+                        borderRadius: const BorderRadius.vertical(
+                          bottom: Radius.circular(2),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
