@@ -69,10 +69,10 @@ class _WindowsNeoHoverHaloState extends State<WindowsNeoHoverHalo> {
                         radius: 1.25,
                         colors: [
                           tokens.accent.withValues(alpha: haloAlpha),
-                          const Color(0xFF70D8E6).withValues(
+                          WindowsNeoTokens.iceCyan.withValues(
                             alpha: haloAlpha * 0.62,
                           ),
-                          const Color(0xFFFFA2BD).withValues(
+                          WindowsNeoTokens.sakuraPink.withValues(
                             alpha: haloAlpha * 0.20,
                           ),
                           Colors.transparent,

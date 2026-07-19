@@ -19,6 +19,10 @@ void main() {
     expect(tokens, isNotNull);
     expect(tokens!.background, isNot(tokens.surface));
     expect(tokens.accent, const Color(0xFF39C5BB));
+    expect(WindowsNeoTokens.iceCyan, const Color(0xFF70D8E6));
+    expect(WindowsNeoTokens.sakuraPink, const Color(0xFFFFA2BD));
+    expect(tokens.workspaceTabGradient.colors, hasLength(2));
+    expect(tokens.cardAccentGradient.colors, hasLength(3));
     final selectionColors = tokens.sidebarSelectionGradient.colors;
     expect(selectionColors, hasLength(3));
     expect(
@@ -63,7 +67,10 @@ void main() {
     final tokens = theme.extension<WindowsNeoTokens>();
 
     expect(tokens, isNotNull);
-    expect(tokens!.background.computeLuminance(), lessThan(0.02));
+    expect(tokens!.background, const Color(0xFF11191D));
+    expect(tokens.surface, const Color(0xFF202A2F));
+    expect(tokens.sidebar, const Color(0xFF172327));
+    expect(tokens.background.computeLuminance(), lessThan(0.02));
     expect(WindowsNeoShell, isA<Type>());
     expect(WindowsNeoPage, isA<Type>());
     expect(WindowsNeoVideoSearchTile, isA<Type>());

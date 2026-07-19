@@ -39,8 +39,10 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     this.motionStagger = const Duration(milliseconds: 28),
   });
 
-  /// Bright cyan-green keeps Neo distinct from the app's legacy green theme.
+  /// Miku's cyan anchor, with ice-blue and sakura accents used sparingly.
   static const Color mikuCyan = Color(0xFF39C5BB);
+  static const Color iceCyan = Color(0xFF70D8E6);
+  static const Color sakuraPink = Color(0xFFFFA2BD);
   static const Color inkDefault = Color(0xFF2C3A43);
 
   factory WindowsNeoTokens.fromTheme(ThemeData theme) {
@@ -48,15 +50,17 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     // Windows Neo has its own visual language. Keep its primary signal stable
     // instead of inheriting a potentially forest-green user seed.
     const accent = mikuCyan;
-    final surface = isDark ? const Color(0xFF10292C) : const Color(0xFFF8FCFB);
+    // Dark mode is graphite with a cool cyan bias, rather than a green-on-green
+    // stack. The player can therefore remain a neutral dark surface.
+    final surface = isDark ? const Color(0xFF202A2F) : const Color(0xFFFAFDFC);
     return WindowsNeoTokens(
-      background: isDark ? const Color(0xFF091B1E) : const Color(0xFFF0FAF9),
-      sidebar: isDark ? const Color(0xFF0D2226) : const Color(0xFFD5EFEC),
+      background: isDark ? const Color(0xFF11191D) : const Color(0xFFEEF6F5),
+      sidebar: isDark ? const Color(0xFF172327) : const Color(0xFFE0F0EE),
       surface: surface,
-      surfaceRaised: isDark ? const Color(0xFF163438) : const Color(0xFFFBFEFD),
-      border: isDark ? const Color(0xFF337078) : const Color(0xFF8FD4CD),
-      muted: isDark ? const Color(0xFF9DBBC1) : const Color(0xFF5A7480),
-      hover: isDark ? const Color(0xFF1A4145) : const Color(0xFFC4EBE7),
+      surfaceRaised: isDark ? const Color(0xFF29363B) : const Color(0xFFFFFFFF),
+      border: isDark ? const Color(0xFF465960) : const Color(0xFFB2D2CF),
+      muted: isDark ? const Color(0xFFA9B9BE) : const Color(0xFF5F747A),
+      hover: isDark ? const Color(0xFF34464D) : const Color(0xFFD8ECE9),
       accent: accent,
       accentSurface: Color.alphaBlend(
         accent.withValues(alpha: isDark ? 0.22 : 0.12),
@@ -108,7 +112,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
 
   List<BoxShadow> get cardShadow => [
     BoxShadow(
-      color: const Color(0xFF0B5E5A).withValues(alpha: 0.065),
+      color: const Color(0xFF18383B).withValues(alpha: 0.065),
       blurRadius: 18,
       offset: const Offset(0, 6),
     ),
@@ -129,6 +133,31 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     ],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
+  );
+
+  LinearGradient get workspaceTabGradient => LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [
+      Color.alphaBlend(accent.withValues(alpha: 0.14), surfaceRaised),
+      Color.alphaBlend(
+        Colors.white.withValues(
+          alpha: surface.computeLuminance() < 0.1 ? 0.07 : 0.50,
+        ),
+        surfaceRaised,
+      ),
+    ],
+  );
+
+  LinearGradient get cardAccentGradient => LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [
+      accent.withValues(alpha: 0.82),
+      iceCyan.withValues(alpha: 0.48),
+      sakuraPink.withValues(alpha: 0.22),
+    ],
+    stops: const [0, 0.62, 1],
   );
 
   LinearGradient get sidebarSelectionGradient => LinearGradient(
@@ -350,7 +379,7 @@ abstract final class WindowsNeoTheme {
         color: tokens.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 10,
-        shadowColor: const Color(0xFF0B5E5A).withValues(alpha: 0.12),
+        shadowColor: const Color(0xFF18383B).withValues(alpha: 0.12),
         shape: RoundedRectangleBorder(
           borderRadius: tokens.cardRadius,
           side: BorderSide(color: tokens.border),
@@ -360,7 +389,7 @@ abstract final class WindowsNeoTheme {
         backgroundColor: tokens.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 16,
-        shadowColor: const Color(0xFF0B5E5A).withValues(alpha: 0.16),
+        shadowColor: const Color(0xFF18383B).withValues(alpha: 0.16),
         barrierColor: Colors.black.withValues(alpha: 0.30),
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
@@ -376,7 +405,7 @@ abstract final class WindowsNeoTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 12,
         modalElevation: 18,
-        shadowColor: const Color(0xFF0B5E5A).withValues(alpha: 0.16),
+        shadowColor: const Color(0xFF18383B).withValues(alpha: 0.16),
         modalBarrierColor: Colors.black.withValues(alpha: 0.30),
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
