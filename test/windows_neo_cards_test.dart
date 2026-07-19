@@ -5,14 +5,17 @@ import 'package:PiliPlus/pages/rank/view.dart';
 import 'package:PiliPlus/pages/rank/zone/view.dart';
 import 'package:PiliPlus/pages/setting/view.dart';
 import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_horizontal_video_tile.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_video_card_v.dart';
 import 'package:PiliPlus/windows_ui/features/home/windows_neo_home.dart';
 import 'package:PiliPlus/windows_ui/features/home/windows_neo_hot.dart';
+import 'package:PiliPlus/windows_ui/features/home/windows_neo_live_card.dart';
 import 'package:PiliPlus/windows_ui/features/home/windows_neo_recommendation_grid.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_ce/hive.dart';
 
 void main() {
@@ -61,6 +64,66 @@ void main() {
 
     expect(find.byType(WindowsNeoVideoCardVSkeleton), findsOneWidget);
     expect(find.byType(WindowsNeoHorizontalTileSkeleton), findsOneWidget);
+  });
+
+  testWidgets('card shell gives keyboard focus the same visual lift', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: WindowsNeoTheme.apply(ThemeData.light()),
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 240,
+              height: 120,
+              child: WindowsNeoCardShell(
+                hovered: false,
+                onTap: () {},
+                child: const Text('Focusable card'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      tester.widget<AnimatedSlide>(find.byType(AnimatedSlide)).offset,
+      Offset.zero,
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+
+    expect(
+      tester.widget<AnimatedSlide>(find.byType(AnimatedSlide)).offset.dy,
+      lessThan(0),
+    );
+  });
+
+  testWidgets('live skeleton fits the Windows 16:9 grid extent', (
+    tester,
+  ) async {
+    const width = 280.0;
+    const metadataHeight = 92.0;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: WindowsNeoTheme.apply(ThemeData.light()),
+        home: const Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: width,
+              height: width / (16 / 9) + metadataHeight,
+              child: WindowsNeoLiveCardSkeleton(),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(WindowsNeoLiveCardSkeleton), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('reserves two complete lines for recommendation titles', (

@@ -38,6 +38,7 @@ void main() {
     expect(tokens.motionFast, const Duration(milliseconds: 140));
     expect(tokens.motionStandard, const Duration(milliseconds: 200));
     expect(tokens.motionPage, const Duration(milliseconds: 240));
+    expect(tokens.motionLoading, const Duration(milliseconds: 1100));
     expect(
       theme.pageTransitionsTheme.builders[TargetPlatform.windows],
       isA<WindowsNeoPageTransitionsBuilder>(),

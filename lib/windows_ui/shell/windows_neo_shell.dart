@@ -516,21 +516,26 @@ class _WindowsNeoNavItem extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            if (selected && showLabel)
+            if (showLabel)
               Positioned(
                 right: 7,
                 top: -4,
                 bottom: -4,
                 child: IgnorePointer(
                   child: Center(
-                    child: Text(
-                      'MIKU',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        fontSize: 25,
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0,
+                    child: AnimatedOpacity(
+                      opacity: selected ? 1 : 0,
+                      duration: context.windowsNeoDuration(tokens.motionFast),
+                      curve: Curves.easeOutCubic,
+                      child: Text(
+                        'MIKU',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          fontSize: 25,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0,
+                        ),
                       ),
                     ),
                   ),
@@ -553,18 +558,24 @@ class _WindowsNeoNavItem extends StatelessWidget {
                         : MainAxisAlignment.center,
                     children: [
                       if (showLabel) const SizedBox(width: 11),
-                      Icon(
-                        icon,
-                        size: 19,
-                        color: foreground,
+                      TweenAnimationBuilder<Color?>(
+                        tween: ColorTween(begin: foreground, end: foreground),
+                        duration: context.windowsNeoDuration(tokens.motionFast),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, color, _) => Icon(
+                          icon,
+                          size: 19,
+                          color: color,
+                        ),
                       ),
                       if (showLabel) ...[
                         const SizedBox(width: 11),
                         Expanded(
-                          child: Text(
-                            label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          child: AnimatedDefaultTextStyle(
+                            duration: context.windowsNeoDuration(
+                              tokens.motionFast,
+                            ),
+                            curve: Curves.easeOutCubic,
                             style:
                                 Theme.of(
                                   context,
@@ -573,7 +584,13 @@ class _WindowsNeoNavItem extends StatelessWidget {
                                   fontWeight: selected
                                       ? FontWeight.w600
                                       : FontWeight.w400,
-                                ),
+                                ) ??
+                                TextStyle(color: foreground),
+                            child: Text(
+                              label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ),
                       ],

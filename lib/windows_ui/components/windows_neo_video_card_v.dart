@@ -1,4 +1,3 @@
-import 'package:PiliPlus/common/skeleton/skeleton.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -200,40 +199,38 @@ class WindowsNeoVideoCardVSkeleton extends StatelessWidget {
     final metaHeight = MediaQuery.textScalerOf(
       context,
     ).scale(tokens.videoCardMetaHeight);
-    return Skeleton(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: tokens.surface,
-          border: Border.all(color: tokens.border),
-          borderRadius: tokens.cardRadius,
-        ),
-        child: Column(
-          children: [
-            Expanded(child: ColoredBox(color: tokens.hover)),
-            SizedBox(
-              height: metaHeight,
-              child: Padding(
-                padding: EdgeInsets.all(tokens.spaceSm + 2),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(height: 12, color: tokens.hover),
-                    SizedBox(height: tokens.spaceSm - 1),
-                    FractionallySizedBox(
-                      widthFactor: 0.72,
-                      child: Container(height: 12, color: tokens.hover),
-                    ),
-                    const Spacer(),
-                    FractionallySizedBox(
-                      widthFactor: 0.48,
-                      child: Container(height: 10, color: tokens.hover),
-                    ),
-                  ],
-                ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        border: Border.all(color: tokens.border),
+        borderRadius: tokens.cardRadius,
+      ),
+      child: Column(
+        children: [
+          Expanded(child: ColoredBox(color: tokens.hover)),
+          SizedBox(
+            height: metaHeight,
+            child: Padding(
+              padding: EdgeInsets.all(tokens.spaceSm + 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(height: 12, color: tokens.hover),
+                  SizedBox(height: tokens.spaceSm - 1),
+                  FractionallySizedBox(
+                    widthFactor: 0.72,
+                    child: Container(height: 12, color: tokens.hover),
+                  ),
+                  const Spacer(),
+                  FractionallySizedBox(
+                    widthFactor: 0.48,
+                    child: Container(height: 10, color: tokens.hover),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

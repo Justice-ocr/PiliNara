@@ -200,6 +200,7 @@ class _LivePageState extends State<LivePage>
   );
 
   Widget _buildBody(ThemeData theme, LoadingState<List?> loadingState) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return switch (loadingState) {
       Loading() => SliverGrid(
         gridDelegate: gridDelegate,

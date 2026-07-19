@@ -8,6 +8,7 @@ import 'package:PiliPlus/pages/hot/controller.dart';
 import 'package:PiliPlus/pages/rank/view.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_horizontal_video_tile.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -66,10 +67,12 @@ class WindowsNeoHot extends StatelessWidget {
       crossAxisSpacing: tokens.gridGap,
     );
     return switch (loadingState) {
-      Loading() => SliverGrid.builder(
-        gridDelegate: delegate,
-        itemCount: 10,
-        itemBuilder: (_, _) => const WindowsNeoHorizontalTileSkeleton(),
+      Loading() => WindowsNeoSliverLoadingPulse(
+        sliver: SliverGrid.builder(
+          gridDelegate: delegate,
+          itemCount: 10,
+          itemBuilder: (_, _) => const WindowsNeoHorizontalTileSkeleton(),
+        ),
       ),
       Success(:final response) =>
         response != null && response.isNotEmpty
@@ -78,11 +81,15 @@ class WindowsNeoHot extends StatelessWidget {
                 itemCount: response.length,
                 itemBuilder: (context, index) {
                   if (index == response.length - 1) controller.onLoadMore();
-                  return WindowsNeoHorizontalVideoTile(
-                    videoItem: response[index],
-                    onRemove: () => controller.loadingState
-                      ..value.data!.removeAt(index)
-                      ..refresh(),
+                  return WindowsNeoStaggeredReveal(
+                    order: index,
+                    enabled: index < 8,
+                    child: WindowsNeoHorizontalVideoTile(
+                      videoItem: response[index],
+                      onRemove: () => controller.loadingState
+                        ..value.data!.removeAt(index)
+                        ..refresh(),
+                    ),
                   );
                 },
               )
