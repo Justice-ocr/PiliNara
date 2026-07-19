@@ -5,6 +5,7 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_hover_halo.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -119,31 +120,56 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> with WindowListener {
                             ),
                           ],
                         ),
-                        if (mode == WindowsNeoLayoutMode.narrow &&
-                            _navigationOpen) ...[
+                        if (mode == WindowsNeoLayoutMode.narrow)
                           Positioned.fill(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: _closeNavigation,
-                              child: ColoredBox(
-                                color: Colors.black.withValues(alpha: 0.34),
+                            child: IgnorePointer(
+                              ignoring: !_navigationOpen,
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: AnimatedOpacity(
+                                      opacity: _navigationOpen ? 1 : 0,
+                                      duration: context.windowsNeoDuration(
+                                        context.windowsNeo.motionStandard,
+                                      ),
+                                      curve: Curves.easeOutCubic,
+                                      child: GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: _closeNavigation,
+                                        child: ColoredBox(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.34,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: AnimatedSlide(
+                                      offset: _navigationOpen
+                                          ? Offset.zero
+                                          : const Offset(-1.04, 0),
+                                      duration: context.windowsNeoDuration(
+                                        context.windowsNeo.motionPage,
+                                      ),
+                                      curve: Curves.easeOutCubic,
+                                      child: SizedBox(
+                                        width: 240,
+                                        child: _WindowsNeoSidebar(
+                                          mode: WindowsNeoLayoutMode.expanded,
+                                          mainController: widget.mainController,
+                                          activeTab: widget.activeTab,
+                                          onNavigate: _closeNavigation,
+                                          onSearch: _openSearch,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: SizedBox(
-                              width: 240,
-                              child: _WindowsNeoSidebar(
-                                mode: WindowsNeoLayoutMode.expanded,
-                                mainController: widget.mainController,
-                                activeTab: widget.activeTab,
-                                onNavigate: _closeNavigation,
-                                onSearch: _openSearch,
-                              ),
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -479,8 +505,9 @@ class _WindowsNeoNavItem extends StatelessWidget {
     final radius = BorderRadius.circular(tokens.radiusSm);
     final item = WindowsNeoHoverHalo(
       borderRadius: radius,
+      enabled: !selected,
       child: AnimatedContainer(
-        duration: tokens.motionFast,
+        duration: context.windowsNeoDuration(tokens.motionFast),
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           color: selected ? null : Colors.transparent,
@@ -561,7 +588,7 @@ class _WindowsNeoNavItem extends StatelessWidget {
                 top: 10,
                 bottom: 10,
                 child: AnimatedContainer(
-                  duration: tokens.motionFast,
+                  duration: context.windowsNeoDuration(tokens.motionFast),
                   curve: Curves.easeOutCubic,
                   width: selected ? 3 : 0,
                   decoration: BoxDecoration(
@@ -825,11 +852,12 @@ class _WindowsNeoTab extends StatelessWidget {
             constraints: const BoxConstraints(minWidth: 116, maxWidth: 240),
             child: WindowsNeoHoverHalo(
               borderRadius: BorderRadius.circular(6),
+              enabled: !active,
               child: Stack(
                 fit: StackFit.passthrough,
                 children: [
                   AnimatedContainer(
-                    duration: tokens.motionFast,
+                    duration: context.windowsNeoDuration(tokens.motionFast),
                     curve: Curves.easeOutCubic,
                     decoration: BoxDecoration(
                       color: active
@@ -903,7 +931,7 @@ class _WindowsNeoTab extends StatelessWidget {
                   Align(
                     alignment: Alignment.bottomCenter,
                     child: AnimatedContainer(
-                      duration: tokens.motionFast,
+                      duration: context.windowsNeoDuration(tokens.motionFast),
                       curve: Curves.easeOutCubic,
                       width: active ? 34 : 0,
                       height: 2,

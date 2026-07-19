@@ -129,16 +129,20 @@ class DynamicPanel extends StatelessWidget {
       return child;
     }
     if (WindowsVideoTabService.enabled && !isDetail) {
+      final tokens = context.windowsNeo;
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: context.windowsNeo.surface,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: context.windowsNeo.border),
+            color: tokens.surface.withValues(alpha: 0.97),
+            borderRadius: tokens.cardRadius,
+            border: Border.all(
+              color: tokens.border.withValues(alpha: 0.42),
+            ),
+            boxShadow: tokens.cardShadow,
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: tokens.cardRadius,
             child: child,
           ),
         ),

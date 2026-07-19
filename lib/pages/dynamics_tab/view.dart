@@ -13,6 +13,7 @@ import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
 import 'package:PiliPlus/windows_ui/features/dynamics/windows_neo_dynamics_layout.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:waterfall_flow/waterfall_flow.dart'
@@ -168,7 +169,7 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
       controller.onLoadMore();
     }
     final item = response[index];
-    return DynamicPanel(
+    final panel = DynamicPanel(
       item: item,
       onRemove: (idStr) => controller.onRemove(index, idStr),
       onBlock: () => controller.onBlock(index),
@@ -177,6 +178,12 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
         response[index] = newItem;
         controller.loadingState.refresh();
       },
+    );
+    if (!WindowsVideoTabService.enabled) return panel;
+    return WindowsNeoStaggeredReveal(
+      order: index,
+      enabled: index < 6,
+      child: panel,
     );
   }
 }

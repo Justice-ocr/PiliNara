@@ -10,7 +10,8 @@ void main() {
   });
 
   test('centers wide dynamics content without losing minimum padding', () {
-    expect(WindowsNeoDynamicsLayout.horizontalPadding(1000), 18);
+    expect(WindowsNeoDynamicsLayout.horizontalPadding(1000), 24);
     expect(WindowsNeoDynamicsLayout.horizontalPadding(1600), 110);
+    expect(WindowsNeoDynamicsLayout.gridSpacing, 18);
   });
 }

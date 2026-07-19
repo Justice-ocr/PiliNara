@@ -33,6 +33,11 @@ void main() {
       tokens.background.computeLuminance(),
       lessThan(tokens.surface.computeLuminance()),
     );
+    expect(tokens.pagePadding, 24);
+    expect(tokens.gridGap, 16);
+    expect(tokens.motionFast, const Duration(milliseconds: 140));
+    expect(tokens.motionStandard, const Duration(milliseconds: 200));
+    expect(tokens.motionPage, const Duration(milliseconds: 240));
     expect(theme.visualDensity, VisualDensity.compact);
   });
 

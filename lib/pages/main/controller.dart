@@ -18,6 +18,7 @@ import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/update.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_debounce/easy_throttle.dart';
@@ -291,10 +292,12 @@ class MainController extends GetxController
     final currentNav = navigationBars[value];
     if (value != selectedIndex.value) {
       selectedIndex.value = value;
-      if (mainTabBarView) {
-        controller.animateTo(value);
-      } else {
-        controller.jumpToPage(value);
+      if (!WindowsVideoTabService.enabled) {
+        if (mainTabBarView) {
+          controller.animateTo(value);
+        } else {
+          controller.jumpToPage(value);
+        }
       }
       if (currentNav == NavigationBarType.home) {
         checkDefaultSearch();

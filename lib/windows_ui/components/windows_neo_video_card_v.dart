@@ -13,6 +13,7 @@ import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 
 /// Canonical vertical video card for Windows Neo grids (recommend/search-like).
@@ -67,7 +68,7 @@ class _WindowsNeoVideoCardVState extends State<WindowsNeoVideoCardV> {
                   LayoutBuilder(
                     builder: (context, constraints) => AnimatedScale(
                       scale: _hovered ? 1.02 : 1,
-                      duration: tokens.motionFast,
+                      duration: context.windowsNeoDuration(tokens.motionFast),
                       curve: Curves.easeOut,
                       child: NetworkImgLayer(
                         src: item.cover,
@@ -139,7 +140,9 @@ class _WindowsNeoVideoCardVState extends State<WindowsNeoVideoCardV> {
                             dimension: 28,
                             child: AnimatedOpacity(
                               opacity: _hovered ? 1 : 0.72,
-                              duration: tokens.motionFast,
+                              duration: context.windowsNeoDuration(
+                                tokens.motionFast,
+                              ),
                               curve: Curves.easeOut,
                               child: VideoPopupMenu(
                                 iconSize: 17,

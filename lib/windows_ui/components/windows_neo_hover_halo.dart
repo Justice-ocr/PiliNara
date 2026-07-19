@@ -1,4 +1,5 @@
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 
 /// Adds a local Miku-cyan hover halo without changing a control's layout.
@@ -7,10 +8,12 @@ class WindowsNeoHoverHalo extends StatefulWidget {
     super.key,
     required this.child,
     required this.borderRadius,
+    this.enabled = true,
   });
 
   final Widget child;
   final BorderRadius borderRadius;
+  final bool enabled;
 
   @override
   State<WindowsNeoHoverHalo> createState() => _WindowsNeoHoverHaloState();
@@ -25,11 +28,13 @@ class _WindowsNeoHoverHaloState extends State<WindowsNeoHoverHalo> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final haloAlpha = isDark ? 0.17 : 0.11;
 
+    if (!widget.enabled) return widget.child;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: AnimatedContainer(
-        duration: tokens.motionFast,
+        duration: context.windowsNeoDuration(tokens.motionFast),
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           borderRadius: widget.borderRadius,
@@ -50,7 +55,7 @@ class _WindowsNeoHoverHaloState extends State<WindowsNeoHoverHalo> {
             Positioned.fill(
               child: IgnorePointer(
                 child: AnimatedOpacity(
-                  duration: tokens.motionFast,
+                  duration: context.windowsNeoDuration(tokens.motionFast),
                   curve: Curves.easeOutCubic,
                   opacity: _hovered ? 1 : 0,
                   child: DecoratedBox(

@@ -24,6 +24,8 @@ import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:get/get.dart';
@@ -63,7 +65,8 @@ class _MainAppState extends PopScopeState<MainApp>
 
   @override
   void initState() {
-    _mainController = widget.controller ??
+    _mainController =
+        widget.controller ??
         (Get.isRegistered<MainController>()
             ? Get.find<MainController>()
             : Get.put(MainController()));
@@ -456,7 +459,25 @@ class _MainAppState extends PopScopeState<MainApp>
   @override
   Widget build(BuildContext context) {
     Widget child;
-    if (_mainController.mainTabBarView) {
+    if (WindowsVideoTabService.enabled) {
+      child = Obx(() {
+        final activeIndex = _mainController.selectedIndex.value;
+        return IndexedStack(
+          index: activeIndex,
+          children: [
+            for (
+              var index = 0;
+              index < _mainController.navigationBars.length;
+              index++
+            )
+              WindowsNeoPageStage(
+                active: index == activeIndex,
+                child: _mainController.navigationBars[index].page,
+              ),
+          ],
+        );
+      });
+    } else if (_mainController.mainTabBarView) {
       child = CustomTabBarView(
         scrollDirection: _mainController.useBottomNav ? .horizontal : .vertical,
         physics: const NeverScrollableScrollPhysics(),

@@ -14,6 +14,7 @@ import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -78,7 +79,9 @@ class _WindowsNeoHorizontalVideoTileState
                     children: [
                       AnimatedScale(
                         scale: _hovered ? 1.02 : 1,
-                        duration: tokens.motionFast,
+                        duration: context.windowsNeoDuration(
+                          tokens.motionFast,
+                        ),
                         curve: Curves.easeOut,
                         child: NetworkImgLayer(
                           src: item.cover,
@@ -168,7 +171,9 @@ class _WindowsNeoHorizontalVideoTileState
                           dimension: 28,
                           child: AnimatedOpacity(
                             opacity: _hovered ? 1 : 0.7,
-                            duration: tokens.motionFast,
+                            duration: context.windowsNeoDuration(
+                              tokens.motionFast,
+                            ),
                             curve: Curves.easeOut,
                             child: VideoPopupMenu(
                               iconSize: 17,
