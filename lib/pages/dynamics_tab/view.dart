@@ -133,5 +133,11 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
         controller.loadingState.refresh();
       },
     );
+    if (!WindowsVideoTabService.enabled) return panel;
+    return WindowsNeoStaggeredReveal(
+      order: index,
+      enabled: index < 6,
+      child: panel,
+    );
   }
 }

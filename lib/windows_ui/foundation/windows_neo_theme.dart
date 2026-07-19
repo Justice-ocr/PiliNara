@@ -26,13 +26,16 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     this.spaceMd = 12,
     this.spaceLg = 16,
     this.spaceXl = 20,
-    this.pagePadding = 20,
+    this.pagePadding = 24,
     this.pageHeaderHeight = 54,
     this.sectionTabHeight = 36,
     this.videoCardMetaHeight = 104,
     this.horizontalCardHeight = 124,
-    this.gridGap = 14,
+    this.gridGap = 16,
     this.motionFast = const Duration(milliseconds: 140),
+    this.motionStandard = const Duration(milliseconds: 200),
+    this.motionPage = const Duration(milliseconds: 240),
+    this.motionStagger = const Duration(milliseconds: 28),
   });
 
   /// Bright cyan-green keeps Neo distinct from the app's legacy green theme.
@@ -93,6 +96,9 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
   final double horizontalCardHeight;
   final double gridGap;
   final Duration motionFast;
+  final Duration motionStandard;
+  final Duration motionPage;
+  final Duration motionStagger;
 
   BorderRadius get cardRadius => BorderRadius.circular(radiusMd);
   BorderRadius get chipRadius => BorderRadius.circular(radiusSm);
@@ -199,6 +205,9 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     double? horizontalCardHeight,
     double? gridGap,
     Duration? motionFast,
+    Duration? motionStandard,
+    Duration? motionPage,
+    Duration? motionStagger,
   }) => WindowsNeoTokens(
     background: background ?? this.background,
     sidebar: sidebar ?? this.sidebar,
@@ -226,6 +235,9 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     horizontalCardHeight: horizontalCardHeight ?? this.horizontalCardHeight,
     gridGap: gridGap ?? this.gridGap,
     motionFast: motionFast ?? this.motionFast,
+    motionStandard: motionStandard ?? this.motionStandard,
+    motionPage: motionPage ?? this.motionPage,
+    motionStagger: motionStagger ?? this.motionStagger,
   );
 
   @override
@@ -274,6 +286,9 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
       )!,
       gridGap: lerpDouble(gridGap, other.gridGap, t)!,
       motionFast: t < 0.5 ? motionFast : other.motionFast,
+      motionStandard: t < 0.5 ? motionStandard : other.motionStandard,
+      motionPage: t < 0.5 ? motionPage : other.motionPage,
+      motionStagger: t < 0.5 ? motionStagger : other.motionStagger,
     );
   }
 }

@@ -63,7 +63,8 @@ class _MainAppState extends PopScopeState<MainApp>
 
   @override
   void initState() {
-    _mainController = widget.controller ??
+    _mainController =
+        widget.controller ??
         (Get.isRegistered<MainController>()
             ? Get.find<MainController>()
             : Get.put(MainController()));

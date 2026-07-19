@@ -6,6 +6,7 @@ import 'package:PiliPlus/pages/rcmd/controller.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_video_card_v.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -91,18 +92,22 @@ class WindowsNeoRecommendationGrid extends StatelessWidget {
                   final actualIndex = markerIndex != null && index > markerIndex
                       ? index - 1
                       : index;
-                  return WindowsNeoVideoCardV(
-                    videoItem: response[actualIndex],
-                    onRemove: () {
-                      if (controller.lastRefreshAt != null &&
-                          actualIndex < controller.lastRefreshAt!) {
-                        controller.lastRefreshAt =
-                            controller.lastRefreshAt! - 1;
-                      }
-                      controller.loadingState
-                        ..value.data!.removeAt(actualIndex)
-                        ..refresh();
-                    },
+                  return WindowsNeoStaggeredReveal(
+                    order: index,
+                    enabled: index < 10,
+                    child: WindowsNeoVideoCardV(
+                      videoItem: response[actualIndex],
+                      onRemove: () {
+                        if (controller.lastRefreshAt != null &&
+                            actualIndex < controller.lastRefreshAt!) {
+                          controller.lastRefreshAt =
+                              controller.lastRefreshAt! - 1;
+                        }
+                        controller.loadingState
+                          ..value.data!.removeAt(actualIndex)
+                          ..refresh();
+                      },
+                    ),
                   );
                 },
               )

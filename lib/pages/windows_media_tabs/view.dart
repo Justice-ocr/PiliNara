@@ -12,6 +12,7 @@ import 'package:PiliPlus/pages/video/view.dart';
 import 'package:PiliPlus/pages/whisper/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/windows_ui/shell/windows_neo_shell.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -80,7 +81,8 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
             LogicalKeyboardKey.tab,
             control: true,
             shift: true,
-          ): () => WindowsVideoTabService.selectRelative(-1),
+          ): () =>
+              WindowsVideoTabService.selectRelative(-1),
           const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true):
               WindowsVideoTabService.popActiveTab,
         },
@@ -96,8 +98,8 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
               index: activeIndex,
               children: [
                 for (var index = 0; index < tabs.length; index++)
-                  TickerMode(
-                    enabled: index == activeIndex,
+                  WindowsNeoPageStage(
+                    active: index == activeIndex,
                     child: ExcludeFocus(
                       excluding: index != activeIndex,
                       child: RepaintBoundary(
@@ -134,13 +136,11 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
           '/member' => MemberPage(
             mid: int.tryParse(data?.parameters['mid'] ?? ''),
             fromViewAid: data?.parameters['from_view_aid'],
-            controllerTag:
-                '${item.id}:member:${data?.parameters['mid'] ?? ''}',
+            controllerTag: '${item.id}:member:${data?.parameters['mid'] ?? ''}',
           ),
           '/dynamicDetail' => DynamicDetailPage(
             arguments: data?.arguments as Map?,
-            controllerTag:
-                '${item.id}:dynamic:${_dynamicId(data?.arguments)}',
+            controllerTag: '${item.id}:dynamic:${_dynamicId(data?.arguments)}',
           ),
           '/articlePage' => ArticlePage(
             parameters: data?.parameters,
@@ -193,7 +193,9 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
       '/download' => const DownloadPage(),
       '/whisper' => const WhisperPage(),
       '/setting' => const SettingPage(),
-      final route => _UnknownWindowsTabRoute(routeName: route?.toString() ?? ''),
+      final route => _UnknownWindowsTabRoute(
+        routeName: route?.toString() ?? '',
+      ),
     },
   };
 
