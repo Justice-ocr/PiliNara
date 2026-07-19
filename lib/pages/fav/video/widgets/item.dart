@@ -4,6 +4,7 @@ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models_new/fav/fav_folder/list.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_hover_halo.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -24,7 +25,7 @@ class FavVideoItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWindowsNeo = WindowsVideoTabService.enabled;
-    return Material(
+    final card = Material(
       type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
       color: isWindowsNeo ? context.windowsNeo.surface : null,
       elevation: 0,
@@ -72,6 +73,12 @@ class FavVideoItem extends StatelessWidget {
         ),
       ),
     );
+    return isWindowsNeo
+        ? WindowsNeoHoverHalo(
+            borderRadius: context.windowsNeo.cardRadius,
+            child: card,
+          )
+        : card;
   }
 
   Widget content(BuildContext context) {

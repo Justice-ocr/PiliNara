@@ -6,6 +6,7 @@ import 'package:PiliPlus/common/widgets/select_mask.dart';
 import 'package:PiliPlus/models_new/download/bili_download_entry_info.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_hover_halo.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
@@ -33,7 +34,7 @@ class DownloadFolderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWindowsNeo = WindowsVideoTabService.enabled;
-    return Material(
+    final card = Material(
       type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
       color: isWindowsNeo ? context.windowsNeo.surface : null,
       elevation: 0,
@@ -110,6 +111,12 @@ class DownloadFolderCard extends StatelessWidget {
         ),
       ),
     );
+    return isWindowsNeo
+        ? WindowsNeoHoverHalo(
+            borderRadius: context.windowsNeo.cardRadius,
+            child: card,
+          )
+        : card;
   }
 
   Widget _buildCover(BuildContext context, double width, double height) {

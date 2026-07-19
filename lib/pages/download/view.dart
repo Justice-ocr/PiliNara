@@ -23,6 +23,7 @@ import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart'
@@ -353,6 +354,26 @@ class _DownloadPageState extends State<DownloadPage>
       final enableMultiSelect = isVideoTab
           ? _controller.enableMultiSelect.value
           : _folderSelectController.enableMultiSelect.value;
+      if (WindowsVideoTabService.enabled && !enableMultiSelect) {
+        return WindowsNeoPage(
+          title: '\u79bb\u7ebf\u7f13\u5b58',
+          subtitle:
+              '\u7ba1\u7406\u5df2\u4e0b\u8f7d\u7684\u89c6\u9891\u4e0e\u6587\u4ef6\u5939',
+          leading: Icon(
+            Icons.download_outlined,
+            color: context.windowsNeo.accent,
+          ),
+          actions: _windowsHeaderActions(isVideoTab),
+          commandBar: _buildDownloadTabs(),
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildAllVideosTab(),
+              _buildFoldersTab(),
+            ],
+          ),
+        );
+      }
       return popScope(
         canPop: !enableMultiSelect,
         onPopInvokedWithResult: (didPop, result) {
@@ -516,6 +537,63 @@ class _DownloadPageState extends State<DownloadPage>
         ),
       );
     });
+  }
+
+  List<Widget> _windowsHeaderActions(bool isVideoTab) {
+    if (isVideoTab) {
+      return [
+        Obx(() {
+          final target = _controller.continueTarget.value;
+          if (target == null) return const SizedBox.shrink();
+          return IconButton(
+            tooltip: '\u7ee7\u7eed\u64ad\u653e ${target.entry.showTitle}',
+            onPressed: () async {
+              await openDownloadEntry(
+                entry: target.entry,
+                playContext: target.playContext,
+              );
+              if (mounted) await _controller.refreshContinueTarget();
+            },
+            icon: const Icon(Icons.play_circle_outline),
+          );
+        }),
+        IconButton(
+          tooltip: '\u641c\u7d22\u4e0b\u8f7d',
+          onPressed: () async {
+            await _downloadService.waitForInitialization;
+            if (!mounted) return;
+            await Get.to(DownloadSearchPage(progress: _progress));
+            if (mounted) await _controller.refreshContinueTarget();
+          },
+          icon: const Icon(Icons.search_outlined),
+        ),
+        IconButton(
+          tooltip: '\u591a\u9009',
+          onPressed: () => _controller.enableMultiSelect.value = true,
+          icon: const Icon(Icons.checklist_outlined),
+        ),
+        _buildAllSortBtn(),
+        const SizedBox(width: 6),
+      ];
+    }
+    return [
+      IconButton(
+        tooltip: '\u65b0\u5efa\u6587\u4ef6\u5939',
+        onPressed: _createFolder,
+        icon: const Icon(Icons.create_new_folder_outlined),
+      ),
+      IconButton(
+        tooltip: '\u591a\u9009',
+        onPressed: () => _folderSelectController.enableMultiSelect.value = true,
+        icon: const Icon(Icons.checklist_outlined),
+      ),
+      IconButton(
+        tooltip: '\u6587\u4ef6\u5939\u6392\u5e8f',
+        onPressed: _openFolderManagePage,
+        icon: const Icon(Icons.sort_outlined),
+      ),
+      const SizedBox(width: 6),
+    ];
   }
 
   PreferredSizeWidget _buildDownloadTabs() {

@@ -6,6 +6,7 @@ import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_hover_halo.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -49,7 +50,7 @@ class FollowItem extends StatelessWidget {
         ),
       );
     }
-    return Material(
+    final card = Material(
       type: WindowsVideoTabService.enabled ? .canvas : .transparency,
       color: WindowsVideoTabService.enabled ? context.windowsNeo.surface : null,
       child: InkWell(
@@ -120,5 +121,11 @@ class FollowItem extends StatelessWidget {
         ),
       ),
     );
+    return WindowsVideoTabService.enabled
+        ? WindowsNeoHoverHalo(
+            borderRadius: context.windowsNeo.cardRadius,
+            child: card,
+          )
+        : card;
   }
 }

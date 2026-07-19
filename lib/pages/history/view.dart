@@ -16,6 +16,7 @@ import 'package:PiliPlus/pages/history/widgets/item.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart' hide TabBarView;
 import 'package:get/get.dart';
@@ -99,51 +100,135 @@ class _HistoryPageState extends State<HistoryPage>
               currCtr().handleSelect();
             }
           },
-          child: Scaffold(
-            backgroundColor: isWindowsNeo
-                ? context.windowsNeo.background
-                : null,
-            resizeToAvoidBottomInset: false,
-            appBar: MultiSelectAppBarWidget(
-              visible: enableMultiSelect,
-              ctr: currCtr(),
-              child: _buildAppBar,
-            ),
-            body: Padding(
-              padding: EdgeInsets.only(
-                left: padding.left,
-                right: padding.right,
-              ),
-              child: Obx(() {
-                final tabs = _historyController.tabs;
-                if (tabs.isEmpty) {
-                  return child;
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildTabs(tabs, enableMultiSelect, isWindowsNeo),
-                    Expanded(
-                      child: TabBarView<CustomHorizontalDragGestureRecognizer>(
-                        physics: enableMultiSelect
-                            ? const NeverScrollableScrollPhysics()
-                            : clampingScrollPhysics,
-                        controller: _historyController.tabController,
-                        horizontalDragGestureRecognizer:
-                            CustomHorizontalDragGestureRecognizer.new,
-                        children: [
-                          KeepAliveWrapper(child: child),
-                          ...tabs.map((item) => HistoryPage(type: item.type)),
-                        ],
-                      ),
+          child: isWindowsNeo && !enableMultiSelect
+              ? _buildWindowsPage(child, _historyController.tabs)
+              : Scaffold(
+                  backgroundColor: isWindowsNeo
+                      ? context.windowsNeo.background
+                      : null,
+                  resizeToAvoidBottomInset: false,
+                  appBar: MultiSelectAppBarWidget(
+                    visible: enableMultiSelect,
+                    ctr: currCtr(),
+                    child: _buildAppBar,
+                  ),
+                  body: Padding(
+                    padding: EdgeInsets.only(
+                      left: padding.left,
+                      right: padding.right,
                     ),
-                  ],
-                );
-              }),
-            ),
-          ),
+                    child: Obx(() {
+                      final tabs = _historyController.tabs;
+                      if (tabs.isEmpty) {
+                        return child;
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildTabs(tabs, enableMultiSelect, isWindowsNeo),
+                          Expanded(
+                            child:
+                                TabBarView<
+                                  CustomHorizontalDragGestureRecognizer
+                                >(
+                                  physics: enableMultiSelect
+                                      ? const NeverScrollableScrollPhysics()
+                                      : clampingScrollPhysics,
+                                  controller: _historyController.tabController,
+                                  horizontalDragGestureRecognizer:
+                                      CustomHorizontalDragGestureRecognizer.new,
+                                  children: [
+                                    KeepAliveWrapper(child: child),
+                                    ...tabs.map(
+                                      (item) => HistoryPage(type: item.type),
+                                    ),
+                                  ],
+                                ),
+                          ),
+                        ],
+                      );
+                    }),
+                  ),
+                ),
         );
       },
+    );
+  }
+
+  Widget _buildWindowsPage(Widget child, List<HistoryTab> tabs) {
+    final tabView = tabs.isEmpty
+        ? child
+        : TabBarView<CustomHorizontalDragGestureRecognizer>(
+            physics: clampingScrollPhysics,
+            controller: _historyController.tabController,
+            horizontalDragGestureRecognizer:
+                CustomHorizontalDragGestureRecognizer.new,
+            children: [
+              KeepAliveWrapper(child: child),
+              ...tabs.map((item) => HistoryPage(type: item.type)),
+            ],
+          );
+    return WindowsNeoPage(
+      title: '\u89c2\u770b\u8bb0\u5f55',
+      subtitle:
+          '\u7ee7\u7eed\u4f60\u7684\u89c6\u9891\u4e0e\u4e13\u680f\u6d4f\u89c8',
+      leading: Icon(Icons.history_outlined, color: context.windowsNeo.accent),
+      actions: [
+        IconButton(
+          tooltip: '\u641c\u7d22\u8bb0\u5f55',
+          onPressed: () => Get.toNamed('/historySearch'),
+          icon: const Icon(Icons.search_outlined),
+        ),
+        StaticPopupMenuButton(
+          icon: const Icon(Icons.more_horiz),
+          tooltip: '\u66f4\u591a\u64cd\u4f5c',
+          itemBuilder: (_) => [
+            PopupMenuItem(
+              onTap: () => _historyController.baseCtr.onPauseHistory(context),
+              child: Obx(
+                () => Text(
+                  !_historyController.baseCtr.pauseStatus.value
+                      ? '\u6682\u505c\u89c2\u770b\u8bb0\u5f55'
+                      : '\u6062\u590d\u89c2\u770b\u8bb0\u5f55',
+                ),
+              ),
+            ),
+            PopupMenuItem(
+              onTap: () => _historyController.baseCtr.onClearHistory(
+                context,
+                () {
+                  _historyController.loadingState.value = const Success(null);
+                  if (_historyController.tabController != null) {
+                    for (final item in _historyController.tabs) {
+                      try {
+                        Get.find<HistoryController>(
+                          tag: item.type,
+                        ).loadingState.value = const Success(
+                          null,
+                        );
+                      } catch (_) {}
+                    }
+                  }
+                },
+              ),
+              child: const Text('\u6e05\u7a7a\u89c2\u770b\u8bb0\u5f55'),
+            ),
+            PopupMenuItem(
+              onTap: currCtr().onDelViewedHistory,
+              child: const Text('\u5220\u9664\u5df2\u770b\u8bb0\u5f55'),
+            ),
+          ],
+        ),
+        const SizedBox(width: 6),
+      ],
+      commandBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ?_buildPauseTip,
+          if (tabs.isNotEmpty) _buildTabs(tabs, false, true),
+        ],
+      ),
+      child: tabView,
     );
   }
 

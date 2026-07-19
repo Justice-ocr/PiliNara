@@ -14,6 +14,7 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_hover_halo.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -44,7 +45,7 @@ class VideoCardHLater extends StatelessWidget {
             ..enableMultiSelect.value = true
             ..onSelect(videoItem);
 
-    return Material(
+    final card = Material(
       type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
       color: isWindowsNeo ? context.windowsNeo.surface : null,
       elevation: 0,
@@ -185,6 +186,12 @@ class VideoCardHLater extends StatelessWidget {
         ),
       ),
     );
+    return isWindowsNeo
+        ? WindowsNeoHoverHalo(
+            borderRadius: context.windowsNeo.cardRadius,
+            child: card,
+          )
+        : card;
   }
 
   Widget content(BuildContext context, ThemeData theme) {
