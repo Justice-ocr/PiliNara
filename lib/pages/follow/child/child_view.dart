@@ -111,7 +111,11 @@ class _FollowChildPageState extends State<FollowChildPage>
                 bottom: padding.bottom + 100,
               ),
               sliver: Obx(
-                () => _buildBody(_followController.loadingState.value),
+                () => WindowsNeoSliverContentTransition(
+                  token: _followController.loadingState.value,
+                  sliver: _buildBody(_followController.loadingState.value),
+                  enabled: isWindowsNeo,
+                ),
               ),
             ),
           ],

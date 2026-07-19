@@ -55,7 +55,13 @@ abstract class CommonSearchPanelState<
             padding: EdgeInsets.only(
               bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
             ),
-            sliver: Obx(() => _buildBody(theme, controller.loadingState.value)),
+            sliver: Obx(
+              () => WindowsNeoSliverContentTransition(
+                token: controller.loadingState.value,
+                sliver: _buildBody(theme, controller.loadingState.value),
+                enabled: WindowsVideoTabService.enabled,
+              ),
+            ),
           ),
         ],
       ),

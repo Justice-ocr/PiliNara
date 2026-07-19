@@ -57,6 +57,34 @@ void main() {
 
     expect(_loadingOpacity(tester), 1);
   });
+
+  testWidgets('content transition replays once for a refreshed token', (
+    tester,
+  ) async {
+    final token = ValueNotifier(0);
+    addTearDown(token.dispose);
+
+    await tester.pumpWidget(_ContentTransitionHarness(token: token));
+    expect(_contentOpacity(tester), 1);
+
+    token.value = 1;
+    await tester.pump();
+    expect(_contentOpacity(tester), 0);
+
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(_contentOpacity(tester), inExclusiveRange(0, 1));
+
+    await tester.pumpAndSettle();
+    expect(_contentOpacity(tester), 1);
+  });
+
+  testWidgets('dark loading pulse uses a quieter opacity range', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const _LoadingPulseHarness(dark: true));
+
+    expect(_loadingOpacity(tester), closeTo(0.82, 0.01));
+  });
 }
 
 double _opacity(WidgetTester tester) {
@@ -69,6 +97,16 @@ double _opacity(WidgetTester tester) {
 
 double _loadingOpacity(WidgetTester tester) => tester
     .widget<SliverFadeTransition>(find.byType(SliverFadeTransition))
+    .opacity
+    .value;
+
+double _contentOpacity(WidgetTester tester) => tester
+    .widget<SliverFadeTransition>(
+      find.descendant(
+        of: find.byType(WindowsNeoSliverContentTransition),
+        matching: find.byType(SliverFadeTransition),
+      ),
+    )
     .opacity
     .value;
 
@@ -100,14 +138,18 @@ class _MotionHarness extends StatelessWidget {
 }
 
 class _LoadingPulseHarness extends StatelessWidget {
-  const _LoadingPulseHarness({this.disableAnimations = false});
+  const _LoadingPulseHarness({
+    this.disableAnimations = false,
+    this.dark = false,
+  });
 
   final bool disableAnimations;
+  final bool dark;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: WindowsNeoTheme.apply(ThemeData.light()),
+      theme: WindowsNeoTheme.apply(dark ? ThemeData.dark() : ThemeData.light()),
       home: MediaQuery(
         data: MediaQueryData(disableAnimations: disableAnimations),
         child: CustomScrollView(
@@ -119,6 +161,33 @@ class _LoadingPulseHarness extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ContentTransitionHarness extends StatelessWidget {
+  const _ContentTransitionHarness({required this.token});
+
+  final ValueNotifier<int> token;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: WindowsNeoTheme.apply(ThemeData.light()),
+      home: CustomScrollView(
+        slivers: [
+          ValueListenableBuilder<int>(
+            valueListenable: token,
+            builder: (context, value, child) =>
+                WindowsNeoSliverContentTransition(
+                  token: value,
+                  sliver: SliverList.list(
+                    children: const [SizedBox(height: 40)],
+                  ),
+                ),
+          ),
+        ],
       ),
     );
   }

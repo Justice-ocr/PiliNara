@@ -1,6 +1,5 @@
 import 'package:PiliPlus/windows_ui/components/windows_neo_backdrop.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
-import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 
 class WindowsNeoPage extends StatelessWidget {
@@ -40,86 +39,83 @@ class WindowsNeoPage extends StatelessWidget {
     final showBack = showBackButton ?? (navigator?.canPop() ?? false);
     final VoidCallback? back = onBack ?? navigator?.maybePop;
 
-    return WindowsNeoStaggeredReveal(
-      order: 0,
-      child: ColoredBox(
-        color: tokens.background,
-        child: WindowsNeoBackdrop(
-          child: Column(
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: tokens.surface.withValues(alpha: 0.92),
-                  boxShadow: [
-                    BoxShadow(
-                      color: tokens.accent.withValues(alpha: 0.07),
-                      blurRadius: 9,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: SizedBox(
-                  height: headerHeight,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: tokens.pagePadding,
-                    ),
-                    child: Row(
-                      children: [
-                        if (showBack) ...[
-                          IconButton(
-                            tooltip: '返回',
-                            onPressed: back,
-                            icon: const Icon(Icons.arrow_back_outlined),
-                          ),
-                          SizedBox(width: tokens.spaceSm),
-                        ],
-                        if (leading != null) ...[
-                          SizedBox.square(dimension: 34, child: leading),
-                          SizedBox(width: tokens.spaceMd - 2),
-                        ],
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+    return ColoredBox(
+      color: tokens.background,
+      child: WindowsNeoBackdrop(
+        child: Column(
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: tokens.surface.withValues(alpha: 0.92),
+                boxShadow: [
+                  BoxShadow(
+                    color: tokens.accent.withValues(alpha: 0.07),
+                    blurRadius: 9,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: SizedBox(
+                height: headerHeight,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: tokens.pagePadding,
+                  ),
+                  child: Row(
+                    children: [
+                      if (showBack) ...[
+                        IconButton(
+                          tooltip: '返回',
+                          onPressed: back,
+                          icon: const Icon(Icons.arrow_back_outlined),
+                        ),
+                        SizedBox(width: tokens.spaceSm),
+                      ],
+                      if (leading != null) ...[
+                        SizedBox.square(dimension: 34, child: leading),
+                        SizedBox(width: tokens.spaceMd - 2),
+                      ],
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: tokens.pageTitleStyle(theme.textTheme),
+                            ),
+                            if (showSubtitle) ...[
+                              const SizedBox(height: 2),
                               Text(
-                                title,
+                                subtitle!,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: tokens.pageTitleStyle(theme.textTheme),
-                              ),
-                              if (showSubtitle) ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  subtitle!,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: tokens.pageSubtitleStyle(
-                                    theme.textTheme,
-                                  ),
+                                style: tokens.pageSubtitleStyle(
+                                  theme.textTheme,
                                 ),
-                              ],
+                              ),
                             ],
-                          ),
+                          ],
                         ),
-                        for (final action in actions) action,
-                      ],
-                    ),
+                      ),
+                      for (final action in actions) action,
+                    ],
                   ),
                 ),
               ),
-              if (commandBar case final commandBar?) ...[
-                ColoredBox(color: tokens.surface, child: commandBar),
-                Divider(
-                  height: 1,
-                  thickness: 1.2,
-                  color: tokens.border.withValues(alpha: 0.95),
-                ),
-              ],
-              Expanded(child: child),
+            ),
+            if (commandBar case final commandBar?) ...[
+              ColoredBox(color: tokens.surface, child: commandBar),
+              Divider(
+                height: 1,
+                thickness: 1.2,
+                color: tokens.border.withValues(alpha: 0.95),
+              ),
             ],
-          ),
+            Expanded(child: child),
+          ],
         ),
       ),
     );

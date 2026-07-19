@@ -33,19 +33,22 @@ class _WindowsNeoSliverLoadingPulseState
     vsync: this,
     duration: const Duration(milliseconds: 1100),
   );
-  late final Animation<double> _opacity =
-      Tween<double>(
-        begin: 0.72,
-        end: 1,
-      ).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic),
-      );
+  late final Tween<double> _opacityTween = Tween<double>(
+    begin: 0.72,
+    end: 1,
+  );
+  late final Animation<double> _opacity = _opacityTween.animate(
+    CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic),
+  );
   bool _running = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _controller.duration = context.windowsNeo.motionLoading;
+    _opacityTween.begin = Theme.of(context).brightness == Brightness.dark
+        ? 0.82
+        : 0.72;
     if (context.windowsNeoReduceMotion) {
       _controller
         ..stop()
@@ -54,6 +57,70 @@ class _WindowsNeoSliverLoadingPulseState
     } else if (!_running) {
       _controller.repeat(reverse: true);
       _running = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverFadeTransition(opacity: _opacity, sliver: widget.sliver);
+  }
+}
+
+/// Gives a refreshed sliver one short content transition without replaying
+/// every card's full entrance animation.
+class WindowsNeoSliverContentTransition extends StatefulWidget {
+  const WindowsNeoSliverContentTransition({
+    super.key,
+    required this.token,
+    required this.sliver,
+    this.enabled = true,
+  });
+
+  final Object? token;
+  final Widget sliver;
+  final bool enabled;
+
+  @override
+  State<WindowsNeoSliverContentTransition> createState() =>
+      _WindowsNeoSliverContentTransitionState();
+}
+
+class _WindowsNeoSliverContentTransitionState
+    extends State<WindowsNeoSliverContentTransition>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 200),
+    value: 1,
+  );
+  late final Animation<double> _opacity = CurvedAnimation(
+    parent: _controller,
+    curve: Curves.easeOutCubic,
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller.duration = context.windowsNeo.motionStandard;
+    if (context.windowsNeoReduceMotion) {
+      _controller.value = 1;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant WindowsNeoSliverContentTransition oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.enabled || oldWidget.token == widget.token) return;
+    if (context.windowsNeoReduceMotion) {
+      _controller.value = 1;
+    } else {
+      _controller.forward(from: 0);
     }
   }
 
