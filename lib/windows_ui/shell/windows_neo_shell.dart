@@ -908,7 +908,7 @@ class _WindowsNeoTabPresenceState extends State<_WindowsNeoTabPresence>
       sizeFactor: _animation,
       child: FadeTransition(
         opacity: _animation,
-        child: _WindowsNeoTab(
+        child: WindowsNeoWorkspaceTab(
           item: widget.item,
           active: widget.active,
           onClose: _close,
@@ -918,12 +918,15 @@ class _WindowsNeoTabPresenceState extends State<_WindowsNeoTabPresence>
   }
 }
 
-class _WindowsNeoTab extends StatelessWidget {
-  const _WindowsNeoTab({
+class WindowsNeoWorkspaceTab extends StatelessWidget {
+  const WindowsNeoWorkspaceTab({
+    super.key,
     required this.item,
     required this.active,
     required this.onClose,
   });
+
+  static const double height = 32;
 
   final WindowsVideoTabItem item;
   final bool active;
@@ -946,7 +949,12 @@ class _WindowsNeoTab extends StatelessWidget {
         ),
         child: IntrinsicWidth(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 116, maxWidth: 240),
+            constraints: const BoxConstraints(
+              minWidth: 116,
+              maxWidth: 240,
+              minHeight: height,
+              maxHeight: height,
+            ),
             child: WindowsNeoHoverHalo(
               borderRadius: BorderRadius.circular(6),
               enabled: !active,
