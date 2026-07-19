@@ -48,7 +48,7 @@ class FollowItem extends StatelessWidget {
         ),
       );
     }
-    return Material(
+    final card = Material(
       type: WindowsVideoTabService.enabled ? .canvas : .transparency,
       color: WindowsVideoTabService.enabled ? context.windowsNeo.surface : null,
       child: InkWell(
@@ -119,5 +119,11 @@ class FollowItem extends StatelessWidget {
         ),
       ),
     );
+    return WindowsVideoTabService.enabled
+        ? WindowsNeoHoverHalo(
+            borderRadius: context.windowsNeo.cardRadius,
+            child: card,
+          )
+        : card;
   }
 }

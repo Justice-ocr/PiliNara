@@ -48,7 +48,7 @@ class HistoryItem extends StatelessWidget {
             ..enableMultiSelect.value = true
             ..onSelect(item);
 
-    return Material(
+    final card = Material(
       type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
       color: isWindowsNeo ? context.windowsNeo.surface : null,
       elevation: 0,
@@ -275,6 +275,12 @@ class HistoryItem extends StatelessWidget {
         ),
       ),
     );
+    return isWindowsNeo
+        ? WindowsNeoHoverHalo(
+            borderRadius: context.windowsNeo.cardRadius,
+            child: card,
+          )
+        : card;
   }
 
   Widget content(ThemeData theme) {

@@ -32,7 +32,7 @@ class DownloadFolderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWindowsNeo = WindowsVideoTabService.enabled;
-    return Material(
+    final card = Material(
       type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
       color: isWindowsNeo ? context.windowsNeo.surface : null,
       elevation: 0,
@@ -109,6 +109,12 @@ class DownloadFolderCard extends StatelessWidget {
         ),
       ),
     );
+    return isWindowsNeo
+        ? WindowsNeoHoverHalo(
+            borderRadius: context.windowsNeo.cardRadius,
+            child: card,
+          )
+        : card;
   }
 
   Widget _buildCover(BuildContext context, double width, double height) {
