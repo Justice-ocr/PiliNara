@@ -16,6 +16,7 @@ import 'package:PiliPlus/utils/parse_int.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LengthLimitingTextInputFormatter;
@@ -51,10 +52,10 @@ class _FollowPageState extends State<FollowPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (WindowsVideoTabService.enabled) {
+      return _buildWindowsPage(context);
+    }
     return Scaffold(
-      backgroundColor: WindowsVideoTabService.enabled
-          ? context.windowsNeo.background
-          : null,
       resizeToAvoidBottomInset: false,
       appBar: _buildAppBar,
       body: _followController.isOwner
@@ -62,6 +63,86 @@ class _FollowPageState extends State<FollowPage> {
           : _childPage(),
     );
   }
+
+  Widget _buildWindowsPage(BuildContext context) {
+    final isOwner = _followController.isOwner;
+    if (isOwner) {
+      return _buildWindowsPageFrame(context, '\u6211\u7684\u5173\u6ce8', true);
+    }
+    return Obx(
+      () => _buildWindowsPageFrame(
+        context,
+        _followController.name.value?.isNotEmpty == true
+            ? '${_followController.name.value}\u7684\u5173\u6ce8'
+            : '\u5173\u6ce8\u5217\u8868',
+        false,
+      ),
+    );
+  }
+
+  Widget _buildWindowsPageFrame(
+    BuildContext context,
+    String title,
+    bool isOwner,
+  ) => WindowsNeoPage(
+    title: title,
+    subtitle: isOwner
+        ? '\u7ba1\u7406\u5173\u6ce8\u5206\u7ec4\u4e0e\u52a8\u6001\u6765\u6e90'
+        : null,
+    leading: Icon(
+      isOwner ? Icons.people_alt_outlined : Icons.person_search_outlined,
+      color: context.windowsNeo.accent,
+    ),
+    actions: isOwner ? _windowsHeaderActions(context) : const [],
+    child: isOwner
+        ? Obx(() => _buildBody(_followController.followState.value))
+        : _childPage(),
+  );
+
+  List<Widget> _windowsHeaderActions(BuildContext context) => [
+    IconButton(
+      tooltip: '\u65b0\u5efa\u5206\u7ec4',
+      onPressed: () => RequestUtils.createFavTag(
+        context,
+        _followController.onCreateFavTag,
+      ),
+      icon: const Icon(Icons.create_new_folder_outlined),
+    ),
+    IconButton(
+      tooltip: '\u5206\u7ec4\u6392\u5e8f',
+      onPressed: () {
+        if (_followController.followState.value is! Success) return;
+        Get.to(FollowTagSortPage(controller: _followController));
+      },
+      icon: const Icon(Icons.swap_vert_outlined),
+    ),
+    IconButton(
+      tooltip: '\u641c\u7d22\u5173\u6ce8',
+      onPressed: () => Get.toNamed(
+        '/followSearch',
+        arguments: {'mid': _followController.mid},
+      ),
+      icon: const Icon(Icons.search_outlined),
+    ),
+    StaticPopupMenuButton(
+      icon: const Icon(Icons.more_horiz),
+      tooltip: '\u66f4\u591a\u64cd\u4f5c',
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          onTap: () => Get.toNamed('/blackListPage'),
+          child: const Row(
+            spacing: 10,
+            mainAxisSize: .min,
+            children: [
+              Icon(Icons.block, size: 19),
+              Text('\u9ed1\u540d\u5355\u7ba1\u7406'),
+            ],
+          ),
+        ),
+      ],
+    ),
+    const SizedBox(width: 6),
+  ];
 
   PreferredSizeWidget get _buildAppBar => AppBar(
     title: _followController.isOwner
