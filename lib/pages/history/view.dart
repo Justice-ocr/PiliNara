@@ -81,7 +81,11 @@ class _HistoryPageState extends State<HistoryPage>
               bottom: padding.bottom + 100,
             ),
             sliver: Obx(
-              () => _buildBody(_historyController.loadingState.value),
+              () => WindowsNeoSliverContentTransition(
+                token: _historyController.loadingState.value,
+                sliver: _buildBody(_historyController.loadingState.value),
+                enabled: isWindowsNeo,
+              ),
             ),
           ),
         ],

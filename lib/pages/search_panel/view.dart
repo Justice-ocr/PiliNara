@@ -6,6 +6,7 @@ import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/pages/search_panel/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_state.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -57,7 +58,13 @@ abstract class CommonSearchPanelState<
             padding: EdgeInsets.only(
               bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
             ),
-            sliver: Obx(() => _buildBody(theme, controller.loadingState.value)),
+            sliver: Obx(
+              () => WindowsNeoSliverContentTransition(
+                token: controller.loadingState.value,
+                sliver: _buildBody(theme, controller.loadingState.value),
+                enabled: WindowsVideoTabService.enabled,
+              ),
+            ),
           ),
         ],
       ),

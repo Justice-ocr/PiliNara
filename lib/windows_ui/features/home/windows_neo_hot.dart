@@ -35,7 +35,10 @@ class WindowsNeoHot extends StatelessWidget {
               100,
             ),
             sliver: Obx(
-              () => _buildBody(context, controller.loadingState.value),
+              () => WindowsNeoSliverContentTransition(
+                token: controller.loadingState.value,
+                sliver: _buildBody(context, controller.loadingState.value),
+              ),
             ),
           ),
         ],

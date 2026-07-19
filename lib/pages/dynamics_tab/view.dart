@@ -82,7 +82,12 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
             padding: const EdgeInsets.only(bottom: 100),
             sliver: WindowsVideoTabService.enabled
                 ? _buildWindowsPage(
-                    Obx(() => _buildBody(controller.loadingState.value)),
+                    Obx(
+                      () => WindowsNeoSliverContentTransition(
+                        token: controller.loadingState.value,
+                        sliver: _buildBody(controller.loadingState.value),
+                      ),
+                    ),
                   )
                 : buildPage(
                     Obx(() => _buildBody(controller.loadingState.value)),

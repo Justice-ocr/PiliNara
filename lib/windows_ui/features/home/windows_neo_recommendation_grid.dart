@@ -47,10 +47,13 @@ class WindowsNeoRecommendationGrid extends StatelessWidget {
               100,
             ),
             sliver: Obx(
-              () => _buildBody(
-                context,
-                gridDelegate,
-                controller.loadingState.value,
+              () => WindowsNeoSliverContentTransition(
+                token: controller.loadingState.value,
+                sliver: _buildBody(
+                  context,
+                  gridDelegate,
+                  controller.loadingState.value,
+                ),
               ),
             ),
           ),

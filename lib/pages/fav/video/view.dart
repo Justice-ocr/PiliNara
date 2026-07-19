@@ -42,7 +42,11 @@ class _FavVideoPageState extends State<FavVideoPage>
               bottom: 100 + MediaQuery.viewPaddingOf(context).bottom,
             ),
             sliver: Obx(
-              () => _buildBody(_favController.loadingState.value),
+              () => WindowsNeoSliverContentTransition(
+                token: _favController.loadingState.value,
+                sliver: _buildBody(_favController.loadingState.value),
+                enabled: WindowsVideoTabService.enabled,
+              ),
             ),
           ),
         ],

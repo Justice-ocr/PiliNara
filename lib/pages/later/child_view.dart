@@ -58,7 +58,11 @@ class _LaterViewChildPageState extends State<LaterViewChildPage>
               bottom: MediaQuery.viewPaddingOf(context).bottom + 85,
             ),
             sliver: Obx(
-              () => _buildBody(_laterController.loadingState.value),
+              () => WindowsNeoSliverContentTransition(
+                token: _laterController.loadingState.value,
+                sliver: _buildBody(_laterController.loadingState.value),
+                enabled: WindowsVideoTabService.enabled,
+              ),
             ),
           ),
         ],
