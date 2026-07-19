@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:flutter/material.dart';
 
@@ -49,8 +51,13 @@ class AppBarAni extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SlideTransition(
-      position: controller.drive(isTop ? _topPos : _bottomPos),
+    final motion = controller.drive(
+      CurveTween(
+        curve: Platform.isWindows ? Curves.easeOutCubic : Curves.linear,
+      ),
+    );
+    final slide = SlideTransition(
+      position: motion.drive(isTop ? _topPos : _bottomPos),
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: isTop ? _topDecoration : _bottomDecoration,
@@ -64,5 +71,7 @@ class AppBarAni extends StatelessWidget {
               ),
       ),
     );
+    if (!Platform.isWindows) return slide;
+    return FadeTransition(opacity: motion, child: slide);
   }
 }

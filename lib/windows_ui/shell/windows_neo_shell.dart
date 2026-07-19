@@ -798,7 +798,8 @@ class _WindowsNeoTabStrip extends StatelessWidget {
                 separatorBuilder: (_, _) => const SizedBox(width: 4),
                 itemBuilder: (context, index) {
                   final item = tabs[index];
-                  return _WindowsNeoTab(
+                  return _WindowsNeoTabPresence(
+                    key: ValueKey(item.id),
                     item: item,
                     active: item.id == activeId,
                   );
@@ -826,11 +827,90 @@ class _WindowsNeoTabStrip extends StatelessWidget {
   }
 }
 
-class _WindowsNeoTab extends StatelessWidget {
-  const _WindowsNeoTab({required this.item, required this.active});
+class _WindowsNeoTabPresence extends StatefulWidget {
+  const _WindowsNeoTabPresence({
+    super.key,
+    required this.item,
+    required this.active,
+  });
 
   final WindowsVideoTabItem item;
   final bool active;
+
+  @override
+  State<_WindowsNeoTabPresence> createState() => _WindowsNeoTabPresenceState();
+}
+
+class _WindowsNeoTabPresenceState extends State<_WindowsNeoTabPresence>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 200),
+  );
+  late final Animation<double> _animation = CurvedAnimation(
+    parent: _controller,
+    curve: Curves.easeOutCubic,
+    reverseCurve: Curves.easeInCubic,
+  );
+  bool _entered = false;
+  bool _closing = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller.duration = context.windowsNeo.motionStandard;
+    if (_entered) return;
+    _entered = true;
+    if (context.windowsNeoReduceMotion) {
+      _controller.value = 1;
+    } else {
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _close() async {
+    if (widget.item.isHome || _closing) return;
+    _closing = true;
+    if (!context.windowsNeoReduceMotion) {
+      await _controller.reverse();
+    }
+    if (mounted) WindowsVideoTabService.close(widget.item.id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizeTransition(
+      axis: Axis.horizontal,
+      alignment: AlignmentDirectional.centerStart,
+      sizeFactor: _animation,
+      child: FadeTransition(
+        opacity: _animation,
+        child: _WindowsNeoTab(
+          item: widget.item,
+          active: widget.active,
+          onClose: _close,
+        ),
+      ),
+    );
+  }
+}
+
+class _WindowsNeoTab extends StatelessWidget {
+  const _WindowsNeoTab({
+    required this.item,
+    required this.active,
+    required this.onClose,
+  });
+
+  final WindowsVideoTabItem item;
+  final bool active;
+  final Future<void> Function() onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -839,7 +919,7 @@ class _WindowsNeoTab extends StatelessWidget {
     return Listener(
       onPointerDown: (event) {
         if (event.buttons == kMiddleMouseButton && !item.isHome) {
-          WindowsVideoTabService.close(item.id);
+          onClose();
         }
       },
       child: GestureDetector(
@@ -915,8 +995,7 @@ class _WindowsNeoTab extends StatelessWidget {
                                     padding: EdgeInsets.zero,
                                     iconSize: 14,
                                     color: foreground,
-                                    onPressed: () =>
-                                        WindowsVideoTabService.close(item.id),
+                                    onPressed: onClose,
                                     icon: const Icon(Icons.close),
                                   ),
                                 )
@@ -967,7 +1046,7 @@ class _WindowsNeoTab extends StatelessWidget {
       ],
     );
     if (action == 'close') {
-      WindowsVideoTabService.close(item.id);
+      await onClose();
     } else if (action == 'others') {
       final ids = WindowsVideoTabService.tabs
           .where((tab) => !tab.isHome && tab.id != item.id)

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:flutter/material.dart';
@@ -45,6 +46,16 @@ class PlayOrPauseButtonState extends State<PlayOrPauseButton>
     subscription.cancel();
     controller.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    controller.duration = reduceMotion
+        ? Duration.zero
+        : Duration(milliseconds: Platform.isWindows ? 180 : 200);
   }
 
   @override

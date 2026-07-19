@@ -351,6 +351,44 @@ abstract final class WindowsNeoTheme {
           side: BorderSide(color: tokens.border),
         ),
       ),
+      dialogTheme: base.dialogTheme.copyWith(
+        backgroundColor: tokens.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 16,
+        shadowColor: const Color(0xFF0B5E5A).withValues(alpha: 0.16),
+        barrierColor: Colors.black.withValues(alpha: 0.30),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: tokens.panelRadius,
+          side: BorderSide(
+            color: tokens.border.withValues(alpha: 0.52),
+          ),
+        ),
+      ),
+      bottomSheetTheme: base.bottomSheetTheme.copyWith(
+        backgroundColor: tokens.surface,
+        modalBackgroundColor: tokens.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 12,
+        modalElevation: 18,
+        shadowColor: const Color(0xFF0B5E5A).withValues(alpha: 0.16),
+        modalBarrierColor: Colors.black.withValues(alpha: 0.30),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(tokens.radiusLg),
+          ),
+          side: BorderSide(
+            color: tokens.border.withValues(alpha: 0.46),
+          ),
+        ),
+      ),
+      pageTransitionsTheme: PageTransitionsTheme(
+        builders: {
+          ...base.pageTransitionsTheme.builders,
+          TargetPlatform.windows: const WindowsNeoPageTransitionsBuilder(),
+        },
+      ),
       tabBarTheme: base.tabBarTheme.copyWith(
         labelColor: tokens.ink,
         unselectedLabelColor: tokens.muted,
@@ -364,6 +402,38 @@ abstract final class WindowsNeoTheme {
         ),
       ),
       extensions: extensions,
+    );
+  }
+}
+
+class WindowsNeoPageTransitionsBuilder extends PageTransitionsBuilder {
+  const WindowsNeoPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) {
+      return child;
+    }
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: const Interval(0, 0.82, curve: Curves.easeOutCubic),
+      reverseCurve: Curves.easeInCubic,
+    );
+    return FadeTransition(
+      opacity: Tween<double>(begin: 0.90, end: 1).animate(curved),
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.014),
+          end: Offset.zero,
+        ).animate(curved),
+        child: child,
+      ),
     );
   }
 }
