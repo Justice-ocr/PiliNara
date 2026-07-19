@@ -4,7 +4,10 @@ import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/pages/search_panel/controller.dart';
 import 'package:PiliPlus/pages/search_panel/live/widgets/item.dart';
 import 'package:PiliPlus/pages/search_panel/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_search_skeletons.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -45,9 +48,11 @@ class _SearchLivePanelState
   }
 
   late final gridDelegate = SliverGridDelegateWithExtentAndRatio(
-    maxCrossAxisExtent: Grid.smallCardWidth,
-    crossAxisSpacing: Style.cardSpace,
-    mainAxisSpacing: Style.cardSpace,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 300
+        : Grid.smallCardWidth,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.cardSpace,
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.cardSpace,
     childAspectRatio: Style.aspectRatio,
     mainAxisExtent: MediaQuery.textScalerOf(context).scale(80),
   );
@@ -55,17 +60,26 @@ class _SearchLivePanelState
   @override
   Widget buildList(ThemeData theme, List<SearchLiveItemModel> list) {
     return SliverPadding(
-      padding: const EdgeInsets.only(
-        left: Style.safeSpace,
-        right: Style.safeSpace,
-      ),
+      padding: WindowsVideoTabService.enabled
+          ? const EdgeInsets.fromLTRB(16, 12, 16, 24)
+          : const EdgeInsets.only(
+              left: Style.safeSpace,
+              right: Style.safeSpace,
+            ),
       sliver: SliverGrid.builder(
         gridDelegate: gridDelegate,
         itemBuilder: (context, index) {
           if (index == list.length - 1) {
             controller.onLoadMore();
           }
-          return LiveItem(liveItem: list[index]);
+          final child = LiveItem(liveItem: list[index]);
+          return WindowsVideoTabService.enabled
+              ? WindowsNeoStaggeredReveal(
+                  order: index,
+                  enabled: index < 8,
+                  child: child,
+                )
+              : child;
         },
         itemCount: list.length,
       ),
@@ -73,9 +87,20 @@ class _SearchLivePanelState
   }
 
   @override
-  Widget get buildLoading => SliverGrid.builder(
-    gridDelegate: gridDelegate,
-    itemBuilder: (context, index) => const VideoCardVSkeleton(),
-    itemCount: 10,
-  );
+  Widget get buildLoading => WindowsVideoTabService.enabled
+      ? SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          sliver: WindowsNeoSliverLoadingPulse(
+            sliver: SliverGrid.builder(
+              gridDelegate: gridDelegate,
+              itemBuilder: (_, _) => const WindowsNeoSearchLiveSkeleton(),
+              itemCount: 10,
+            ),
+          ),
+        )
+      : SliverGrid.builder(
+          gridDelegate: gridDelegate,
+          itemBuilder: (_, _) => const VideoCardVSkeleton(),
+          itemCount: 10,
+        );
 }

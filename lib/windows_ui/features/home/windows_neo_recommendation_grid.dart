@@ -1,10 +1,10 @@
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
-import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/pages/rcmd/controller.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_video_card_v.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_state.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
@@ -113,10 +113,16 @@ class WindowsNeoRecommendationGrid extends StatelessWidget {
                   );
                 },
               )
-            : HttpError(onReload: controller.onReload),
-      Error(:final errMsg) => HttpError(
-        errMsg: errMsg,
-        onReload: controller.onReload,
+            : WindowsNeoSliverState(
+                icon: Icons.inbox_outlined,
+                title: '\u6682\u65f6\u6ca1\u6709\u63a8\u8350\u5185\u5bb9',
+                onRetry: controller.onReload,
+              ),
+      Error(:final errMsg) => WindowsNeoSliverState(
+        icon: Icons.cloud_off_outlined,
+        title: '\u63a8\u8350\u52a0\u8f7d\u5931\u8d25',
+        message: errMsg,
+        onRetry: controller.onReload,
       ),
     };
   }

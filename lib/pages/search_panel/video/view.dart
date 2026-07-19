@@ -8,8 +8,10 @@ import 'package:PiliPlus/pages/search_panel/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart'
     hide SliverGridDelegateWithMaxCrossAxisExtent;
+import 'package:PiliPlus/windows_ui/components/windows_neo_search_skeletons.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_video_search_tile.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -33,6 +35,13 @@ class _SearchVideoPanelState
           SearchVideoItemModel
         >
     with GridMixin {
+  static const _windowsGridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
+    maxCrossAxisExtent: 760,
+    mainAxisExtent: 120,
+    mainAxisSpacing: 8,
+    crossAxisSpacing: 8,
+  );
+
   @override
   late final SearchVideoController controller;
 
@@ -102,14 +111,16 @@ class _SearchVideoPanelState
                   padding: WidgetStatePropertyAll(EdgeInsets.zero),
                 ),
                 onPressed: () => controller.onShowFilterDialog(context),
-                icon: Obx(() => Icon(
-                  controller.includeKeywords.isNotEmpty ||
-                          controller.excludeKeywords.isNotEmpty
-                      ? Icons.filter_list
-                      : Icons.filter_list_off,
-                  size: 18,
-                  color: theme.colorScheme.primary,
-                )),
+                icon: Obx(
+                  () => Icon(
+                    controller.includeKeywords.isNotEmpty ||
+                            controller.excludeKeywords.isNotEmpty
+                        ? Icons.filter_list
+                        : Icons.filter_list_off,
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
               ),
             ),
           ],
@@ -124,19 +135,18 @@ class _SearchVideoPanelState
       return SliverPadding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         sliver: SliverGrid.builder(
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 760,
-            mainAxisExtent: 120,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-          ),
+          gridDelegate: _windowsGridDelegate,
           itemBuilder: (context, index) {
             if (index == list.length - 1) controller.onLoadMore();
-            return WindowsNeoVideoSearchTile(
-              videoItem: list[index],
-              onRemove: () => controller.loadingState
-                ..value.data!.removeAt(index)
-                ..refresh(),
+            return WindowsNeoStaggeredReveal(
+              order: index,
+              enabled: index < 8,
+              child: WindowsNeoVideoSearchTile(
+                videoItem: list[index],
+                onRemove: () => controller.loadingState
+                  ..value.data!.removeAt(index)
+                  ..refresh(),
+              ),
             );
           },
           itemCount: list.length,
@@ -164,7 +174,13 @@ class _SearchVideoPanelState
   Widget get buildLoading => WindowsVideoTabService.enabled
       ? SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          sliver: gridSkeleton,
+          sliver: WindowsNeoSliverLoadingPulse(
+            sliver: SliverGrid.builder(
+              gridDelegate: _windowsGridDelegate,
+              itemBuilder: (_, _) => const WindowsNeoSearchHorizontalSkeleton(),
+              itemCount: 10,
+            ),
+          ),
         )
       : gridSkeleton;
 }

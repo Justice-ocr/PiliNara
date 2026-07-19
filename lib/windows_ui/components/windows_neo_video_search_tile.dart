@@ -10,10 +10,12 @@ import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 
-class WindowsNeoVideoSearchTile extends StatelessWidget {
+class WindowsNeoVideoSearchTile extends StatefulWidget {
   const WindowsNeoVideoSearchTile({
     super.key,
     required this.videoItem,
@@ -24,53 +26,63 @@ class WindowsNeoVideoSearchTile extends StatelessWidget {
   final VoidCallback? onRemove;
 
   @override
+  State<WindowsNeoVideoSearchTile> createState() =>
+      _WindowsNeoVideoSearchTileState();
+}
+
+class _WindowsNeoVideoSearchTileState extends State<WindowsNeoVideoSearchTile> {
+  bool _hovered = false;
+
+  SearchVideoItemModel get videoItem => widget.videoItem;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tokens = context.windowsNeo;
-    return Material(
-      color: tokens.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(6),
-        side: BorderSide(color: tokens.border),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: InkWell(
-              hoverColor: tokens.hover,
-              onTap: _openVideo,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildCover(theme),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildContent(context)),
-                    const SizedBox(width: 24),
-                  ],
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: WindowsNeoCardShell(
+        hovered: _hovered,
+        onTap: _openVideo,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildCover(context, theme),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildContent(context)),
+                  const SizedBox(width: 24),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 3,
+              right: 3,
+              width: 30,
+              height: 30,
+              child: AnimatedOpacity(
+                opacity: _hovered ? 1 : 0.68,
+                duration: context.windowsNeoDuration(tokens.motionFast),
+                curve: Curves.easeOutCubic,
+                child: VideoPopupMenu(
+                  iconSize: 17,
+                  videoItem: videoItem,
+                  onRemove: widget.onRemove,
                 ),
               ),
             ),
-          ),
-          Positioned(
-            top: 3,
-            right: 3,
-            width: 30,
-            height: 30,
-            child: VideoPopupMenu(
-              iconSize: 17,
-              videoItem: videoItem,
-              onRemove: onRemove,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildCover(ThemeData theme) {
+  Widget _buildCover(BuildContext context, ThemeData theme) {
     const width = 168.0;
     const height = 94.5;
     final progress = videoItem.progress;
@@ -80,11 +92,18 @@ class WindowsNeoVideoSearchTile extends StatelessWidget {
       child: Stack(
         children: [
           const SizedBox.expand(),
-          NetworkImgLayer(
-            src: videoItem.cover,
-            width: width,
-            height: height,
-            borderRadius: BorderRadius.circular(5),
+          AnimatedScale(
+            scale: _hovered ? 1.018 : 1,
+            duration: context.windowsNeoDuration(
+              context.windowsNeo.motionFast,
+            ),
+            curve: Curves.easeOutCubic,
+            child: NetworkImgLayer(
+              src: videoItem.cover,
+              width: width,
+              height: height,
+              borderRadius: BorderRadius.circular(5),
+            ),
           ),
           if (videoItem.badge case final badge?)
             PBadge(text: badge, top: 6, left: 6, type: PBadgeType.primary),

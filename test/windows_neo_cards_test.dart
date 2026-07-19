@@ -7,6 +7,8 @@ import 'package:PiliPlus/pages/setting/view.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_horizontal_video_tile.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_search_skeletons.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_state.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_video_card_v.dart';
 import 'package:PiliPlus/windows_ui/features/home/windows_neo_home.dart';
 import 'package:PiliPlus/windows_ui/features/home/windows_neo_hot.dart';
@@ -124,6 +126,81 @@ void main() {
 
     expect(find.byType(WindowsNeoLiveCardSkeleton), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('search skeletons fit their desktop result extents', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: WindowsNeoTheme.apply(ThemeData.light()),
+        home: const Scaffold(
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                SizedBox(
+                  width: 720,
+                  height: 120,
+                  child: WindowsNeoSearchHorizontalSkeleton(),
+                ),
+                SizedBox(height: 12),
+                SizedBox(
+                  width: 280,
+                  height: 240,
+                  child: WindowsNeoSearchLiveSkeleton(),
+                ),
+                SizedBox(height: 12),
+                SizedBox(
+                  width: 520,
+                  height: 72,
+                  child: WindowsNeoSearchCompactSkeleton(),
+                ),
+                SizedBox(height: 12),
+                SizedBox(
+                  width: 600,
+                  height: 170,
+                  child: WindowsNeoSearchPgcSkeleton(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(WindowsNeoSearchHorizontalSkeleton), findsOneWidget);
+    expect(find.byType(WindowsNeoSearchLiveSkeleton), findsOneWidget);
+    expect(find.byType(WindowsNeoSearchCompactSkeleton), findsOneWidget);
+    expect(find.byType(WindowsNeoSearchPgcSkeleton), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Neo empty state keeps retry in the sliver workflow', (
+    tester,
+  ) async {
+    var retries = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: WindowsNeoTheme.apply(ThemeData.light()),
+        home: Scaffold(
+          body: CustomScrollView(
+            slivers: [
+              WindowsNeoSliverState(
+                icon: Icons.search_off_outlined,
+                title: 'No results',
+                message: 'Try another query',
+                onRetry: () => retries++,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('39'), findsOneWidget);
+    expect(find.text('No results'), findsOneWidget);
+    await tester.tap(find.text('\u91cd\u8bd5'));
+    expect(retries, 1);
   });
 
   testWidgets('reserves two complete lines for recommendation titles', (
