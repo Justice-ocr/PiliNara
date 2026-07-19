@@ -386,12 +386,19 @@ class _HistoryPageState extends State<HistoryPage>
                     _historyController.onLoadMore();
                   }
                   final item = response[index];
-                  return HistoryItem(
+                  final card = HistoryItem(
                     item: item,
                     ctr: _historyController,
                     onDelete: (kid, business) =>
                         _historyController.delHistory(item),
                   );
+                  return WindowsVideoTabService.enabled
+                      ? WindowsNeoStaggeredReveal(
+                          order: index,
+                          enabled: index < 8,
+                          child: card,
+                        )
+                      : card;
                 },
                 itemCount: response.length,
               )

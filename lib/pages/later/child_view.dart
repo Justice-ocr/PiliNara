@@ -85,7 +85,7 @@ class _LaterViewChildPageState extends State<LaterViewChildPage>
                     _laterController.onLoadMore();
                   }
                   final videoItem = response[index];
-                  return VideoCardHLater(
+                  final card = VideoCardHLater(
                     index: index,
                     videoItem: videoItem,
                     ctr: _laterController,
@@ -112,6 +112,13 @@ class _LaterViewChildPageState extends State<LaterViewChildPage>
                       );
                     },
                   );
+                  return WindowsVideoTabService.enabled
+                      ? WindowsNeoStaggeredReveal(
+                          order: index,
+                          enabled: index < 8,
+                          child: card,
+                        )
+                      : card;
                 },
                 itemCount: response.length,
               )

@@ -27,6 +27,7 @@ import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -819,7 +820,7 @@ class _DownloadPageState extends State<DownloadPage>
                 itemCount: _controller.allVideos.length,
                 itemBuilder: (context, index) {
                   final entry = _controller.allVideos[index];
-                  return DetailItem(
+                  final card = DetailItem(
                     entry: entry,
                     progress: _progress,
                     downloadService: _downloadService,
@@ -843,6 +844,13 @@ class _DownloadPageState extends State<DownloadPage>
                     extraMoreItemsBuilder: (menuContext) =>
                         _buildFolderQuickMenuItems(menuContext, entry),
                   );
+                  return isWindowsNeo
+                      ? WindowsNeoStaggeredReveal(
+                          order: index,
+                          enabled: index < 8,
+                          child: card,
+                        )
+                      : card;
                 },
               ),
             );
@@ -903,7 +911,7 @@ class _DownloadPageState extends State<DownloadPage>
                 itemBuilder: (context, index) {
                   final folder = _controller.folders[index];
                   final entries = _controller.resolveFolderEntries(folder.id);
-                  return DownloadFolderCard(
+                  final card = DownloadFolderCard(
                     title: folder.title,
                     count: entries.length,
                     entry: entries.firstOrNull,
@@ -923,6 +931,13 @@ class _DownloadPageState extends State<DownloadPage>
                         ? null
                         : _buildFolderMoreBtn(folder),
                   );
+                  return isWindowsNeo
+                      ? WindowsNeoStaggeredReveal(
+                          order: index,
+                          enabled: index < 8,
+                          child: card,
+                        )
+                      : card;
                 },
               ),
             );
