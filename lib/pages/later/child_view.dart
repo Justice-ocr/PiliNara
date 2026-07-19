@@ -11,6 +11,7 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -85,7 +86,7 @@ class _LaterViewChildPageState extends State<LaterViewChildPage>
                     _laterController.onLoadMore();
                   }
                   final videoItem = response[index];
-                  return VideoCardHLater(
+                  final card = VideoCardHLater(
                     index: index,
                     videoItem: videoItem,
                     ctr: _laterController,
@@ -112,6 +113,13 @@ class _LaterViewChildPageState extends State<LaterViewChildPage>
                       );
                     },
                   );
+                  return WindowsVideoTabService.enabled
+                      ? WindowsNeoStaggeredReveal(
+                          order: index,
+                          enabled: index < 8,
+                          child: card,
+                        )
+                      : card;
                 },
                 itemCount: response.length,
               )

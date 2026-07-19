@@ -18,6 +18,7 @@ import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart' hide TabBarView;
 import 'package:get/get.dart';
 
@@ -352,12 +353,19 @@ class _HistoryPageState extends State<HistoryPage>
                     _historyController.onLoadMore();
                   }
                   final item = response[index];
-                  return HistoryItem(
+                  final card = HistoryItem(
                     item: item,
                     ctr: _historyController,
                     onDelete: (kid, business) =>
                         _historyController.delHistory(item),
                   );
+                  return WindowsVideoTabService.enabled
+                      ? WindowsNeoStaggeredReveal(
+                          order: index,
+                          enabled: index < 8,
+                          child: card,
+                        )
+                      : card;
                 },
                 itemCount: response.length,
               )

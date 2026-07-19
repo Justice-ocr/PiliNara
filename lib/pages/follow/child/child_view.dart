@@ -17,6 +17,7 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -185,7 +186,7 @@ class _FollowChildPageState extends State<FollowChildPage>
                     _followController.onLoadMore();
                   }
                   final item = response[index];
-                  return FollowItem(
+                  final card = FollowItem(
                     item: item,
                     isOwner: widget.controller?.isOwner,
                     onSelect: widget.onSelect,
@@ -194,6 +195,13 @@ class _FollowChildPageState extends State<FollowChildPage>
                       _followController.loadingState.refresh();
                     },
                   );
+                  return WindowsVideoTabService.enabled
+                      ? WindowsNeoStaggeredReveal(
+                          order: index,
+                          enabled: index < 8,
+                          child: card,
+                        )
+                      : card;
                 },
                 separatorBuilder: (_, _) => WindowsVideoTabService.enabled
                     ? Divider(height: 1, color: context.windowsNeo.border)
@@ -245,8 +253,16 @@ class _FollowChildPageState extends State<FollowChildPage>
                   ),
                   SliverList.builder(
                     itemCount: min(3, response.length),
-                    itemBuilder: (_, index) =>
-                        FollowItem(item: response[index]),
+                    itemBuilder: (_, index) {
+                      final card = FollowItem(item: response[index]);
+                      return WindowsVideoTabService.enabled
+                          ? WindowsNeoStaggeredReveal(
+                              order: index,
+                              enabled: index < 3,
+                              child: card,
+                            )
+                          : card;
+                    },
                   ),
                   SliverToBoxAdapter(
                     child: Padding(

@@ -7,6 +7,7 @@ import 'package:PiliPlus/pages/fav/video/widgets/item.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -70,7 +71,7 @@ class _FavVideoPageState extends State<FavVideoPage>
                   }
                   final item = response[index];
                   String heroTag = Utils.makeHeroTag(item.fid);
-                  return FavVideoItem(
+                  final card = FavVideoItem(
                     heroTag: heroTag,
                     item: item,
                     onTap: () async {
@@ -89,6 +90,13 @@ class _FavVideoPageState extends State<FavVideoPage>
                       }
                     },
                   );
+                  return WindowsVideoTabService.enabled
+                      ? WindowsNeoStaggeredReveal(
+                          order: index,
+                          enabled: index < 8,
+                          child: card,
+                        )
+                      : card;
                 },
                 itemCount: response.length,
               )
