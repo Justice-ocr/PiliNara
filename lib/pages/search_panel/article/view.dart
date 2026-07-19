@@ -28,6 +28,14 @@ class _SearchArticlePanelState
           SearchArticleItemModel
         >
     with GridMixin {
+  late final _windowsGridDelegate = SliverGridDelegateWithExtentAndRatio(
+    maxCrossAxisExtent: 520,
+    childAspectRatio: 4.2,
+    minHeight: 112,
+    mainAxisSpacing: 12,
+    crossAxisSpacing: 12,
+  );
+
   @override
   late final SearchArticleController controller;
 
@@ -110,19 +118,20 @@ class _SearchArticlePanelState
   Widget buildList(ThemeData theme, List<SearchArticleItemModel> list) {
     final grid = SliverGrid.builder(
       gridDelegate: WindowsVideoTabService.enabled
-          ? SliverGridDelegateWithExtentAndRatio(
-              maxCrossAxisExtent: 520,
-              childAspectRatio: 4.2,
-              minHeight: 112,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-            )
+          ? _windowsGridDelegate
           : gridDelegate,
       itemBuilder: (context, index) {
         if (index == list.length - 1) {
           controller.onLoadMore();
         }
-        return SearchArticleItem(item: list[index]);
+        final child = SearchArticleItem(item: list[index]);
+        return WindowsVideoTabService.enabled
+            ? WindowsNeoStaggeredReveal(
+                order: index,
+                enabled: index < 8,
+                child: child,
+              )
+            : child;
       },
       itemCount: list.length,
     );
@@ -138,7 +147,13 @@ class _SearchArticlePanelState
   Widget get buildLoading => WindowsVideoTabService.enabled
       ? SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          sliver: gridSkeleton,
+          sliver: WindowsNeoSliverLoadingPulse(
+            sliver: SliverGrid.builder(
+              gridDelegate: _windowsGridDelegate,
+              itemBuilder: (_, _) => const WindowsNeoSearchHorizontalSkeleton(),
+              itemCount: 10,
+            ),
+          ),
         )
       : gridSkeleton;
 }

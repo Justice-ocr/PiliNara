@@ -5,6 +5,7 @@ import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/pages/search_panel/user/controller.dart';
 import 'package:PiliPlus/pages/search_panel/user/widgets/item.dart';
 import 'package:PiliPlus/pages/search_panel/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart'
@@ -48,9 +49,16 @@ class _SearchUserPanelState
   @override
   Widget buildHeader(ThemeData theme) {
     return SliverFloatingHeaderWidget(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.surface
+          : theme.colorScheme.surface,
       child: Padding(
-        padding: const .fromLTRB(25, 0, 12, 4),
+        padding: EdgeInsets.fromLTRB(
+          WindowsVideoTabService.enabled ? 16 : 25,
+          0,
+          12,
+          4,
+        ),
         child: Row(
           children: [
             Obx(
@@ -92,24 +100,41 @@ class _SearchUserPanelState
   }
 
   late final gridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
-    maxCrossAxisExtent: Grid.smallCardWidth * 2,
-    mainAxisExtent: 66,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 560
+        : Grid.smallCardWidth * 2,
+    mainAxisExtent: WindowsVideoTabService.enabled ? 72 : 66,
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 8 : 0,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 8 : 0,
   );
 
   @override
   Widget buildList(ThemeData theme, List<SearchUserItemModel> list) {
-    return SliverGrid.builder(
+    final grid = SliverGrid.builder(
       gridDelegate: gridDelegate,
       itemBuilder: (BuildContext context, int index) {
         if (index == list.length - 1) {
           controller.onLoadMore();
         }
-        return SearchUserItem(
+        final child = SearchUserItem(
           item: list[index],
         );
+        return WindowsVideoTabService.enabled
+            ? WindowsNeoStaggeredReveal(
+                order: index,
+                enabled: index < 8,
+                child: child,
+              )
+            : child;
       },
       itemCount: list.length,
     );
+    return WindowsVideoTabService.enabled
+        ? SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            sliver: grid,
+          )
+        : grid;
   }
 
   @override

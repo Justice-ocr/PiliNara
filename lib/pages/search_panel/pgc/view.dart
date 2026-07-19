@@ -5,6 +5,7 @@ import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/pages/search_panel/controller.dart';
 import 'package:PiliPlus/pages/search_panel/pgc/widgets/item.dart';
 import 'package:PiliPlus/pages/search_panel/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart'
@@ -47,22 +48,39 @@ class _SearchPgcPanelState
   }
 
   late final gridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
-    maxCrossAxisExtent: Grid.smallCardWidth * 2,
-    mainAxisExtent: 160,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 620
+        : Grid.smallCardWidth * 2,
+    mainAxisExtent: WindowsVideoTabService.enabled ? 170 : 160,
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : 0,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : 0,
   );
 
   @override
   Widget buildList(ThemeData theme, List<SearchPgcItemModel> list) {
-    return SliverGrid.builder(
+    final grid = SliverGrid.builder(
       gridDelegate: gridDelegate,
       itemBuilder: (BuildContext context, int index) {
         if (index == list.length - 1) {
           controller.onLoadMore();
         }
-        return SearchPgcItem(item: list[index]);
+        final child = SearchPgcItem(item: list[index]);
+        return WindowsVideoTabService.enabled
+            ? WindowsNeoStaggeredReveal(
+                order: index,
+                enabled: index < 8,
+                child: child,
+              )
+            : child;
       },
       itemCount: list.length,
     );
+    return WindowsVideoTabService.enabled
+        ? SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            sliver: grid,
+          )
+        : grid;
   }
 
   @override
