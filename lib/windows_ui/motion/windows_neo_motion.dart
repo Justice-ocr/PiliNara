@@ -11,6 +11,64 @@ extension WindowsNeoMotionContext on BuildContext {
       windowsNeoReduceMotion ? Duration.zero : duration;
 }
 
+/// Uses one composited opacity pulse for an entire loading sliver instead of
+/// running a shimmer controller on every placeholder card.
+class WindowsNeoSliverLoadingPulse extends StatefulWidget {
+  const WindowsNeoSliverLoadingPulse({
+    super.key,
+    required this.sliver,
+  });
+
+  final Widget sliver;
+
+  @override
+  State<WindowsNeoSliverLoadingPulse> createState() =>
+      _WindowsNeoSliverLoadingPulseState();
+}
+
+class _WindowsNeoSliverLoadingPulseState
+    extends State<WindowsNeoSliverLoadingPulse>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  );
+  late final Animation<double> _opacity =
+      Tween<double>(
+        begin: 0.72,
+        end: 1,
+      ).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic),
+      );
+  bool _running = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller.duration = context.windowsNeo.motionLoading;
+    if (context.windowsNeoReduceMotion) {
+      _controller
+        ..stop()
+        ..value = 1;
+      _running = false;
+    } else if (!_running) {
+      _controller.repeat(reverse: true);
+      _running = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverFadeTransition(opacity: _opacity, sliver: widget.sliver);
+  }
+}
+
 /// Preserves inactive tab state while giving newly selected content a quiet
 /// fade and short vertical settle.
 class WindowsNeoPageStage extends StatefulWidget {

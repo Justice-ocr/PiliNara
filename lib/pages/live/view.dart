@@ -20,6 +20,8 @@ import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
+import 'package:PiliPlus/windows_ui/features/home/windows_neo_live_card.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -199,12 +201,22 @@ class _LivePageState extends State<LivePage>
   );
 
   Widget _buildBody(ThemeData theme, LoadingState<List?> loadingState) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return switch (loadingState) {
-      Loading() => SliverGrid.builder(
-        gridDelegate: gridDelegate,
-        itemBuilder: (context, index) => const VideoCardVSkeleton(),
-        itemCount: 10,
-      ),
+      Loading() =>
+        isWindowsNeo
+            ? WindowsNeoSliverLoadingPulse(
+                sliver: SliverGrid.builder(
+                  gridDelegate: gridDelegate,
+                  itemBuilder: (_, _) => const WindowsNeoLiveCardSkeleton(),
+                  itemCount: 10,
+                ),
+              )
+            : SliverGrid.builder(
+                gridDelegate: gridDelegate,
+                itemBuilder: (_, _) => const VideoCardVSkeleton(),
+                itemCount: 10,
+              ),
       Success(:final response) => SliverMainAxisGroup(
         slivers: [
           if (controller.newTags case final newTags?)

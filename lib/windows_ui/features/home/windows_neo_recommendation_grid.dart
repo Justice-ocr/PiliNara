@@ -65,10 +65,12 @@ class WindowsNeoRecommendationGrid extends StatelessWidget {
     LoadingState<List<dynamic>?> loadingState,
   ) {
     return switch (loadingState) {
-      Loading() => SliverGrid.builder(
-        gridDelegate: gridDelegate,
-        itemCount: 12,
-        itemBuilder: (_, _) => const WindowsNeoVideoCardVSkeleton(),
+      Loading() => WindowsNeoSliverLoadingPulse(
+        sliver: SliverGrid.builder(
+          gridDelegate: gridDelegate,
+          itemCount: 12,
+          itemBuilder: (_, _) => const WindowsNeoVideoCardVSkeleton(),
+        ),
       ),
       Success(:final response) =>
         response != null && response.isNotEmpty

@@ -4,7 +4,7 @@ import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 
 /// Cyan card shell with a short, non-layout-shifting hover lift.
-class WindowsNeoCardShell extends StatelessWidget {
+class WindowsNeoCardShell extends StatefulWidget {
   const WindowsNeoCardShell({
     super.key,
     required this.hovered,
@@ -21,38 +21,51 @@ class WindowsNeoCardShell extends StatelessWidget {
   final VoidCallback? onSecondaryTap;
 
   @override
+  State<WindowsNeoCardShell> createState() => _WindowsNeoCardShellState();
+}
+
+class _WindowsNeoCardShellState extends State<WindowsNeoCardShell> {
+  bool _focused = false;
+
+  @override
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
+    final highlighted = widget.hovered || _focused;
     return AnimatedSlide(
-      offset: hovered ? const Offset(0, -0.012) : Offset.zero,
+      offset: highlighted ? const Offset(0, -0.012) : Offset.zero,
       duration: context.windowsNeoDuration(tokens.motionFast),
       curve: Curves.easeOutCubic,
       child: WindowsNeoHoverHalo(
         borderRadius: tokens.cardRadius,
+        active: _focused,
         child: AnimatedContainer(
           duration: context.windowsNeoDuration(tokens.motionFast),
           curve: Curves.easeOutCubic,
           decoration: BoxDecoration(
-            color: hovered ? tokens.surfaceRaised : tokens.surface,
+            color: highlighted ? tokens.surfaceRaised : tokens.surface,
             borderRadius: tokens.cardRadius,
             border: Border.all(
-              color: hovered
+              color: highlighted
                   ? tokens.accent.withValues(alpha: 0.34)
                   : tokens.border.withValues(alpha: 0.40),
             ),
-            boxShadow: hovered ? tokens.cardHoverShadow : tokens.cardShadow,
+            boxShadow: highlighted ? tokens.cardHoverShadow : tokens.cardShadow,
           ),
           child: Material(
             color: Colors.transparent,
             borderRadius: tokens.cardRadius,
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: onTap,
-              onLongPress: onLongPress,
-              onSecondaryTap: onSecondaryTap,
+              onTap: widget.onTap,
+              onLongPress: widget.onLongPress,
+              onSecondaryTap: widget.onSecondaryTap,
+              onFocusChange: (focused) {
+                if (_focused != focused) setState(() => _focused = focused);
+              },
+              focusColor: tokens.accentSoft,
               splashColor: tokens.accent.withValues(alpha: 0.06),
               highlightColor: tokens.accentSoft,
-              child: child,
+              child: widget.child,
             ),
           ),
         ),

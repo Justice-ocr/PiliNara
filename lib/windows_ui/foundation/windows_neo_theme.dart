@@ -35,6 +35,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     this.motionFast = const Duration(milliseconds: 140),
     this.motionStandard = const Duration(milliseconds: 200),
     this.motionPage = const Duration(milliseconds: 240),
+    this.motionLoading = const Duration(milliseconds: 1100),
     this.motionStagger = const Duration(milliseconds: 28),
   });
 
@@ -98,6 +99,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
   final Duration motionFast;
   final Duration motionStandard;
   final Duration motionPage;
+  final Duration motionLoading;
   final Duration motionStagger;
 
   BorderRadius get cardRadius => BorderRadius.circular(radiusMd);
@@ -207,6 +209,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     Duration? motionFast,
     Duration? motionStandard,
     Duration? motionPage,
+    Duration? motionLoading,
     Duration? motionStagger,
   }) => WindowsNeoTokens(
     background: background ?? this.background,
@@ -237,6 +240,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     motionFast: motionFast ?? this.motionFast,
     motionStandard: motionStandard ?? this.motionStandard,
     motionPage: motionPage ?? this.motionPage,
+    motionLoading: motionLoading ?? this.motionLoading,
     motionStagger: motionStagger ?? this.motionStagger,
   );
 
@@ -288,6 +292,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
       motionFast: t < 0.5 ? motionFast : other.motionFast,
       motionStandard: t < 0.5 ? motionStandard : other.motionStandard,
       motionPage: t < 0.5 ? motionPage : other.motionPage,
+      motionLoading: t < 0.5 ? motionLoading : other.motionLoading,
       motionStagger: t < 0.5 ? motionStagger : other.motionStagger,
     );
   }

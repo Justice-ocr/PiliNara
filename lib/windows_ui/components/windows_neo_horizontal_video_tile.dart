@@ -1,4 +1,3 @@
-import 'package:PiliPlus/common/skeleton/skeleton.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -231,55 +230,53 @@ class WindowsNeoHorizontalTileSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
-    return Skeleton(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: tokens.surface,
-          border: Border.all(color: tokens.border),
-          borderRadius: tokens.cardRadius,
-          boxShadow: tokens.cardShadow,
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final height =
-                constraints.maxHeight.isFinite && constraints.maxHeight > 0
-                ? constraints.maxHeight
-                : tokens.horizontalCardHeight;
-            final width = (height * 16 / 9)
-                .clamp(0.0, constraints.maxWidth * 0.52)
-                .toDouble();
-            return Row(
-              children: [
-                SizedBox(
-                  width: width,
-                  height: height,
-                  child: ColoredBox(color: tokens.hover),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.all(tokens.spaceMd),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(height: 13, color: tokens.hover),
-                        SizedBox(height: tokens.spaceSm - 1),
-                        FractionallySizedBox(
-                          widthFactor: 0.72,
-                          child: Container(height: 13, color: tokens.hover),
-                        ),
-                        const Spacer(),
-                        FractionallySizedBox(
-                          widthFactor: 0.48,
-                          child: Container(height: 11, color: tokens.hover),
-                        ),
-                      ],
-                    ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        border: Border.all(color: tokens.border),
+        borderRadius: tokens.cardRadius,
+        boxShadow: tokens.cardShadow,
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final height =
+              constraints.maxHeight.isFinite && constraints.maxHeight > 0
+              ? constraints.maxHeight
+              : tokens.horizontalCardHeight;
+          final width = (height * 16 / 9)
+              .clamp(0.0, constraints.maxWidth * 0.52)
+              .toDouble();
+          return Row(
+            children: [
+              SizedBox(
+                width: width,
+                height: height,
+                child: ColoredBox(color: tokens.hover),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.all(tokens.spaceMd),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(height: 13, color: tokens.hover),
+                      SizedBox(height: tokens.spaceSm - 1),
+                      FractionallySizedBox(
+                        widthFactor: 0.72,
+                        child: Container(height: 13, color: tokens.hover),
+                      ),
+                      const Spacer(),
+                      FractionallySizedBox(
+                        widthFactor: 0.48,
+                        child: Container(height: 11, color: tokens.hover),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            );
-          },
-        ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

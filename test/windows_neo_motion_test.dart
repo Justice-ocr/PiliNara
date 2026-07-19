@@ -36,6 +36,27 @@ void main() {
 
     expect(_opacity(tester), 1);
   });
+
+  testWidgets('loading placeholders share one restrained sliver pulse', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const _LoadingPulseHarness());
+
+    final initial = _loadingOpacity(tester);
+    expect(initial, closeTo(0.72, 0.01));
+
+    await tester.pump(const Duration(milliseconds: 550));
+    expect(_loadingOpacity(tester), greaterThan(initial));
+    expect(find.byType(SliverFadeTransition), findsOneWidget);
+  });
+
+  testWidgets('loading pulse honors reduced motion', (tester) async {
+    await tester.pumpWidget(
+      const _LoadingPulseHarness(disableAnimations: true),
+    );
+
+    expect(_loadingOpacity(tester), 1);
+  });
 }
 
 double _opacity(WidgetTester tester) {
@@ -45,6 +66,11 @@ double _opacity(WidgetTester tester) {
   );
   return tester.widget<FadeTransition>(finder).opacity.value;
 }
+
+double _loadingOpacity(WidgetTester tester) => tester
+    .widget<SliverFadeTransition>(find.byType(SliverFadeTransition))
+    .opacity
+    .value;
 
 class _MotionHarness extends StatelessWidget {
   const _MotionHarness({
@@ -67,6 +93,31 @@ class _MotionHarness extends StatelessWidget {
             active: value,
             child: const ColoredBox(color: Colors.white),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LoadingPulseHarness extends StatelessWidget {
+  const _LoadingPulseHarness({this.disableAnimations = false});
+
+  final bool disableAnimations;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: WindowsNeoTheme.apply(ThemeData.light()),
+      home: MediaQuery(
+        data: MediaQueryData(disableAnimations: disableAnimations),
+        child: CustomScrollView(
+          slivers: [
+            WindowsNeoSliverLoadingPulse(
+              sliver: SliverList.list(
+                children: const [SizedBox(height: 40)],
+              ),
+            ),
+          ],
         ),
       ),
     );

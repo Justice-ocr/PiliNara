@@ -9,11 +9,13 @@ class WindowsNeoHoverHalo extends StatefulWidget {
     required this.child,
     required this.borderRadius,
     this.enabled = true,
+    this.active = false,
   });
 
   final Widget child;
   final BorderRadius borderRadius;
   final bool enabled;
+  final bool active;
 
   @override
   State<WindowsNeoHoverHalo> createState() => _WindowsNeoHoverHaloState();
@@ -27,6 +29,7 @@ class _WindowsNeoHoverHaloState extends State<WindowsNeoHoverHalo> {
     final tokens = context.windowsNeo;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final haloAlpha = isDark ? 0.17 : 0.11;
+    final visible = _hovered || widget.active;
 
     if (!widget.enabled) return widget.child;
 
@@ -38,7 +41,7 @@ class _WindowsNeoHoverHaloState extends State<WindowsNeoHoverHalo> {
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           borderRadius: widget.borderRadius,
-          boxShadow: _hovered
+          boxShadow: visible
               ? [
                   BoxShadow(
                     color: tokens.accent.withValues(alpha: haloAlpha),
@@ -57,7 +60,7 @@ class _WindowsNeoHoverHaloState extends State<WindowsNeoHoverHalo> {
                 child: AnimatedOpacity(
                   duration: context.windowsNeoDuration(tokens.motionFast),
                   curve: Curves.easeOutCubic,
-                  opacity: _hovered ? 1 : 0,
+                  opacity: visible ? 1 : 0,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       borderRadius: widget.borderRadius,
