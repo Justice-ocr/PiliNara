@@ -386,6 +386,17 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
     }
   }
 
+  bool get _reduceMotion =>
+      MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+
+  Duration get _feedbackMotionDuration => _reduceMotion
+      ? Duration.zero
+      : Duration(milliseconds: Platform.isWindows ? 180 : 150);
+
+  Duration get _seekIndicatorMotionDuration => _reduceMotion
+      ? Duration.zero
+      : Duration(milliseconds: Platform.isWindows ? 200 : 500);
+
   Future<void> setBrightness(double value) async {
     _brightnessValue.value = value;
     try {
@@ -1075,6 +1086,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
   void didChangeDependencies() {
     super.didChangeDependencies();
     colorScheme = ColorScheme.of(context);
+    _animationController.duration = _reduceMotion
+        ? Duration.zero
+        : Duration(milliseconds: Platform.isWindows ? 180 : 100);
   }
 
   @override
@@ -1816,7 +1830,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                 return AnimatedOpacity(
                   curve: Curves.easeInOut,
                   opacity: plPlayerController.volumeIndicator.value ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 150),
+                  duration: _feedbackMotionDuration,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -1865,7 +1879,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
               () => AnimatedOpacity(
                 curve: Curves.easeInOut,
                 opacity: _brightnessIndicator.value ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 150),
+                duration: _feedbackMotionDuration,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -1989,7 +2003,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                       onPressed: () async {
                         final animController = AnimationController(
                           vsync: this,
-                          duration: const Duration(milliseconds: 255),
+                          duration: _reduceMotion
+                              ? Duration.zero
+                              : const Duration(milliseconds: 255),
                         );
                         final anim = animController.drive(
                           Matrix4Tween(
@@ -2258,7 +2274,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                           Expanded(
                             child: TweenAnimationBuilder<double>(
                               tween: Tween<double>(begin: 0.0, end: 1.0),
-                              duration: const Duration(milliseconds: 500),
+                              duration: _seekIndicatorMotionDuration,
                               builder: (context, value, child) => Opacity(
                                 opacity: value,
                                 child: child,
@@ -2279,7 +2295,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                           Expanded(
                             child: TweenAnimationBuilder<double>(
                               tween: Tween<double>(begin: 0.0, end: 1.0),
-                              duration: const Duration(milliseconds: 500),
+                              duration: _seekIndicatorMotionDuration,
                               builder: (context, value, child) => Opacity(
                                 opacity: value,
                                 child: child,
@@ -2368,8 +2384,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
               minScale: plPlayerController.enableShrinkVideoSize ? 0.75 : 1,
               maxScale: 2.0,
               boundaryMargin: plPlayerController.enableShrinkVideoSize
-                            ? const .all(double.infinity)
-                            : .zero,
+                  ? const .all(double.infinity)
+                  : .zero,
               panAxis: .aligned,
               transformationController: _transformationController,
               childKey: _videoKey,

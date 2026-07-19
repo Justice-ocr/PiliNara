@@ -38,6 +38,14 @@ void main() {
     expect(tokens.motionFast, const Duration(milliseconds: 140));
     expect(tokens.motionStandard, const Duration(milliseconds: 200));
     expect(tokens.motionPage, const Duration(milliseconds: 240));
+    expect(
+      theme.pageTransitionsTheme.builders[TargetPlatform.windows],
+      isA<WindowsNeoPageTransitionsBuilder>(),
+    );
+    expect(theme.dialogTheme.backgroundColor, tokens.surface);
+    expect(theme.dialogTheme.surfaceTintColor, Colors.transparent);
+    expect(theme.bottomSheetTheme.modalBackgroundColor, tokens.surface);
+    expect(theme.bottomSheetTheme.surfaceTintColor, Colors.transparent);
     expect(theme.visualDensity, VisualDensity.compact);
   });
 
