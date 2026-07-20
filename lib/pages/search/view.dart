@@ -16,6 +16,7 @@ import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -222,7 +223,7 @@ class _SearchPageState extends State<SearchPage> {
           SliverPadding(
             padding: const .fromLTRB(6, 0, 6, 6),
             sliver: SliverToBoxAdapter(
-              child: Row(
+              child: _windowsSectionHeader(Row(
                 mainAxisAlignment: .spaceBetween,
                 children: [
                   isTrending
@@ -284,7 +285,7 @@ class _SearchPageState extends State<SearchPage> {
                     ),
                   ),
                 ],
-              ),
+              )),
             ),
           ),
           Obx(
@@ -301,6 +302,13 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   late final mainAxisExtent = 16 + MediaQuery.textScalerOf(context).scale(14);
+
+  Widget _windowsSectionHeader(Widget child) {
+    return WindowsVideoTabService.enabled
+        ? WindowsNeoSectionHeader(child: child)
+        : child;
+  }
+
   Widget get _buildHistory {
     return Obx(
       () {
@@ -325,7 +333,7 @@ class _SearchPageState extends State<SearchPage> {
               SliverPadding(
                 padding: const .fromLTRB(6, 0, 6, 6),
                 sliver: SliverToBoxAdapter(
-                  child: Row(
+                  child: _windowsSectionHeader(Row(
                     children: [
                       Text(
                         '搜索历史',
@@ -359,7 +367,7 @@ class _SearchPageState extends State<SearchPage> {
                         ),
                       ),
                     ],
-                  ),
+                  )),
                 ),
               ),
               SliverFixedWrap(

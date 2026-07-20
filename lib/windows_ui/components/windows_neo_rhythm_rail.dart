@@ -119,6 +119,40 @@ class WindowsNeoHeaderWave extends StatelessWidget {
   );
 }
 
+/// Adds a compact beat and rhythm rail around an open workspace section.
+/// The content stays unframed so adjacent sections remain airy.
+class WindowsNeoSectionHeader extends StatelessWidget {
+  const WindowsNeoSectionHeader({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.windowsNeo;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 3,
+              height: 18,
+              decoration: BoxDecoration(
+                gradient: tokens.rhythmGradient,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            SizedBox(width: tokens.spaceSm),
+            Expanded(child: child),
+          ],
+        ),
+        SizedBox(height: tokens.spaceXs + 1),
+        const WindowsNeoRhythmRail(height: 3),
+      ],
+    );
+  }
+}
+
 class WindowsNeoTabIndicator extends Decoration {
   const WindowsNeoTabIndicator({this.width = 38, this.height = 2.5});
 
