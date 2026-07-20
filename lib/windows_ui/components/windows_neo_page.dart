@@ -1,4 +1,5 @@
 import 'package:PiliPlus/windows_ui/components/windows_neo_backdrop.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -75,6 +76,8 @@ class WindowsNeoPage extends StatelessWidget {
                         SizedBox.square(dimension: 34, child: leading),
                         SizedBox(width: tokens.spaceMd - 2),
                       ],
+                      const WindowsNeoHeaderBeat(),
+                      SizedBox(width: tokens.spaceSm),
                       Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,

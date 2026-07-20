@@ -1,5 +1,6 @@
 import 'package:PiliPlus/pages/search_result/view.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_video_search_tile.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/shell/windows_neo_shell.dart';
@@ -75,5 +76,29 @@ void main() {
     expect(WindowsNeoPage, isA<Type>());
     expect(WindowsNeoVideoSearchTile, isA<Type>());
     expect(SearchResultPage, isA<Type>());
+  });
+
+  testWidgets('shared rhythm markers render without layout exceptions', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: WindowsNeoTheme.apply(ThemeData.light()),
+        home: const Scaffold(
+          body: Column(
+            children: [
+              WindowsNeoRhythmRail(),
+              WindowsNeoHeaderBeat(),
+              WindowsNeoActiveBeat(active: true),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const Key('windows-neo-header-beat')), findsOneWidget);
+    expect(find.byType(WindowsNeoRhythmRail), findsOneWidget);
+    expect(find.byType(WindowsNeoActiveBeat), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
