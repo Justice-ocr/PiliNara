@@ -209,7 +209,7 @@ class _SearchPageState extends State<SearchPage> {
           SliverPadding(
             padding: const .fromLTRB(6, 0, 6, 6),
             sliver: SliverToBoxAdapter(
-              child: Row(
+              child: _windowsSectionHeader(Row(
                 mainAxisAlignment: .spaceBetween,
                 children: [
                   isTrending
@@ -271,7 +271,7 @@ class _SearchPageState extends State<SearchPage> {
                     ),
                   ),
                 ],
-              ),
+              )),
             ),
           ),
           Obx(
@@ -288,6 +288,13 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   late final mainAxisExtent = 16 + MediaQuery.textScalerOf(context).scale(14);
+
+  Widget _windowsSectionHeader(Widget child) {
+    return WindowsVideoTabService.enabled
+        ? WindowsNeoSectionHeader(child: child)
+        : child;
+  }
+
   Widget get _buildHistory {
     return Obx(
       () {
@@ -312,7 +319,7 @@ class _SearchPageState extends State<SearchPage> {
               SliverPadding(
                 padding: const .fromLTRB(6, 0, 6, 6),
                 sliver: SliverToBoxAdapter(
-                  child: Row(
+                  child: _windowsSectionHeader(Row(
                     children: [
                       Text(
                         '搜索历史',
@@ -346,7 +353,7 @@ class _SearchPageState extends State<SearchPage> {
                         ),
                       ),
                     ],
-                  ),
+                  )),
                 ),
               ),
               SliverFixedWrap(

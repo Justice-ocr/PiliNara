@@ -93,6 +93,7 @@ void main() {
               WindowsNeoHeaderBeat(),
               WindowsNeoHeaderWave(),
               WindowsNeoActiveBeat(active: true),
+              WindowsNeoSectionHeader(child: Text('Search history')),
               SizedBox(
                 width: 280,
                 child: DefaultTabController(
@@ -110,9 +111,10 @@ void main() {
     );
 
     expect(find.byKey(const Key('windows-neo-header-beat')), findsOneWidget);
-    expect(find.byType(WindowsNeoRhythmRail), findsOneWidget);
+    expect(find.byType(WindowsNeoRhythmRail), findsNWidgets(2));
     expect(find.byKey(const Key('windows-neo-header-wave')), findsOneWidget);
     expect(find.byType(WindowsNeoActiveBeat), findsOneWidget);
+    expect(find.byType(WindowsNeoSectionHeader), findsOneWidget);
     expect(find.byType(TabBar), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
