@@ -104,6 +104,15 @@ void main() {
       tester.widget<AnimatedSlide>(find.byType(AnimatedSlide)).offset.dy,
       lessThan(0),
     );
+    expect(
+      tester
+          .widget<TweenAnimationBuilder<double>>(
+            find.byType(TweenAnimationBuilder<double>),
+          )
+          .tween
+          .end,
+      1,
+    );
   });
 
   testWidgets('live skeleton fits the Windows 16:9 grid extent', (

@@ -77,9 +77,26 @@ class _WindowsNeoCardShellState extends State<WindowsNeoCardShell> {
                 right: tokens.spaceLg,
                 height: highlighted ? 2 : 1,
                 child: IgnorePointer(
-                  child: AnimatedOpacity(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(
+                      begin: 0.28,
+                      end: highlighted ? 1 : 0.28,
+                    ),
                     duration: context.windowsNeoDuration(tokens.motionFast),
-                    opacity: highlighted ? 0.82 : 0.42,
+                    curve: Curves.easeOutCubic,
+                    builder: (context, widthFactor, child) => Align(
+                      alignment: Alignment.centerLeft,
+                      child: FractionallySizedBox(
+                        widthFactor: widthFactor,
+                        child: AnimatedOpacity(
+                          duration: context.windowsNeoDuration(
+                            tokens.motionFast,
+                          ),
+                          opacity: highlighted ? 0.82 : 0.42,
+                          child: child,
+                        ),
+                      ),
+                    ),
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: tokens.cardAccentGradient,
