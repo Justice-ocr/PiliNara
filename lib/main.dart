@@ -88,14 +88,19 @@ Future<void> _initTmpPath() async {
   tmpDirPath = (await getTemporaryDirectory()).path;
 }
 
-Future<void> _initAppPath() async {
-  appSupportDirPath = (await getApplicationSupportDirectory()).path;
+Future<void> _initAppPath({required bool isolatedDebugInstance}) async {
+  final basePath = (await getApplicationSupportDirectory()).path;
+  appSupportDirPath = isolatedDebugInstance
+      ? path.join(basePath, 'debug_instance')
+      : basePath;
 }
 
-void main() async {
+void main(List<String> arguments) async {
   ScaledWidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
-  await _initAppPath();
+  await _initAppPath(
+    isolatedDebugInstance: arguments.contains('--allow-multiple-instances'),
+  );
   try {
     await GStorage.init();
   } catch (e) {

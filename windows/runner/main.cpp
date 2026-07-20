@@ -7,11 +7,16 @@
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
-  HWND hwnd = ::FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"pilinara");
-  if (hwnd != NULL) {
-    ::ShowWindow(hwnd, SW_NORMAL);
-    ::SetForegroundWindow(hwnd);
-    return EXIT_FAILURE;
+  const bool allow_multiple_instances =
+      command_line != nullptr &&
+      ::wcsstr(command_line, L"--allow-multiple-instances") != nullptr;
+  if (!allow_multiple_instances) {
+    HWND hwnd = ::FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"pilinara");
+    if (hwnd != NULL) {
+      ::ShowWindow(hwnd, SW_NORMAL);
+      ::SetForegroundWindow(hwnd);
+      return EXIT_FAILURE;
+    }
   }
 
   // Attach to console when present (e.g., 'flutter run') or create a
@@ -36,6 +41,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   Win32Window::Size size(1280, 720);
   if (!window.Create(L"pilinara", origin, size)) {
     return EXIT_FAILURE;
+  }
+  if (allow_multiple_instances) {
+    window.Show();
   }
   window.SetQuitOnClose(true);
 

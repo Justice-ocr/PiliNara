@@ -324,8 +324,6 @@ class _SettingPageState extends State<SettingPage> {
         child: InkWell(
           onTap: () => _toPage(item.type),
           child: Ink(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             decoration: BoxDecoration(
               gradient: selected ? tokens.workspaceTabGradient : null,
               border: Border(
@@ -335,37 +333,49 @@ class _SettingPageState extends State<SettingPage> {
                 ),
               ),
             ),
-            child: Row(
-              children: [
-                IconTheme.merge(
-                  data: IconThemeData(
-                    color: selected ? tokens.accent : tokens.muted,
-                    size: 19,
-                  ),
-                  child: item.icon,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        item.type.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                child: Row(
+                  children: [
+                    IconTheme.merge(
+                      data: IconThemeData(
+                        color: selected ? tokens.accent : tokens.muted,
+                        size: 19,
                       ),
-                      if (item.subtitle case final subtitle?)
-                        Text(
-                          subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 11, color: tokens.muted),
-                        ),
-                    ],
-                  ),
+                      child: item.icon,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            item.type.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (item.subtitle case final subtitle?)
+                            Text(
+                              subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: tokens.muted,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
