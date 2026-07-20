@@ -102,6 +102,23 @@ class WindowsNeoHeaderBeat extends StatelessWidget {
   }
 }
 
+class WindowsNeoHeaderWave extends StatelessWidget {
+  const WindowsNeoHeaderWave({super.key});
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    key: const Key('windows-neo-header-wave'),
+    width: 168,
+    height: 28,
+    child: CustomPaint(
+      painter: _WindowsNeoHeaderWavePainter(
+        primary: context.windowsNeo.accent.withValues(alpha: 0.075),
+        secondary: WindowsNeoTokens.iceCyan.withValues(alpha: 0.055),
+      ),
+    ),
+  );
+}
+
 class WindowsNeoTabIndicator extends Decoration {
   const WindowsNeoTabIndicator({this.width = 38, this.height = 2.5});
 
@@ -174,6 +191,47 @@ class _WindowsNeoHeaderBeatPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _WindowsNeoHeaderBeatPainter oldDelegate) =>
       oldDelegate.gradient != gradient || oldDelegate.mutedColor != mutedColor;
+}
+
+class _WindowsNeoHeaderWavePainter extends CustomPainter {
+  const _WindowsNeoHeaderWavePainter({
+    required this.primary,
+    required this.secondary,
+  });
+
+  final Color primary;
+  final Color secondary;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.height / 2;
+    final primaryPaint = Paint()
+      ..color = primary
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+    final secondaryPaint = Paint()
+      ..color = secondary
+      ..strokeWidth = 1;
+    final path = Path()..moveTo(0, center);
+    const levels = [0.0, -4.0, 7.0, -10.0, 5.0, -2.0, 8.0, -5.0, 0.0];
+    final step = size.width / (levels.length - 1);
+    for (var index = 1; index < levels.length; index++) {
+      path.lineTo(step * index, center + levels[index]);
+    }
+    canvas.drawPath(path, primaryPaint);
+    for (final position in const [0.18, 0.39, 0.72]) {
+      final x = size.width * position;
+      canvas.drawLine(
+        Offset(x, center - 10),
+        Offset(x, center + 10),
+        secondaryPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WindowsNeoHeaderWavePainter oldDelegate) =>
+      oldDelegate.primary != primary || oldDelegate.secondary != secondary;
 }
 
 class _WindowsNeoTabIndicatorPainter extends BoxPainter {

@@ -1,7 +1,6 @@
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
-import 'package:PiliPlus/common/widgets/stat/stat.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_v.dart';
 import 'package:PiliPlus/common/widgets/video_popup_menu.dart';
 import 'package:PiliPlus/models/common/stat_type.dart';
@@ -11,6 +10,7 @@ import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_media_meta.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
@@ -86,11 +86,8 @@ class _WindowsNeoVideoCardVState extends State<WindowsNeoVideoCardV> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         if (item.duration > 0)
-                          PBadge(
+                          WindowsNeoMediaBadge(
                             text: DurationUtils.formatDuration(item.duration),
-                            isStack: false,
-                            size: .small,
-                            type: .gray,
                           ),
                         const Spacer(),
                         if (item case RcmdVideoItemAppModel(
@@ -109,6 +106,7 @@ class _WindowsNeoVideoCardVState extends State<WindowsNeoVideoCardV> {
                 ],
               ),
             ),
+            const WindowsNeoMediaDivider(),
             SizedBox(
               height: metaHeight,
               child: Padding(
@@ -157,13 +155,13 @@ class _WindowsNeoVideoCardVState extends State<WindowsNeoVideoCardV> {
                     SizedBox(height: tokens.spaceXs - 1),
                     Row(
                       children: [
-                        StatWidget(
+                        WindowsNeoStat(
                           type: StatType.play,
                           value: item.stat.view,
                         ),
                         if (item.goto != 'picture') ...[
                           SizedBox(width: tokens.spaceSm),
-                          StatWidget(
+                          WindowsNeoStat(
                             type: StatType.danmaku,
                             value: item.stat.danmu,
                           ),

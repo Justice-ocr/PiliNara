@@ -2,7 +2,6 @@ import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/progress_bar/video_progress_indicator.dart';
-import 'package:PiliPlus/common/widgets/stat/stat.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart';
 import 'package:PiliPlus/common/widgets/video_popup_menu.dart';
 import 'package:PiliPlus/models/common/stat_type.dart';
@@ -12,6 +11,7 @@ import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_media_meta.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
@@ -94,13 +94,14 @@ class _WindowsNeoHorizontalVideoTileState
                         PBadge(text: badge, top: 8, left: 8),
                       if (item.progress case final progress?
                           when progress != 0) ...[
-                        PBadge(
-                          text: progress == -1
-                              ? '\u5df2\u770b\u5b8c'
-                              : '${DurationUtils.formatDuration(progress)}/${DurationUtils.formatDuration(item.duration)}',
+                        Positioned(
                           right: 8,
                           bottom: 8,
-                          type: .gray,
+                          child: WindowsNeoMediaBadge(
+                            text: progress == -1
+                                ? '\u5df2\u770b\u5b8c'
+                                : '${DurationUtils.formatDuration(progress)}/${DurationUtils.formatDuration(item.duration)}',
+                          ),
                         ),
                         Positioned(
                           left: 0,
@@ -117,17 +118,19 @@ class _WindowsNeoHorizontalVideoTileState
                           ),
                         ),
                       ] else if (item.duration > 0)
-                        PBadge(
-                          text: DurationUtils.formatDuration(item.duration),
+                        Positioned(
                           right: 8,
                           bottom: 8,
-                          type: .gray,
+                          child: WindowsNeoMediaBadge(
+                            text: DurationUtils.formatDuration(item.duration),
+                          ),
                         ),
                     ],
                   ),
                 );
               },
             ),
+            const WindowsNeoMediaDivider(axis: Axis.vertical),
             Expanded(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
@@ -188,12 +191,12 @@ class _WindowsNeoHorizontalVideoTileState
                     SizedBox(height: tokens.spaceXs),
                     Row(
                       children: [
-                        StatWidget(
+                        WindowsNeoStat(
                           type: StatType.play,
                           value: item.stat.view,
                         ),
                         SizedBox(width: tokens.spaceSm),
-                        StatWidget(
+                        WindowsNeoStat(
                           type: StatType.danmaku,
                           value: item.stat.danmu,
                         ),
@@ -343,6 +346,7 @@ class _WindowsNeoPgcRankTileState extends State<WindowsNeoPgcRankTile> {
                 );
               },
             ),
+            const WindowsNeoMediaDivider(axis: Axis.vertical),
             Expanded(
               child: Padding(
                 padding: EdgeInsets.all(tokens.spaceMd),
@@ -367,12 +371,12 @@ class _WindowsNeoPgcRankTileState extends State<WindowsNeoPgcRankTile> {
                     SizedBox(height: tokens.spaceSm),
                     Row(
                       children: [
-                        StatWidget(
+                        WindowsNeoStat(
                           type: StatType.play,
                           value: item.stat?.view,
                         ),
                         SizedBox(width: tokens.spaceMd - 2),
-                        StatWidget(
+                        WindowsNeoStat(
                           type: StatType.follow,
                           value: item.stat?.follow,
                         ),

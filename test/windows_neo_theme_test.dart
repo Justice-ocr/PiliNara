@@ -40,6 +40,7 @@ void main() {
     );
     expect(tokens.pagePadding, 24);
     expect(tokens.gridGap, 16);
+    expect(tokens.radiusMd, 10);
     expect(tokens.motionFast, const Duration(milliseconds: 140));
     expect(tokens.motionStandard, const Duration(milliseconds: 200));
     expect(tokens.motionPage, const Duration(milliseconds: 240));
@@ -89,6 +90,7 @@ void main() {
             children: [
               WindowsNeoRhythmRail(),
               WindowsNeoHeaderBeat(),
+              WindowsNeoHeaderWave(),
               WindowsNeoActiveBeat(active: true),
             ],
           ),
@@ -98,6 +100,7 @@ void main() {
 
     expect(find.byKey(const Key('windows-neo-header-beat')), findsOneWidget);
     expect(find.byType(WindowsNeoRhythmRail), findsOneWidget);
+    expect(find.byKey(const Key('windows-neo-header-wave')), findsOneWidget);
     expect(find.byType(WindowsNeoActiveBeat), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
