@@ -71,6 +71,12 @@ void main() {
               container.decoration is BoxDecoration &&
               (container.decoration! as BoxDecoration).gradient != null,
         );
-    expect(activeContainers, hasLength(1));
+    expect(activeContainers, hasLength(2));
+    expect(
+      activeContainers.any(
+        (container) => (container.decoration! as BoxDecoration).border != null,
+      ),
+      isTrue,
+    );
   });
 }

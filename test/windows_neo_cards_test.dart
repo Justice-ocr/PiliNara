@@ -8,6 +8,7 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_horizontal_video_tile.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_search_skeletons.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_state.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_video_card_v.dart';
 import 'package:PiliPlus/windows_ui/features/home/windows_neo_home.dart';
@@ -66,6 +67,7 @@ void main() {
 
     expect(find.byType(WindowsNeoVideoCardVSkeleton), findsOneWidget);
     expect(find.byType(WindowsNeoHorizontalTileSkeleton), findsOneWidget);
+    expect(find.byType(WindowsNeoLoadingMarker), findsNWidgets(2));
   });
 
   testWidgets('card shell gives keyboard focus the same visual lift', (

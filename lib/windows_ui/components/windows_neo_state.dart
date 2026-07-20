@@ -1,4 +1,5 @@
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 
@@ -56,6 +57,11 @@ class WindowsNeoSliverState extends StatelessWidget {
                       Icon(icon, size: 38, color: tokens.accent),
                     ],
                   ),
+                  const SizedBox(
+                    width: 180,
+                    child: WindowsNeoRhythmRail(),
+                  ),
+                  SizedBox(height: tokens.spaceSm),
                   SizedBox(height: tokens.spaceMd),
                   Text(
                     title,
