@@ -39,6 +39,7 @@ void main() {
       lessThan(tokens.surface.computeLuminance()),
     );
     expect(tokens.pagePadding, 24);
+    expect(tokens.sectionTabHeight, 40);
     expect(tokens.gridGap, 16);
     expect(tokens.radiusMd, 10);
     expect(tokens.motionFast, const Duration(milliseconds: 140));
@@ -92,6 +93,16 @@ void main() {
               WindowsNeoHeaderBeat(),
               WindowsNeoHeaderWave(),
               WindowsNeoActiveBeat(active: true),
+              SizedBox(
+                width: 280,
+                child: DefaultTabController(
+                  length: 2,
+                  child: TabBar(
+                    indicator: WindowsNeoTabIndicator(),
+                    tabs: [Tab(text: '推荐'), Tab(text: '热门')],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -102,6 +113,7 @@ void main() {
     expect(find.byType(WindowsNeoRhythmRail), findsOneWidget);
     expect(find.byKey(const Key('windows-neo-header-wave')), findsOneWidget);
     expect(find.byType(WindowsNeoActiveBeat), findsOneWidget);
+    expect(find.byType(TabBar), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
