@@ -7,6 +7,7 @@ import 'package:PiliPlus/pages/setting/view.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_horizontal_video_tile.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_media_meta.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_search_skeletons.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_state.dart';
@@ -252,6 +253,9 @@ void main() {
 
     final titleBox = tester.renderObject<RenderBox>(find.text(title));
     expect(titleBox.size.height, greaterThanOrEqualTo(36));
+    expect(find.byType(WindowsNeoMediaBadge), findsOneWidget);
+    expect(find.byType(WindowsNeoStat), findsNWidgets(2));
+    expect(find.byType(WindowsNeoMediaDivider), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

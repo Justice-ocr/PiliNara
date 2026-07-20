@@ -3,6 +3,7 @@ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models_new/live/live_feed_index/card_data_list_item.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_media_meta.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
@@ -130,7 +131,7 @@ class _WindowsNeoLiveCardState extends State<WindowsNeoLiveCard> {
                           Expanded(
                             child: Align(
                               alignment: Alignment.centerLeft,
-                              child: _OverlayLabel(
+                              child: WindowsNeoMediaBadge(
                                 text: item.areaName ?? '',
                               ),
                             ),
@@ -139,7 +140,7 @@ class _WindowsNeoLiveCardState extends State<WindowsNeoLiveCard> {
                             Expanded(
                               child: Align(
                                 alignment: Alignment.centerRight,
-                                child: _OverlayLabel(
+                                child: WindowsNeoMediaBadge(
                                   icon: Icons.visibility_outlined,
                                   text: value,
                                 ),
@@ -152,6 +153,7 @@ class _WindowsNeoLiveCardState extends State<WindowsNeoLiveCard> {
                 ),
               ),
             ),
+            const WindowsNeoMediaDivider(),
             SizedBox(
               height: MediaQuery.textScalerOf(context).scale(92),
               child: Padding(
@@ -207,43 +209,6 @@ class _WindowsNeoLiveCardState extends State<WindowsNeoLiveCard> {
                     ),
                   ],
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OverlayLabel extends StatelessWidget {
-  const _OverlayLabel({required this.text, this.icon});
-
-  final String text;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.68),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 12, color: Colors.white),
-              const SizedBox(width: 3),
-            ],
-            Flexible(
-              child: Text(
-                text,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, color: Colors.white),
               ),
             ),
           ],

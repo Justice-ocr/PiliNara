@@ -1,7 +1,6 @@
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/progress_bar/video_progress_indicator.dart';
-import 'package:PiliPlus/common/widgets/stat/stat.dart';
 import 'package:PiliPlus/common/widgets/video_popup_menu.dart';
 import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/common/badge_type.dart';
@@ -11,6 +10,7 @@ import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_media_meta.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +37,6 @@ class _WindowsNeoVideoSearchTileState extends State<WindowsNeoVideoSearchTile> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final tokens = context.windowsNeo;
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -53,7 +52,7 @@ class _WindowsNeoVideoSearchTileState extends State<WindowsNeoVideoSearchTile> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildCover(context, theme),
+                  _buildCover(context),
                   const SizedBox(width: 12),
                   Expanded(child: _buildContent(context)),
                   const SizedBox(width: 24),
@@ -82,7 +81,8 @@ class _WindowsNeoVideoSearchTileState extends State<WindowsNeoVideoSearchTile> {
     );
   }
 
-  Widget _buildCover(BuildContext context, ThemeData theme) {
+  Widget _buildCover(BuildContext context) {
+    final tokens = context.windowsNeo;
     const width = 168.0;
     const height = 94.5;
     final progress = videoItem.progress;
@@ -108,31 +108,33 @@ class _WindowsNeoVideoSearchTileState extends State<WindowsNeoVideoSearchTile> {
           if (videoItem.badge case final badge?)
             PBadge(text: badge, top: 6, left: 6, type: PBadgeType.primary),
           if (progress != null && progress != 0) ...[
-            PBadge(
-              text: progress == -1
-                  ? '已看完'
-                  : '${DurationUtils.formatDuration(progress)}/'
-                        '${DurationUtils.formatDuration(videoItem.duration)}',
+            Positioned(
               right: 6,
               bottom: 7,
-              type: PBadgeType.gray,
+              child: WindowsNeoMediaBadge(
+                text: progress == -1
+                    ? '已看完'
+                    : '${DurationUtils.formatDuration(progress)}/'
+                          '${DurationUtils.formatDuration(videoItem.duration)}',
+              ),
             ),
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
               child: VideoProgressIndicator(
-                color: theme.colorScheme.primary,
-                backgroundColor: theme.colorScheme.secondaryContainer,
+                color: tokens.accent,
+                backgroundColor: tokens.border,
                 progress: progress == -1 ? 1 : progress / videoItem.duration,
               ),
             ),
           ] else if (videoItem.duration > 0)
-            PBadge(
-              text: DurationUtils.formatDuration(videoItem.duration),
+            Positioned(
               right: 6,
               bottom: 6,
-              type: PBadgeType.gray,
+              child: WindowsNeoMediaBadge(
+                text: DurationUtils.formatDuration(videoItem.duration),
+              ),
             ),
         ],
       ),
@@ -195,8 +197,11 @@ class _WindowsNeoVideoSearchTileState extends State<WindowsNeoVideoSearchTile> {
         Row(
           spacing: 12,
           children: [
-            StatWidget(type: StatType.play, value: videoItem.stat.view),
-            StatWidget(type: StatType.danmaku, value: videoItem.stat.danmu),
+            WindowsNeoStat(type: StatType.play, value: videoItem.stat.view),
+            WindowsNeoStat(
+              type: StatType.danmaku,
+              value: videoItem.stat.danmu,
+            ),
           ],
         ),
       ],

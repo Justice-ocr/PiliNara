@@ -1,4 +1,4 @@
-import 'dart:ui' show lerpDouble;
+import 'dart:ui' show FontFeature, lerpDouble;
 
 import 'package:flutter/material.dart';
 
@@ -19,8 +19,8 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     required this.accentSoft,
     required this.ink,
     this.radiusSm = 8,
-    this.radiusMd = 14,
-    this.radiusLg = 18,
+    this.radiusMd = 10,
+    this.radiusLg = 16,
     this.spaceXs = 4,
     this.spaceSm = 8,
     this.spaceMd = 12,
@@ -215,6 +215,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
       (textTheme.labelSmall ?? const TextStyle(fontSize: 11)).copyWith(
         color: muted,
         height: 1.2,
+        fontFeatures: const [FontFeature.tabularFigures()],
       );
 
   @override

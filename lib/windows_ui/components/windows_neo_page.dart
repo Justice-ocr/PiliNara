@@ -79,27 +79,39 @@ class WindowsNeoPage extends StatelessWidget {
                       const WindowsNeoHeaderBeat(),
                       SizedBox(width: tokens.spaceSm),
                       Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Stack(
+                          fit: StackFit.expand,
                           children: [
-                            Text(
-                              title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: tokens.pageTitleStyle(theme.textTheme),
-                            ),
-                            if (showSubtitle) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                subtitle!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: tokens.pageSubtitleStyle(
-                                  theme.textTheme,
-                                ),
+                            const Positioned(
+                              right: 14,
+                              top: 9,
+                              child: IgnorePointer(
+                                child: WindowsNeoHeaderWave(),
                               ),
-                            ],
+                            ),
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: tokens.pageTitleStyle(theme.textTheme),
+                                ),
+                                if (showSubtitle) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    subtitle!,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: tokens.pageSubtitleStyle(
+                                      theme.textTheme,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ],
                         ),
                       ),
