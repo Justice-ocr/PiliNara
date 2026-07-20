@@ -92,10 +92,17 @@ class _HomeSectionTabs extends StatelessWidget {
             indicator: const WindowsNeoTabIndicator(),
             labelColor: tokens.ink,
             unselectedLabelColor: tokens.muted,
-            labelStyle: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w600,
+            labelStyle: theme.textTheme.bodyMedium?.copyWith(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0,
             ),
-            unselectedLabelStyle: theme.textTheme.bodySmall,
+            unselectedLabelStyle: theme.textTheme.bodyMedium?.copyWith(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0,
+            ),
+            labelPadding: const EdgeInsets.symmetric(horizontal: 14),
             overlayColor: WidgetStatePropertyAll(
               tokens.accent.withValues(alpha: 0.06),
             ),

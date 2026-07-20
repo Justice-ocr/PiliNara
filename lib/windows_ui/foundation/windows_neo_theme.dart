@@ -28,7 +28,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     this.spaceXl = 20,
     this.pagePadding = 24,
     this.pageHeaderHeight = 54,
-    this.sectionTabHeight = 36,
+    this.sectionTabHeight = 40,
     this.videoCardMetaHeight = 104,
     this.horizontalCardHeight = 124,
     this.gridGap = 16,

@@ -112,8 +112,8 @@ class WindowsNeoHeaderWave extends StatelessWidget {
     height: 28,
     child: CustomPaint(
       painter: _WindowsNeoHeaderWavePainter(
-        primary: context.windowsNeo.accent.withValues(alpha: 0.075),
-        secondary: WindowsNeoTokens.iceCyan.withValues(alpha: 0.055),
+        primary: context.windowsNeo.accent.withValues(alpha: 0.11),
+        secondary: WindowsNeoTokens.iceCyan.withValues(alpha: 0.075),
       ),
     ),
   );
@@ -245,6 +245,34 @@ class _WindowsNeoTabIndicatorPainter extends BoxPainter {
     final size = configuration.size;
     if (size == null) return;
     final context = configuration.textDirection;
+    final selectionRect = Rect.fromLTWH(
+      offset.dx - 11,
+      offset.dy + 4,
+      size.width + 22,
+      size.height - 7,
+    );
+    final selectionGradient = LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: [
+        WindowsNeoTokens.mikuCyan.withValues(alpha: 0.14),
+        Colors.white.withValues(alpha: 0.26),
+        WindowsNeoTokens.iceCyan.withValues(alpha: 0.08),
+      ],
+      stops: const [0, 0.68, 1],
+    );
+    canvas
+      ..drawRRect(
+        RRect.fromRectAndRadius(selectionRect, const Radius.circular(5)),
+        Paint()..shader = selectionGradient.createShader(selectionRect),
+      )
+      ..drawRRect(
+        RRect.fromRectAndRadius(selectionRect, const Radius.circular(5)),
+        Paint()
+          ..color = WindowsNeoTokens.mikuCyan.withValues(alpha: 0.16)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.8,
+      );
     final left = offset.dx + (size.width - width) / 2;
     final rect = Rect.fromLTWH(
       left,
