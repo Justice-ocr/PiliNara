@@ -55,7 +55,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     final surface = isDark ? const Color(0xFF202A2F) : const Color(0xFFFAFDFC);
     return WindowsNeoTokens(
       background: isDark ? const Color(0xFF11191D) : const Color(0xFFEEF6F5),
-      sidebar: isDark ? const Color(0xFF172327) : const Color(0xFFE0F0EE),
+      sidebar: isDark ? const Color(0xFF172327) : const Color(0xFFD0E7E5),
       surface: surface,
       surfaceRaised: isDark ? const Color(0xFF29363B) : const Color(0xFFFFFFFF),
       border: isDark ? const Color(0xFF465960) : const Color(0xFFB2D2CF),

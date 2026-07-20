@@ -214,7 +214,9 @@ class _MediaPageState extends CommonPageState<MinePage>
     Obx(() {
       final anonymity = MineController.anonymity.value;
       return IconButton(
-        tooltip: anonymity ? '\u9000\u51fa\u65e0\u75d5\u6a21\u5f0f' : '\u8fdb\u5165\u65e0\u75d5\u6a21\u5f0f',
+        tooltip: anonymity
+            ? '\u9000\u51fa\u65e0\u75d5\u6a21\u5f0f'
+            : '\u8fdb\u5165\u65e0\u75d5\u6a21\u5f0f',
         onPressed: MineController.onChangeAnonymity,
         icon: Icon(
           anonymity ? MdiIcons.incognito : MdiIcons.incognitoOff,
@@ -250,6 +252,7 @@ class _MediaPageState extends CommonPageState<MinePage>
   ];
 
   Widget _buildWindowsQuickActions() {
+    final tokens = context.windowsNeo;
     return Align(
       alignment: Alignment.centerLeft,
       child: Wrap(
@@ -257,22 +260,32 @@ class _MediaPageState extends CommonPageState<MinePage>
         runSpacing: 8,
         children: controller.list.indexed
             .map(
-              (entry) => OutlinedButton.icon(
-                onPressed: entry.$1 == 0
-                    ? () => PageUtils.openToolTab(
-                        route: '/download',
-                        title: '\u4e0b\u8f7d',
-                      )
-                    : entry.$2.onTap,
-                icon: Icon(entry.$2.icon, size: 18),
-                label: Text(entry.$2.title),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 38),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
+              (entry) => Material(
+                color: tokens.surfaceRaised.withValues(alpha: 0.72),
+                borderRadius: BorderRadius.circular(6),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  hoverColor: tokens.accent.withValues(alpha: 0.08),
+                  onTap: entry.$1 == 0
+                      ? () => PageUtils.openToolTab(
+                          route: '/download',
+                          title: '\u4e0b\u8f7d',
+                        )
+                      : entry.$2.onTap,
+                  child: SizedBox(
+                    height: 38,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(entry.$2.icon, size: 18, color: tokens.accent),
+                          const SizedBox(width: 8),
+                          Text(entry.$2.title),
+                        ],
+                      ),
+                    ),
                   ),
-                  side: BorderSide(color: context.windowsNeo.border),
                 ),
               ),
             )
@@ -696,7 +709,9 @@ class _MediaPageState extends CommonPageState<MinePage>
                       child: IconButton(
                         tooltip: '查看更多',
                         style: ButtonStyle(
-                          padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+                          padding: const WidgetStatePropertyAll(
+                            EdgeInsets.zero,
+                          ),
                           backgroundColor: WidgetStatePropertyAll(
                             theme.colorScheme.secondaryContainer.withValues(
                               alpha: 0.5,

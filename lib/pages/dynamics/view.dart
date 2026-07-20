@@ -12,6 +12,7 @@ import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_section_tabs.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart' hide DraggableScrollableSheet;
 import 'package:get/get.dart';
@@ -62,7 +63,11 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
       type: needBg ? .canvas : .transparency,
       color: needBg ? theme.colorScheme.surface : null,
       child: SizedBox(
-        width: isTop ? null : horizontal == false ? 82 : 64,
+        width: isTop
+            ? null
+            : horizontal == false
+            ? 82
+            : 64,
         height: isTop ? (horizontal == true ? 84 : 76) : null,
         child: NotificationListener<ScrollEndNotification>(
           onNotification: (notification) {
@@ -239,23 +244,29 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
         ),
         const SizedBox(width: 6),
       ],
-      commandBar: _buildWindowsTabs(theme),
+      commandBar: _buildWindowsTabs(),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final horizontal = constraints.maxWidth < 800;
           if (horizontal) {
             return Column(
               children: [
-                upPanelPart(theme, horizontal: true),
-                Divider(height: 1, color: context.windowsNeo.border),
+                ColoredBox(
+                  color: context.windowsNeo.surface.withValues(alpha: 0.62),
+                  child: upPanelPart(theme, horizontal: true),
+                ),
+                const SizedBox(height: 12),
                 Expanded(child: tabView),
               ],
             );
           }
           return Row(
             children: [
-              upPanelPart(theme, horizontal: false),
-              VerticalDivider(width: 1, color: context.windowsNeo.border),
+              ColoredBox(
+                color: context.windowsNeo.surface.withValues(alpha: 0.62),
+                child: upPanelPart(theme, horizontal: false),
+              ),
+              const SizedBox(width: 12),
               Expanded(child: tabView),
             ],
           );
@@ -264,32 +275,18 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
     );
   }
 
-  Widget _buildWindowsTabs(ThemeData theme) {
-    return SizedBox(
-      height: 44,
-      child: TabBar(
-        controller: _dynamicsController.tabController,
-        tabs: DynamicsTabType.values.map((item) => Tab(text: item.label)).toList(),
-        isScrollable: true,
-        tabAlignment: TabAlignment.start,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        dividerColor: Colors.transparent,
-        dividerHeight: 0,
-        indicatorSize: TabBarIndicatorSize.label,
-        indicator: UnderlineTabIndicator(
-          borderSide: BorderSide(
-            color: context.windowsNeo.accent,
-            width: 2.5,
-          ),
-        ),
-        labelColor: theme.colorScheme.onSurface,
-        unselectedLabelColor: context.windowsNeo.muted,
-        onTap: (_) {
-          if (!_dynamicsController.tabController.indexIsChanging) {
-            _dynamicsController.animateToTop();
-          }
-        },
-      ),
+  Widget _buildWindowsTabs() {
+    return WindowsNeoSectionTabs(
+      controller: _dynamicsController.tabController,
+      tabs: DynamicsTabType.values
+          .map((item) => Tab(text: item.label))
+          .toList(),
+      horizontalPadding: 14,
+      onTap: (_) {
+        if (!_dynamicsController.tabController.indexIsChanging) {
+          _dynamicsController.animateToTop();
+        }
+      },
     );
   }
 }

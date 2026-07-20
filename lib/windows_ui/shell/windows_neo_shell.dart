@@ -524,7 +524,7 @@ class _WindowsNeoNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
-    final foreground = selected ? Colors.white : tokens.muted;
+    final foreground = selected ? tokens.ink : tokens.muted;
     final radius = BorderRadius.circular(tokens.radiusSm);
     final item = WindowsNeoHoverHalo(
       borderRadius: radius,
@@ -553,7 +553,7 @@ class _WindowsNeoNavItem extends StatelessWidget {
                       child: Text(
                         'MIKU',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.15),
+                          color: tokens.ink.withValues(alpha: 0.13),
                           fontSize: 25,
                           fontStyle: FontStyle.italic,
                           fontWeight: FontWeight.w900,
@@ -633,7 +633,7 @@ class _WindowsNeoNavItem extends StatelessWidget {
                   width: selected ? 3 : 0,
                   decoration: BoxDecoration(
                     color: selected
-                        ? Colors.white.withValues(alpha: 0.88)
+                        ? tokens.ink.withValues(alpha: 0.78)
                         : tokens.accent,
                     borderRadius: BorderRadius.circular(2),
                   ),
