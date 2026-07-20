@@ -160,6 +160,15 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     stops: const [0, 0.62, 1],
   );
 
+  Color get rhythmTrackColor => border.withValues(alpha: 0.52);
+
+  LinearGradient get rhythmGradient => LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [accent, iceCyan, sakuraPink.withValues(alpha: 0.42)],
+    stops: const [0, 0.78, 1],
+  );
+
   LinearGradient get sidebarSelectionGradient => LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,

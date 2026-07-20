@@ -5,6 +5,7 @@ import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_account_actions.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -64,40 +65,49 @@ class _HomeSectionTabs extends StatelessWidget {
     final tokens = context.windowsNeo;
     return SizedBox(
       height: tokens.sectionTabHeight,
-      child: TabBar(
-        controller: homeController.tabController,
-        tabs: homeController.tabs
-            .map(
-              (HomeTabType item) =>
-                  Tab(text: item.label, height: tokens.sectionTabHeight - 2),
-            )
-            .toList(),
-        isScrollable: true,
-        tabAlignment: TabAlignment.start,
-        padding: EdgeInsets.symmetric(horizontal: tokens.pagePadding - 4),
-        dividerColor: Colors.transparent,
-        dividerHeight: 0,
-        indicatorSize: TabBarIndicatorSize.label,
-        indicator: UnderlineTabIndicator(
-          borderSide: BorderSide(color: tokens.accent, width: 2.4),
-          borderRadius: BorderRadius.circular(2),
-        ),
-        labelColor: tokens.ink,
-        unselectedLabelColor: tokens.muted,
-        labelStyle: theme.textTheme.bodySmall?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: theme.textTheme.bodySmall,
-        overlayColor: WidgetStatePropertyAll(
-          tokens.accent.withValues(alpha: 0.06),
-        ),
-        splashFactory: NoSplash.splashFactory,
-        onTap: (_) {
-          feedBack();
-          if (!homeController.tabController.indexIsChanging) {
-            homeController.animateToTop();
-          }
-        },
+      child: Stack(
+        children: [
+          Positioned(
+            left: tokens.pagePadding - 4,
+            right: tokens.pagePadding - 4,
+            bottom: 1,
+            child: const WindowsNeoRhythmRail(),
+          ),
+          TabBar(
+            controller: homeController.tabController,
+            tabs: homeController.tabs
+                .map(
+                  (HomeTabType item) => Tab(
+                    text: item.label,
+                    height: tokens.sectionTabHeight - 2,
+                  ),
+                )
+                .toList(),
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            padding: EdgeInsets.symmetric(horizontal: tokens.pagePadding - 4),
+            dividerColor: Colors.transparent,
+            dividerHeight: 0,
+            indicatorSize: TabBarIndicatorSize.label,
+            indicator: const WindowsNeoTabIndicator(),
+            labelColor: tokens.ink,
+            unselectedLabelColor: tokens.muted,
+            labelStyle: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: theme.textTheme.bodySmall,
+            overlayColor: WidgetStatePropertyAll(
+              tokens.accent.withValues(alpha: 0.06),
+            ),
+            splashFactory: NoSplash.splashFactory,
+            onTap: (_) {
+              feedBack();
+              if (!homeController.tabController.indexIsChanging) {
+                homeController.animateToTop();
+              }
+            },
+          ),
+        ],
       ),
     );
   }

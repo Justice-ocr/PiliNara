@@ -4,6 +4,7 @@ import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_hover_halo.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/gestures.dart';
@@ -827,38 +828,48 @@ class _WindowsNeoTabStrip extends StatelessWidget {
       ),
       child: SizedBox(
         height: 42,
-        child: Row(
+        child: Stack(
           children: [
-            Expanded(
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(8, 5, 4, 5),
-                itemCount: tabs.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 4),
-                itemBuilder: (context, index) {
-                  final item = tabs[index];
-                  return _WindowsNeoTabPresence(
-                    key: ValueKey(item.id),
-                    item: item,
-                    active: item.id == activeId,
-                  );
-                },
-              ),
+            const Positioned(
+              left: 8,
+              right: 48,
+              bottom: 3,
+              child: WindowsNeoRhythmRail(),
             ),
-            WindowsNeoHoverHalo(
-              borderRadius: BorderRadius.circular(8),
-              child: SizedBox(
-                width: 40,
-                height: 40,
-                child: IconButton(
-                  tooltip: '新建搜索',
-                  iconSize: 18,
-                  onPressed: onSearch,
-                  icon: const Icon(Icons.add),
+            Row(
+              children: [
+                Expanded(
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.fromLTRB(8, 5, 4, 5),
+                    itemCount: tabs.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 4),
+                    itemBuilder: (context, index) {
+                      final item = tabs[index];
+                      return _WindowsNeoTabPresence(
+                        key: ValueKey(item.id),
+                        item: item,
+                        active: item.id == activeId,
+                      );
+                    },
+                  ),
                 ),
-              ),
+                WindowsNeoHoverHalo(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: IconButton(
+                      tooltip: '新建搜索',
+                      iconSize: 18,
+                      onPressed: onSearch,
+                      icon: const Icon(Icons.add),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+              ],
             ),
-            const SizedBox(width: 4),
           ],
         ),
       ),
@@ -1057,16 +1068,7 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                   ),
                   Align(
                     alignment: Alignment.bottomCenter,
-                    child: AnimatedContainer(
-                      duration: context.windowsNeoDuration(tokens.motionFast),
-                      curve: Curves.easeOutCubic,
-                      width: active ? 34 : 0,
-                      height: 2,
-                      decoration: BoxDecoration(
-                        color: tokens.accent,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
+                    child: WindowsNeoActiveBeat(active: active, width: 38),
                   ),
                 ],
               ),
