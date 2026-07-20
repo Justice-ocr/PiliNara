@@ -3,6 +3,7 @@ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models_new/live/live_feed_index/card_data_list_item.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
@@ -36,31 +37,42 @@ class WindowsNeoLiveCardSkeleton extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: tokens.cardRadius,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
+          fit: StackFit.passthrough,
           children: [
-            Expanded(child: ColoredBox(color: tokens.hover)),
-            SizedBox(
-              height: MediaQuery.textScalerOf(context).scale(92),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(height: 12, color: tokens.hover),
-                    SizedBox(height: tokens.spaceSm - 1),
-                    FractionallySizedBox(
-                      widthFactor: 0.74,
-                      child: Container(height: 12, color: tokens.hover),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: ColoredBox(color: tokens.hover)),
+                SizedBox(
+                  height: MediaQuery.textScalerOf(context).scale(92),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(height: 12, color: tokens.hover),
+                        SizedBox(height: tokens.spaceSm - 1),
+                        FractionallySizedBox(
+                          widthFactor: 0.74,
+                          child: Container(height: 12, color: tokens.hover),
+                        ),
+                        const Spacer(),
+                        FractionallySizedBox(
+                          widthFactor: 0.46,
+                          child: Container(height: 10, color: tokens.hover),
+                        ),
+                      ],
                     ),
-                    const Spacer(),
-                    FractionallySizedBox(
-                      widthFactor: 0.46,
-                      child: Container(height: 10, color: tokens.hover),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
+            ),
+            const Positioned(
+              top: 0,
+              left: 14,
+              right: 14,
+              child: WindowsNeoLoadingMarker(),
             ),
           ],
         ),

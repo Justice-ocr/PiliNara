@@ -64,6 +64,23 @@ class WindowsNeoActiveBeat extends StatelessWidget {
   }
 }
 
+/// Static accent line for placeholder surfaces. The parent loading sliver owns
+/// the opacity animation so individual cards do not create controllers.
+class WindowsNeoLoadingMarker extends StatelessWidget {
+  const WindowsNeoLoadingMarker({super.key});
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 2,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: context.windowsNeo.rhythmGradient,
+        borderRadius: BorderRadius.circular(2),
+      ),
+    ),
+  );
+}
+
 /// Compact vertical beat used beside shared page titles.
 class WindowsNeoHeaderBeat extends StatelessWidget {
   const WindowsNeoHeaderBeat({super.key});

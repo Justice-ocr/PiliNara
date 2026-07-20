@@ -12,6 +12,7 @@ import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
@@ -237,46 +238,57 @@ class WindowsNeoHorizontalTileSkeleton extends StatelessWidget {
         borderRadius: tokens.cardRadius,
         boxShadow: tokens.cardShadow,
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final height =
-              constraints.maxHeight.isFinite && constraints.maxHeight > 0
-              ? constraints.maxHeight
-              : tokens.horizontalCardHeight;
-          final width = (height * 16 / 9)
-              .clamp(0.0, constraints.maxWidth * 0.52)
-              .toDouble();
-          return Row(
-            children: [
-              SizedBox(
-                width: width,
-                height: height,
-                child: ColoredBox(color: tokens.hover),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.all(tokens.spaceMd),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(height: 13, color: tokens.hover),
-                      SizedBox(height: tokens.spaceSm - 1),
-                      FractionallySizedBox(
-                        widthFactor: 0.72,
-                        child: Container(height: 13, color: tokens.hover),
-                      ),
-                      const Spacer(),
-                      FractionallySizedBox(
-                        widthFactor: 0.48,
-                        child: Container(height: 11, color: tokens.hover),
-                      ),
-                    ],
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final height =
+                  constraints.maxHeight.isFinite && constraints.maxHeight > 0
+                  ? constraints.maxHeight
+                  : tokens.horizontalCardHeight;
+              final width = (height * 16 / 9)
+                  .clamp(0.0, constraints.maxWidth * 0.52)
+                  .toDouble();
+              return Row(
+                children: [
+                  SizedBox(
+                    width: width,
+                    height: height,
+                    child: ColoredBox(color: tokens.hover),
                   ),
-                ),
-              ),
-            ],
-          );
-        },
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.all(tokens.spaceMd),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(height: 13, color: tokens.hover),
+                          SizedBox(height: tokens.spaceSm - 1),
+                          FractionallySizedBox(
+                            widthFactor: 0.72,
+                            child: Container(height: 13, color: tokens.hover),
+                          ),
+                          const Spacer(),
+                          FractionallySizedBox(
+                            widthFactor: 0.48,
+                            child: Container(height: 11, color: tokens.hover),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const Positioned(
+            top: 0,
+            left: 14,
+            right: 14,
+            child: WindowsNeoLoadingMarker(),
+          ),
+        ],
       ),
     );
   }

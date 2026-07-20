@@ -1,3 +1,4 @@
+import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -195,7 +196,21 @@ class _SkeletonSurface extends StatelessWidget {
         border: Border.all(color: tokens.border.withValues(alpha: 0.42)),
         boxShadow: tokens.cardShadow,
       ),
-      child: ClipRRect(borderRadius: tokens.cardRadius, child: child),
+      child: ClipRRect(
+        borderRadius: tokens.cardRadius,
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            child,
+            const Positioned(
+              top: 0,
+              left: 14,
+              right: 14,
+              child: WindowsNeoLoadingMarker(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
