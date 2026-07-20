@@ -122,11 +122,18 @@ class WindowsNeoPage extends StatelessWidget {
               ),
             ),
             if (commandBar case final commandBar?) ...[
-              ColoredBox(color: tokens.surface, child: commandBar),
-              Divider(
-                height: 1,
-                thickness: 1.2,
-                color: tokens.border.withValues(alpha: 0.95),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: tokens.surface,
+                  boxShadow: [
+                    BoxShadow(
+                      color: tokens.accent.withValues(alpha: 0.05),
+                      blurRadius: 7,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: commandBar,
               ),
             ],
             Expanded(child: child),

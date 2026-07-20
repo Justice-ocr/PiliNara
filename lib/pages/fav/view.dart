@@ -10,6 +10,7 @@ import 'package:PiliPlus/pages/fav_folder_sort/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_section_tabs.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -229,60 +230,45 @@ class _FavPageState extends State<FavPage> with SingleTickerProviderStateMixin {
 
   PreferredSizeWidget _buildTabs() {
     final isWindowsNeo = WindowsVideoTabService.enabled;
+    final tabs = FavTabType.values
+        .map((item) => Tab(text: item.title))
+        .toList();
+    void onTap(int index) {
+      try {
+        if (!_tabController.indexIsChanging) {
+          switch (FavTabType.values[index]) {
+            case FavTabType.video:
+              _favController.scrollController.animToTop();
+            case FavTabType.article:
+              Get.find<FavArticleController>().scrollController.animToTop();
+            case FavTabType.topic:
+              Get.find<FavTopicController>().scrollController.animToTop();
+            case FavTabType.cheese:
+              Get.find<FavCheeseController>().scrollController.animToTop();
+            default:
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (isWindowsNeo) {
+      return PreferredSize(
+        preferredSize: Size.fromHeight(context.windowsNeo.sectionTabHeight),
+        child: WindowsNeoSectionTabs(
+          controller: _tabController,
+          tabs: tabs,
+          onTap: onTap,
+        ),
+      );
+    }
     return PreferredSize(
       preferredSize: const Size.fromHeight(48),
-      child: Container(
-        height: 48,
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: isWindowsNeo ? 18 : 0),
-        decoration: isWindowsNeo
-            ? BoxDecoration(
-                color: context.windowsNeo.surface,
-                border: Border(
-                  bottom: BorderSide(color: context.windowsNeo.border),
-                ),
-              )
-            : null,
-        alignment: Alignment.centerLeft,
-        child: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          tabs: FavTabType.values.map((item) => Tab(text: item.title)).toList(),
-          dividerColor: isWindowsNeo ? Colors.transparent : null,
-          dividerHeight: isWindowsNeo ? 0 : null,
-          indicatorSize: isWindowsNeo
-              ? TabBarIndicatorSize.label
-              : TabBarIndicatorSize.tab,
-          indicator: isWindowsNeo
-              ? UnderlineTabIndicator(
-                  borderSide: BorderSide(
-                    color: context.windowsNeo.accent,
-                    width: 2.5,
-                  ),
-                )
-              : null,
-          unselectedLabelColor: isWindowsNeo ? context.windowsNeo.muted : null,
-          onTap: (index) {
-            try {
-              if (!_tabController.indexIsChanging) {
-                switch (FavTabType.values[index]) {
-                  case FavTabType.video:
-                    _favController.scrollController.animToTop();
-                  case FavTabType.article:
-                    Get.find<FavArticleController>().scrollController
-                        .animToTop();
-                  case FavTabType.topic:
-                    Get.find<FavTopicController>().scrollController.animToTop();
-                  case FavTabType.cheese:
-                    Get.find<FavCheeseController>().scrollController
-                        .animToTop();
-                  default:
-                }
-              }
-            } catch (_) {}
-          },
-        ),
+      child: TabBar(
+        controller: _tabController,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        tabs: tabs,
+        onTap: onTap,
       ),
     );
   }

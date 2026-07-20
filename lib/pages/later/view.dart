@@ -17,6 +17,7 @@ import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_section_tabs.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart' hide TabBarView;
 import 'package:get/get.dart';
@@ -242,48 +243,26 @@ class _LaterPageState extends State<LaterPage>
 
   Widget _buildTabs(bool enableMultiSelect) {
     final isWindowsNeo = WindowsVideoTabService.enabled;
-    final tabBar = TabBar(
-      controller: _tabController,
-      tabs: LaterViewType.values.map((item) {
-        final count = _baseCtr.counts[item.index];
-        return Tab(text: '${item.title}${count != -1 ? '($count)' : ''}');
-      }).toList(),
-      onTap: (_) {
-        if (!_tabController.indexIsChanging) {
-          currCtr().scrollController.animToTop();
-        } else if (enableMultiSelect) {
-          currCtr(_tabController.previousIndex).handleSelect();
-        }
-      },
-      isScrollable: isWindowsNeo,
-      tabAlignment: isWindowsNeo ? TabAlignment.start : null,
-      dividerColor: isWindowsNeo ? Colors.transparent : null,
-      dividerHeight: isWindowsNeo ? 0 : null,
-      indicatorSize: isWindowsNeo
-          ? TabBarIndicatorSize.label
-          : TabBarIndicatorSize.tab,
-      indicator: isWindowsNeo
-          ? UnderlineTabIndicator(
-              borderSide: BorderSide(
-                color: context.windowsNeo.accent,
-                width: 2.5,
-              ),
-            )
-          : null,
-      unselectedLabelColor: isWindowsNeo ? context.windowsNeo.muted : null,
-    );
-    if (!isWindowsNeo) return tabBar;
-    return Container(
-      height: 48,
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        color: context.windowsNeo.surface,
-        border: Border(bottom: BorderSide(color: context.windowsNeo.border)),
-      ),
-      alignment: Alignment.centerLeft,
-      child: tabBar,
-    );
+    final tabs = LaterViewType.values.map((item) {
+      final count = _baseCtr.counts[item.index];
+      return Tab(text: '${item.title}${count != -1 ? '($count)' : ''}');
+    }).toList();
+    void onTap(int _) {
+      if (!_tabController.indexIsChanging) {
+        currCtr().scrollController.animToTop();
+      } else if (enableMultiSelect) {
+        currCtr(_tabController.previousIndex).handleSelect();
+      }
+    }
+
+    if (isWindowsNeo) {
+      return WindowsNeoSectionTabs(
+        controller: _tabController,
+        tabs: tabs,
+        onTap: onTap,
+      );
+    }
+    return TabBar(controller: _tabController, tabs: tabs, onTap: onTap);
   }
 
   PreferredSizeWidget _buildAppbar(bool enableMultiSelect) {

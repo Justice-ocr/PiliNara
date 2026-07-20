@@ -24,6 +24,7 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_section_tabs.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:collection/collection.dart';
@@ -599,52 +600,28 @@ class _DownloadPageState extends State<DownloadPage>
 
   PreferredSizeWidget _buildDownloadTabs() {
     final isWindowsNeo = WindowsVideoTabService.enabled;
+    final tabs = [
+      Tab(
+        child: Obx(() => Text('全部视频(${_controller.allVideos.length})')),
+      ),
+      Tab(
+        child: Obx(() => Text('文件夹(${_controller.folders.length})')),
+      ),
+    ];
+    if (isWindowsNeo) {
+      return PreferredSize(
+        preferredSize: Size.fromHeight(context.windowsNeo.sectionTabHeight),
+        child: WindowsNeoSectionTabs(
+          controller: _tabController,
+          tabs: tabs,
+        ),
+      );
+    }
     return PreferredSize(
       preferredSize: const Size.fromHeight(48),
-      child: Container(
-        height: 48,
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: isWindowsNeo ? 18 : 0),
-        decoration: isWindowsNeo
-            ? BoxDecoration(
-                color: context.windowsNeo.surface,
-                border: Border(
-                  bottom: BorderSide(color: context.windowsNeo.border),
-                ),
-              )
-            : null,
-        alignment: Alignment.centerLeft,
-        child: TabBar(
-          controller: _tabController,
-          isScrollable: isWindowsNeo,
-          tabAlignment: isWindowsNeo ? TabAlignment.start : null,
-          dividerColor: isWindowsNeo ? Colors.transparent : null,
-          dividerHeight: isWindowsNeo ? 0 : null,
-          indicatorSize: isWindowsNeo
-              ? TabBarIndicatorSize.label
-              : TabBarIndicatorSize.tab,
-          indicator: isWindowsNeo
-              ? UnderlineTabIndicator(
-                  borderSide: BorderSide(
-                    color: context.windowsNeo.accent,
-                    width: 2.5,
-                  ),
-                )
-              : null,
-          unselectedLabelColor: isWindowsNeo ? context.windowsNeo.muted : null,
-          tabs: [
-            Tab(
-              child: Obx(
-                () => Text('全部视频(${_controller.allVideos.length})'),
-              ),
-            ),
-            Tab(
-              child: Obx(
-                () => Text('文件夹(${_controller.folders.length})'),
-              ),
-            ),
-          ],
-        ),
+      child: TabBar(
+        controller: _tabController,
+        tabs: tabs,
       ),
     );
   }

@@ -11,6 +11,7 @@ import 'package:PiliPlus/pages/search_result/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_section_tabs.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -36,7 +37,8 @@ class _SearchResultPageState extends State<SearchResultPage>
   @override
   void initState() {
     super.initState();
-    _args = widget.arguments ??
+    _args =
+        widget.arguments ??
         (Get.arguments is Map ? Get.arguments as Map : const {});
     _isFromSearch = _args['fromSearch'] ?? false;
     _searchResultController = Get.put(
@@ -142,64 +144,57 @@ class _SearchResultPageState extends State<SearchResultPage>
   }
 
   Widget _buildTabBar(ThemeData theme, {bool desktop = false}) {
-    return SizedBox(
-      height: desktop ? 44 : null,
-      child: TabBar(
-        overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-        splashFactory: NoSplash.splashFactory,
-        padding: EdgeInsets.symmetric(horizontal: desktop ? 14 : 8),
+    final tabs = SearchType.values
+        .map(
+          (item) => Obx(() {
+            final count = _searchResultController.count[item.index];
+            final countLabel = count == -1
+                ? ''
+                : ' ${count > 99 ? '99+' : count}';
+            return Tab(text: '${_labelForType(item)}$countLabel');
+          }),
+        )
+        .toList();
+    void onTap(int index) {
+      if (!_tabController.indexIsChanging) {
+        if (_searchResultController.toTopIndex.value == index) {
+          _searchResultController.toTopIndex.refresh();
+        } else {
+          _searchResultController.toTopIndex.value = index;
+        }
+      }
+    }
+
+    if (desktop) {
+      return WindowsNeoSectionTabs(
         controller: _tabController,
-        tabs: SearchType.values
-            .map(
-              (item) => Obx(() {
-                final count = _searchResultController.count[item.index];
-                final countLabel = count == -1
-                    ? ''
-                    : ' ${count > 99 ? '99+' : count}';
-                return Tab(text: '${_labelForType(item)}$countLabel');
-              }),
-            )
-            .toList(),
-        isScrollable: true,
-        indicatorSize: desktop
-            ? TabBarIndicatorSize.label
-            : TabBarIndicatorSize.tab,
-        indicatorPadding: desktop
-            ? EdgeInsets.zero
-            : const EdgeInsets.symmetric(horizontal: 3, vertical: 8),
-        indicator: desktop
-            ? UnderlineTabIndicator(
-                borderSide: BorderSide(
-                  color: context.windowsNeo.accent,
-                  width: 2.5,
-                ),
-              )
-            : BoxDecoration(
-                color: theme.colorScheme.secondaryContainer,
-                borderRadius: const BorderRadius.all(Radius.circular(20)),
-              ),
-        labelColor: desktop
-            ? theme.colorScheme.onSurface
-            : theme.colorScheme.onSecondaryContainer,
-        labelStyle: theme.textTheme.bodySmall?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-        dividerColor: Colors.transparent,
-        dividerHeight: 0,
-        unselectedLabelColor: desktop
-            ? context.windowsNeo.muted
-            : theme.colorScheme.outline,
-        tabAlignment: TabAlignment.start,
-        onTap: (index) {
-          if (!_tabController.indexIsChanging) {
-            if (_searchResultController.toTopIndex.value == index) {
-              _searchResultController.toTopIndex.refresh();
-            } else {
-              _searchResultController.toTopIndex.value = index;
-            }
-          }
-        },
+        tabs: tabs,
+        horizontalPadding: 14,
+        onTap: onTap,
+      );
+    }
+    return TabBar(
+      overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+      splashFactory: NoSplash.splashFactory,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      controller: _tabController,
+      tabs: tabs,
+      isScrollable: true,
+      indicatorSize: TabBarIndicatorSize.tab,
+      indicatorPadding: const EdgeInsets.symmetric(horizontal: 3, vertical: 8),
+      indicator: BoxDecoration(
+        color: theme.colorScheme.secondaryContainer,
+        borderRadius: const BorderRadius.all(Radius.circular(20)),
       ),
+      labelColor: theme.colorScheme.onSecondaryContainer,
+      labelStyle: theme.textTheme.bodySmall?.copyWith(
+        fontWeight: FontWeight.w600,
+      ),
+      dividerColor: Colors.transparent,
+      dividerHeight: 0,
+      unselectedLabelColor: theme.colorScheme.outline,
+      tabAlignment: TabAlignment.start,
+      onTap: onTap,
     );
   }
 
@@ -208,37 +203,36 @@ class _SearchResultPageState extends State<SearchResultPage>
     children: SearchType.values
         .map(
           (item) => switch (item) {
-                        // SearchType.all => SearchAllPanel(
-                        //   tag: _tag,
-                        //   searchType: item,
-                        //   keyword: _searchResultController.keyword,
-                        // ),
-                        SearchType.video => SearchVideoPanel(
-                          tag: _tag,
-                          searchType: item,
-                          keyword: _searchResultController.keyword,
-                        ),
-                        SearchType.media_bangumi ||
-                        SearchType.media_ft => SearchPgcPanel(
-                          tag: _tag,
-                          searchType: item,
-                          keyword: _searchResultController.keyword,
-                        ),
-                        SearchType.live_room => SearchLivePanel(
-                          tag: _tag,
-                          searchType: item,
-                          keyword: _searchResultController.keyword,
-                        ),
-                        SearchType.bili_user => SearchUserPanel(
-                          tag: _tag,
-                          searchType: item,
-                          keyword: _searchResultController.keyword,
-                        ),
-                        SearchType.article => SearchArticlePanel(
-                          tag: _tag,
-                          searchType: item,
-                          keyword: _searchResultController.keyword,
-                        ),
+            // SearchType.all => SearchAllPanel(
+            //   tag: _tag,
+            //   searchType: item,
+            //   keyword: _searchResultController.keyword,
+            // ),
+            SearchType.video => SearchVideoPanel(
+              tag: _tag,
+              searchType: item,
+              keyword: _searchResultController.keyword,
+            ),
+            SearchType.media_bangumi || SearchType.media_ft => SearchPgcPanel(
+              tag: _tag,
+              searchType: item,
+              keyword: _searchResultController.keyword,
+            ),
+            SearchType.live_room => SearchLivePanel(
+              tag: _tag,
+              searchType: item,
+              keyword: _searchResultController.keyword,
+            ),
+            SearchType.bili_user => SearchUserPanel(
+              tag: _tag,
+              searchType: item,
+              keyword: _searchResultController.keyword,
+            ),
+            SearchType.article => SearchArticlePanel(
+              tag: _tag,
+              searchType: item,
+              keyword: _searchResultController.keyword,
+            ),
           },
         )
         .toList(),
