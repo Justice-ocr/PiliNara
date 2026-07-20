@@ -1,6 +1,7 @@
 import 'dart:io' show Directory, File;
 
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:path/path.dart' as path;
@@ -10,16 +11,13 @@ abstract final class CacheManager {
   static late final DefaultCacheManager manager;
 
   static Future<void> ensureInitialized() => DefaultCacheManager.init(
-    cacheDirectoryProvider:
-        PlatformUtils.isDesktop
-            ? () async {
-              final appSupportDirectory =
-                  await getApplicationSupportDirectory();
-              return Directory(
-                path.join(appSupportDirectory.path, 'cached_network_image_ce'),
-              );
-            }
-            : getTemporaryDirectory,
+    cacheDirectoryProvider: PlatformUtils.isDesktop
+        ? () async {
+            return Directory(
+              path.join(appSupportDirPath, 'cached_network_image_ce'),
+            );
+          }
+        : getTemporaryDirectory,
     maxNrOfCacheLength: Pref.maxCacheSize.toInt(),
   ).then((i) => manager = i);
 
