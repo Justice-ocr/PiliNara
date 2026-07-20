@@ -156,27 +156,27 @@ class _SettingPageState extends State<SettingPage> {
   Widget _buildWindowsNeo(ThemeData theme) {
     final tokens = context.windowsNeo;
     final selected = _items.firstWhere((item) => item.type == _type);
-    return Scaffold(
-      backgroundColor: tokens.background,
-      resizeToAvoidBottomInset: false,
-      appBar: AppBar(title: const Text('设置')),
-      body: Row(
+    return WindowsNeoPage(
+      title: '设置',
+      subtitle: '调整播放、内容与应用偏好',
+      leading: Icon(Icons.tune_outlined, color: tokens.accent),
+      child: Row(
         children: [
           SizedBox(
-            width: 300,
+            width: 276,
             child: ColoredBox(
-              color: tokens.sidebar,
+              color: tokens.surface.withValues(alpha: 0.72),
               child: _buildWindowsList(theme),
             ),
           ),
-          VerticalDivider(width: 1, color: tokens.border),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               children: [
                 Container(
                   height: 58,
                   padding: const EdgeInsets.symmetric(horizontal: 22),
-                  color: tokens.surface,
+                  color: tokens.surface.withValues(alpha: 0.82),
                   child: Row(
                     children: [
                       IconTheme.merge(
@@ -210,7 +210,6 @@ class _SettingPageState extends State<SettingPage> {
                     ],
                   ),
                 ),
-                Divider(height: 1, color: tokens.border),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
@@ -218,28 +217,25 @@ class _SettingPageState extends State<SettingPage> {
                       alignment: Alignment.topCenter,
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 920),
-                        child: Material(
-                          color: tokens.surface,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
-                            side: BorderSide(color: tokens.border),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: Theme(
-                            data: theme.copyWith(
-                              scaffoldBackgroundColor: tokens.surface,
-                              canvasColor: tokens.surface,
-                            ),
-                            child: LayoutBuilder(
-                              builder: (context, constraints) => MediaQuery(
-                                data: windowsSettingsPaneMediaQuery(
-                                  MediaQuery.of(context),
-                                  constraints,
-                                ),
-                                child: _buildSettingPage(
-                                  _type,
-                                  showAppBar: false,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: ColoredBox(
+                            color: tokens.surface,
+                            child: Theme(
+                              data: theme.copyWith(
+                                scaffoldBackgroundColor: tokens.surface,
+                                canvasColor: tokens.surface,
+                              ),
+                              child: LayoutBuilder(
+                                builder: (context, constraints) => MediaQuery(
+                                  data: windowsSettingsPaneMediaQuery(
+                                    MediaQuery.of(context),
+                                    constraints,
+                                  ),
+                                  child: _buildSettingPage(
+                                    _type,
+                                    showAppBar: false,
+                                  ),
                                 ),
                               ),
                             ),
@@ -330,15 +326,16 @@ class _SettingPageState extends State<SettingPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 3),
       child: Material(
-        color: selected ? tokens.accentSurface : Colors.transparent,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(4),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => _toPage(item.type),
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 48),
+          child: Ink(
+            height: 48,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             decoration: BoxDecoration(
+              gradient: selected ? tokens.workspaceTabGradient : null,
               border: Border(
                 left: BorderSide(
                   color: selected ? tokens.accent : Colors.transparent,

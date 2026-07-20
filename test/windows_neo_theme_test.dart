@@ -1,6 +1,7 @@
 import 'package:PiliPlus/pages/search_result/view.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_section_tabs.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_video_search_tile.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/shell/windows_neo_shell.dart';
@@ -19,6 +20,7 @@ void main() {
 
     expect(tokens, isNotNull);
     expect(tokens!.background, isNot(tokens.surface));
+    expect(tokens.sidebar, const Color(0xFFD0E7E5));
     expect(tokens.accent, const Color(0xFF39C5BB));
     expect(WindowsNeoTokens.iceCyan, const Color(0xFF70D8E6));
     expect(WindowsNeoTokens.sakuraPink, const Color(0xFFFFA2BD));
@@ -86,21 +88,26 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: WindowsNeoTheme.apply(ThemeData.light()),
-        home: const Scaffold(
+        home: Scaffold(
           body: Column(
             children: [
-              WindowsNeoRhythmRail(),
-              WindowsNeoHeaderBeat(),
-              WindowsNeoHeaderWave(),
-              WindowsNeoActiveBeat(active: true),
-              WindowsNeoSectionHeader(child: Text('Search history')),
+              const WindowsNeoRhythmRail(),
+              const WindowsNeoHeaderBeat(),
+              const WindowsNeoHeaderWave(),
+              const WindowsNeoActiveBeat(active: true),
+              const WindowsNeoSectionHeader(child: Text('Search history')),
               SizedBox(
                 width: 280,
                 child: DefaultTabController(
                   length: 2,
-                  child: TabBar(
-                    indicator: WindowsNeoTabIndicator(),
-                    tabs: [Tab(text: '推荐'), Tab(text: '热门')],
+                  child: Builder(
+                    builder: (context) => WindowsNeoSectionTabs(
+                      controller: DefaultTabController.of(context),
+                      tabs: const [
+                        Tab(text: '推荐'),
+                        Tab(text: '热门'),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -111,10 +118,11 @@ void main() {
     );
 
     expect(find.byKey(const Key('windows-neo-header-beat')), findsOneWidget);
-    expect(find.byType(WindowsNeoRhythmRail), findsNWidgets(2));
+    expect(find.byType(WindowsNeoRhythmRail), findsNWidgets(3));
     expect(find.byKey(const Key('windows-neo-header-wave')), findsOneWidget);
     expect(find.byType(WindowsNeoActiveBeat), findsOneWidget);
     expect(find.byType(WindowsNeoSectionHeader), findsOneWidget);
+    expect(find.byType(WindowsNeoSectionTabs), findsOneWidget);
     expect(find.byType(TabBar), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
