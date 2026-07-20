@@ -276,50 +276,27 @@ class _HistoryPageState extends State<HistoryPage>
     bool enableMultiSelect,
     bool isWindowsNeo,
   ) {
-    final tabBar = TabBar(
-      controller: _historyController.tabController,
-      onTap: (index) {
-        if (!_historyController.tabController!.indexIsChanging) {
-          currCtr().scrollController.animToTop();
-        } else if (enableMultiSelect) {
-          currCtr(
-            _historyController.tabController!.previousIndex,
-          ).handleSelect();
-        }
-      },
-      tabs: [
-        const Tab(text: '全部'),
-        ...tabs.map((item) => Tab(text: item.name)),
-      ],
-      isScrollable: isWindowsNeo,
-      tabAlignment: isWindowsNeo ? TabAlignment.start : null,
-      dividerColor: isWindowsNeo ? Colors.transparent : null,
-      dividerHeight: isWindowsNeo ? 0 : null,
-      indicatorSize: isWindowsNeo
-          ? TabBarIndicatorSize.label
-          : TabBarIndicatorSize.tab,
-      indicator: isWindowsNeo
-          ? UnderlineTabIndicator(
-              borderSide: BorderSide(
-                color: context.windowsNeo.accent,
-                width: 2.5,
-              ),
-            )
-          : null,
-      unselectedLabelColor: isWindowsNeo ? context.windowsNeo.muted : null,
-    );
-    if (!isWindowsNeo) return tabBar;
-    return Container(
-      height: 48,
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        color: context.windowsNeo.surface,
-        border: Border(bottom: BorderSide(color: context.windowsNeo.border)),
-      ),
-      alignment: Alignment.centerLeft,
-      child: tabBar,
-    );
+    final controller = _historyController.tabController!;
+    final tabWidgets = [
+      const Tab(text: '全部'),
+      ...tabs.map((item) => Tab(text: item.name)),
+    ];
+    void onTap(int index) {
+      if (!controller.indexIsChanging) {
+        currCtr().scrollController.animToTop();
+      } else if (enableMultiSelect) {
+        currCtr(controller.previousIndex).handleSelect();
+      }
+    }
+
+    if (isWindowsNeo) {
+      return WindowsNeoSectionTabs(
+        controller: controller,
+        tabs: tabWidgets,
+        onTap: onTap,
+      );
+    }
+    return TabBar(controller: controller, onTap: onTap, tabs: tabWidgets);
   }
 
   AppBar get _buildAppBar => AppBar(

@@ -166,7 +166,7 @@ class _MediaPageState extends CommonPageState<MinePage>
                       padding: const EdgeInsets.fromLTRB(18, 22, 18, 12),
                       child: _buildUserInfo(theme, secondary),
                     ),
-                    Divider(height: 1, color: context.windowsNeo.border),
+                    const SizedBox(height: 4),
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 18,
@@ -636,13 +636,17 @@ class _MediaPageState extends CommonPageState<MinePage>
     () => controller.onRefresh(isManual: false),
   );
 
+  Widget _buildSectionGap(ThemeData theme) => WindowsVideoTabService.enabled
+      ? const SizedBox(height: 20)
+      : Divider(
+          height: 20,
+          color: theme.dividerColor.withValues(alpha: 0.1),
+        );
+
   Widget _buildToView(ThemeData theme, Color secondary) {
     return Column(
       children: [
-        Divider(
-          height: 20,
-          color: theme.dividerColor.withValues(alpha: 0.1),
-        ),
+        _buildSectionGap(theme),
         ListTile(
           onTap: () => Get.toNamed('/later'),
           dense: true,
@@ -748,10 +752,7 @@ class _MediaPageState extends CommonPageState<MinePage>
   Widget _buildHistory(ThemeData theme, Color secondary) {
     return Column(
       children: [
-        Divider(
-          height: 20,
-          color: theme.dividerColor.withValues(alpha: 0.1),
-        ),
+        _buildSectionGap(theme),
         ListTile(
           onTap: () => Get.toNamed('/history'),
           dense: true,
@@ -861,10 +862,7 @@ class _MediaPageState extends CommonPageState<MinePage>
   Widget _buildFav(ThemeData theme, Color secondary) {
     return Column(
       children: [
-        Divider(
-          height: 20,
-          color: theme.dividerColor.withValues(alpha: 0.1),
-        ),
+        _buildSectionGap(theme),
         ListTile(
           onTap: () => Get.toNamed('/fav')?.whenComplete(_autoRefresh),
           dense: true,
