@@ -778,6 +778,41 @@ abstract final class LiveHttp {
   static int _hbSeqId = 0;
   static Timer? _heartbeatTimer;
 
+  static Future<LoadingState<void>> liveFeedback(
+    Object roomId,
+    Object id,
+    String type, {
+    int page = 1,
+  }) async {
+    final params = <String, dynamic>{
+      'access_key': recommend.accessKey,
+      'actionKey': 'appkey',
+      'build': 8430300,
+      'channel': 'master',
+      'c_locale': 'zh_CN',
+      'device': 'android',
+      'disable_rcmd': 0,
+      'mobi_app': 'android',
+      'platform': 'android',
+      's_locale': 'zh_CN',
+      'statistics': Constants.statisticsApp,
+      'version': '8.43.0',
+      'id': id,
+      'id_type': type,
+      'room_id': roomId,
+      'type': 'dislike',
+      'page': page,
+    };
+    AppSign.appSign(params);
+    final res = await Request().get(
+      Api.liveFeedback,
+      queryParameters: params,
+    );
+    return res.data['code'] == 0
+        ? const Success(null)
+        : Error(res.data['message']);
+  }
+
   static void startLiveHeartbeat(int roomId, int upId) {
     cancelLiveHeartbeat();
     _hbUuid = _generateUuidV4();
