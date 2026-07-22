@@ -1,57 +1,56 @@
 <div align="center">
-    <img width="200" height="200" src="assets/images/logo/logo.png">
+  <img width="160" height="160" src="assets/images/logo/logo.png" alt="PiliNara logo">
+  <h1>PiliNara</h1>
+  <p>面向 Windows 桌面的第三方哔哩哔哩客户端</p>
+
+  <a href="https://github.com/Justice-ocr/PiliNara/actions/workflows/win_x64.yml"><img src="https://github.com/Justice-ocr/PiliNara/actions/workflows/win_x64.yml/badge.svg?branch=feat/windows-eui-neo" alt="Windows build"></a>
+  <a href="https://github.com/Justice-ocr/PiliNara/releases"><img src="https://img.shields.io/github/v/release/Justice-ocr/PiliNara?include_prereleases" alt="Release"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/Justice-ocr/PiliNara" alt="License"></a>
 </div>
 
+## 项目定位
 
+PiliNara 基于 [Starfallan/PiliNara](https://github.com/Starfallan/PiliNara) 维护，并沿用 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 的功能基础。当前分支 `feat/windows-eui-neo` 是 Windows 特化版本，重点不是简单换肤，而是重新组织桌面端的信息层级、导航方式和媒体工作流。
 
-<div align="center">
-    <h1>PiliNara</h1>
-<div align="center">
-    
-</div>
-    <p>基于PiliPlus做了一些自用修改</p>
-    
-<img src="assets/screenshots/510shots_so.png" width="32%" alt="home" />
-<img src="assets/screenshots/174shots_so.png" width="32%" alt="home" />
-<img src="assets/screenshots/850shots_so.png" width="32%" alt="home" />
-<br/>
-<img src="assets/screenshots/main_screen.png" width="96%" alt="home" />
-<br/>
-</div>
+> [!IMPORTANT]
+> `Windows Neo` 是本项目的 Windows 工作区和视觉设计名称。当前实现仍使用 Flutter，并非 EUI-NEO 技术栈重写。
 
+本分支只面向 Windows。若需要与上游接近的通用版本，请使用 [`main`](https://github.com/Justice-ocr/PiliNara/tree/main) 分支。
 
-<br/>
+## Windows Neo
 
-## 项目说明
-- 本项目PiliNara是基于[PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)进行修改的,做了一些自用的改动.
-- 本仓库保留了PiliPlus的所有功能,并在此基础上进行了部分自用的优化和调整.支持导入PiliPlus的设置和数据，也应该支持了导出设置和数据到PiliPlus.
-- 本项目会定期同步PiliPlus的更新,并在此基础上进行修改和优化.
-- 本项目仅供个人学习和测试使用；当前分支专注 Windows 端，非 Windows 平台工程已移除。
-- 有啥需要的功能或者想法欢迎提issue或者PR,我会尽量抽时间进行开发和完善.
-- 本人开发水平有限，可能存在一些bug和不完善的地方，欢迎提交issue和PR.
+- **桌面工作区**：窗口标题栏、侧栏、工作区标签和内容区形成稳定的三层导航，宽度变化时可切换为紧凑布局。
+- **多标签页**：主页、搜索、视频、直播、用户、动态、下载、消息和设置可在同一窗口中并行保留；支持关闭、关闭其他标签以及快捷切换。
+- **页面状态保留**：非当前标签继续保留导航栈和页面状态，关闭后台标签不会重播当前页面动画。
+- **统一页面导航**：主页、动态、收藏、关注、历史、稍后再看、下载和搜索结果采用一致的二级标签与返回逻辑。
+- **Miku 主题语言**：以明亮青绿色为主信号，通过不同白色混合度区分工作区、侧栏与选中状态，并使用克制的 Miku 元素建立主题辨识度。
+- **轻量动效**：页面切换、卡片反馈、加载状态和标签增删使用短时、非循环动画；系统要求减少动态效果时会自动收敛。
+- **桌面媒体布局**：视频评论保留在右侧上下文区域；直播聊天、贡献榜与 SuperChat 分区展示，弹幕输入在页面内完成。
+- **键鼠操作**：支持播放器方向键快进/快退、直播输入框正常编辑与回车发送，以及常用标签快捷键。
 
-在此致敬原作者和上游作者的无私奉献。如有侵权请联系删除。
+### 标签快捷键
 
-## 改动说明(未来计划？)
+| 操作 | 快捷键 |
+| --- | --- |
+| 关闭当前标签 | `Ctrl + W` |
+| 切换到下一标签 | `Ctrl + Tab` |
+| 切换到上一标签 | `Ctrl + Shift + Tab` |
+| 返回当前标签的上一页 | `Alt + Left` |
 
-Fork特性：
+Windows Neo 工作区默认启用，可在“设置 → 播放设置 → Windows Neo 工作区”中关闭。
 
-**基础适配与界面**
-- [x] 应用名称由PiliPlus更改为PiliNara，并做了 Windows 端相应替换以实现共存
-- [x] 修复Flutter在澎湃小窗下无法正常显示的问题，参考Flutter官方issue [#161086](https://github.com/flutter/flutter/issues/161086)，该问题似乎在HyperOS3上被修复
-   修复方案参考了[venera/pull/467](https://github.com/venera-app/venera/pull/467)
-- [x] 支持自定义「我的」页面卡片顺序和显示数量
-- [x] 「我的」页面新增历史记录卡片预览和「稍后再看」卡片板块
-- [x] 支持自定义修改应用字体和弹幕字体，可以手动选择本地字体文件
-- [x] 支持自动侧边栏切换，并可配置触发宽度
-- [x] 图片长按/右键菜单支持复制图片
+## 主要功能
 
-- [x] 优化了部分界面UI？
+除 Windows 专属界面外，本项目保留并持续同步上游的主要能力，包括：
 
-**播放、小窗与画质**
-- [x] 实现了类似于[Pilipro](https://github.com/naaammme/pilipro)的应用内小窗功能，感谢原作者naaammme的无私奉献,在实现时参考了其逻辑
-- [x] 应用内小窗支持拖动、双击调整大小、横竖屏比例自适应和仿官方控制栏操作
-- [x] 应用内小窗支持SponsorBlock跳过片段，支持从应用内小窗返回桌面自动进入系统小窗(有待优化)
+- 视频、番剧、直播、动态、用户空间、收藏、历史和稍后再看
+- 弹幕、字幕与双语字幕，支持 WEBVTT、SRT 等字幕导出
+- 离线缓存、文件夹管理、继续播放与本地字幕
+- SponsorBlock、分段进度、播放列表和系统媒体控制
+- 直播弹幕、SuperChat、表情、DLNA 投屏与流偏好记忆
+- 推荐流、动态、搜索结果和评论的本地过滤
+- 应用内小窗、多账号、WebDAV 备份与自定义字体
+- AI 字幕分析，可配置 OpenAI 兼容接口
 
   演示图片:![应用内小窗演示](https://r2.170529.xyz/PicList/2026/02/IMG_20260222_194923.avif)
 - [x] 实现了可以和其他应用同时播放音频的功能
@@ -274,7 +273,7 @@ Fork特性：
 
 ## 下载
 
-可以通过右侧release进行下载或拉取代码到本地进行编译
+在 [Releases](https://github.com/Justice-ocr/PiliNara/releases) 下载 Windows x64 安装包或便携版。GitHub Actions 的 Windows 工作流也会生成构建产物。
 
 ### Arch Linux (AUR)
 
@@ -297,26 +296,18 @@ yay -S pilinara-bin
 
 ## 声明
 
-此项目（PiliNara）是个人为了兴趣而开发，仅用于学习和测试，请于下载后24小时内删除。
-所用API皆从官方网站收集，不提供任何破解内容。
-在此致敬原作者：[guozhigq/pilipala](https://github.com/guozhigq/pilipala)
-在此致敬上游作者：[orz12/PiliPalaX](https://github.com/orz12/PiliPalaX)
-在此致敬上游作者：[bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)
-本仓库做了一些自用修改，感谢原作者的开源精神。
+PiliNara 是非官方第三方客户端，与哔哩哔哩及其关联公司无关。本项目仅供学习、研究和个人使用，不提供任何破解内容；所使用的接口信息来源于公开网络。请遵守所在地法律法规、平台服务条款以及内容版权要求。
 
-感谢使用
-
-
-<br/>
+项目采用 [GNU General Public License v3.0](LICENSE) 许可。
 
 ## 致谢
 
+- [Starfallan/PiliNara](https://github.com/Starfallan/PiliNara)
+- [bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)
+- [orz12/PiliPalaX](https://github.com/orz12/PiliPalaX)
+- [guozhigq/pilipala](https://github.com/guozhigq/pilipala)
 - [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
-- [flutter_meedu_videoplayer](https://github.com/zezo357/flutter_meedu_videoplayer)
 - [media-kit](https://github.com/media-kit/media-kit)
-- [dio](https://pub.dev/packages/dio)
-- 等等
+- [SponsorBlock](https://github.com/ajayyy/SponsorBlock)
 
-<br/>
-<br/>
-<br/>
+感谢所有上游作者、贡献者和测试者。
