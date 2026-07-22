@@ -94,20 +94,10 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
             mainController: _mainController,
             tabs: tabs,
             activeTab: tabs[activeIndex],
-            child: IndexedStack(
-              index: activeIndex,
-              children: [
-                for (var index = 0; index < tabs.length; index++)
-                  WindowsNeoPageStage(
-                    active: index == activeIndex,
-                    child: ExcludeFocus(
-                      excluding: index != activeIndex,
-                      child: RepaintBoundary(
-                        child: _buildTabNavigator(tabs[index]),
-                      ),
-                    ),
-                  ),
-              ],
+            child: WindowsMediaTabStack(
+              tabs: tabs,
+              activeIndex: activeIndex,
+              tabBuilder: _buildTabNavigator,
             ),
           ),
         ),
@@ -204,6 +194,37 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
       return arguments['item']?.idStr.toString() ?? '';
     }
     return '';
+  }
+}
+
+class WindowsMediaTabStack extends StatelessWidget {
+  const WindowsMediaTabStack({
+    super.key,
+    required this.tabs,
+    required this.activeIndex,
+    required this.tabBuilder,
+  });
+
+  final List<WindowsVideoTabItem> tabs;
+  final int activeIndex;
+  final Widget Function(WindowsVideoTabItem item) tabBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return IndexedStack(
+      index: activeIndex,
+      children: [
+        for (var index = 0; index < tabs.length; index++)
+          WindowsNeoPageStage(
+            key: ValueKey(tabs[index].id),
+            active: index == activeIndex,
+            child: ExcludeFocus(
+              excluding: index != activeIndex,
+              child: RepaintBoundary(child: tabBuilder(tabs[index])),
+            ),
+          ),
+      ],
+    );
   }
 }
 
