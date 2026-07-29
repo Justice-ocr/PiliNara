@@ -173,6 +173,67 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     );
   }
 
+  // 归位动画进行中：页面播放器以透明占位先行布局（供量取目标矩形），
+  // 恢复握手完成后亮出，期间小窗是唯一可见端
+  bool _pipRestoreInFlight = false;
+  int _pipRestoreRectAttempts = 0;
+
+  // 页面根参照系：归位目标矩形以此量取，规避路由转场期间的整页偏移
+  final _pageRootKey = GlobalKey();
+
+  /// 量取页面播放器矩形（收起源矩形用全局坐标；归位目标以页面根为参照系）
+  Rect? _livePlayerRect({bool relativeToPage = false}) {
+    final renderObject = playerKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox ||
+        !renderObject.attached ||
+        !renderObject.hasSize ||
+        // 未加载完成时播放器区是零尺寸 SizedBox.shrink,视为未量到
+        renderObject.size.isEmpty) {
+      return null;
+    }
+    if (relativeToPage) {
+      final pageRenderObject = _pageRootKey.currentContext?.findRenderObject();
+      if (pageRenderObject is RenderBox && pageRenderObject.attached) {
+        return renderObject.localToGlobal(
+              Offset.zero,
+              ancestor: pageRenderObject,
+            ) &
+            renderObject.size;
+      }
+      return null;
+    }
+    return renderObject.localToGlobal(Offset.zero) & renderObject.size;
+  }
+
+  /// C1/C2 共用：页面就绪后量取归位目标矩形并上报协调器（最多重试 10 帧）
+  void _scheduleLivePipRestoreAttach() {
+    _pipRestoreRectAttempts = 0;
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _attachLivePipRestore(),
+    );
+  }
+
+  void _attachLivePipRestore() {
+    if (!mounted || !_pipRestoreInFlight) return;
+    final targetRect = _livePlayerRect(relativeToPage: true);
+    if (targetRect == null && _pipRestoreRectAttempts++ < 10) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _attachLivePipRestore(),
+      );
+      return;
+    }
+    LivePipOverlayService.transition.attachRestorePage(
+      targetRect: targetRect,
+      onCompleted: () {
+        if (!mounted) {
+          _pipRestoreInFlight = false;
+          return;
+        }
+        setState(() => _pipRestoreInFlight = false);
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();

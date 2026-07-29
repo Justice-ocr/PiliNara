@@ -445,6 +445,21 @@ class _PipWidgetState extends State<PipWidget>
   double _baseLong = 200; // 当前设备档的长边基准(未乘 _scale),build 时更新
   double _baseShort = 112;
 
+  PipTransitionCoordinator get _transition => PipOverlayService.transition;
+  PipPhase _lastPhase = PipPhase.hidden;
+
+  // 收起/归位的 Rect 插值进度
+  late final AnimationController _phaseCtr = AnimationController(
+    vsync: this,
+    duration: PipTransitionCoordinator.animDuration,
+  )..addStatusListener(_onPhaseAnimStatus);
+
+  // X 关闭的缩小淡出
+  late final AnimationController _closeCtr = AnimationController(
+    vsync: this,
+    duration: PipTransitionCoordinator.closeFadeDuration,
+  );
+
   double get _width =>
       (PipOverlayService.isVertical ? _baseShort : _baseLong) * _scale;
   double get _height =>
@@ -474,6 +489,51 @@ class _PipWidgetState extends State<PipWidget>
     } else {
       _startHideTimer();
     }
+  }
+
+  void _onPhaseChanged() {
+    final phase = _transition.phase;
+    if (phase != _lastPhase) {
+      _lastPhase = phase;
+      switch (phase) {
+        case PipPhase.entering:
+        case PipPhase.restoring:
+          _phaseCtr.forward(from: 0);
+        case PipPhase.active:
+          // 入场完成后的常规落位;或超时回退——窗口直接回到小窗矩形
+          _phaseCtr
+            ..stop()
+            ..value = 1;
+        case PipPhase.hidden:
+          _phaseCtr.stop();
+      }
+    }
+    if (mounted) setState(() {});
+  }
+
+  void _onPhaseAnimStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed) return;
+    switch (_transition.phase) {
+      case PipPhase.entering:
+        _transition.markEnterDone();
+      case PipPhase.restoring:
+        _transition.markRestoreAnimationDone();
+      case PipPhase.active:
+      case PipPhase.hidden:
+        break;
+    }
+  }
+
+  // X 关闭:先播缩小淡出,动画完成后才真正走 stopPip;
+  // 期间窗口不可交互。外部若提前移除 overlay(如被抢占),widget 已
+  // dispose,then 不会触发
+  void _beginClose() {
+    if (_isClosing) return;
+    _hideTimer?.cancel();
+    setState(() => _isClosing = true);
+    _closeCtr.forward(from: 0).then((_) {
+      if (mounted) widget.onClose();
+    });
   }
 
   void _onPhaseChanged() {
@@ -1042,6 +1102,7 @@ class _PipWidgetState extends State<PipWidget>
                         ),
                       ),
                     ),
+                    /* Legacy Windows PiP controls retained in history; the animated implementation below supersedes them.
                   ),
                 ),
               ),
