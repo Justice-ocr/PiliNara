@@ -23,7 +23,7 @@ class FavFolderItem extends StatelessWidget {
     final radius = BorderRadius.circular(isWindowsNeo ? 6 : 12);
     return GestureDetector(
       onTap: () {
-        Get.toNamed(
+        PageUtils.toDupNamed(
           '/favDetail',
           arguments: item,
           parameters: {

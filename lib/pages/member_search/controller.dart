@@ -7,18 +7,24 @@ import 'package:material_ui/material_ui.dart';
 
 class MemberSearchController extends GetxController
     with GetSingleTickerProviderStateMixin {
+  MemberSearchController({String? mid, String? uname})
+    : mid = mid ?? Get.parameters['mid']!,
+      uname = uname ?? Get.parameters['uname'];
+
   late final FocusNode focusNode;
   late final TabController tabController;
   late final TextEditingController editingController;
 
-  final mid = Get.parameters['mid']!;
-  final uname = Get.parameters['uname'];
+  final String mid;
+  final String? uname;
 
   final RxBool hasData = false.obs;
   final RxList<int> counts = <int>[-1, -1].obs;
 
   late final MemberSearchChildController arcCtr;
   late final MemberSearchChildController dynCtr;
+  late final String _arcTag;
+  late final String _dynTag;
 
   @override
   void onInit() {
@@ -26,24 +32,30 @@ class MemberSearchController extends GetxController
     focusNode = FocusNode();
     editingController = TextEditingController();
     tabController = TabController(vsync: this, length: 2);
+    _arcTag = Utils.generateRandomString(8);
+    _dynTag = Utils.generateRandomString(8);
     arcCtr = Get.put(
       MemberSearchChildController(this, MemberSearchType.archive),
-      tag: Utils.generateRandomString(8),
+      tag: _arcTag,
     );
     dynCtr = Get.put(
       MemberSearchChildController(this, MemberSearchType.dynamic),
-      tag: Utils.generateRandomString(8),
+      tag: _dynTag,
     );
   }
 
-  void onClear() {
+  void onClear([VoidCallback? onBack]) {
     if (editingController.value.text.isNotEmpty) {
       editingController.clear();
       counts.value = <int>[-1, -1];
       hasData.value = false;
       focusNode.requestFocus();
     } else {
-      Get.back();
+      if (onBack case final callback?) {
+        callback();
+      } else {
+        Get.back();
+      }
     }
   }
 
@@ -61,6 +73,8 @@ class MemberSearchController extends GetxController
 
   @override
   void onClose() {
+    Get.delete<MemberSearchChildController>(tag: _arcTag);
+    Get.delete<MemberSearchChildController>(tag: _dynTag);
     focusNode.dispose();
     tabController.dispose();
     editingController.dispose();

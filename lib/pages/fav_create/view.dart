@@ -23,7 +23,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 
 class CreateFavPage extends StatefulWidget {
-  const CreateFavPage({super.key});
+  const CreateFavPage({super.key, this.mediaId});
+
+  final Object? mediaId;
 
   @override
   State<CreateFavPage> createState() => _CreateFavPageState();
@@ -44,7 +46,7 @@ class _CreateFavPageState extends State<CreateFavPage> {
     super.initState();
     _titleController = TextEditingController();
     _introController = TextEditingController();
-    _mediaId = Get.parameters['mediaId'];
+    _mediaId = widget.mediaId ?? Get.parameters['mediaId'];
     if (_mediaId != null) {
       _getFolderInfo();
     }
@@ -97,7 +99,7 @@ class _CreateFavPageState extends State<CreateFavPage> {
                 if (res case Success(:final response)) {
                   SmartDialog.showToast('${_mediaId != null ? '编辑' : '创建'}成功');
                   if (mounted) {
-                    Get.back(result: response);
+                    Navigator.of(context).pop(response);
                   }
                 } else {
                   res.toast();

@@ -8,13 +8,15 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
 class FansController extends FollowTypeController {
-  FansController(this.showName);
+  FansController(this.showName, {Map? arguments}) : _arguments = arguments;
+
+  final Map? _arguments;
   final bool showName;
   late final bool isOwner;
 
   @override
   void init() {
-    final Map? args = Get.arguments;
+    final Map? args = _arguments ?? Get.arguments;
     final ownerMid = Accounts.main.mid;
     final int? mid = args?['mid'];
     this.mid = mid ?? ownerMid;

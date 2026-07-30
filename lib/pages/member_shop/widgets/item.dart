@@ -26,7 +26,7 @@ class MemberShopItem extends StatelessWidget {
         borderRadius: const .all(.circular(6)),
         onTap: () {
           if (item.cardUrl case final cardUrl?) {
-            Get.toNamed('/webview', parameters: {'url': cardUrl});
+            PageUtils.toDupNamed('/webview', parameters: {'url': cardUrl});
           }
         },
         child: Column(

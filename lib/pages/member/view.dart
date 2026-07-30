@@ -368,7 +368,7 @@ class _MemberPageState extends State<MemberPage> {
                                   recognizer:
                                       lottery.jumpUrl?.isNotEmpty == true
                                       ? (NoDeadlineTapGestureRecognizer()
-                                          ..onTap = () => Get.toNamed(
+                                          ..onTap = () => PageUtils.toDupNamed(
                                             '/webview',
                                             parameters: {
                                               'url': lottery.jumpUrl!,
@@ -398,7 +398,7 @@ class _MemberPageState extends State<MemberPage> {
       _reserveBtn(_userController.reserves!, theme),
     IconButton(
       tooltip: '搜索',
-      onPressed: () => Get.toNamed(
+      onPressed: () => PageUtils.toDupNamed(
         '/memberSearch?mid=$_mid&uname=${_userController.username}',
       ),
       icon: const Icon(Icons.search_outlined),
@@ -541,7 +541,10 @@ class _MemberPageState extends State<MemberPage> {
                 ),
               ),
             PopupMenuItem(
-              onTap: () => Get.to(const LoginDevicesPage()),
+              onTap: () => PageUtils.toPage(
+                context,
+                () => const LoginDevicesPage(),
+              ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -552,9 +555,9 @@ class _MemberPageState extends State<MemberPage> {
               ),
             ),
             PopupMenuItem(
-              onTap: () => Get.to(
-                const LogPage(),
-                arguments: LoginLogController(),
+              onTap: () => PageUtils.toPage(
+                context,
+                () => LogPage(controller: LoginLogController()),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
@@ -566,9 +569,9 @@ class _MemberPageState extends State<MemberPage> {
               ),
             ),
             PopupMenuItem(
-              onTap: () => Get.to(
-                const LogPage(),
-                arguments: CoinLogController(),
+              onTap: () => PageUtils.toPage(
+                context,
+                () => LogPage(controller: CoinLogController()),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
@@ -580,9 +583,9 @@ class _MemberPageState extends State<MemberPage> {
               ),
             ),
             PopupMenuItem(
-              onTap: () => Get.to(
-                const LogPage(),
-                arguments: ExpLogController(),
+              onTap: () => PageUtils.toPage(
+                context,
+                () => LogPage(controller: ExpLogController()),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
@@ -594,7 +597,7 @@ class _MemberPageState extends State<MemberPage> {
               ),
             ),
             PopupMenuItem(
-              onTap: () => Get.toNamed('/spaceSetting'),
+              onTap: () => PageUtils.toDupNamed('/spaceSetting'),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

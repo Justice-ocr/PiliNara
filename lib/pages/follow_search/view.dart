@@ -15,10 +15,12 @@ class FollowSearchPage extends StatefulWidget {
     super.key,
     this.mid,
     this.isFromSelect = false,
+    this.controllerTag,
   });
 
   final int? mid;
   final bool isFromSelect;
+  final String? controllerTag;
 
   @override
   State<FollowSearchPage> createState() => _FollowSearchPageState();
@@ -35,7 +37,7 @@ class _FollowSearchPageState
     super.initState();
     controller = Get.put(
       FollowSearchController(widget.mid ?? Get.arguments['mid']),
-      tag: Utils.generateRandomString(8),
+      tag: widget.controllerTag ?? Utils.generateRandomString(8),
     );
   }
 

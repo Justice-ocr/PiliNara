@@ -179,7 +179,7 @@ class _EmotePanelState extends State<EmotePanel>
                           iconSize: 20,
                           iconColor: theme.colorScheme.onSurfaceVariant
                               .withValues(alpha: 0.8),
-                          onPressed: () => Get.toNamed(
+                          onPressed: () => PageUtils.toDupNamed(
                             '/webview',
                             parameters: {
                               'url':

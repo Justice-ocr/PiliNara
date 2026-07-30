@@ -226,7 +226,8 @@ class _SearchPageState extends State<SearchPage> {
                                   .symmetric(horizontal: 10),
                                 ),
                               ),
-                              onPressed: () => Get.toNamed('/searchTrending'),
+                              onPressed: () =>
+                                  PageUtils.toDupNamed('/searchTrending'),
                               child: Row(
                                 children: [
                                   Text(

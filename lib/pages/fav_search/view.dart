@@ -13,7 +13,9 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class FavSearchPage extends StatefulWidget {
-  const FavSearchPage({super.key});
+  const FavSearchPage({super.key, this.arguments});
+
+  final Map? arguments;
 
   @override
   State<FavSearchPage> createState() => _FavSearchPageState();
@@ -24,10 +26,16 @@ class _FavSearchPageState
         CommonSearchPageState<FavSearchPage, FavDetailData, FavDetailItemModel>
     with GridMixin {
   @override
-  final FavSearchController controller = Get.put(
-    FavSearchController(),
-    tag: Utils.generateRandomString(8),
-  );
+  late final FavSearchController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(
+      FavSearchController(arguments: widget.arguments),
+      tag: Utils.generateRandomString(8),
+    );
+  }
 
   @override
   List<Widget>? get multiSelectActions {

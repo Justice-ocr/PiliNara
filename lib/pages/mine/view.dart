@@ -206,7 +206,10 @@ class _MediaPageState extends CommonPageState<MinePage>
     if (GStorage.reply != null)
       IconButton(
         tooltip: '\u8bc4\u8bba\u8bb0\u5f55',
-        onPressed: () => Get.toNamed('/myReply'),
+        onPressed: () => PageUtils.openWorkspaceTab(
+          route: '/myReply',
+          title: '\u8bc4\u8bba\u8bb0\u5f55',
+        ),
         icon: const Icon(Icons.message_outlined),
       ),
     Obx(() {
@@ -361,7 +364,10 @@ class _MediaPageState extends CommonPageState<MinePage>
             padding: padding,
             style: style,
             tooltip: '评论记录',
-            onPressed: () => Get.toNamed('/myReply'),
+            onPressed: () => PageUtils.openWorkspaceTab(
+              route: '/myReply',
+              title: '\u8bc4\u8bba\u8bb0\u5f55',
+            ),
             icon: const Icon(Icons.message_outlined),
           ),
         Obx(
@@ -648,7 +654,10 @@ class _MediaPageState extends CommonPageState<MinePage>
       children: [
         _buildSectionGap(theme),
         ListTile(
-          onTap: () => Get.toNamed('/later'),
+          onTap: () => PageUtils.openWorkspaceTab(
+            route: '/later',
+            title: '\u7a0d\u540e\u518d\u770b',
+          ),
           dense: true,
           title: Padding(
             padding: const EdgeInsets.only(left: 10),
@@ -720,7 +729,10 @@ class _MediaPageState extends CommonPageState<MinePage>
                             ),
                           ),
                         ),
-                        onPressed: () => Get.toNamed('/later'),
+                        onPressed: () => PageUtils.openWorkspaceTab(
+                          route: '/later',
+                          title: '\u7a0d\u540e\u518d\u770b',
+                        ),
                         icon: Icon(
                           Icons.arrow_forward_ios,
                           size: 18,
@@ -754,7 +766,10 @@ class _MediaPageState extends CommonPageState<MinePage>
       children: [
         _buildSectionGap(theme),
         ListTile(
-          onTap: () => Get.toNamed('/history'),
+          onTap: () => PageUtils.openWorkspaceTab(
+            route: '/history',
+            title: '\u89c2\u770b\u8bb0\u5f55',
+          ),
           dense: true,
           title: Padding(
             padding: const EdgeInsets.only(left: 10),
@@ -830,7 +845,10 @@ class _MediaPageState extends CommonPageState<MinePage>
                             ),
                           ),
                         ),
-                        onPressed: () => Get.toNamed('/history'),
+                        onPressed: () => PageUtils.openWorkspaceTab(
+                          route: '/history',
+                          title: '\u89c2\u770b\u8bb0\u5f55',
+                        ),
                         icon: Icon(
                           Icons.arrow_forward_ios,
                           size: 18,
@@ -864,7 +882,10 @@ class _MediaPageState extends CommonPageState<MinePage>
       children: [
         _buildSectionGap(theme),
         ListTile(
-          onTap: () => Get.toNamed('/fav')?.whenComplete(_autoRefresh),
+          onTap: () => PageUtils.openWorkspaceTab(
+            route: '/fav',
+            title: '\u6211\u7684\u6536\u85cf',
+          ),
           dense: true,
           title: Padding(
             padding: const EdgeInsets.only(left: 10),
@@ -943,8 +964,10 @@ class _MediaPageState extends CommonPageState<MinePage>
                             ),
                           ),
                         ),
-                        onPressed: () =>
-                            Get.toNamed('/fav')?.whenComplete(_autoRefresh),
+                        onPressed: () => PageUtils.openWorkspaceTab(
+                          route: '/fav',
+                          title: '\u6211\u7684\u6536\u85cf',
+                        ),
                         icon: Icon(
                           Icons.arrow_forward_ios,
                           size: 18,

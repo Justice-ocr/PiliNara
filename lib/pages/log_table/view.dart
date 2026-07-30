@@ -9,14 +9,33 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class LogPage<T> extends StatefulWidget {
-  const LogPage({super.key});
+  const LogPage({super.key, this.controller});
+
+  final LogController<dynamic, T>? controller;
 
   @override
   State<LogPage<T>> createState() => _LogPageState<T>();
 }
 
 class _LogPageState<T> extends State<LogPage<T>> {
-  final _controller = Get.put<LogController<dynamic, T>>(Get.arguments);
+  late final LogController<dynamic, T> _controller;
+  late final String _controllerTag;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllerTag = Utils.generateRandomString(8);
+    _controller = Get.put<LogController<dynamic, T>>(
+      widget.controller ?? Get.arguments,
+      tag: _controllerTag,
+    );
+  }
+
+  @override
+  void dispose() {
+    Get.delete<LogController<dynamic, T>>(tag: _controllerTag);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

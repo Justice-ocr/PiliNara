@@ -8,6 +8,9 @@ import 'package:get/get.dart';
 
 class SubDetailController
     extends CommonListController<SubDetailData, SubDetailItemModel> {
+  SubDetailController({Map? arguments}) : _arguments = arguments;
+
+  final Map? _arguments;
   late int id;
   String? heroTag;
   SubItemModel? subInfo;
@@ -15,7 +18,7 @@ class SubDetailController
   @override
   void onInit() {
     super.onInit();
-    final args = Get.arguments;
+    final args = _arguments ?? Get.arguments;
     id = args['id'];
     subInfo = args['subInfo'];
     heroTag = args['heroTag'];

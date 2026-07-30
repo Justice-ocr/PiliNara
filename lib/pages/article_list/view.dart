@@ -17,17 +17,33 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class ArticleListPage extends StatefulWidget {
-  const ArticleListPage({super.key});
+  const ArticleListPage({super.key, this.parameters});
+
+  final Map<String, String>? parameters;
 
   @override
   State<ArticleListPage> createState() => _ArticleListPageState();
 }
 
 class _ArticleListPageState extends State<ArticleListPage> with GridMixin {
-  final _controller = Get.put(
-    ArticleListController(),
-    tag: Get.parameters['id']!,
-  );
+  late final ArticleListController _controller;
+  late final String _controllerTag;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllerTag = widget.parameters?['id'] ?? Get.parameters['id']!;
+    _controller = Get.put(
+      ArticleListController(id: widget.parameters?['id']),
+      tag: _controllerTag,
+    );
+  }
+
+  @override
+  void dispose() {
+    Get.delete<ArticleListController>(tag: _controllerTag);
+    super.dispose();
+  }
 
   late EdgeInsets padding;
 

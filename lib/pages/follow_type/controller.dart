@@ -9,6 +9,7 @@ abstract class FollowTypeController
     extends CommonListController<FollowData, FollowItemModel> {
   late final int mid;
   late final RxnString name;
+  Map? get routeArguments => null;
 
   RxInt total = 0.obs;
 
@@ -20,7 +21,7 @@ abstract class FollowTypeController
 
   void init() {
     final ownerMid = Accounts.main.mid;
-    final Map? args = Get.arguments;
+    final Map? args = routeArguments ?? Get.arguments;
     mid = args?['mid'] ?? ownerMid;
     final String? name = args?['name'];
     this.name = RxnString(name);

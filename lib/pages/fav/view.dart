@@ -2,20 +2,25 @@ import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
+import 'package:PiliPlus/models_new/fav/fav_folder/list.dart';
 import 'package:PiliPlus/models/common/fav_type.dart';
 import 'package:PiliPlus/pages/fav/article/controller.dart';
 import 'package:PiliPlus/pages/fav/cheese/controller.dart';
 import 'package:PiliPlus/pages/fav/topic/controller.dart';
 import 'package:PiliPlus/pages/fav/video/controller.dart';
+import 'package:PiliPlus/pages/fav_create/view.dart';
 import 'package:PiliPlus/pages/fav_folder_sort/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class FavPage extends StatefulWidget {
-  const FavPage({super.key});
+  const FavPage({super.key, this.arguments});
+
+  final Object? arguments;
 
   @override
   State<FavPage> createState() => _FavPageState();
@@ -33,7 +38,8 @@ class _FavPageState extends State<FavPage> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    int initialIndex = Get.arguments is int ? Get.arguments as int : 0;
+    final routeArguments = widget.arguments ?? Get.arguments;
+    int initialIndex = routeArguments is int ? routeArguments : 0;
     _showVideoFavMenu = (initialIndex == 0).obs;
     _tabController = TabController(
       length: FavTabType.values.length,
@@ -60,16 +66,19 @@ class _FavPageState extends State<FavPage> with SingleTickerProviderStateMixin {
           Obx(
             () => _showVideoFavMenu.value
                 ? IconButton(
-                    onPressed: () => Get.toNamed('/createFav')?.then(
+                    onPressed: () => PageUtils.toPage(
+                      context,
+                      () => const CreateFavPage(),
+                    )?.then(
                       (data) {
-                        if (data != null) {
+                        if (data is FavFolderInfo) {
                           final list =
                               _favController.loadingState.value.dataOrNull;
                           if (list != null && list.isNotEmpty) {
                             list.insert(1, data);
                             _favController.loadingState.refresh();
                           } else {
-                            _favController.loadingState.value = Success([data]);
+                          _favController.loadingState.value = Success([data]);
                           }
                         }
                       },
@@ -88,8 +97,11 @@ class _FavPageState extends State<FavPage> with SingleTickerProviderStateMixin {
                           SmartDialog.showToast('加载全部收藏夹再排序');
                           return;
                         }
-                        Get.to(
-                          FavFolderSortPage(favController: _favController),
+                        PageUtils.toPage(
+                          context,
+                          () => FavFolderSortPage(
+                            favController: _favController,
+                          ),
                         );
                       }
                     },
@@ -107,7 +119,7 @@ class _FavPageState extends State<FavPage> with SingleTickerProviderStateMixin {
                       )) {
                         try {
                           final item = response!.first;
-                          Get.toNamed(
+                          PageUtils.toDupNamed(
                             '/favSearch',
                             arguments: {
                               'type': 1,

@@ -32,7 +32,7 @@ class SearchArticleController
     ).matchAsPrefix(keyword)?.group(2);
     if (cvid != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Get.toNamed(
+        PageUtils.toDupNamed(
           '/articlePage',
           parameters: {
             'id': cvid,
@@ -46,7 +46,10 @@ class SearchArticleController
   Rx<ArticleOrderType> articleOrderType = ArticleOrderType.totalrank.obs;
 
   @override
-  bool customHandleResponse(bool isRefresh, Success<SearchArticleData> response) {
+  bool customHandleResponse(
+    bool isRefresh,
+    Success<SearchArticleData> response,
+  ) {
     searchResultController?.count[searchType.index] =
         response.response.numResults ?? 0;
     final list = response.response.list;

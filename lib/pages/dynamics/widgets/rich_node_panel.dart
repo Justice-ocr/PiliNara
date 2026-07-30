@@ -98,14 +98,8 @@ TextSpan? richNode(
                 text: i.origText,
                 style: style,
                 recognizer: NoDeadlineTapGestureRecognizer()
-                  ..onTap = () => Get.toNamed(
-                    '/searchResult',
-                    parameters: {
-                      'keyword': i.origText!.substring(
-                        1,
-                        i.origText!.length - 1,
-                      ),
-                    },
+                  ..onTap = () => PageUtils.toSearchResult(
+                    i.origText!.substring(1, i.origText!.length - 1),
                   ),
               ),
             );
@@ -179,7 +173,7 @@ TextSpan? richNode(
                   text: '${i.origText} ',
                   style: style,
                   recognizer: NoDeadlineTapGestureRecognizer()
-                    ..onTap = () => Get.toNamed(
+                    ..onTap = () => PageUtils.toDupNamed(
                       '/webview',
                       parameters: {
                         'url':

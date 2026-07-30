@@ -186,7 +186,7 @@ class _PgcReviewChildPageState extends State<PgcReviewChildPage>
       type: MaterialType.transparency,
       child: InkWell(
         onTap: isLongReview
-            ? () => Get.toNamed(
+            ? () => PageUtils.toDupNamed(
                 '/articlePage',
                 parameters: {
                   'id': item.articleId!.toString(),

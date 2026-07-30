@@ -17,6 +17,7 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/nested_scroll_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -286,7 +287,7 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
 
   void onFollow(BuildContext context) {
     if (mid == account.mid) {
-      Get.toNamed('/editProfile');
+      PageUtils.toDupNamed('/editProfile');
     } else if (relation.value == 128) {
       _onBlock();
     } else {

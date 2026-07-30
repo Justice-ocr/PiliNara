@@ -15,10 +15,14 @@ class FansPage extends StatefulWidget {
     super.key,
     this.showName = true,
     this.onSelect,
+    this.arguments,
+    this.controllerTag,
   });
 
   final bool showName;
   final ValueChanged<UserModel>? onSelect;
+  final Map? arguments;
+  final String? controllerTag;
 
   @override
   State<FansPage> createState() => _FansPageState();
@@ -27,7 +31,7 @@ class FansPage extends StatefulWidget {
     if (mid == null) {
       return;
     }
-    Get.toNamed(
+    PageUtils.toDupNamed(
       '/fan',
       arguments: {
         'mid': safeToInt(mid),
@@ -46,8 +50,10 @@ class _FansPageState extends FollowTypePageState<FansPage> {
   void initState() {
     super.initState();
     controller = Get.put(
-      FansController(widget.showName),
-      tag: Get.arguments?['mid']?.toString() ?? Utils.generateRandomString(8),
+      FansController(widget.showName, arguments: widget.arguments),
+      tag: widget.controllerTag ??
+          widget.arguments?['mid']?.toString() ??
+          Utils.generateRandomString(8),
     );
   }
 

@@ -13,7 +13,7 @@ List<SettingsModel> get privacySettings => [
         SmartDialog.showToast('登录后查看');
         return;
       }
-      Get.toNamed('/blackListPage');
+      PageUtils.toDupNamed('/blackListPage');
     },
     title: '黑名单管理',
     subtitle: '已拉黑用户',

@@ -41,7 +41,12 @@ class WhisperDetailPage extends CommonRichTextPubPage {
   const WhisperDetailPage({
     super.key,
     super.autofocus = false,
+    this.arguments,
+    this.controllerTag,
   });
+
+  final Map? arguments;
+  final String? controllerTag;
 
   @override
   State<WhisperDetailPage> createState() => _WhisperDetailPageState();
@@ -49,10 +54,26 @@ class WhisperDetailPage extends CommonRichTextPubPage {
 
 class _WhisperDetailPageState
     extends CommonRichTextPubPageState<WhisperDetailPage> {
-  final _whisperDetailController = Get.put(
-    WhisperDetailController(),
-    tag: Utils.makeHeroTag(Get.parameters['talkerId']),
-  );
+  late final WhisperDetailController _whisperDetailController;
+  late final String _controllerTag;
+
+  @override
+  void initState() {
+    super.initState();
+    final arguments = widget.arguments ?? Get.arguments as Map?;
+    _controllerTag =
+        widget.controllerTag ?? Utils.makeHeroTag(arguments?['talkerId']);
+    _whisperDetailController = Get.put(
+      WhisperDetailController(arguments: arguments),
+      tag: _controllerTag,
+    );
+  }
+
+  @override
+  void dispose() {
+    Get.delete<WhisperDetailController>(tag: _controllerTag);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,8 +135,9 @@ class _WhisperDetailPageState
         actions: [
           IconButton(
             tooltip: '设置',
-            onPressed: () => Get.to(
-              WhisperLinkSettingPage(
+            onPressed: () => PageUtils.toPage(
+              context,
+              () => WhisperLinkSettingPage(
                 talkerUid: _whisperDetailController.talkerId,
               ),
             ),

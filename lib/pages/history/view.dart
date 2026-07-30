@@ -215,7 +215,7 @@ class _HistoryPageState extends State<HistoryPage>
       actions: [
         IconButton(
           tooltip: '\u641c\u7d22\u8bb0\u5f55',
-          onPressed: () => Get.toNamed('/historySearch'),
+          onPressed: () => PageUtils.toDupNamed('/historySearch'),
           icon: const Icon(Icons.search_outlined),
         ),
         StaticPopupMenuButton(
@@ -304,7 +304,7 @@ class _HistoryPageState extends State<HistoryPage>
     actions: [
       IconButton(
         tooltip: '搜索',
-        onPressed: () => Get.toNamed('/historySearch'),
+        onPressed: () => PageUtils.toDupNamed('/historySearch'),
         icon: const Icon(Icons.search_outlined),
       ),
       StaticPopupMenuButton(

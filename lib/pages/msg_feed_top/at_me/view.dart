@@ -40,8 +40,9 @@ class _AtMePageState extends State<AtMePage> {
         title: const Text('@我的'),
         actions: [
           IconButton(
-            onPressed: () => Get.to(
-              const WhisperSettingsPage(
+            onPressed: () => PageUtils.toPage(
+              context,
+              () => const WhisperSettingsPage(
                 imSettingType: IMSettingType.SETTING_TYPE_OLD_AT_ME,
               ),
             ),

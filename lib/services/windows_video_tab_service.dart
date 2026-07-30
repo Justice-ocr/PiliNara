@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 
+import 'package:PiliPlus/services/windows_back_navigation_policy.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -136,6 +137,7 @@ abstract final class WindowsVideoTabService {
   static final Map<String, void Function()> _activators = {};
   static final Map<String, void Function()> _deactivators = {};
   static final Map<String, void Function()> _closers = {};
+  static final Map<String, List<bool Function()>> _contextPoppers = {};
   static final Map<String, _WindowsVideoTabPlayer> _players = {};
   static final Map<String, GlobalKey<NavigatorState>> _navigatorKeys = {};
   static final List<String> _activationHistory = [];
@@ -150,11 +152,56 @@ abstract final class WindowsVideoTabService {
   static const rootRoute = '/';
   static const homeTabId = 'home';
   static const maxMediaTabs = 8;
+  static const workspaceRoutes = {
+    '/download',
+    '/fav',
+    '/history',
+    '/later',
+    '/myReply',
+    '/setting',
+    '/subscription',
+    '/whisper',
+  };
   static const nestedRoutes = {
     '/search',
+    '/searchTrending',
     '/member',
+    '/memberSearch',
+    '/editProfile',
+    '/spaceSetting',
     '/dynamicDetail',
     '/articlePage',
+    '/articleList',
+    '/dynTopic',
+    '/blockSetting',
+    '/blackListPage',
+    '/sponsorBlock',
+    '/aiSetting',
+    '/playSpeedSet',
+    '/colorSetting',
+    '/fontSizeSetting',
+    '/barSetting',
+    '/historySearch',
+    '/laterSearch',
+    '/favDetail',
+    '/favSearch',
+    '/popularSeries',
+    '/popularPrecious',
+    '/rank',
+    '/whisperDetail',
+    '/replyMe',
+    '/atMe',
+    '/likeMe',
+    '/sysMsg',
+    '/webview',
+    '/subDetail',
+    '/msgLikeDetail',
+    '/memberDynamics',
+    '/follow',
+    '/fan',
+    '/followSearch',
+    '/followed',
+    '/sameFollowing',
   };
 
   static WindowsVideoTabItem _homeTab() {
@@ -203,18 +250,18 @@ abstract final class WindowsVideoTabService {
     _navigatorKeys.removeWhere((id, _) => !ids.contains(id));
   }
 
-  static bool navigateInActiveTab(
+  static Future<T?>? pushNamedInActiveTab<T extends Object?>(
     String page, {
     Object? arguments,
     Map<String, String>? parameters,
     bool replace = false,
   }) {
-    if (!enabled || !_hostMounted || !_isHostCurrent) return false;
+    if (!enabled || !_hostMounted || !_isHostCurrent) return null;
     final uri = Uri.tryParse(page);
-    if (uri == null || !nestedRoutes.contains(uri.path)) return false;
+    if (uri == null || !nestedRoutes.contains(uri.path)) return null;
     final id = activeId.value;
     final navigator = id == null ? null : _navigatorKeys[id]?.currentState;
-    if (navigator == null) return false;
+    if (navigator == null) return null;
     final routeData = WindowsTabRouteData(
       arguments: arguments,
       parameters: {
@@ -223,12 +270,27 @@ abstract final class WindowsVideoTabService {
       },
     );
     if (replace) {
-      navigator.pushReplacementNamed(uri.path, arguments: routeData);
-    } else {
-      navigator.pushNamed(uri.path, arguments: routeData);
+      return navigator.pushReplacementNamed<T, Object?>(
+        uri.path,
+        arguments: routeData,
+      );
     }
-    return true;
+    return navigator.pushNamed<T>(uri.path, arguments: routeData);
   }
+
+  static bool navigateInActiveTab(
+    String page, {
+    Object? arguments,
+    Map<String, String>? parameters,
+    bool replace = false,
+  }) =>
+      pushNamedInActiveTab<void>(
+        page,
+        arguments: arguments,
+        parameters: parameters,
+        replace: replace,
+      ) !=
+      null;
 
   static void popActiveTabToRoot() {
     final id = activeId.value;
@@ -238,10 +300,22 @@ abstract final class WindowsVideoTabService {
 
   static bool popActiveTab() {
     final id = activeId.value;
+    final contextPoppers = id == null ? null : _contextPoppers[id];
     final navigator = id == null ? null : _navigatorKeys[id]?.currentState;
-    if (navigator?.canPop() != true) return false;
-    navigator!.pop();
-    return true;
+    return WindowsBackNavigationPolicy.dispatch(
+      popContext: () {
+        if (contextPoppers == null) return false;
+        for (final popper in contextPoppers.reversed) {
+          if (popper()) return true;
+        }
+        return false;
+      },
+      popPage: () {
+        if (navigator?.canPop() != true) return false;
+        navigator!.pop();
+        return true;
+      },
+    );
   }
 
   static void closeActiveTab() {
@@ -453,6 +527,7 @@ abstract final class WindowsVideoTabService {
     }
     final close = _closers.remove(id);
     _activators.remove(id);
+    _contextPoppers.remove(id);
     _players.remove(id)?.dispose();
     _navigatorKeys.remove(id);
     _activationHistory.remove(id);
@@ -481,6 +556,7 @@ abstract final class WindowsVideoTabService {
     _closers.clear();
     _activators.clear();
     _deactivators.clear();
+    _contextPoppers.clear();
     for (final close in closers) {
       close();
     }
@@ -559,6 +635,28 @@ abstract final class WindowsVideoTabService {
       _activators.remove(id);
       _deactivators.remove(id);
     }
+  }
+
+  static void registerContextPopper(
+    Map arguments,
+    bool Function() popContext,
+  ) {
+    if (!enabled) return;
+    final id = keyFromArgs(arguments);
+    if (id.isEmpty) return;
+    _contextPoppers.putIfAbsent(id, () => []).add(popContext);
+  }
+
+  static void unregisterContextPopper(
+    Map arguments,
+    bool Function() popContext,
+  ) {
+    if (!enabled) return;
+    final id = keyFromArgs(arguments);
+    if (id.isEmpty) return;
+    final poppers = _contextPoppers[id];
+    poppers?.removeWhere((entry) => identical(entry, popContext));
+    if (poppers?.isEmpty == true) _contextPoppers.remove(id);
   }
 
   static Future<void>? open(WindowsVideoTabItem item) {

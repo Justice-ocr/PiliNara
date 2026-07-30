@@ -7,6 +7,9 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class FollowController extends GetxController with GetTickerProviderStateMixin {
+  FollowController({Map? arguments}) : _arguments = arguments;
+
+  final Map? _arguments;
   late final int mid;
   late final RxnString name;
   late final bool isOwner;
@@ -18,7 +21,7 @@ class FollowController extends GetxController with GetTickerProviderStateMixin {
   @override
   void onInit() {
     super.onInit();
-    final Map? args = Get.arguments;
+    final Map? args = _arguments ?? Get.arguments;
     final ownerMid = Accounts.main.mid;
     final int? mid = args?['mid'];
     this.mid = mid ?? ownerMid;

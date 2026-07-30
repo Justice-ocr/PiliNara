@@ -24,6 +24,7 @@ import 'package:PiliPlus/services/download/download_collection_service.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_section_tabs.dart';
@@ -214,8 +215,9 @@ class _DownloadPageState extends State<DownloadPage>
     if (_controller.allVideos.isEmpty) {
       return;
     }
-    await Get.to(
-      DownloadVideoSortPage(
+    await PageUtils.toPage(
+      context,
+      () => DownloadVideoSortPage(
         title: '排序: 全部视频',
         entries: _controller.allVideos,
         onSave: _collectionService.saveAllVideoOrder,
@@ -242,8 +244,11 @@ class _DownloadPageState extends State<DownloadPage>
   }
 
   Future<void> _openFolderManagePage() async {
-    await Get.to(
-      DownloadFolderManagePage(collectionService: _collectionService),
+    await PageUtils.toPage(
+      context,
+      () => DownloadFolderManagePage(
+        collectionService: _collectionService,
+      ),
     );
   }
 
@@ -550,7 +555,10 @@ class _DownloadPageState extends State<DownloadPage>
                       if (!mounted) {
                         return;
                       }
-                      await Get.to(DownloadSearchPage(progress: _progress));
+                      await PageUtils.toPage(
+                        context,
+                        () => DownloadSearchPage(progress: _progress),
+                      );
                       if (mounted) {
                         await _controller.refreshContinueTarget();
                       }
@@ -652,7 +660,10 @@ class _DownloadPageState extends State<DownloadPage>
           onPressed: () async {
             await _downloadService.waitForInitialization;
             if (!mounted) return;
-            await Get.to(DownloadSearchPage(progress: _progress));
+            await PageUtils.toPage(
+              context,
+              () => DownloadSearchPage(progress: _progress),
+            );
             if (mounted) await _controller.refreshContinueTarget();
           },
           icon: const Icon(Icons.search_outlined),
@@ -896,8 +907,9 @@ class _DownloadPageState extends State<DownloadPage>
                     onTap: _folderSelectController.enableMultiSelect.value
                         ? () => _folderSelectController.onSelect(folder)
                         : () async {
-                            await Get.to(
-                              DownloadFolderPage(folderId: folder.id),
+                            await PageUtils.toPage(
+                              context,
+                              () => DownloadFolderPage(folderId: folder.id),
                             );
                             await _controller.refreshContinueTarget();
                           },

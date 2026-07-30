@@ -105,7 +105,7 @@ class DetailItem extends StatelessWidget {
         onTap: enableTap
             ? () async {
                 if (!canDel) {
-                  Get.to(const DownloadingPage());
+                  PageUtils.toPage(context, () => const DownloadingPage());
                   return;
                 }
                 if (enableMultiSelect) {

@@ -12,6 +12,7 @@ import 'package:PiliPlus/pages/later/base_controller.dart';
 import 'package:PiliPlus/pages/later/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
@@ -179,7 +180,7 @@ class _LaterPageState extends State<LaterPage>
       tooltip: '\u641c\u7d22\u7a0d\u540e\u518d\u770b',
       onPressed: () {
         final mid = Accounts.main.mid;
-        Get.toNamed(
+        PageUtils.toDupNamed(
           '/laterSearch',
           arguments: {
             'type': 0,
@@ -317,7 +318,7 @@ class _LaterPageState extends State<LaterPage>
             tooltip: '搜索',
             onPressed: () {
               final mid = Accounts.main.mid;
-              Get.toNamed(
+              PageUtils.toDupNamed(
                 '/laterSearch',
                 arguments: {
                   'type': 0,

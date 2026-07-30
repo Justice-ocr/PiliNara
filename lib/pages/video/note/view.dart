@@ -225,7 +225,7 @@ class _NoteListPageState extends State<NoteListPage>
           : MaterialType.transparency,
       color: WindowsVideoTabService.enabled ? context.windowsNeo.surface : null,
       child: InkWell(
-        onTap: () => Get.toNamed(
+        onTap: () => PageUtils.toDupNamed(
           '/articlePage',
           parameters: {
             'id': item.cvid!.toString(),

@@ -33,6 +33,7 @@ import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -331,7 +332,7 @@ List<SettingsModel> get styleSettings => [
     },
   ),
   NormalModel(
-    onTap: (context, setState) => Get.toNamed('/colorSetting'),
+    onTap: (context, setState) => PageUtils.toDupNamed('/colorSetting'),
     leading: const Icon(Icons.color_lens_outlined),
     title: '应用主题',
     getSubtitle: () => '当前主题：${Pref.dynamicColor ? '动态取色' : '指定颜色'}',
@@ -378,7 +379,7 @@ List<SettingsModel> get styleSettings => [
     leading: const Icon(Icons.toc_outlined),
   ),
   NormalModel(
-    onTap: (context, setState) => Get.toNamed(
+    onTap: (context, setState) => PageUtils.toDupNamed(
       '/barSetting',
       arguments: {
         'key': SettingBoxKey.navBarSort,
@@ -391,7 +392,7 @@ List<SettingsModel> get styleSettings => [
     leading: const Icon(Icons.toc_outlined),
   ),
   NormalModel(
-    onTap: (context, setState) => Get.toNamed(
+    onTap: (context, setState) => PageUtils.toDupNamed(
       '/barSetting',
       arguments: {
         'key': SettingBoxKey.mineCardSort,
@@ -424,7 +425,7 @@ List<SettingsModel> get styleSettings => [
   ),
   if (Platform.isAndroid)
     NormalModel(
-      onTap: (context, setState) => Get.toNamed('/displayModeSetting'),
+      onTap: (context, setState) => PageUtils.toDupNamed('/displayModeSetting'),
       title: '屏幕帧率',
       leading: const Icon(Icons.autofps_select_outlined),
     ),

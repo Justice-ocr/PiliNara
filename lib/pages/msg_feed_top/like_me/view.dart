@@ -42,8 +42,9 @@ class _LikeMePageState extends State<LikeMePage> {
         title: const Text('收到的赞'),
         actions: [
           IconButton(
-            onPressed: () => Get.to(
-              const WhisperSettingsPage(
+            onPressed: () => PageUtils.toPage(
+              context,
+              () => const WhisperSettingsPage(
                 imSettingType: IMSettingType.SETTING_TYPE_OLD_RECEIVE_LIKE,
               ),
             ),
@@ -256,8 +257,8 @@ class _LikeMePageState extends State<LikeMePage> {
         bool isInvalid =
             nativeUri == null || nativeUri.isEmpty || nativeUri.startsWith('?');
         if (item.counts! > 1) {
-          Get.toNamed(
-            'msgLikeDetail',
+          PageUtils.toDupNamed(
+            '/msgLikeDetail',
             arguments: {
               'id': item.id!.toString(),
               if (!isInvalid) 'uri': nativeUri,

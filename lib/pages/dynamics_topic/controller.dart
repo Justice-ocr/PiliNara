@@ -13,8 +13,12 @@ import 'package:get/get.dart';
 
 class DynTopicController
     extends CommonListController<TopicCardList?, TopicCardItem> {
-  final topicId = Get.parameters['id']!;
-  String topicName = Get.parameters['name'] ?? '';
+  DynTopicController({String? id, String? name})
+    : topicId = id ?? Get.parameters['id']!,
+      topicName = name ?? Get.parameters['name'] ?? '';
+
+  final String topicId;
+  String topicName;
 
   int sortBy = 0;
   String? offset;

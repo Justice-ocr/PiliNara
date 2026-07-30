@@ -36,6 +36,7 @@ import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_context_panel.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -80,7 +81,24 @@ class _DynamicDetailPageState
     future.whenComplete(_stopRefresh);
   }
 
+  @override
+  void dispose() {
+    if (WindowsVideoTabService.enabled) {
+      if (_registeredWindowsTabArguments case final tabArguments?) {
+        WindowsVideoTabService.unregisterContextPopper(
+          tabArguments,
+          _windowsReactionPopper,
+        );
+      }
+    }
+    super.dispose();
+  }
+
   void _showReactions() {
+    if (_useWindowsReactionPanel) {
+      setState(() => _windowsReactionOpen = true);
+      return;
+    }
     final size = MediaQuery.sizeOf(context);
     showModalBottomSheet<void>(
       context: context,
@@ -125,6 +143,12 @@ class _DynamicDetailPageState
         ),
       ),
     );
+  }
+
+  bool _popWindowsReactionContext() {
+    if (!_windowsReactionOpen || !mounted) return false;
+    setState(() => _windowsReactionOpen = false);
+    return true;
   }
 
   @override
@@ -179,6 +203,45 @@ class _DynamicDetailPageState
           ),
         );
       },
+    );
+  }
+
+  Widget _buildWindowsInteractionBody(ThemeData theme) {
+    final content = isPortrait
+        ? refreshIndicator(
+            onRefresh: controller.onRefresh,
+            child: _buildBody(theme),
+          )
+        : _buildBody(theme);
+    if (_windowsReactionOpen && !_useWindowsReactionPanel) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_useWindowsReactionPanel) {
+          setState(() => _windowsReactionOpen = false);
+        }
+      });
+    }
+    if (!_windowsReactionOpen || !_useWindowsReactionPanel) return content;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: content),
+        VerticalDivider(width: 1, color: context.windowsNeo.border),
+        SizedBox(
+          width: min(420, MediaQuery.sizeOf(context).width * 0.32),
+          child: ColoredBox(
+            color: context.windowsNeo.surface,
+            child: WindowsNeoContextPanel(
+              title: '赞与转发',
+              onBack: () => setState(() => _windowsReactionOpen = false),
+              child: DynReactPage(
+                id: controller.dynItem.idStr,
+                controller: _reactionController,
+                isPortrait: false,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

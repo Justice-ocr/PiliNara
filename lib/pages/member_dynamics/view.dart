@@ -15,9 +15,10 @@ import 'package:waterfall_flow/waterfall_flow.dart'
     hide SliverWaterfallFlowDelegateWithMaxCrossAxisExtent;
 
 class MemberDynamicsPage extends StatefulWidget {
-  const MemberDynamicsPage({super.key, this.mid});
+  const MemberDynamicsPage({super.key, this.mid, this.controllerTag});
 
   final int? mid;
+  final String? controllerTag;
 
   @override
   State<MemberDynamicsPage> createState() => _MemberDynamicsPageState();
@@ -44,7 +45,7 @@ class _MemberDynamicsPageState extends State<MemberDynamicsPage>
     final String heroTag = Utils.makeHeroTag(mid);
     _memberDynamicController = Get.put(
       MemberDynamicsController(mid),
-      tag: heroTag,
+      tag: widget.controllerTag ?? heroTag,
     );
   }
 

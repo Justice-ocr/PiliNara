@@ -1,7 +1,7 @@
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/grpc/reply.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/user_whitelist.dart';
@@ -20,7 +20,7 @@ List<SettingsModel> get replySettings => [
     title: '屏蔽与豁免',
     leading: const Icon(Icons.shield_outlined),
     getSubtitle: () => '推荐/动态/评论用户屏蔽、白名单、Tag 屏蔽',
-    onTap: (context, setState) => Get.toNamed('/blockSetting'),
+    onTap: (context, setState) => PageUtils.toDupNamed('/blockSetting'),
   ),
   SwitchModel(
     title: '屏蔽带货评论',

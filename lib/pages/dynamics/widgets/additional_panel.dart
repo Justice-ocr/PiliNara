@@ -126,7 +126,7 @@ Widget? addWidget(
                                       ? null
                                       : (NoDeadlineTapGestureRecognizer()
                                           ..onTap = () {
-                                            Get.toNamed(
+                                            PageUtils.toDupNamed(
                                               '/webview',
                                               parameters: {
                                                 'url': reserve.desc3!.jumpUrl!,
@@ -263,7 +263,7 @@ Widget? addWidget(
                                     ? null
                                     : (NoDeadlineTapGestureRecognizer()
                                         ..onTap = () {
-                                          Get.toNamed(
+                                          PageUtils.toDupNamed(
                                             '/webview',
                                             parameters: {
                                               'url': content.desc!.jumpUrl!,

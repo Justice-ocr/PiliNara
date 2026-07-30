@@ -8,7 +8,9 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class BarSetPage extends StatefulWidget {
-  const BarSetPage({super.key});
+  const BarSetPage({super.key, this.arguments});
+
+  final Map? arguments;
 
   @override
   State<BarSetPage> createState() => _BarSetPageState();
@@ -23,7 +25,9 @@ class _BarSetPageState extends State<BarSetPage> with ReorderMixin {
   @override
   void initState() {
     super.initState();
-    final Map<String, dynamic> args = Get.arguments;
+    final Map<String, dynamic> args = Map<String, dynamic>.from(
+      widget.arguments ?? Get.arguments,
+    );
     key = args['key'];
     title = args['title'];
     final List? cache = GStorage.setting.get(key);
@@ -56,7 +60,7 @@ class _BarSetPageState extends State<BarSetPage> with ReorderMixin {
   }
 
   void onReset() {
-    Get.back();
+    Navigator.of(context).pop();
     GStorage.setting.delete(key);
     SmartDialog.showToast('重置成功，下次启动时生效');
   }

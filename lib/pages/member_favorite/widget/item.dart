@@ -8,6 +8,7 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -45,7 +46,7 @@ class MemberFavItem extends StatelessWidget {
           }
 
           if (item.type == 0 || item.type == 11) {
-            final isDeleted = await Get.toNamed(
+            final isDeleted = await PageUtils.toDupNamed<bool>(
               '/favDetail',
               parameters: {
                 'mediaId': item.id.toString(),

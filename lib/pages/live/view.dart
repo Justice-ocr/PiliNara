@@ -159,7 +159,7 @@ class _LivePageState extends State<LivePage>
                       context: context,
                       tooltip: '游戏赛事',
                       icon: const Icon(Icons.gamepad),
-                      onPressed: () => Get.toNamed(
+                      onPressed: () => PageUtils.toDupNamed(
                         '/webview',
                         parameters: {
                           'uaType': 'mob',

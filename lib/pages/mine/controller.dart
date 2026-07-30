@@ -53,14 +53,20 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
     (
       icon: CustomIcons.folderDownloadOutline,
       title: '离线缓存',
-      onTap: () => Get.toNamed('/download'),
+      onTap: () => PageUtils.openWorkspaceTab(
+        route: '/download',
+        title: '\u79bb\u7ebf\u7f13\u5b58',
+      ),
     ),
     (
       icon: CustomIcons.history,
       title: '观看记录',
       onTap: () {
         if (isLogin) {
-          Get.toNamed('/history');
+          PageUtils.openWorkspaceTab(
+            route: '/history',
+            title: '\u89c2\u770b\u8bb0\u5f55',
+          );
         }
       },
     ),
@@ -69,7 +75,10 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
       title: '我的订阅',
       onTap: () {
         if (isLogin) {
-          Get.toNamed('/subscription');
+          PageUtils.openWorkspaceTab(
+            route: '/subscription',
+            title: '\u6211\u7684\u8ba2\u9605',
+          );
         }
       },
     ),
@@ -78,7 +87,10 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
       title: '稍后再看',
       onTap: () {
         if (isLogin) {
-          Get.toNamed('/later');
+          PageUtils.openWorkspaceTab(
+            route: '/later',
+            title: '\u7a0d\u540e\u518d\u770b',
+          );
         }
       },
     ),
@@ -304,7 +316,7 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
   void push(String name) {
     late final mid = userInfo.value.mid;
     if (isLogin && mid != null) {
-      Get.toNamed('/$name?mid=$mid');
+      PageUtils.toDupNamed('/$name', parameters: {'mid': '$mid'});
     }
   }
 

@@ -11,6 +11,7 @@ import 'package:PiliPlus/pages/whisper/widgets/item.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/extension/three_dot_ext.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -36,7 +37,7 @@ class _WhisperPageState extends State<WhisperPage> {
         actions: [
           IconButton(
             tooltip: '新增粉丝',
-            onPressed: () => Get.toNamed(
+            onPressed: () => PageUtils.toDupNamed(
               '/webview',
               parameters: {
                 'url':
@@ -240,7 +241,7 @@ class _WhisperPageState extends State<WhisperPage> {
                   return;
                 }
                 _controller.unreadCounts[index] = 0;
-                Get.toNamed(item.route);
+                PageUtils.toDupNamed(item.route);
               }
 
               if (!isWindowsNeo) {

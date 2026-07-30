@@ -12,11 +12,13 @@ import 'package:PiliPlus/models/common/fav_order_type.dart';
 import 'package:PiliPlus/models_new/fav/fav_detail/media.dart';
 import 'package:PiliPlus/models_new/fav/fav_folder/list.dart';
 import 'package:PiliPlus/pages/dynamics_repost/view.dart';
+import 'package:PiliPlus/pages/fav_create/view.dart';
 import 'package:PiliPlus/pages/fav_detail/controller.dart';
 import 'package:PiliPlus/pages/fav_detail/widget/fav_video_card.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
@@ -25,7 +27,14 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class FavDetailPage extends StatefulWidget {
-  const FavDetailPage({super.key});
+  const FavDetailPage({
+    super.key,
+    this.parameters,
+    this.controllerTag,
+  });
+
+  final Map<String, String>? parameters;
+  final String? controllerTag;
 
   @override
   State<FavDetailPage> createState() => _FavDetailPageState();
@@ -33,16 +42,29 @@ class FavDetailPage extends StatefulWidget {
 
 class _FavDetailPageState extends State<FavDetailPage> with GridMixin {
   late final FavDetailController _favDetailController;
+  late final String _controllerTag;
   late String mediaId;
 
   @override
   void initState() {
     super.initState();
-    mediaId = Get.parameters['mediaId']!;
+    mediaId = widget.parameters?['mediaId'] ?? Get.parameters['mediaId']!;
+    final heroTag =
+        widget.parameters?['heroTag'] ?? Get.parameters['heroTag'] ?? mediaId;
+    _controllerTag = widget.controllerTag ?? Utils.makeHeroTag(mediaId);
     _favDetailController = Get.put(
-      FavDetailController(),
-      tag: Utils.makeHeroTag(mediaId),
+      FavDetailController(
+        mediaId: int.parse(mediaId),
+        heroTag: heroTag,
+      ),
+      tag: _controllerTag,
     );
+  }
+
+  @override
+  void dispose() {
+    Get.delete<FavDetailController>(tag: _controllerTag);
+    super.dispose();
   }
 
   late EdgeInsets padding;
@@ -188,7 +210,7 @@ class _FavDetailPageState extends State<FavDetailPage> with GridMixin {
         tooltip: '搜索',
         onPressed: () {
           final folderInfo = _favDetailController.folderInfo.value;
-          Get.toNamed(
+          PageUtils.toDupNamed(
             '/favSearch',
             arguments: {
               'type': 0,
@@ -243,15 +265,14 @@ class _FavDetailPageState extends State<FavDetailPage> with GridMixin {
             return [
               if (isOwner) ...[
                 PopupMenuItem(
-                  onTap: _favDetailController.onSort,
+                  onTap: () => _favDetailController.onSort(context),
                   child: const Text('排序'),
                 ),
                 PopupMenuItem(
-                  onTap: () =>
-                      Get.toNamed(
-                        '/createFav',
-                        parameters: {'mediaId': mediaId},
-                      )?.then((res) {
+                  onTap: () => PageUtils.toPage(
+                    context,
+                    () => CreateFavPage(mediaId: mediaId),
+                  )?.then((res) {
                         if (res is FavFolderInfo) {
                           _favDetailController.folderInfo.value = res;
                         }
@@ -295,7 +316,7 @@ class _FavDetailPageState extends State<FavDetailPage> with GridMixin {
                           FavHttp.deleteFolder(mediaIds: mediaId).then((res) {
                             if (res.isSuccess) {
                               SmartDialog.showToast('删除成功');
-                              Get.back(result: true);
+                              Navigator.of(context).pop(true);
                             } else {
                               res.toast();
                             }
@@ -440,9 +461,8 @@ class _FavDetailPageState extends State<FavDetailPage> with GridMixin {
                             ),
                           ),
                           GestureDetector(
-                            onTap: () => Get.toNamed(
-                              '/member?mid=${folderInfo.upper!.mid}',
-                            ),
+                            onTap: () =>
+                                PageUtils.toMember(folderInfo.upper!.mid),
                             child: Text(
                               folderInfo.upper!.name!,
                               style: TextStyle(

@@ -12,6 +12,7 @@ import 'package:PiliPlus/pages/hot/controller.dart';
 import 'package:PiliPlus/pages/rank/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -102,12 +103,12 @@ class _HotPageState extends State<HotPage>
                     _buildEntranceItem(
                       iconUrl: 'https://i0.hdslb.com/bfs/archive/552ebe8c4794aeef30ebd1568b59ad35f15e21ad.png',
                       title: '每周必看',
-                      onTap: () => Get.toNamed('/popularSeries'),
+                      onTap: () => PageUtils.toDupNamed('/popularSeries'),
                     ),
                     _buildEntranceItem(
                       iconUrl: 'https://i0.hdslb.com/bfs/archive/3693ec9335b78ca57353ac0734f36a46f3d179a9.png',
                       title: '入站必刷',
-                      onTap: () => Get.toNamed('/popularPrecious'),
+                      onTap: () => PageUtils.toDupNamed('/popularPrecious'),
                     ),
                   ],
                 ),

@@ -3,6 +3,7 @@ import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models_new/space/space_fav/list.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -22,7 +23,7 @@ class MemberFavItem extends StatelessWidget {
       type: MaterialType.transparency,
       child: InkWell(
         onTap: () {
-          Get.toNamed(
+          PageUtils.toDupNamed(
             '/favDetail',
             parameters: {
               'mediaId': item.mediaId.toString(),

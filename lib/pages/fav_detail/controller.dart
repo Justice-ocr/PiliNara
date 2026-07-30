@@ -16,7 +16,7 @@ import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
-import 'package:flutter/widgets.dart' show Text, ValueChanged;
+import 'package:flutter/widgets.dart' show BuildContext, Text, ValueChanged;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
@@ -76,9 +76,11 @@ mixin BaseFavController
 class FavDetailController
     extends MultiSelectController<FavDetailData, FavDetailItemModel>
     with BaseFavController {
+  FavDetailController({required this.mediaId, required this.heroTag});
+
   @override
-  late int mediaId;
-  late String heroTag;
+  final int mediaId;
+  final String heroTag;
   final Rx<FavFolderInfo> folderInfo = FavFolderInfo().obs;
   final RxBool _isOwner = false.obs;
   final Rx<FavOrderType> order = FavOrderType.mtime.obs;
@@ -100,9 +102,6 @@ class FavDetailController
   @override
   void onInit() {
     super.onInit();
-
-    mediaId = int.parse(Get.parameters['mediaId']!);
-    heroTag = Get.parameters['heroTag']!;
 
     queryData();
   }
@@ -200,14 +199,17 @@ class FavDetailController
     }
   }
 
-  void onSort() {
+  void onSort(BuildContext context) {
     if (loadingState.value case Success(:final response)) {
       if (response != null && response.isNotEmpty) {
         if (folderInfo.value.mediaCount > 1000) {
           SmartDialog.showToast('内容太多啦！超过1000不支持排序');
           return;
         }
-        Get.to(FavSortPage(favDetailController: this));
+        PageUtils.toPage(
+          context,
+          () => FavSortPage(favDetailController: this),
+        );
       }
     }
   }

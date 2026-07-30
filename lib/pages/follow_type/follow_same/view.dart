@@ -2,19 +2,23 @@ import 'package:PiliPlus/pages/follow_type/follow_same/controller.dart';
 import 'package:PiliPlus/pages/follow_type/view.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/parse_int.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class FollowSamePage extends StatefulWidget {
-  const FollowSamePage({super.key});
+  const FollowSamePage({super.key, this.arguments, this.controllerTag});
+
+  final Map? arguments;
+  final String? controllerTag;
 
   @override
   State<FollowSamePage> createState() => _FollowSamePageState();
 
   static void toFollowSamePage({dynamic mid, String? name}) {
     if (mid == null) return;
-    Get.toNamed(
+    PageUtils.toDupNamed(
       '/sameFollowing',
       arguments: {
         'mid': safeToInt(mid),
@@ -26,10 +30,20 @@ class FollowSamePage extends StatefulWidget {
 
 class _FollowSamePageState extends FollowTypePageState<FollowSamePage> {
   @override
-  final controller = Get.putOrFind(
-    FollowSameController.new,
-    tag: Get.arguments?['mid']?.toString() ?? Utils.generateRandomString(8),
-  );
+  Map? get routeArguments => widget.arguments;
+  @override
+  late final FollowSameController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(
+      FollowSameController(),
+      tag: widget.controllerTag ??
+          widget.arguments?['mid']?.toString() ??
+          Utils.generateRandomString(8),
+    );
+  }
 
   @override
   PreferredSizeWidget get appBar => AppBar(

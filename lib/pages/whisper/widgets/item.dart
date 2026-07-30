@@ -204,7 +204,7 @@ class WhisperSessionItem extends StatelessWidget {
           }
         }
         if (item.id.privateId.hasTalkerUid()) {
-          Get.toNamed(
+          PageUtils.toDupNamed(
             '/whisperDetail',
             arguments: {
               'talkerId': item.id.privateId.talkerUid.toInt(),
@@ -232,8 +232,9 @@ class WhisperSessionItem extends StatelessWidget {
             _ => null,
           };
           if (sessionPageType != null) {
-            Get.to(
-              WhisperSecPage(
+            PageUtils.toPage(
+              context,
+              () => WhisperSecPage(
                 name: item.sessionInfo.sessionName,
                 sessionPageType: sessionPageType,
               ),

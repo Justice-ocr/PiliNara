@@ -54,6 +54,46 @@ abstract final class PageUtils {
     toDupNamed('/search', parameters: parameters, off: off);
   }
 
+  static Future<void> toSearchResult(
+    String keyword, {
+    String? tag,
+    int? initIndex,
+    bool fromSearch = false,
+    bool off = false,
+  }) async {
+    if (WindowsVideoTabService.enabled) {
+      WindowsVideoTabService.upsert(
+        {
+          'keyword': keyword,
+          if (tag != null) 'tag': tag,
+          if (initIndex != null) 'initIndex': initIndex,
+          'fromSearch': fromSearch,
+        },
+        type: WindowsMediaTabType.search,
+      );
+      await WindowsVideoTabService.showHost();
+      return;
+    }
+    final parameters = {'keyword': keyword, if (tag != null) 'tag': tag};
+    final arguments = {
+      if (initIndex != null) 'initIndex': initIndex,
+      'fromSearch': fromSearch,
+    };
+    if (off) {
+      await Get.offNamed(
+        '/searchResult',
+        parameters: parameters,
+        arguments: arguments,
+      );
+    } else {
+      await Get.toNamed(
+        '/searchResult',
+        parameters: parameters,
+        arguments: arguments,
+      );
+    }
+  }
+
   static void toMember(
     Object? mid, {
     Object? fromViewAid,
@@ -89,16 +129,19 @@ abstract final class PageUtils {
     toDupNamed('/member', parameters: parameters, off: off);
   }
 
-  static void openToolTab({
+  static void openWorkspaceTab({
     required String route,
     required String title,
     bool off = false,
+    Object? arguments,
   }) {
-    if (WindowsVideoTabService.enabled) {
+    if (WindowsVideoTabService.enabled &&
+        WindowsVideoTabService.workspaceRoutes.contains(route)) {
       WindowsVideoTabService.openTab(
         {
           'tabRoute': route,
           'title': title,
+          if (arguments != null) 'workspaceArguments': arguments,
           'mediaTabType': WindowsMediaTabType.tool.name,
         },
         type: WindowsMediaTabType.tool,
@@ -106,7 +149,29 @@ abstract final class PageUtils {
       );
       return;
     }
-    toDupNamed(route, off: off);
+    toDupNamed(route, arguments: arguments, off: off);
+  }
+
+  static void openToolTab({
+    required String route,
+    required String title,
+    bool off = false,
+  }) => openWorkspaceTab(route: route, title: title, off: off);
+
+  static Future<T?>? toPage<T extends Object?>(
+    BuildContext context,
+    Widget Function() page, {
+    Object? arguments,
+  }) {
+    if (WindowsVideoTabService.enabled) {
+      return Navigator.of(context).push<T>(
+        MaterialPageRoute<T>(
+          builder: (_) => page(),
+          settings: RouteSettings(arguments: arguments),
+        ),
+      );
+    }
+    return Get.to<T>(page, arguments: arguments);
   }
 
   static RelativeRect menuPosition(Offset offset) {
@@ -252,7 +317,7 @@ abstract final class PageUtils {
   }
 
   static void reportVideo(int aid) {
-    Get.toNamed(
+    toDupNamed(
       '/webview',
       parameters: {'url': 'https://www.bilibili.com/appeal/?avid=$aid'},
     );
@@ -465,7 +530,7 @@ abstract final class PageUtils {
           final String? url = medialist.jumpUrl;
           if (url != null) {
             if (url.contains('medialist/detail/ml')) {
-              Get.toNamed(
+              toDupNamed(
                 '/favDetail',
                 parameters: {
                   'heroTag': '${medialist.cover}',

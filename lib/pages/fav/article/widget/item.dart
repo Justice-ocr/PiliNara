@@ -36,7 +36,7 @@ class FavArticleItem extends StatelessWidget {
               : null,
           clipBehavior: isWindowsNeo ? Clip.antiAlias : Clip.none,
           child: InkWell(
-            onTap: () => Get.toNamed(
+            onTap: () => PageUtils.toDupNamed(
               '/articlePage',
               parameters: {
                 'id': item.opusId!.toString(),

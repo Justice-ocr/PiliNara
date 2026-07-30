@@ -638,9 +638,7 @@ class ReplyItemGrpc extends StatelessWidget {
                             recognizer: NoDeadlineTapGestureRecognizer()
                               ..onTap = () {
                                 feedBack();
-                                Get.toNamed(
-                                  '/member?mid=${childReply.member.mid}',
-                                );
+                                PageUtils.toMember(childReply.member.mid);
                               },
                           ),
                           if (childReply.mid == upMid) ...[
@@ -788,7 +786,7 @@ class ReplyItemGrpc extends StatelessWidget {
                   String? cvid =
                       match?.group(1) ?? match?.group(2) ?? match?.group(3);
                   if (cvid != null) {
-                    Get.toNamed(
+                    PageUtils.toDupNamed(
                       '/articlePage',
                       parameters: {
                         'id': cvid,
@@ -801,10 +799,7 @@ class ReplyItemGrpc extends StatelessWidget {
                 }
               } else {
                 if (url.extra.isWordSearch) {
-                  Get.toNamed(
-                    '/searchResult',
-                    parameters: {'keyword': url.title},
-                  );
+                  PageUtils.toSearchResult(url.title);
                 } else {
                   PageUtils.handleWebview(matchStr);
                 }
@@ -852,8 +847,7 @@ class ReplyItemGrpc extends StatelessWidget {
               text: matchStr,
               style: TextStyle(color: colorScheme.primary),
               recognizer: NoDeadlineTapGestureRecognizer()
-                ..onTap = () =>
-                    PageUtils.toMember(content.atNameToMid[name]),
+                ..onTap = () => PageUtils.toMember(content.atNameToMid[name]),
             ),
           );
         } else if (_voteRegExp.hasMatch(matchStr)) {
@@ -885,9 +879,11 @@ class ReplyItemGrpc extends StatelessWidget {
               isValid =
                   DurationUtils.parseDuration(matchStr) * 1000 <=
                   ctr.data.timeLength!;
-              if (kDebugMode) debugPrint('Found VideoDetailController, isValid: $isValid');
+              if (kDebugMode)
+                debugPrint('Found VideoDetailController, isValid: $isValid');
             } catch (e) {
-              if (kDebugMode) debugPrint('No controller found for tag: $heroTag, error: $e');
+              if (kDebugMode)
+                debugPrint('No controller found for tag: $heroTag, error: $e');
             }
           }
           spanChildren.add(
@@ -906,18 +902,24 @@ class ReplyItemGrpc extends StatelessWidget {
                           );
                           SmartDialog.showToast('跳转至：$matchStr');
                           if (kDebugMode) {
-                            debugPrint('Seeking to $duration with tag: $heroTag');
+                            debugPrint(
+                              'Seeking to $duration with tag: $heroTag',
+                            );
                           }
                           try {
                             final ctr = Get.find<AudioController>(tag: heroTag);
-                            if (kDebugMode) debugPrint('Seeking AudioController');
+                            if (kDebugMode)
+                              debugPrint('Seeking AudioController');
                             ctr.seekTo(
                               duration,
                               isSeek: false,
                             );
                           } catch (_) {
-                            final ctr = Get.find<VideoDetailController>(tag: heroTag);
-                            if (kDebugMode) debugPrint('Seeking VideoDetailController');
+                            final ctr = Get.find<VideoDetailController>(
+                              tag: heroTag,
+                            );
+                            if (kDebugMode)
+                              debugPrint('Seeking VideoDetailController');
                             ctr.plPlayerController.seekTo(
                               duration,
                               isSeek: false,
@@ -944,10 +946,7 @@ class ReplyItemGrpc extends StatelessWidget {
                 style: TextStyle(color: colorScheme.primary),
                 recognizer: NoDeadlineTapGestureRecognizer()
                   ..onTap = () {
-                    Get.toNamed(
-                      '/searchResult',
-                      parameters: {'keyword': topic},
-                    );
+                    PageUtils.toSearchResult(topic);
                   },
               ),
             );
@@ -993,7 +992,7 @@ class ReplyItemGrpc extends StatelessWidget {
         recognizer = NoDeadlineTapGestureRecognizer()
           ..onTap = () => hasClickUrl
               ? PiliScheme.routePushFromUrl(content.richText.note.clickUrl)
-              : Get.toNamed(
+              : PageUtils.toDupNamed(
                   '/articlePage',
                   parameters: {
                     'id': content.richText.opus.opusId.toString(),

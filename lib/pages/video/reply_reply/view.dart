@@ -44,6 +44,7 @@ class VideoReplyReplyPanel extends CommonSlidePage {
     this.heroTag,
     this.upMid,
     this.onClose,
+    this.showHeader = true,
   });
   final int? id;
   final int oid;
@@ -56,6 +57,7 @@ class VideoReplyReplyPanel extends CommonSlidePage {
   final String? heroTag;
   final Int64? upMid;
   final VoidCallback? onClose;
+  final bool showHeader;
 
   @override
   State<VideoReplyReplyPanel> createState() => _VideoReplyReplyPanelState();

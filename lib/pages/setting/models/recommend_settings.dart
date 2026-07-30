@@ -3,7 +3,7 @@ import 'package:PiliPlus/models/common/rcmd_mode.dart';
 import 'package:PiliPlus/pages/rcmd/controller.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
 import 'package:PiliPlus/pages/setting/widgets/select_dialog.dart';
-import 'package:PiliPlus/utils/global_data.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/recommend_filter.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -57,7 +57,7 @@ List<SettingsModel> get recommendSettings => [
     title: '屏蔽与豁免',
     leading: const Icon(Icons.shield_outlined),
     getSubtitle: () => '推荐/动态/评论用户屏蔽、白名单、Tag 屏蔽',
-    onTap: (context, setState) => Get.toNamed('/blockSetting'),
+    onTap: (context, setState) => PageUtils.toDupNamed('/blockSetting'),
   ),
   getVideoFilterSelectModel(
     title: '点赞率',

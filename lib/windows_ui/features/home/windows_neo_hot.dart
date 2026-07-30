@@ -4,7 +4,7 @@ import 'package:PiliPlus/models/common/home_tab_type.dart';
 import 'package:PiliPlus/models/model_hot_video_item.dart';
 import 'package:PiliPlus/pages/home/controller.dart';
 import 'package:PiliPlus/pages/hot/controller.dart';
-import 'package:PiliPlus/pages/rank/view.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_horizontal_video_tile.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_state.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
@@ -55,7 +55,7 @@ class WindowsNeoHot extends StatelessWidget {
         return;
       }
     } catch (_) {}
-    Get.to(const Scaffold(body: RankPage()));
+    PageUtils.toDupNamed('/rank');
   }
 
   Widget _buildBody(
@@ -140,12 +140,12 @@ class _HotDestinations extends StatelessWidget {
             _DestinationButton(
               icon: Icons.calendar_month_outlined,
               label: '\u6bcf\u5468\u5fc5\u770b',
-              onPressed: () => Get.toNamed('/popularSeries'),
+              onPressed: () => PageUtils.toDupNamed('/popularSeries'),
             ),
             _DestinationButton(
               icon: Icons.workspace_premium_outlined,
               label: '\u5165\u7ad9\u5fc5\u5237',
-              onPressed: () => Get.toNamed('/popularPrecious'),
+              onPressed: () => PageUtils.toDupNamed('/popularPrecious'),
             ),
           ],
         ),

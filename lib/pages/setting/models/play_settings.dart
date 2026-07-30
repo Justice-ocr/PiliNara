@@ -16,6 +16,7 @@ import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -41,7 +42,7 @@ List<SettingsModel> get playSettings => [
       defaultVal: true,
     ),
   NormalModel(
-    onTap: (context, setState) => Get.toNamed('/playSpeedSet'),
+    onTap: (context, setState) => PageUtils.toDupNamed('/playSpeedSet'),
     leading: const Icon(Icons.speed_outlined),
     title: '倍速设置',
     subtitle: '设置视频播放速度',
@@ -212,7 +213,8 @@ List<SettingsModel> get playSettings => [
     title: '全屏 SC 大小',
     subtitle: 'SuperChat (醒目留言) 大小设置',
     leading: const Icon(Icons.open_in_full),
-    onTap: (_, _) => Get.to(const FullScreenScSize()),
+    onTap: (context, _) =>
+        PageUtils.toPage(context, () => const FullScreenScSize()),
   ),
   const SwitchModel(
     title: '竖屏扩大展示',

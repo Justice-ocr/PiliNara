@@ -114,7 +114,7 @@ class _SearchResultPageState extends State<SearchResultPage>
       if (WindowsVideoTabService.enabled) {
         PageUtils.toSearch(parameters: parameters);
       } else {
-        Get.offNamed('/search', parameters: parameters);
+        PageUtils.toSearch(parameters: parameters, off: true);
       }
     }
   }

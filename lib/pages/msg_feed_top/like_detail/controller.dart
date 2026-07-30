@@ -8,6 +8,9 @@ import 'package:get/get.dart';
 
 class LikeDetailController
     extends CommonListController<MsgLikeDetailData, MsgLikeDetailItem> {
+  LikeDetailController({Map? arguments}) : _arguments = arguments;
+
+  final Map? _arguments;
   late final String cardId;
   late final String? uri;
   late final int counts;
@@ -17,7 +20,7 @@ class LikeDetailController
   @override
   void onInit() {
     super.onInit();
-    final args = Get.arguments;
+    final args = _arguments ?? Get.arguments;
     cardId = args['id'];
     uri = args['uri'];
     counts = args['counts'];

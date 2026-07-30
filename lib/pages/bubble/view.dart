@@ -10,6 +10,7 @@ import 'package:PiliPlus/models_new/bubble/dyn_list.dart';
 import 'package:PiliPlus/pages/bubble/controller.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:collection/collection.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart'
@@ -202,7 +203,7 @@ class _BubblePageState extends State<BubblePage>
                   safeArea: false,
                   visualDensity: .standard,
                   // PageUtils.pushDynFromId(id: item.dynId);
-                  onTap: () => Get.toNamed(
+                  onTap: () => PageUtils.toDupNamed(
                     '/articlePage',
                     parameters: {
                       'id': item.dynId!,

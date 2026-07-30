@@ -94,8 +94,9 @@ class _WhisperSettingsPageState extends State<WhisperSettingsPage> {
     Setting item,
   ) {
     if (item.redirect.settingPage.hasParentSettingType()) {
-      Get.to(
-        WhisperSettingsPage(
+      PageUtils.toPage(
+        context,
+        () => WhisperSettingsPage(
           imSettingType: item.redirect.settingPage.parentSettingType,
           onUpdate: (value) {
             _controller.loadingState
@@ -103,7 +104,6 @@ class _WhisperSettingsPageState extends State<WhisperSettingsPage> {
               ..refresh();
           },
         ),
-        preventDuplicates: false,
       );
     } else if (item.redirect.hasWindowSelect()) {
       String? selected;
@@ -152,9 +152,9 @@ class _WhisperSettingsPageState extends State<WhisperSettingsPage> {
       );
     } else if (item.redirect.otherPage.hasUrl()) {
       if (item.redirect.title == '黑名单') {
-        Get.toNamed('/blackListPage');
+        PageUtils.toDupNamed('/blackListPage');
       } else if (item.redirect.otherPage.url.startsWith('http')) {
-        Get.toNamed(
+        PageUtils.toDupNamed(
           '/webview',
           parameters: {'url': item.redirect.otherPage.url},
         );
@@ -163,9 +163,9 @@ class _WhisperSettingsPageState extends State<WhisperSettingsPage> {
       }
     } else if (item.redirect.settingPage.hasUrl()) {
       if (item.redirect.title == '消息屏蔽词') {
-        Get.to(const WhisperBlockPage());
+        PageUtils.toPage(context, () => const WhisperBlockPage());
       } else if (item.redirect.settingPage.url.startsWith('http')) {
-        Get.toNamed(
+        PageUtils.toDupNamed(
           '/webview',
           parameters: {'url': item.redirect.settingPage.url},
         );

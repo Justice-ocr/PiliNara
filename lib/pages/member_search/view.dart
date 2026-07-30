@@ -9,17 +9,36 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class MemberSearchPage extends StatefulWidget {
-  const MemberSearchPage({super.key});
+  const MemberSearchPage({super.key, this.parameters});
+
+  final Map<String, String>? parameters;
 
   @override
   State<MemberSearchPage> createState() => _MemberSearchPageState();
 }
 
 class _MemberSearchPageState extends State<MemberSearchPage> {
-  final _controller = Get.put(
-    MemberSearchController(),
-    tag: Utils.generateRandomString(8),
-  );
+  late final MemberSearchController _controller;
+  late final String _controllerTag;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllerTag = Utils.generateRandomString(8);
+    _controller = Get.put(
+      MemberSearchController(
+        mid: widget.parameters?['mid'],
+        uname: widget.parameters?['uname'],
+      ),
+      tag: _controllerTag,
+    );
+  }
+
+  @override
+  void dispose() {
+    Get.delete<MemberSearchController>(tag: _controllerTag);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +87,9 @@ class _MemberSearchPageState extends State<MemberSearchPage> {
             suffixIcon: IconButton(
               tooltip: '清空',
               icon: const Icon(Icons.clear, size: 22),
-              onPressed: _controller.onClear,
+              onPressed: () => _controller.onClear(
+                () => Navigator.of(context).maybePop(),
+              ),
             ),
           ),
           onSubmitted: (value) => _controller.submit(),

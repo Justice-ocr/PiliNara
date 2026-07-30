@@ -15,6 +15,7 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/parse_int.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter/services.dart' show LengthLimitingTextInputFormatter;
@@ -22,14 +23,17 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class FollowPage extends StatefulWidget {
-  const FollowPage({super.key});
+  const FollowPage({super.key, this.arguments, this.controllerTag});
+
+  final Map? arguments;
+  final String? controllerTag;
 
   @override
   State<FollowPage> createState() => _FollowPageState();
 
   static void toFollowPage({dynamic mid, String? name}) {
     if (mid == null) return;
-    Get.toNamed(
+    PageUtils.toDupNamed(
       '/follow',
       arguments: {
         'mid': safeToInt(mid),
@@ -46,7 +50,10 @@ class _FollowPageState extends State<FollowPage> {
   @override
   void initState() {
     super.initState();
-    _followController = Get.put(FollowController(), tag: _tag);
+    _followController = Get.put(
+      FollowController(arguments: widget.arguments),
+      tag: widget.controllerTag ?? _tag,
+    );
   }
 
   @override
@@ -107,13 +114,16 @@ class _FollowPageState extends State<FollowPage> {
       tooltip: '\u5206\u7ec4\u6392\u5e8f',
       onPressed: () {
         if (_followController.followState.value is! Success) return;
-        Get.to(FollowTagSortPage(controller: _followController));
+        PageUtils.toPage(
+          context,
+          () => FollowTagSortPage(controller: _followController),
+        );
       },
       icon: const Icon(Icons.swap_vert_outlined),
     ),
     IconButton(
       tooltip: '\u641c\u7d22\u5173\u6ce8',
-      onPressed: () => Get.toNamed(
+      onPressed: () => PageUtils.toDupNamed(
         '/followSearch',
         arguments: {'mid': _followController.mid},
       ),
@@ -124,7 +134,7 @@ class _FollowPageState extends State<FollowPage> {
       tooltip: '\u66f4\u591a\u64cd\u4f5c',
       itemBuilder: (context) => [
         PopupMenuItem(
-          onTap: () => Get.toNamed('/blackListPage'),
+          onTap: () => PageUtils.toDupNamed('/blackListPage'),
           child: const Row(
             spacing: 10,
             mainAxisSize: .min,
@@ -162,13 +172,16 @@ class _FollowPageState extends State<FollowPage> {
                 if (_followController.followState.value is! Success) {
                   return;
                 }
-                Get.to(FollowTagSortPage(controller: _followController));
+                PageUtils.toPage(
+                  context,
+                  () => FollowTagSortPage(controller: _followController),
+                );
               },
               icon: const Icon(Icons.sort),
               tooltip: '分组排序',
             ),
             IconButton(
-              onPressed: () => Get.toNamed(
+              onPressed: () => PageUtils.toDupNamed(
                 '/followSearch',
                 arguments: {
                   'mid': _followController.mid,
@@ -181,7 +194,7 @@ class _FollowPageState extends State<FollowPage> {
               icon: const Icon(Icons.more_vert),
               itemBuilder: (context) => [
                 PopupMenuItem(
-                  onTap: () => Get.toNamed('/blackListPage'),
+                  onTap: () => PageUtils.toDupNamed('/blackListPage'),
                   child: const Row(
                     spacing: 10,
                     mainAxisSize: .min,

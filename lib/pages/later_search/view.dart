@@ -13,7 +13,9 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class LaterSearchPage extends StatefulWidget {
-  const LaterSearchPage({super.key});
+  const LaterSearchPage({super.key, this.arguments});
+
+  final Map? arguments;
 
   @override
   State<LaterSearchPage> createState() => _LaterSearchPageState();
@@ -23,10 +25,16 @@ class _LaterSearchPageState
     extends CommonSearchPageState<LaterSearchPage, LaterData, LaterItemModel>
     with GridMixin {
   @override
-  final LaterSearchController controller = Get.put(
-    LaterSearchController(),
-    tag: Utils.generateRandomString(8),
-  );
+  late final LaterSearchController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(
+      LaterSearchController(arguments: widget.arguments),
+      tag: Utils.generateRandomString(8),
+    );
+  }
 
   @override
   List<Widget>? get multiSelectActions {

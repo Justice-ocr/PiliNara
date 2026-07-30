@@ -14,6 +14,7 @@ import 'package:PiliPlus/pages/video/reply/controller.dart';
 import 'package:PiliPlus/pages/video/reply/vote/reply_vote_item.dart';
 import 'package:PiliPlus/pages/video/reply/widgets/reply_item_grpc.dart';
 import 'package:PiliPlus/pages/video/reply_reply/view.dart';
+import 'package:PiliPlus/pages/video/windows_video_context_controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
@@ -27,11 +28,13 @@ class VideoReplyPanel extends StatefulWidget {
     this.replyLevel = 1,
     required this.heroTag,
     required this.isNested,
+    this.onOpenWindowsContext,
   });
 
   final int replyLevel;
   final String heroTag;
   final bool isNested;
+  final bool Function(WindowsVideoReplyContext context)? onOpenWindowsContext;
 
   @override
   State<VideoReplyPanel> createState() => _VideoReplyPanelState();
@@ -240,6 +243,10 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
   void replyReply(ReplyInfo replyItem, int? id) {
     EasyThrottle.throttle('replyReply', const Duration(milliseconds: 500), () {
       if (WindowsVideoTabService.enabled) {
+        final handled = widget.onOpenWindowsContext?.call(
+          WindowsVideoReplyContext(replyItem: replyItem, replyId: id),
+        );
+        if (handled == true) return;
         if (!mounted) return;
         setState(() {
           _windowsReplyDetail = replyItem;

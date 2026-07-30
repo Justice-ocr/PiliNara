@@ -37,12 +37,14 @@ class HorizontalMemberPage extends StatefulWidget {
     required this.videoDetailController,
     required this.ugcIntroController,
     this.onClose,
+    this.controllerTag,
   });
 
   final dynamic mid;
   final VideoDetailController videoDetailController;
   final UgcIntroController ugcIntroController;
   final VoidCallback? onClose;
+  final String? controllerTag;
 
   @override
   State<HorizontalMemberPage> createState() => _HorizontalMemberPageState();
@@ -50,6 +52,7 @@ class HorizontalMemberPage extends StatefulWidget {
 
 class _HorizontalMemberPageState extends State<HorizontalMemberPage> {
   late final HorizontalMemberPageController _controller;
+  late final String _controllerTag;
   late final account = Accounts.main;
   late final String _bvid;
   late ColorScheme colorScheme;
@@ -57,12 +60,14 @@ class _HorizontalMemberPageState extends State<HorizontalMemberPage> {
   @override
   void initState() {
     super.initState();
+    _controllerTag =
+        widget.controllerTag ?? widget.videoDetailController.heroTag;
     _controller = Get.put(
       HorizontalMemberPageController(
         mid: widget.mid,
         currAid: widget.videoDetailController.aid.toString(),
       ),
-      tag: widget.videoDetailController.heroTag,
+      tag: _controllerTag,
     );
     _bvid = widget.videoDetailController.bvid;
     if (_controller.loadingState.value
@@ -321,7 +326,7 @@ class _HorizontalMemberPageState extends State<HorizontalMemberPage> {
               ),
               onPressed: () {
                 if (widget.mid == account.mid) {
-                  Get.toNamed('/editProfile');
+                  PageUtils.toDupNamed('/editProfile');
                 } else {
                   if (!account.isLogin) {
                     SmartDialog.showToast('账号未登录');

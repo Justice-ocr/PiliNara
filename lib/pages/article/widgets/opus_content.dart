@@ -932,7 +932,7 @@ Widget opusCollection(ThemeData theme, ModuleCollection item) {
       color: theme.colorScheme.onInverseSurface,
       child: InkWell(
         borderRadius: const BorderRadius.all(Radius.circular(8)),
-        onTap: () => Get.toNamed(
+        onTap: () => PageUtils.toDupNamed(
           '/articleList',
           parameters: {'id': '${item.id}'},
         ),

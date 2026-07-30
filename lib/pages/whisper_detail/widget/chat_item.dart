@@ -264,7 +264,7 @@ class ChatItem extends StatelessWidget {
   Widget msgTypeArticleCard_12(dynamic content, Color textColor) {
     return GestureDetector(
       behavior: .opaque,
-      onTap: () => Get.toNamed(
+      onTap: () => PageUtils.toDupNamed(
         '/articlePage',
         parameters: {
           'id': '${content['rid']}',
@@ -562,7 +562,7 @@ class ChatItem extends StatelessWidget {
       // article
       case 6:
         type = '专栏';
-        onTap = () => Get.toNamed(
+        onTap = () => PageUtils.toDupNamed(
           '/articlePage',
           parameters: {
             'id': '${content['id']}',

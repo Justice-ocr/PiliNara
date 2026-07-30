@@ -378,10 +378,7 @@ class _MusicDetailPageState extends CommonDynPageState<MusicDetailPage> {
     child = GestureDetector(
       onTap: artist.mid == null || artist.mid == 0
           ? () => Utils.copyText(artist.name!)
-          : () => Get.toNamed(
-              '/member',
-              parameters: {'mid': artist.mid!.toString()},
-            ),
+          : () => PageUtils.toMember(artist.mid),
       child: child,
     );
     return child;

@@ -286,7 +286,10 @@ Widget msgBadge(MainController mainController) {
             mainController
               ..msgUnReadCount.value = ''
               ..lastCheckUnreadAt = DateTime.now().millisecondsSinceEpoch;
-            Get.toNamed('/whisper');
+            PageUtils.openWorkspaceTab(
+              route: '/whisper',
+              title: '\u6d88\u606f',
+            );
           },
           icon: Badge(
             isLabelVisible:

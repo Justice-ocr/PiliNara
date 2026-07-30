@@ -40,6 +40,7 @@ import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/filtering_text.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -93,7 +94,7 @@ List<SettingsModel> get extraSettings => [
     switchModel: SwitchModel.split(
       defaultVal: false,
       setKey: SettingBoxKey.enableSponsorBlock,
-      onTap: (context) => Get.toNamed('/sponsorBlock'),
+      onTap: (context) => PageUtils.toDupNamed('/sponsorBlock'),
     ),
   ),
   PopupModel<SkipType>(
@@ -109,7 +110,7 @@ List<SettingsModel> get extraSettings => [
     title: 'AI 视频总结',
     leading: const Icon(Icons.auto_awesome),
     getSubtitle: () => '配置 OpenAI 兼容 API 和提示词模板',
-    onTap: (context, _) => Get.toNamed('/aiSetting'),
+    onTap: (context, _) => PageUtils.toDupNamed('/aiSetting'),
   ),
   SplitModel(
     normalModel: const NormalModel.split(
@@ -243,7 +244,8 @@ List<SettingsModel> get extraSettings => [
     title: '评论区过滤设置',
     leading: const Icon(Icons.comment_outlined),
     getSubtitle: () => '关键词、用户屏蔽、等级过滤、屏蔽带货评论',
-    onTap: (context, _) => Get.to(() => const ReplySetting()),
+    onTap: (context, _) =>
+        PageUtils.toPage(context, () => const ReplySetting()),
   ),
   const SwitchModel(
     title: '使用外部浏览器打开链接',

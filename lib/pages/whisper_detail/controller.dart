@@ -17,6 +17,9 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class WhisperDetailController extends CommonListController<RspSessionMsg, Msg> {
+  WhisperDetailController({Map? arguments}) : _arguments = arguments;
+
+  final Map? _arguments;
   late final account = Accounts.main;
 
   late final int talkerId;
@@ -33,7 +36,7 @@ class WhisperDetailController extends CommonListController<RspSessionMsg, Msg> {
   @override
   void onInit() {
     super.onInit();
-    final args = Get.arguments;
+    final args = _arguments ?? Get.arguments;
     talkerId = args['talkerId'];
     name = args['name'];
     face = args['face'];

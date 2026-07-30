@@ -85,8 +85,9 @@ class _DownloadFolderPageState extends State<DownloadFolderPage> {
     if (_controller.entries.isEmpty) {
       return;
     }
-    await Get.to(
-      DownloadVideoSortPage(
+    await PageUtils.toPage(
+      context,
+      () => DownloadVideoSortPage(
         title: '排序: ${_controller.title.value}',
         entries: _controller.entries,
         onSave: (cids) =>

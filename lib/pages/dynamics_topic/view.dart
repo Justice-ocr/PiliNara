@@ -37,7 +37,9 @@ import 'package:waterfall_flow/waterfall_flow.dart'
     hide SliverWaterfallFlowDelegateWithMaxCrossAxisExtent;
 
 class DynTopicPage extends StatefulWidget {
-  const DynTopicPage({super.key});
+  const DynTopicPage({super.key, this.parameters});
+
+  final Map<String, String>? parameters;
 
   @override
   State<DynTopicPage> createState() => _DynTopicPageState();
@@ -207,9 +209,7 @@ class _DynTopicPageState extends State<DynTopicPage>
                 margin: const EdgeInsets.only(left: 45, right: 78),
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => Get.toNamed(
-                    '/member?mid=${response.topicCreator!.uid}',
-                  ),
+                  onTap: () => PageUtils.toMember(response.topicCreator!.uid),
                   child: Row(
                     spacing: 10,
                     mainAxisSize: MainAxisSize.min,

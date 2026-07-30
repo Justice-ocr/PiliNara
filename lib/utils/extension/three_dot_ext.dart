@@ -68,7 +68,7 @@ extension ThreeDotItemTypeExt on ThreeDotItemType {
         dynamic talkerId = RegExp(r'/(\d{3,})').firstMatch(item.url)?.group(1);
         if (talkerId != null) {
           talkerId = int.parse(talkerId);
-          Get.toNamed(
+          PageUtils.toDupNamed(
             '/whisperDetail',
             arguments: {
               'talkerId': talkerId,

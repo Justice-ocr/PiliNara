@@ -16,6 +16,9 @@ class FavSearchController
         CommonMultiSelectMixin<FavDetailItemModel>,
         DeleteItemMixin,
         BaseFavController {
+  FavSearchController({Map? arguments}) : _arguments = arguments;
+
+  final Map? _arguments;
   late int type;
   @override
   late int mediaId;
@@ -26,7 +29,7 @@ class FavSearchController
 
   @override
   void onInit() {
-    final args = Get.arguments;
+    final args = _arguments ?? Get.arguments;
     type = args['type'];
     mediaId = args['mediaId'];
     isOwner = args['isOwner'];

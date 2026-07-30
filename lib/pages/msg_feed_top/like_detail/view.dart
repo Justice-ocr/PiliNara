@@ -19,17 +19,25 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class LikeDetailPage extends StatefulWidget {
-  const LikeDetailPage({super.key});
+  const LikeDetailPage({super.key, this.arguments});
+
+  final Map? arguments;
 
   @override
   State<LikeDetailPage> createState() => _LikeDetailPageState();
 }
 
 class _LikeDetailPageState extends State<LikeDetailPage> {
-  final LikeDetailController _controller = Get.put(
-    LikeDetailController(),
-    tag: Utils.generateRandomString(8),
-  );
+  late final LikeDetailController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = Get.put(
+      LikeDetailController(arguments: widget.arguments),
+      tag: Utils.generateRandomString(8),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

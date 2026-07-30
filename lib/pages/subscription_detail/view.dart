@@ -13,7 +13,10 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class SubDetailPage extends StatefulWidget {
-  const SubDetailPage({super.key});
+  const SubDetailPage({super.key, this.arguments, this.controllerTag});
+
+  final Map? arguments;
+  final String? controllerTag;
 
   @override
   State<SubDetailPage> createState() => _SubDetailPageState();
@@ -23,7 +26,7 @@ class SubDetailPage extends StatefulWidget {
     String? heroTag,
     SubItemModel? subInfo,
   }) {
-    Get.toNamed(
+    PageUtils.toDupNamed(
       '/subDetail',
       arguments: {
         'id': id,
@@ -36,14 +39,24 @@ class SubDetailPage extends StatefulWidget {
 
 class _SubDetailPageState extends State<SubDetailPage> with GridMixin {
   late final SubDetailController _subDetailController;
+  late final String _controllerTag;
 
   @override
   void initState() {
     super.initState();
+    final arguments = widget.arguments ?? Get.arguments as Map?;
+    _controllerTag =
+        widget.controllerTag ?? Utils.makeHeroTag(arguments?['id']);
     _subDetailController = Get.put(
-      SubDetailController(),
-      tag: Utils.makeHeroTag(Get.parameters['id']),
+      SubDetailController(arguments: arguments),
+      tag: _controllerTag,
     );
+  }
+
+  @override
+  void dispose() {
+    Get.delete<SubDetailController>(tag: _controllerTag);
+    super.dispose();
   }
 
   @override

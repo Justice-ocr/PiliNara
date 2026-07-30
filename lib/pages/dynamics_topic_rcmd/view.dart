@@ -65,7 +65,7 @@ class _DynTopicRcmdPageState extends State<DynTopicRcmdPage> {
                 itemBuilder: (context, index) {
                   return DynTopicItem(
                     item: response[index],
-                    onTap: (item) => Get.toNamed(
+                    onTap: (item) => PageUtils.toDupNamed(
                       '/dynTopic',
                       parameters: {
                         'id': item.id.toString(),

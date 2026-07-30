@@ -50,6 +50,7 @@ import 'package:PiliPlus/pages/video/reply/controller.dart';
 import 'package:PiliPlus/pages/video/reply/view.dart';
 import 'package:PiliPlus/pages/video/widgets/keyboard_scrollable.dart';
 import 'package:PiliPlus/pages/video/view_point/view.dart';
+import 'package:PiliPlus/pages/video/windows_video_context_controller.dart';
 import 'package:PiliPlus/pages/video/widgets/header_control.dart';
 import 'package:PiliPlus/pages/video/widgets/intro_layout.dart';
 import 'package:PiliPlus/pages/video/widgets/player_focus.dart';
@@ -81,6 +82,7 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_context_panel.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/features/video/windows_neo_video_layout.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
@@ -122,7 +124,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   VideoReplyController? _savedReplyControllerFromPip;
   bool _closingFromWindowsVideoTabService = false;
   int _windowsVideoPlayerMountKey = 0;
-  int? _windowsMemberPanelMid;
+  final WindowsVideoContextController _windowsContextController =
+      WindowsVideoContextController();
+  late final bool Function() _windowsContextPopper = _popWindowsVideoContext;
   bool _windowsUsesSidePanel = false;
 
   // 归位动画进行中：页面播放器以透明占位先行布局（供量取目标矩形），
@@ -411,6 +415,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         activate: _activateWindowsVideoTab,
         deactivate: _deactivateWindowsVideoTab,
         close: _closeWindowsVideoTab,
+      );
+      WindowsVideoTabService.registerContextPopper(
+        videoDetailController.args,
+        _windowsContextPopper,
       );
     }
 
@@ -879,6 +887,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     WindowsVideoTabService.unregisterRoute(
       videoDetailController.args,
       _closeWindowsVideoTab,
+    );
+    WindowsVideoTabService.unregisterContextPopper(
+      videoDetailController.args,
+      _windowsContextPopper,
     );
 
     playerFocusNode.dispose();
@@ -2908,6 +2920,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     key: videoReplyPanelKey,
     isNested: isNested,
     heroTag: heroTag,
+    onOpenWindowsContext: _openWindowsReplyContext,
   );
 
   // ai总结
@@ -3423,13 +3436,25 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
   }
 
-  void _closeWindowsMemberPanel() {
-    if (_windowsMemberPanelMid == null || !mounted) return;
-    setState(() => _windowsMemberPanelMid = null);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Get.delete<HorizontalMemberPageController>(
-        tag: videoDetailController.heroTag,
-      );
-    });
+  bool _openWindowsReplyContext(WindowsVideoReplyContext entry) {
+    if (!_windowsUsesSidePanel || !mounted) return false;
+    _pushWindowsVideoContext(entry);
+    return true;
+  }
+
+  void _pushWindowsVideoContext(WindowsVideoContextEntry entry) {
+    if (!mounted) return;
+    setState(() => _windowsContextController.push(entry));
+  }
+
+  bool _popWindowsVideoContext() {
+    if (!mounted || !_windowsContextController.canPop) return false;
+    setState(_windowsContextController.pop);
+    return true;
+  }
+
+  void _clearWindowsVideoContext() {
+    if (!mounted || !_windowsContextController.canPop) return;
+    setState(_windowsContextController.clear);
   }
 }

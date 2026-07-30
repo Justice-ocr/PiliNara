@@ -202,11 +202,7 @@ abstract final class PiliScheme {
           case 'search':
             final keyword = uri.queryParameters['keyword'];
             if (keyword != null) {
-              PageUtils.toDupNamed(
-                '/searchResult',
-                parameters: {'keyword': keyword},
-                off: off,
-              );
+              PageUtils.toSearchResult(keyword, off: off);
               return true;
             }
             PageUtils.toSearch();
@@ -349,7 +345,10 @@ abstract final class PiliScheme {
             }
             return false;
           case 'history':
-            Get.toNamed('/history');
+            PageUtils.openWorkspaceTab(
+              route: '/history',
+              title: '\u89c2\u770b\u8bb0\u5f55',
+            );
             return true;
           case 'main':
             if (path.startsWith('/favorite')) {
@@ -362,7 +361,11 @@ abstract final class PiliScheme {
                   if (kDebugMode) debugPrint('favorite jump: $e');
                 }
               }
-              Get.toNamed('/fav', arguments: index);
+              PageUtils.openWorkspaceTab(
+                route: '/fav',
+                title: '\u6211\u7684\u6536\u85cf',
+                arguments: index,
+              );
               return true;
             }
             return false;
@@ -389,7 +392,7 @@ abstract final class PiliScheme {
             if (path.startsWith('/playlist/')) {
               final mediaId = uriDigitRegExp.firstMatch(path)?.group(1);
               if (mediaId != null) {
-                Get.toNamed(
+                PageUtils.toDupNamed(
                   '/favDetail',
                   parameters: {
                     'mediaId': mediaId,
@@ -401,7 +404,10 @@ abstract final class PiliScheme {
             }
             return false;
           case 'download':
-            Get.toNamed('/download');
+            PageUtils.openWorkspaceTab(
+              route: '/download',
+              title: '\u79bb\u7ebf\u7f13\u5b58',
+            );
             return true;
           default:
             if (!selfHandle) {
@@ -561,11 +567,7 @@ abstract final class PiliScheme {
     } else if (host.contains(bilibili_search)) {
       String? keyword = uri.queryParameters['keyword'];
       if (keyword != null) {
-        PageUtils.toDupNamed(
-          '/searchResult',
-          parameters: {'keyword': keyword},
-          off: off,
-        );
+        PageUtils.toSearchResult(keyword, off: off);
         return true;
       }
       launchURL();

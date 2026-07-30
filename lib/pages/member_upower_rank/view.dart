@@ -322,7 +322,7 @@ class _UpowerRankPageState extends State<UpowerRankPage>
   @override
   bool get wantKeepAlive => widget.privilegeType != null;
 
-  void _openCharge() => Get.toNamed(
+  void _openCharge() => PageUtils.toDupNamed(
     '/webview',
     parameters: {
       'url':

@@ -5,7 +5,6 @@ import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/common/widgets/pendant_avatar.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/dynamic/dyn_reaction/item.dart';
-import 'package:PiliPlus/pages/common/dyn/common_dyn_page.dart';
 import 'package:PiliPlus/pages/common/dyn/reaction/controller.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
@@ -48,7 +47,7 @@ class DynReactPage extends StatelessWidget {
                       dense: true,
                       safeArea: false,
                       visualDensity: .standard,
-                      onTap: () => Get.toNamed('/member?mid=${item.mid}'),
+                      onTap: () => PageUtils.toMember(item.mid),
                       leading: PendantAvatar(item.face!, size: 36),
                       title: Text.rich(
                         TextSpan(

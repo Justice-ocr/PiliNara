@@ -34,7 +34,7 @@ class MemberComicItem extends StatelessWidget {
       clipBehavior: isWindowsNeo ? Clip.antiAlias : Clip.none,
       child: InkWell(
         onTap: () {
-          Get.toNamed(
+          PageUtils.toDupNamed(
             '/webview',
             parameters: {
               'url': 'https://manga.bilibili.com/detail/mc${item.param}',

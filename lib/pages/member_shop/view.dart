@@ -9,6 +9,7 @@ import 'package:PiliPlus/pages/member_shop/controller.dart';
 import 'package:PiliPlus/pages/member_shop/widgets/item.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -71,7 +72,7 @@ class _MemberShopState extends State<MemberShop>
     if (_controller.clickUrl case final clickUrl?) {
       final url = Uri.parse(clickUrl).queryParameters['url'];
       if (url case final url?) {
-        Get.toNamed('/webview', parameters: {'url': url});
+        PageUtils.toDupNamed('/webview', parameters: {'url': url});
       }
     }
   }

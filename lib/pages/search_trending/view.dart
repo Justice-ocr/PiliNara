@@ -16,6 +16,8 @@ import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
@@ -23,14 +25,17 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
 
 class SearchTrendingPage extends StatefulWidget {
-  const SearchTrendingPage({super.key});
+  const SearchTrendingPage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   State<SearchTrendingPage> createState() => _SearchTrendingPageState();
 }
 
 class _SearchTrendingPageState extends State<SearchTrendingPage> {
-  final _controller = Get.putOrFind(SearchTrendingController.new);
+  late final SearchTrendingController _controller;
+  late final String _controllerTag;
 
   late double _offset;
   final RxDouble _scrollRatio = 0.0.obs;

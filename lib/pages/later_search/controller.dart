@@ -13,14 +13,19 @@ class LaterSearchController
         CommonMultiSelectMixin<LaterItemModel>,
         DeleteItemMixin,
         BaseLaterController {
+  LaterSearchController({Map? arguments}) : _arguments = arguments;
+
+  final Map? _arguments;
   dynamic mid;
   dynamic count;
 
   @override
   void onInit() {
-    final args = Get.arguments;
-    mid = args['mid'];
-    count = args['count'];
+    final args = _arguments ?? Get.arguments;
+    if (args is Map) {
+      mid = args['mid'];
+      count = args['count'];
+    }
     super.onInit();
   }
 

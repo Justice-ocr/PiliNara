@@ -32,7 +32,7 @@ class ArticleListItem extends StatelessWidget {
       child: InkWell(
         onTap: () {
           final dynIdStr = item.dynIdStr;
-          Get.toNamed(
+          PageUtils.toDupNamed(
             '/articlePage',
             parameters: {
               'id': dynIdStr ?? item.id!.toString(),

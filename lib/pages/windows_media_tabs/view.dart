@@ -1,16 +1,57 @@
 import 'package:PiliPlus/pages/download/view.dart';
+import 'package:PiliPlus/pages/fav/view.dart';
+import 'package:PiliPlus/pages/fav_detail/view.dart';
+import 'package:PiliPlus/pages/fav_search/view.dart';
+import 'package:PiliPlus/pages/history/view.dart';
+import 'package:PiliPlus/pages/history_search/view.dart';
+import 'package:PiliPlus/pages/later/view.dart';
+import 'package:PiliPlus/pages/later_search/view.dart';
 import 'package:PiliPlus/pages/article/view.dart';
+import 'package:PiliPlus/pages/article_list/view.dart';
+import 'package:PiliPlus/pages/blacklist/view.dart';
 import 'package:PiliPlus/pages/dynamics_detail/view.dart';
+import 'package:PiliPlus/pages/dynamics_topic/view.dart';
 import 'package:PiliPlus/pages/live_room/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/pages/main/view.dart';
 import 'package:PiliPlus/pages/member/view.dart';
+import 'package:PiliPlus/pages/member_dynamics/view.dart';
+import 'package:PiliPlus/pages/fan/view.dart';
+import 'package:PiliPlus/pages/follow/view.dart';
+import 'package:PiliPlus/pages/follow_search/view.dart';
+import 'package:PiliPlus/pages/follow_type/followed/view.dart';
+import 'package:PiliPlus/pages/follow_type/follow_same/view.dart';
+import 'package:PiliPlus/pages/member_profile/view.dart';
+import 'package:PiliPlus/pages/member_search/view.dart';
+import 'package:PiliPlus/pages/my_reply/view.dart';
+import 'package:PiliPlus/pages/msg_feed_top/at_me/view.dart';
+import 'package:PiliPlus/pages/msg_feed_top/like_me/view.dart';
+import 'package:PiliPlus/pages/msg_feed_top/like_detail/view.dart';
+import 'package:PiliPlus/pages/msg_feed_top/reply_me/view.dart';
+import 'package:PiliPlus/pages/msg_feed_top/sys_msg/view.dart';
+import 'package:PiliPlus/pages/popular_precious/view.dart';
+import 'package:PiliPlus/pages/popular_series/view.dart';
+import 'package:PiliPlus/pages/rank/view.dart';
 import 'package:PiliPlus/pages/search/view.dart';
 import 'package:PiliPlus/pages/search_result/view.dart';
+import 'package:PiliPlus/pages/search_trending/view.dart';
+import 'package:PiliPlus/pages/setting/ai_setting/view.dart';
+import 'package:PiliPlus/pages/setting/block_setting.dart';
+import 'package:PiliPlus/pages/setting/pages/bar_set.dart';
+import 'package:PiliPlus/pages/setting/pages/color_select.dart';
+import 'package:PiliPlus/pages/setting/pages/font_size_select.dart';
+import 'package:PiliPlus/pages/setting/pages/play_speed_set.dart';
 import 'package:PiliPlus/pages/setting/view.dart';
+import 'package:PiliPlus/pages/space_setting/view.dart';
+import 'package:PiliPlus/pages/sponsor_block/view.dart';
+import 'package:PiliPlus/pages/subscription/view.dart';
+import 'package:PiliPlus/pages/subscription_detail/view.dart';
 import 'package:PiliPlus/pages/video/view.dart';
+import 'package:PiliPlus/pages/webview/view.dart';
 import 'package:PiliPlus/pages/whisper/view.dart';
+import 'package:PiliPlus/pages/whisper_detail/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/windows_ui/components/windows_back_shortcut_listener.dart';
 import 'package:PiliPlus/windows_ui/shell/windows_neo_shell.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
@@ -71,33 +112,36 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
         });
       }
 
-      return CallbackShortcuts(
-        bindings: {
-          const SingleActivator(LogicalKeyboardKey.keyW, control: true):
-              WindowsVideoTabService.closeActiveTab,
-          const SingleActivator(LogicalKeyboardKey.tab, control: true): () =>
-              WindowsVideoTabService.selectRelative(1),
-          const SingleActivator(
-            LogicalKeyboardKey.tab,
-            control: true,
-            shift: true,
-          ): () =>
-              WindowsVideoTabService.selectRelative(-1),
-          const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true):
-              WindowsVideoTabService.popActiveTab,
-        },
-        child: Focus(
-          // Active media pages own keyboard focus. Keeping a focusable shell
-          // here prevents PlayerFocus from receiving video shortcuts.
-          canRequestFocus: false,
-          child: WindowsNeoShell(
-            mainController: _mainController,
-            tabs: tabs,
-            activeTab: tabs[activeIndex],
-            child: WindowsMediaTabStack(
+      return WindowsBackShortcutListener(
+        onBack: WindowsVideoTabService.popActiveTab,
+        child: CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.keyW, control: true):
+                WindowsVideoTabService.closeActiveTab,
+            const SingleActivator(LogicalKeyboardKey.tab, control: true): () =>
+                WindowsVideoTabService.selectRelative(1),
+            const SingleActivator(
+              LogicalKeyboardKey.tab,
+              control: true,
+              shift: true,
+            ): () =>
+                WindowsVideoTabService.selectRelative(-1),
+            const SingleActivator(LogicalKeyboardKey.escape):
+                WindowsVideoTabService.popActiveTab,
+          },
+          child: Focus(
+            // Active media pages own keyboard focus. Keeping a focusable shell
+            // here prevents PlayerFocus from receiving video shortcuts.
+            canRequestFocus: false,
+            child: WindowsNeoShell(
+              mainController: _mainController,
               tabs: tabs,
-              activeIndex: activeIndex,
-              tabBuilder: _buildTabNavigator,
+              activeTab: tabs[activeIndex],
+              child: WindowsMediaTabStack(
+                tabs: tabs,
+                activeIndex: activeIndex,
+                tabBuilder: _buildTabNavigator,
+              ),
             ),
           ),
         ),
@@ -123,11 +167,17 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
         settings: settings,
         page: () => switch (settings.name) {
           '/search' => SearchPage(parameters: data?.parameters),
+          '/searchTrending' => SearchTrendingPage(
+            controllerTag: '${item.id}:searchTrending',
+          ),
           '/member' => MemberPage(
             mid: int.tryParse(data?.parameters['mid'] ?? ''),
             fromViewAid: data?.parameters['from_view_aid'],
             controllerTag: '${item.id}:member:${data?.parameters['mid'] ?? ''}',
           ),
+          '/memberSearch' => MemberSearchPage(parameters: data?.parameters),
+          '/editProfile' => const EditProfilePage(),
+          '/spaceSetting' => const SpaceSettingPage(),
           '/dynamicDetail' => DynamicDetailPage(
             arguments: data?.arguments as Map?,
             controllerTag: '${item.id}:dynamic:${_dynamicId(data?.arguments)}',
@@ -137,6 +187,80 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
             controllerTag:
                 '${item.id}:article:${data?.parameters['type'] ?? ''}:'
                 '${data?.parameters['id'] ?? ''}',
+          ),
+          '/articleList' => ArticleListPage(parameters: data?.parameters),
+          '/dynTopic' => DynTopicPage(parameters: data?.parameters),
+          '/blockSetting' => const BlockSetting(),
+          '/blackListPage' => const BlackListPage(),
+          '/sponsorBlock' => const SponsorBlockPage(),
+          '/aiSetting' => const AiSettingPage(),
+          '/playSpeedSet' => const PlaySpeedPage(),
+          '/colorSetting' => const ColorSelectPage(),
+          '/fontSizeSetting' => const FontSizeSelectPage(),
+          '/barSetting' => BarSetPage(arguments: data?.arguments as Map?),
+          '/historySearch' => const HistorySearchPage(),
+          '/laterSearch' => LaterSearchPage(
+            arguments: data?.arguments as Map?,
+          ),
+          '/favDetail' => FavDetailPage(
+            parameters: data?.parameters,
+            controllerTag:
+                '${item.id}:favDetail:${data?.parameters['mediaId'] ?? ''}',
+          ),
+          '/favSearch' => FavSearchPage(
+            arguments: data?.arguments as Map?,
+          ),
+          '/popularSeries' => const PopularSeriesPage(),
+          '/popularPrecious' => const PopularPreciousPage(),
+          '/rank' => const _WindowsRankRoute(),
+          '/whisperDetail' => WhisperDetailPage(
+            arguments: data?.arguments as Map?,
+            controllerTag:
+                '${item.id}:whisper:${(data?.arguments as Map?)?['talkerId'] ?? ''}',
+          ),
+          '/replyMe' => const ReplyMePage(),
+          '/atMe' => const AtMePage(),
+          '/likeMe' => const LikeMePage(),
+          '/sysMsg' => const SysMsgPage(),
+          '/webview' => WebviewPage(
+            parameters: data?.parameters,
+            arguments: data?.arguments as Map?,
+          ),
+          '/subDetail' => SubDetailPage(
+            arguments: data?.arguments as Map?,
+            controllerTag:
+                '${item.id}:subscription:${(data?.arguments as Map?)?['id'] ?? ''}',
+          ),
+          '/msgLikeDetail' => LikeDetailPage(
+            arguments: data?.arguments as Map?,
+          ),
+          '/memberDynamics' => MemberDynamicsPage(
+            mid: int.tryParse(data?.parameters['mid'] ?? ''),
+            controllerTag: '${item.id}:memberDynamics',
+          ),
+          '/follow' => FollowPage(
+            arguments: data?.arguments as Map?,
+            controllerTag: '${item.id}:follow',
+          ),
+          '/fan' => FansPage(
+            arguments: data?.arguments as Map?,
+            controllerTag: '${item.id}:fan',
+          ),
+          '/followSearch' => FollowSearchPage(
+            mid: int.tryParse(
+              data?.parameters['mid'] ??
+                  (data?.arguments as Map?)?['mid']?.toString() ??
+                  '',
+            ),
+            controllerTag: '${item.id}:followSearch',
+          ),
+          '/followed' => FollowedPage(
+            arguments: data?.arguments as Map?,
+            controllerTag: '${item.id}:followed',
+          ),
+          '/sameFollowing' => FollowSamePage(
+            arguments: data?.arguments as Map?,
+            controllerTag: '${item.id}:sameFollowing',
           ),
           _ => _UnknownWindowsTabRoute(routeName: settings.name!),
         },
@@ -181,8 +305,13 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
     ),
     WindowsMediaTabType.tool => switch (item.arguments['tabRoute']) {
       '/download' => const DownloadPage(),
+      '/fav' => FavPage(arguments: item.arguments['workspaceArguments']),
+      '/history' => const HistoryPage(),
+      '/later' => const LaterPage(),
+      '/myReply' => const MyReply(),
       '/whisper' => const WhisperPage(),
       '/setting' => const SettingPage(),
+      '/subscription' => const SubPage(),
       final route => _UnknownWindowsTabRoute(
         routeName: route?.toString() ?? '',
       ),
@@ -195,6 +324,16 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
     }
     return '';
   }
+}
+
+class _WindowsRankRoute extends StatelessWidget {
+  const _WindowsRankRoute();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('\u6392\u884c\u699c')),
+    body: const RankPage(),
+  );
 }
 
 class WindowsMediaTabStack extends StatelessWidget {
