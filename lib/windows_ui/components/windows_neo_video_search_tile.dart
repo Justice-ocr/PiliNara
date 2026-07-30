@@ -158,9 +158,7 @@ class _WindowsNeoVideoSearchTileState extends State<WindowsNeoVideoSearchTile> {
                     (part) => TextSpan(
                       text: part.text,
                       style: TextStyle(
-                        color: part.isEm
-                            ? tokens.accent
-                            : theme.colorScheme.onSurface,
+                        color: part.isEm ? tokens.accent : tokens.ink,
                       ),
                     ),
                   )
@@ -168,20 +166,14 @@ class _WindowsNeoVideoSearchTileState extends State<WindowsNeoVideoSearchTile> {
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              height: 1.35,
-              fontWeight: FontWeight.w600,
-            ),
+            style: tokens.cardTitleStyle(theme.textTheme),
           )
         else
           Text(
             videoItem.title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              height: 1.35,
-              fontWeight: FontWeight.w600,
-            ),
+            style: tokens.cardTitleStyle(theme.textTheme),
           ),
         const Spacer(),
         Text(

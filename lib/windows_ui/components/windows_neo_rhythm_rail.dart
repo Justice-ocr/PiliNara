@@ -101,6 +101,7 @@ class WindowsNeoHeaderBeat extends StatelessWidget {
         painter: _WindowsNeoHeaderBeatPainter(
           gradient: tokens.rhythmGradient,
           mutedColor: tokens.border.withValues(alpha: 0.72),
+          family: tokens.family,
         ),
       ),
     );
@@ -111,20 +112,24 @@ class WindowsNeoHeaderWave extends StatelessWidget {
   const WindowsNeoHeaderWave({super.key});
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    key: const Key('windows-neo-header-wave'),
-    width: 168,
-    height: 28,
-    child: CustomPaint(
-      painter: _WindowsNeoHeaderWavePainter(
-        primary: context.windowsNeo.accent.withValues(alpha: 0.11),
-        secondary: context.windowsNeo.structuralSecondaryAccent.withValues(
-          alpha: 0.075,
+  Widget build(BuildContext context) {
+    final tokens = context.windowsNeo;
+    final isMiku = tokens.family == WindowsNeoThemeFamily.miku;
+    return SizedBox(
+      key: const Key('windows-neo-header-wave'),
+      width: isMiku ? 168 : 252,
+      height: isMiku ? 28 : 42,
+      child: CustomPaint(
+        painter: _WindowsNeoHeaderWavePainter(
+          primary: tokens.accent.withValues(alpha: isMiku ? 0.11 : 0.18),
+          secondary: tokens.structuralSecondaryAccent.withValues(
+            alpha: isMiku ? 0.075 : 0.14,
+          ),
+          family: tokens.family,
         ),
-        flatLine: context.windowsNeo.identity.usesSquaredGeometry,
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// Adds a compact beat and rhythm rail around an open workspace section.
@@ -224,43 +229,71 @@ class _WindowsNeoHeaderBeatPainter extends CustomPainter {
   const _WindowsNeoHeaderBeatPainter({
     required this.gradient,
     required this.mutedColor,
+    required this.family,
   });
 
   final Gradient gradient;
   final Color mutedColor;
+  final WindowsNeoThemeFamily family;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final lineRect = Rect.fromLTWH(0, 0, 2, size.height);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(lineRect, const Radius.circular(2)),
-      Paint()..shader = gradient.createShader(lineRect),
+    final lineRect = Rect.fromLTWH(
+      0,
+      0,
+      family == WindowsNeoThemeFamily.popucom ? 3 : 2,
+      size.height,
     );
+    if (family == WindowsNeoThemeFamily.exAstris) {
+      final ring = Paint()
+        ..color = mutedColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1;
+      canvas
+        ..drawCircle(const Offset(1.5, 7), 1.5, ring)
+        ..drawCircle(const Offset(1.5, 22), 1.5, ring);
+    } else {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          lineRect,
+          Radius.circular(family == WindowsNeoThemeFamily.popucom ? 2 : 0),
+        ),
+        Paint()..shader = gradient.createShader(lineRect),
+      );
+    }
     final beatPaint = Paint()..color = mutedColor;
-    canvas
-      ..drawCircle(Offset(size.width - 1.5, 7), 1.5, beatPaint)
-      ..drawCircle(Offset(size.width - 1.5, 22), 1.5, beatPaint);
+    if (family == WindowsNeoThemeFamily.miku ||
+        family == WindowsNeoThemeFamily.popucom) {
+      canvas
+        ..drawCircle(Offset(size.width - 1.5, 7), 1.5, beatPaint)
+        ..drawCircle(Offset(size.width - 1.5, 22), 1.5, beatPaint);
+    } else if (family == WindowsNeoThemeFamily.ark) {
+      canvas
+        ..drawLine(const Offset(3, 6), Offset(size.width, 6), beatPaint)
+        ..drawLine(const Offset(3, 23), Offset(size.width, 23), beatPaint);
+    }
   }
 
   @override
   bool shouldRepaint(covariant _WindowsNeoHeaderBeatPainter oldDelegate) =>
-      oldDelegate.gradient != gradient || oldDelegate.mutedColor != mutedColor;
+      oldDelegate.gradient != gradient ||
+      oldDelegate.mutedColor != mutedColor ||
+      oldDelegate.family != family;
 }
 
 class _WindowsNeoHeaderWavePainter extends CustomPainter {
   const _WindowsNeoHeaderWavePainter({
     required this.primary,
     required this.secondary,
-    required this.flatLine,
+    required this.family,
   });
 
   final Color primary;
   final Color secondary;
-  final bool flatLine;
+  final WindowsNeoThemeFamily family;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = size.height / 2;
     final primaryPaint = Paint()
       ..color = primary
       ..strokeWidth = 1.2
@@ -268,30 +301,126 @@ class _WindowsNeoHeaderWavePainter extends CustomPainter {
     final secondaryPaint = Paint()
       ..color = secondary
       ..strokeWidth = 1;
+    final center = size.height / 2;
+    switch (family) {
+      case WindowsNeoThemeFamily.miku:
+        _paintPolyline(
+          canvas,
+          primaryPaint,
+          center,
+          const [0.0, -4.0, 7.0, -10.0, 5.0, -2.0, 8.0, -5.0, 0.0],
+          size,
+        );
+        for (final position in const [0.18, 0.39, 0.72]) {
+          final x = size.width * position;
+          canvas.drawLine(
+            Offset(x, center - 10),
+            Offset(x, center + 10),
+            secondaryPaint,
+          );
+        }
+      case WindowsNeoThemeFamily.endfield:
+        canvas.drawPath(
+          Path()
+            ..moveTo(size.width * .20, 4)
+            ..lineTo(size.width * .88, 4)
+            ..lineTo(size.width, size.height - 6)
+            ..lineTo(size.width * .32, size.height - 6)
+            ..close(),
+          primaryPaint,
+        );
+        for (final position in const [0.16, 0.43, 0.78]) {
+          final x = size.width * position;
+          canvas.drawLine(
+            Offset(x, center - 7),
+            Offset(x, center + 7),
+            secondaryPaint,
+          );
+        }
+      case WindowsNeoThemeFamily.ark:
+        final frame = Rect.fromLTWH(
+          size.width * .16,
+          4,
+          size.width * .72,
+          size.height - 8,
+        );
+        canvas
+          ..drawRect(frame, primaryPaint)
+          ..drawLine(
+            frame.topLeft,
+            Offset(frame.center.dx, frame.bottom),
+            secondaryPaint,
+          )
+          ..drawLine(
+            Offset(frame.center.dx, frame.top),
+            frame.bottomRight,
+            secondaryPaint,
+          );
+      case WindowsNeoThemeFamily.exAstris:
+        final orbitCenter = Offset(size.width * .72, center);
+        canvas
+          ..drawOval(
+            Rect.fromCenter(center: orbitCenter, width: 128, height: 34),
+            primaryPaint,
+          )
+          ..drawOval(
+            Rect.fromCenter(center: orbitCenter, width: 58, height: 62),
+            secondaryPaint,
+          )
+          ..drawCircle(orbitCenter, 3, primaryPaint);
+      case WindowsNeoThemeFamily.popucom:
+        canvas
+          ..drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTWH(size.width * .20, 6, size.width * .56, 30),
+              const Radius.circular(15),
+            ),
+            primaryPaint,
+          )
+          ..drawCircle(Offset(size.width * .28, center), 5, secondaryPaint)
+          ..drawCircle(Offset(size.width * .70, center), 5, secondaryPaint);
+      case WindowsNeoThemeFamily.corporate:
+        final frame = Rect.fromLTWH(
+          size.width * .20,
+          6,
+          size.width * .72,
+          size.height - 12,
+        );
+        canvas
+          ..drawRect(frame, primaryPaint)
+          ..drawLine(
+            Offset(frame.left, frame.center.dy),
+            Offset(frame.right, frame.center.dy),
+            secondaryPaint,
+          )
+          ..drawLine(
+            Offset(frame.right - 18, frame.top),
+            Offset(frame.right - 18, frame.bottom),
+            secondaryPaint,
+          );
+    }
+  }
+
+  void _paintPolyline(
+    Canvas canvas,
+    Paint paint,
+    double center,
+    List<double> levels,
+    Size size,
+  ) {
     final path = Path()..moveTo(0, center);
-    final levels = flatLine
-        ? const [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        : const [0.0, -4.0, 7.0, -10.0, 5.0, -2.0, 8.0, -5.0, 0.0];
     final step = size.width / (levels.length - 1);
     for (var index = 1; index < levels.length; index++) {
       path.lineTo(step * index, center + levels[index]);
     }
-    canvas.drawPath(path, primaryPaint);
-    for (final position in const [0.18, 0.39, 0.72]) {
-      final x = size.width * position;
-      canvas.drawLine(
-        Offset(x, center - 10),
-        Offset(x, center + 10),
-        secondaryPaint,
-      );
-    }
+    canvas.drawPath(path, paint);
   }
 
   @override
   bool shouldRepaint(covariant _WindowsNeoHeaderWavePainter oldDelegate) =>
       oldDelegate.primary != primary ||
       oldDelegate.secondary != secondary ||
-      oldDelegate.flatLine != flatLine;
+      oldDelegate.family != family;
 }
 
 class _WindowsNeoTabIndicatorPainter extends BoxPainter {

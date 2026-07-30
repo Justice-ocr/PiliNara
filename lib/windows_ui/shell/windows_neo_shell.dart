@@ -940,6 +940,29 @@ class _WindowsNeoEndfieldStage extends StatelessWidget {
           ),
         ),
       ),
+      Positioned(
+        left: 50,
+        right: 12,
+        bottom: 11,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: tokens.ink.withValues(alpha: 0.28)),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 5),
+            child: Text(
+              'ROUTE // WORKSPACE',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: tokens.muted,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.25,
+              ),
+            ),
+          ),
+        ),
+      ),
     ],
   );
 }
@@ -959,6 +982,19 @@ class _WindowsNeoExAstrisStage extends StatelessWidget {
           painter: _WindowsNeoOrbitStagePainter(
             lineColor: tokens.accent.withValues(alpha: 0.44),
             pointColor: tokens.secondaryAccent.withValues(alpha: 0.54),
+          ),
+        ),
+      ),
+      Positioned(
+        right: 14,
+        top: 16,
+        child: Text(
+          '03',
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+            color: Colors.white.withValues(alpha: 0.16),
+            fontFamilyFallback: tokens.displayFontFallback,
+            fontWeight: FontWeight.w500,
+            height: .82,
           ),
         ),
       ),
@@ -1001,6 +1037,25 @@ class _WindowsNeoPopucomStage extends StatelessWidget {
     children: [
       const ColoredBox(color: Color(0xFF3994FF)),
       Positioned(
+        left: 0,
+        right: 0,
+        top: 0,
+        child: SizedBox(
+          height: 35,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: const Color(0xFF252B35),
+              border: Border(
+                bottom: BorderSide(
+                  color: tokens.accent.withValues(alpha: 0.72),
+                  width: 2,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      Positioned(
         right: 12,
         top: 12,
         child: Container(
@@ -1034,7 +1089,7 @@ class _WindowsNeoPopucomStage extends StatelessWidget {
       ),
       Positioned(
         left: 14,
-        top: 16,
+        top: 10,
         child: Text(
           'PLAY',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -1071,6 +1126,18 @@ class _WindowsNeoCorporateStage extends StatelessWidget {
     children: [
       ColoredBox(color: tokens.ink),
       Positioned(
+        right: 16,
+        top: 12,
+        child: Text(
+          '05',
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+            color: Colors.white.withValues(alpha: 0.14),
+            fontWeight: FontWeight.w800,
+            height: .82,
+          ),
+        ),
+      ),
+      Positioned(
         left: 14,
         top: 16,
         child: Text(
@@ -1100,13 +1167,26 @@ class _WindowsNeoCorporateStage extends StatelessWidget {
       Positioned(
         left: 14,
         bottom: 10,
-        child: Text(
-          'WORK / 05',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: tokens.accent,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.5,
-          ),
+        child: Row(
+          children: [
+            Text(
+              'PILI NARA',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.72),
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.4,
+              ),
+            ),
+            const SizedBox(width: 7),
+            Text(
+              'WORK / 05',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: tokens.accent,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+              ),
+            ),
+          ],
         ),
       ),
     ],

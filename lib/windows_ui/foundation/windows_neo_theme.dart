@@ -774,28 +774,89 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     stops: const [0, 0.78, 1],
   );
 
-  LinearGradient get sidebarSelectionGradient => LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [
-      Color.alphaBlend(accent.withValues(alpha: 0.88), navigationSurface),
-      Color.alphaBlend(accent.withValues(alpha: 0.56), navigationSurface),
-      Color.alphaBlend(
-        Colors.white.withValues(alpha: 0.42),
-        Color.alphaBlend(accent.withValues(alpha: 0.20), navigationSurface),
-      ),
-    ],
-    stops: const [0, 0.58, 1],
-  );
+  LinearGradient get sidebarSelectionGradient {
+    final colors = switch (family) {
+      WindowsNeoThemeFamily.miku => [
+        Color.alphaBlend(accent.withValues(alpha: 0.88), navigationSurface),
+        Color.alphaBlend(accent.withValues(alpha: 0.56), navigationSurface),
+        Color.alphaBlend(
+          Colors.white.withValues(alpha: 0.42),
+          Color.alphaBlend(accent.withValues(alpha: 0.20), navigationSurface),
+        ),
+      ],
+      WindowsNeoThemeFamily.endfield => [
+        Color.alphaBlend(accent.withValues(alpha: 0.34), navigationSurface),
+        Color.alphaBlend(accent.withValues(alpha: 0.16), navigationSurface),
+        navigationSurface,
+      ],
+      WindowsNeoThemeFamily.ark => [
+        Color.alphaBlend(accent.withValues(alpha: 0.30), navigationSurface),
+        Color.alphaBlend(accent.withValues(alpha: 0.10), navigationSurface),
+        navigationSurface,
+      ],
+      WindowsNeoThemeFamily.exAstris => [
+        Color.alphaBlend(accent.withValues(alpha: 0.22), navigationSurface),
+        Color.alphaBlend(
+          secondaryAccent.withValues(alpha: 0.10),
+          navigationSurface,
+        ),
+        navigationSurface,
+      ],
+      WindowsNeoThemeFamily.popucom => [
+        Color.alphaBlend(accent.withValues(alpha: 0.78), navigationSurface),
+        Color.alphaBlend(
+          secondaryAccent.withValues(alpha: 0.54),
+          navigationSurface,
+        ),
+        navigationSurface,
+      ],
+      WindowsNeoThemeFamily.corporate => [
+        Color.alphaBlend(accent.withValues(alpha: 0.16), navigationSurface),
+        Color.alphaBlend(accent.withValues(alpha: 0.05), navigationSurface),
+        navigationSurface,
+      ],
+    };
+    return LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: colors,
+      stops: const [0, 0.58, 1],
+    );
+  }
 
-  TextStyle pageTitleStyle(TextTheme textTheme) =>
-      (textTheme.titleMedium ?? const TextStyle(fontSize: 18)).copyWith(
-        color: ink,
-        fontWeight: FontWeight.w700,
-        height: 1.15,
-        letterSpacing: 0,
-        fontFamilyFallback: displayFontFallback,
-      );
+  TextStyle pageTitleStyle(TextTheme textTheme) {
+    final base = (textTheme.titleMedium ?? const TextStyle(fontSize: 18))
+        .copyWith(
+          color: ink,
+          fontWeight: FontWeight.w700,
+          height: 1.15,
+          letterSpacing: 0,
+          fontFamilyFallback: displayFontFallback,
+        );
+    return switch (family) {
+      WindowsNeoThemeFamily.endfield => base.copyWith(
+        fontWeight: FontWeight.w800,
+        letterSpacing: .25,
+      ),
+      WindowsNeoThemeFamily.ark => base.copyWith(
+        fontWeight: FontWeight.w800,
+        letterSpacing: .35,
+      ),
+      WindowsNeoThemeFamily.exAstris => base.copyWith(
+        fontWeight: FontWeight.w500,
+        fontSize: 19,
+      ),
+      WindowsNeoThemeFamily.popucom => base.copyWith(
+        fontWeight: FontWeight.w900,
+        letterSpacing: .15,
+      ),
+      WindowsNeoThemeFamily.corporate => base.copyWith(
+        fontWeight: FontWeight.w800,
+        letterSpacing: .55,
+      ),
+      WindowsNeoThemeFamily.miku => base,
+    };
+  }
 
   TextStyle pageSubtitleStyle(TextTheme textTheme) =>
       (textTheme.bodySmall ?? const TextStyle(fontSize: 12)).copyWith(
@@ -804,14 +865,35 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
         fontFamilyFallback: uiFontFallback,
       );
 
-  TextStyle cardTitleStyle(TextTheme textTheme) =>
-      (textTheme.bodyMedium ?? const TextStyle(fontSize: 14)).copyWith(
-        color: ink,
-        fontWeight: FontWeight.w600,
-        height: 1.35,
-        fontSize: 13.5,
-        fontFamilyFallback: uiFontFallback,
-      );
+  TextStyle cardTitleStyle(TextTheme textTheme) {
+    final base = (textTheme.bodyMedium ?? const TextStyle(fontSize: 14))
+        .copyWith(
+          color: ink,
+          fontWeight: FontWeight.w600,
+          height: 1.35,
+          fontSize: 13.5,
+          fontFamilyFallback: uiFontFallback,
+        );
+    return switch (family) {
+      WindowsNeoThemeFamily.endfield => base.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: .12,
+      ),
+      WindowsNeoThemeFamily.ark => base.copyWith(fontWeight: FontWeight.w700),
+      WindowsNeoThemeFamily.exAstris => base.copyWith(
+        fontWeight: FontWeight.w500,
+        fontFamilyFallback: displayFontFallback,
+      ),
+      WindowsNeoThemeFamily.popucom => base.copyWith(
+        fontWeight: FontWeight.w800,
+      ),
+      WindowsNeoThemeFamily.corporate => base.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: .18,
+      ),
+      WindowsNeoThemeFamily.miku => base,
+    };
+  }
 
   TextStyle cardMetaStyle(TextTheme textTheme) =>
       (textTheme.labelMedium ?? const TextStyle(fontSize: 12)).copyWith(

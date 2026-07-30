@@ -28,10 +28,72 @@ class _WindowsNeoHoverHaloState extends State<WindowsNeoHoverHalo> {
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final haloAlpha = isDark ? 0.17 : 0.11;
     final visible = _hovered || widget.active;
 
     if (!widget.enabled) return widget.child;
+
+    final haloAlpha = isDark ? 0.17 : 0.11;
+    final decoration = switch (tokens.family) {
+      WindowsNeoThemeFamily.miku ||
+      WindowsNeoThemeFamily.popucom => BoxDecoration(
+        borderRadius: widget.borderRadius,
+        gradient: RadialGradient(
+          center: const Alignment(-0.45, -0.55),
+          radius: 1.25,
+          colors: [
+            tokens.accent.withValues(alpha: haloAlpha),
+            tokens.structuralSecondaryAccent.withValues(
+              alpha: haloAlpha * 0.62,
+            ),
+            tokens.tertiaryAccent.withValues(alpha: haloAlpha * 0.20),
+            Colors.transparent,
+          ],
+          stops: const [0, 0.42, 0.70, 1],
+        ),
+      ),
+      WindowsNeoThemeFamily.exAstris => BoxDecoration(
+        borderRadius: widget.borderRadius,
+        border: Border.all(color: tokens.accent.withValues(alpha: 0.42)),
+        gradient: RadialGradient(
+          center: Alignment.centerRight,
+          radius: 1.12,
+          colors: [
+            tokens.accent.withValues(alpha: haloAlpha * 0.54),
+            Colors.transparent,
+          ],
+        ),
+      ),
+      _ => BoxDecoration(
+        borderRadius: widget.borderRadius,
+        border: Border(
+          left: BorderSide(color: tokens.accent, width: visible ? 2 : 1),
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            tokens.accent.withValues(alpha: haloAlpha * 0.54),
+            Colors.transparent,
+          ],
+        ),
+      ),
+    };
+    final boxShadow = switch (tokens.family) {
+      WindowsNeoThemeFamily.miku || WindowsNeoThemeFamily.popucom => [
+        BoxShadow(
+          color: tokens.accent.withValues(alpha: haloAlpha),
+          blurRadius: 16,
+          spreadRadius: 1,
+        ),
+      ],
+      WindowsNeoThemeFamily.exAstris => [
+        BoxShadow(
+          color: tokens.accent.withValues(alpha: haloAlpha * 0.42),
+          blurRadius: 12,
+        ),
+      ],
+      _ => const <BoxShadow>[],
+    };
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -41,15 +103,7 @@ class _WindowsNeoHoverHaloState extends State<WindowsNeoHoverHalo> {
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           borderRadius: widget.borderRadius,
-          boxShadow: visible
-              ? [
-                  BoxShadow(
-                    color: tokens.accent.withValues(alpha: haloAlpha),
-                    blurRadius: 16,
-                    spreadRadius: 1,
-                  ),
-                ]
-              : const [],
+          boxShadow: visible ? boxShadow : const [],
         ),
         child: Stack(
           fit: StackFit.passthrough,
@@ -61,26 +115,7 @@ class _WindowsNeoHoverHaloState extends State<WindowsNeoHoverHalo> {
                   duration: context.windowsNeoDuration(tokens.motionFast),
                   curve: Curves.easeOutCubic,
                   opacity: visible ? 1 : 0,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: widget.borderRadius,
-                      gradient: RadialGradient(
-                        center: const Alignment(-0.45, -0.55),
-                        radius: 1.25,
-                        colors: [
-                          tokens.accent.withValues(alpha: haloAlpha),
-                          tokens.structuralSecondaryAccent.withValues(
-                            alpha: haloAlpha * 0.62,
-                          ),
-                          tokens.tertiaryAccent.withValues(
-                            alpha: haloAlpha * 0.20,
-                          ),
-                          Colors.transparent,
-                        ],
-                        stops: const [0, 0.42, 0.70, 1],
-                      ),
-                    ),
-                  ),
+                  child: DecoratedBox(decoration: decoration),
                 ),
               ),
             ),

@@ -91,7 +91,7 @@ class WindowsNeoPage extends StatelessWidget {
                           children: [
                             const Positioned(
                               right: 14,
-                              top: 9,
+                              top: 4,
                               child: IgnorePointer(
                                 child: WindowsNeoHeaderWave(),
                               ),

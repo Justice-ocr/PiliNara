@@ -24,6 +24,7 @@ class WindowsNeoBackdrop extends StatelessWidget {
                   alpha: dark ? 0.065 : 0.045,
                 ),
                 backdropPattern: tokens.identity.backdropPattern,
+                family: tokens.family,
                 depth: tokens.depth,
                 shellMark: tokens.shellMark,
                 shellWordmark: tokens.shellWordmark,
@@ -43,6 +44,7 @@ class _WindowsNeoDotGrid extends CustomPainter {
     required this.watermarkColor,
     required this.motifColor,
     required this.backdropPattern,
+    required this.family,
     required this.depth,
     required this.shellMark,
     required this.shellWordmark,
@@ -52,35 +54,24 @@ class _WindowsNeoDotGrid extends CustomPainter {
   final Color watermarkColor;
   final Color motifColor;
   final WindowsNeoBackdropPattern backdropPattern;
+  final WindowsNeoThemeFamily family;
   final WindowsNeoThemeDepth depth;
   final String shellMark;
   final String shellWordmark;
 
   @override
   void paint(Canvas canvas, Size size) {
-    _paintDots(canvas, size);
+    if (family == WindowsNeoThemeFamily.miku ||
+        family == WindowsNeoThemeFamily.popucom) {
+      _paintDots(canvas, size);
+    }
     if (depth == WindowsNeoThemeDepth.minimal ||
         size.width < 560 ||
         size.height < 360) {
       return;
     }
 
-    _paintWordmark(
-      canvas,
-      text: shellMark,
-      offset: Offset(size.width - 210, size.height * 0.20),
-      fontSize: 94,
-      weight: FontWeight.w800,
-      letterSpacing: 1,
-    );
-    _paintWordmark(
-      canvas,
-      text: shellWordmark,
-      offset: Offset(28, size.height * 0.72),
-      fontSize: shellWordmark == 'MIKU' ? 22 : 20,
-      weight: FontWeight.w700,
-      letterSpacing: shellWordmark == 'MIKU' ? 7 : 4,
-    );
+    _paintFamilyWordmarks(canvas, size);
 
     if (depth == WindowsNeoThemeDepth.moderate) {
       _paintModerateRule(canvas, size);
@@ -105,26 +96,76 @@ class _WindowsNeoDotGrid extends CustomPainter {
     }
   }
 
+  void _paintFamilyWordmarks(Canvas canvas, Size size) {
+    final (offset, fontSize, rotation) = switch (family) {
+      WindowsNeoThemeFamily.endfield => (
+        Offset(size.width - 164, size.height * .16),
+        112.0,
+        0.0,
+      ),
+      WindowsNeoThemeFamily.ark => (
+        Offset(size.width - 254, size.height * .16),
+        86.0,
+        -.06,
+      ),
+      WindowsNeoThemeFamily.exAstris => (
+        Offset(size.width - 198, size.height * .16),
+        88.0,
+        0.0,
+      ),
+      WindowsNeoThemeFamily.popucom => (
+        Offset(size.width - 194, size.height * .16),
+        86.0,
+        -.08,
+      ),
+      WindowsNeoThemeFamily.corporate => (
+        Offset(size.width - 176, size.height * .16),
+        94.0,
+        0.0,
+      ),
+      WindowsNeoThemeFamily.miku => (
+        Offset(size.width - 210, size.height * .20),
+        94.0,
+        -.10,
+      ),
+    };
+    _paintWordmark(
+      canvas,
+      text: shellMark,
+      offset: offset,
+      fontSize: fontSize,
+      weight: FontWeight.w800,
+      letterSpacing: 1,
+      rotation: rotation,
+    );
+    _paintWordmark(
+      canvas,
+      text: shellWordmark,
+      offset: Offset(28, size.height * .72),
+      fontSize: family == WindowsNeoThemeFamily.exAstris ? 22 : 20,
+      weight: FontWeight.w700,
+      letterSpacing: family == WindowsNeoThemeFamily.miku ? 7 : 4,
+      rotation: 0,
+    );
+  }
+
   void _paintModerateRule(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = motifColor
       ..strokeWidth = 1;
     final y = size.height * .74;
-    canvas.drawLine(
-      Offset(size.width * .56, y),
-      Offset(size.width - 28, y),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(size.width * .62, y - 7),
-      Offset(size.width * .62, y + 7),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(size.width * .84, y - 7),
-      Offset(size.width * .84, y + 7),
-      paint,
-    );
+    canvas
+      ..drawLine(Offset(size.width * .56, y), Offset(size.width - 28, y), paint)
+      ..drawLine(
+        Offset(size.width * .62, y - 7),
+        Offset(size.width * .62, y + 7),
+        paint,
+      )
+      ..drawLine(
+        Offset(size.width * .84, y - 7),
+        Offset(size.width * .84, y + 7),
+        paint,
+      );
   }
 
   void _paintMaximalFrame(Canvas canvas, Size size) {
@@ -133,24 +174,29 @@ class _WindowsNeoDotGrid extends CustomPainter {
       ..strokeWidth = 1;
     const tick = 7.0;
     for (final x in [size.width * .48, size.width * .72, size.width * .94]) {
-      canvas.drawLine(Offset(x, 14), Offset(x, 14 + tick), paint);
-      canvas.drawLine(
-        Offset(x, size.height - 14),
-        Offset(x, size.height - 14 - tick),
+      canvas
+        ..drawLine(Offset(x, 14), Offset(x, 14 + tick), paint)
+        ..drawLine(
+          Offset(x, size.height - 14),
+          Offset(x, size.height - 14 - tick),
+          paint,
+        );
+    }
+    canvas
+      ..drawLine(const Offset(14, 14), const Offset(14 + tick, 14), paint)
+      ..drawLine(
+        Offset(size.width - 14, size.height - 14),
+        Offset(size.width - 14 - tick, size.height - 14),
         paint,
       );
-    }
-    canvas.drawLine(const Offset(14, 14), Offset(14 + tick, 14), paint);
-    canvas.drawLine(
-      Offset(size.width - 14, size.height - 14),
-      Offset(size.width - 14 - tick, size.height - 14),
-      paint,
-    );
   }
 
   void _paintDots(Canvas canvas, Size size) {
     const spacing = 20.0;
-    final paint = Paint()..color = dotColor;
+    final paint = Paint()
+      ..color = dotColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = .7;
     for (var x = spacing; x < size.width; x += spacing) {
       for (var y = spacing; y < size.height; y += spacing) {
         canvas.drawCircle(Offset(x, y), 0.75, paint);
@@ -196,10 +242,11 @@ class _WindowsNeoDotGrid extends CustomPainter {
       size.width * .35,
       size.height * .44,
     );
-    canvas.drawRect(rect, paint);
-    canvas.drawLine(rect.topLeft, rect.bottomRight, paint);
-    canvas.drawLine(rect.topRight, rect.bottomLeft, paint);
-    canvas.drawCircle(rect.center, rect.shortestSide * .20, paint);
+    canvas
+      ..drawRect(rect, paint)
+      ..drawLine(rect.topLeft, rect.bottomRight, paint)
+      ..drawLine(rect.topRight, rect.bottomLeft, paint)
+      ..drawCircle(rect.center, rect.shortestSide * .20, paint);
     _paintCornerTicks(
       canvas,
       size,
@@ -265,7 +312,14 @@ class _WindowsNeoDotGrid extends CustomPainter {
         paint,
       )
       ..drawOval(Rect.fromCenter(center: center, width: 190, height: 82), paint)
-      ..drawCircle(center, 4, Paint()..color = motifColor);
+      ..drawCircle(
+        center,
+        4,
+        Paint()
+          ..color = motifColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1,
+      );
     final archiveLine = Paint()
       ..color = motifColor
       ..strokeWidth = 1;
@@ -277,7 +331,10 @@ class _WindowsNeoDotGrid extends CustomPainter {
   }
 
   void _paintPlayfulBlocks(Canvas canvas, Size size) {
-    final paint = Paint()..color = motifColor;
+    final paint = Paint()
+      ..color = motifColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
     for (var i = 0; i < 6; i++) {
       canvas.drawRRect(
         RRect.fromRectAndRadius(
@@ -296,12 +353,13 @@ class _WindowsNeoDotGrid extends CustomPainter {
       ..color = motifColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
-    canvas.drawCircle(Offset(size.width * .72, size.height * .29), 34, outline);
-    canvas.drawLine(
-      Offset(size.width * .72 - 48, size.height * .29),
-      Offset(size.width * .72 + 48, size.height * .29),
-      outline,
-    );
+    canvas
+      ..drawCircle(Offset(size.width * .72, size.height * .29), 34, outline)
+      ..drawLine(
+        Offset(size.width * .72 - 48, size.height * .29),
+        Offset(size.width * .72 + 48, size.height * .29),
+        outline,
+      );
   }
 
   void _paintRhythmLines(Canvas canvas, Size size) {
@@ -336,12 +394,20 @@ class _WindowsNeoDotGrid extends CustomPainter {
     required double fontSize,
     required FontWeight weight,
     required double letterSpacing,
+    required double rotation,
   }) {
+    final outline = family != WindowsNeoThemeFamily.miku;
     final painter = TextPainter(
       text: TextSpan(
         text: text,
         style: TextStyle(
-          color: watermarkColor,
+          color: outline ? null : watermarkColor,
+          foreground: outline
+              ? (Paint()
+                  ..color = watermarkColor
+                  ..style = PaintingStyle.stroke
+                  ..strokeWidth = .85)
+              : null,
           fontSize: fontSize,
           fontWeight: weight,
           letterSpacing: letterSpacing,
@@ -353,7 +419,7 @@ class _WindowsNeoDotGrid extends CustomPainter {
     canvas
       ..save()
       ..translate(offset.dx, offset.dy)
-      ..rotate(-0.10);
+      ..rotate(rotation);
     painter.paint(canvas, Offset.zero);
     canvas.restore();
   }
@@ -364,6 +430,7 @@ class _WindowsNeoDotGrid extends CustomPainter {
       oldDelegate.watermarkColor != watermarkColor ||
       oldDelegate.motifColor != motifColor ||
       oldDelegate.backdropPattern != backdropPattern ||
+      oldDelegate.family != family ||
       oldDelegate.depth != depth ||
       oldDelegate.shellMark != shellMark ||
       oldDelegate.shellWordmark != shellWordmark;
