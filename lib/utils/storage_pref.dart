@@ -1294,6 +1294,11 @@ abstract final class Pref {
   static int get windowsNeoThemeFamily =>
       _setting.get(SettingBoxKey.windowsNeoThemeFamily, defaultValue: 0);
 
+  static int get windowsNeoThemeDepth => _setting.get(
+    SettingBoxKey.windowsNeoThemeDepth,
+    defaultValue: 3,
+  );
+
   static bool get enableSponsorBlock =>
       _setting.get(SettingBoxKey.enableSponsorBlock, defaultValue: false);
 

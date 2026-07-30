@@ -325,9 +325,20 @@ List<SettingsModel> get styleSettings => [
       onTap: _showWindowsNeoThemeDialog,
       leading: const Icon(Icons.architecture_outlined),
       title: 'Windows Neo 主题',
+      getSubtitle: () {
+        final definition = WindowsNeoThemeRegistry.resolve(
+          WindowsNeoThemeController.family.value,
+        );
+        return '当前：${definition.label} · ${definition.description}';
+      },
+    ),
+  if (Platform.isWindows)
+    NormalModel(
+      onTap: _showWindowsNeoDepthDialog,
+      leading: const Icon(Icons.layers_outlined),
+      title: 'Windows Neo 设计深度',
       getSubtitle: () =>
-          '当前：${WindowsNeoThemeController.family.value.label} · '
-          '${WindowsNeoThemeController.family.value.description}',
+          '当前：${WindowsNeoThemeController.depth.value.label} · 五个风格族默认使用 Maximal',
     ),
   SwitchModel(
     leading: const Icon(Icons.invert_colors),

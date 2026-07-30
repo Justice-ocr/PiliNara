@@ -6,6 +6,7 @@ import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_account_actions.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_section_tabs.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -20,38 +21,45 @@ class WindowsNeoHome extends StatelessWidget {
   final MainController mainController;
 
   @override
-  Widget build(BuildContext context) {
-    return WindowsNeoPage(
-      title: '\u9996\u9875',
-      compactHeader: true,
-      leading: Icon(Icons.home_outlined, color: context.windowsNeo.accent),
-      actions: [
-        IconButton(
-          tooltip: '\u641c\u7d22',
-          onPressed: () => PageUtils.toSearch(
-            parameters: homeController.enableSearchWord
-                ? {'hintText': homeController.defaultSearch.value}
-                : null,
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: homeController.tabController,
+    builder: (context, _) {
+      final index = homeController.tabController.index;
+      return WindowsNeoPage(
+        title: '\u9996\u9875',
+        compactHeader: true,
+        stageMode: WindowsNeoStageMode.browse,
+        stageIndex: index,
+        stageState: homeController.tabs[index].label,
+        leading: Icon(Icons.home_outlined, color: context.windowsNeo.accent),
+        actions: [
+          IconButton(
+            tooltip: '\u641c\u7d22',
+            onPressed: () => PageUtils.toSearch(
+              parameters: homeController.enableSearchWord
+                  ? {'hintText': homeController.defaultSearch.value}
+                  : null,
+            ),
+            icon: const Icon(Icons.search_outlined),
           ),
-          icon: const Icon(Icons.search_outlined),
+          IconButton(
+            tooltip: '\u5237\u65b0\u5f53\u524d\u5206\u533a',
+            onPressed: homeController.onRefresh,
+            icon: const Icon(Icons.refresh_outlined),
+          ),
+          WindowsNeoMessageButton(mainController: mainController),
+          const SizedBox(width: 4),
+          WindowsNeoAccountAvatar(mainController: mainController),
+          const SizedBox(width: 4),
+        ],
+        commandBar: _HomeSectionTabs(homeController: homeController),
+        child: TabBarView(
+          controller: homeController.tabController,
+          children: homeController.tabs.map((item) => item.page).toList(),
         ),
-        IconButton(
-          tooltip: '\u5237\u65b0\u5f53\u524d\u5206\u533a',
-          onPressed: homeController.onRefresh,
-          icon: const Icon(Icons.refresh_outlined),
-        ),
-        WindowsNeoMessageButton(mainController: mainController),
-        const SizedBox(width: 4),
-        WindowsNeoAccountAvatar(mainController: mainController),
-        const SizedBox(width: 4),
-      ],
-      commandBar: _HomeSectionTabs(homeController: homeController),
-      child: TabBarView(
-        controller: homeController.tabController,
-        children: homeController.tabs.map((item) => item.page).toList(),
-      ),
-    );
-  }
+      );
+    },
+  );
 }
 
 class _HomeSectionTabs extends StatelessWidget {

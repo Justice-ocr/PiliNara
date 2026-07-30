@@ -87,14 +87,24 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> with WindowListener {
   Widget build(BuildContext context) =>
       ValueListenableBuilder<WindowsNeoThemeFamily>(
         valueListenable: WindowsNeoThemeController.family,
-        builder: (context, family, _) => _buildThemed(context, family),
+        builder: (context, family, _) =>
+            ValueListenableBuilder<WindowsNeoThemeDepth>(
+              valueListenable: WindowsNeoThemeController.depth,
+              builder: (context, depth, _) =>
+                  _buildThemed(context, family, depth),
+            ),
       );
 
   Widget _buildThemed(
     BuildContext context,
     WindowsNeoThemeFamily family,
+    WindowsNeoThemeDepth depth,
   ) {
-    final neoTheme = WindowsNeoTheme.apply(Theme.of(context), family: family);
+    final neoTheme = WindowsNeoTheme.apply(
+      Theme.of(context),
+      family: family,
+      depth: depth,
+    );
     return AnimatedTheme(
       data: neoTheme,
       duration: MediaQuery.maybeOf(context)?.disableAnimations == true
@@ -242,7 +252,7 @@ class _WindowsNeoTitleBar extends StatelessWidget {
     return SizedBox(
       height: 44,
       child: ColoredBox(
-        color: tokens.sidebar,
+        color: tokens.chromeSurface,
         child: Row(
           children: [
             SizedBox(
@@ -272,6 +282,7 @@ class _WindowsNeoTitleBar extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleSmall?.copyWith(
+                            color: tokens.chromeForeground,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -284,7 +295,7 @@ class _WindowsNeoTitleBar extends StatelessWidget {
             VerticalDivider(
               width: 2,
               thickness: 1,
-              color: tokens.border.withValues(alpha: 0.95),
+              color: tokens.chromeForeground.withValues(alpha: 0.24),
             ),
             const _TitleBarAction(
               tooltip: '后退',
@@ -310,7 +321,7 @@ class _WindowsNeoTitleBar extends StatelessWidget {
                               child: Text(
                                 'Windows 工作区',
                                 style: theme.textTheme.labelMedium?.copyWith(
-                                  color: tokens.muted,
+                                  color: tokens.chromeMuted,
                                 ),
                               ),
                             )
@@ -323,7 +334,7 @@ class _WindowsNeoTitleBar extends StatelessWidget {
                           padding: const EdgeInsets.only(right: 18),
                           child: IgnorePointer(
                             child: Text(
-                              '39',
+                              tokens.shellMark,
                               style: theme.textTheme.titleSmall?.copyWith(
                                 color: tokens.accent.withValues(alpha: 0.20),
                                 fontWeight: FontWeight.w800,
@@ -338,20 +349,28 @@ class _WindowsNeoTitleBar extends StatelessWidget {
               ),
             ),
             WindowCaptionButton.minimize(
-              brightness: theme.brightness,
+              brightness: tokens.usesDarkChrome
+                  ? Brightness.dark
+                  : theme.brightness,
               onPressed: windowManager.minimize,
             ),
             isMaximized
                 ? WindowCaptionButton.unmaximize(
-                    brightness: theme.brightness,
+                    brightness: tokens.usesDarkChrome
+                        ? Brightness.dark
+                        : theme.brightness,
                     onPressed: windowManager.unmaximize,
                   )
                 : WindowCaptionButton.maximize(
-                    brightness: theme.brightness,
+                    brightness: tokens.usesDarkChrome
+                        ? Brightness.dark
+                        : theme.brightness,
                     onPressed: windowManager.maximize,
                   ),
             WindowCaptionButton.close(
-              brightness: theme.brightness,
+              brightness: tokens.usesDarkChrome
+                  ? Brightness.dark
+                  : theme.brightness,
               onPressed: windowManager.close,
             ),
           ],
@@ -373,19 +392,22 @@ class _TitleBarAction extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) => WindowsNeoHoverHalo(
-    borderRadius: BorderRadius.circular(8),
-    child: SizedBox(
-      width: 42,
-      height: 42,
-      child: IconButton(
-        tooltip: tooltip,
-        iconSize: 18,
-        onPressed: onPressed,
-        icon: Icon(icon),
+  Widget build(BuildContext context) {
+    final tokens = context.windowsNeo;
+    return WindowsNeoHoverHalo(
+      borderRadius: tokens.actionRadius,
+      child: SizedBox(
+        width: 42,
+        height: 42,
+        child: IconButton(
+          tooltip: tooltip,
+          iconSize: 18,
+          onPressed: onPressed,
+          icon: Icon(icon, color: context.windowsNeo.chromeForeground),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _WindowsNeoSidebar extends StatelessWidget {
@@ -408,7 +430,7 @@ class _WindowsNeoSidebar extends StatelessWidget {
     final tokens = context.windowsNeo;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: tokens.sidebar,
+        color: tokens.navigationSurface,
         boxShadow: [
           BoxShadow(
             color: tokens.accent.withValues(alpha: 0.10),
@@ -552,8 +574,10 @@ class _WindowsNeoNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
-    final foreground = selected ? tokens.ink : tokens.muted;
-    final radius = BorderRadius.circular(tokens.radiusSm);
+    final foreground = selected
+        ? tokens.navigationForeground
+        : tokens.navigationMuted;
+    final radius = tokens.navigationItemRadius;
     final item = WindowsNeoHoverHalo(
       borderRadius: radius,
       enabled: !selected,
@@ -579,9 +603,11 @@ class _WindowsNeoNavItem extends StatelessWidget {
                       duration: context.windowsNeoDuration(tokens.motionFast),
                       curve: Curves.easeOutCubic,
                       child: Text(
-                        'MIKU',
+                        tokens.shellWordmark,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: tokens.ink.withValues(alpha: 0.13),
+                          color: tokens.navigationForeground.withValues(
+                            alpha: 0.13,
+                          ),
                           fontSize: 25,
                           fontStyle: FontStyle.italic,
                           fontWeight: FontWeight.w900,
@@ -661,7 +687,7 @@ class _WindowsNeoNavItem extends StatelessWidget {
                   width: selected ? 3 : 0,
                   decoration: BoxDecoration(
                     color: selected
-                        ? tokens.ink.withValues(alpha: 0.78)
+                        ? tokens.navigationForeground.withValues(alpha: 0.78)
                         : tokens.accent,
                     borderRadius: BorderRadius.circular(2),
                   ),
@@ -684,65 +710,480 @@ class _WindowsNeoSidebarArtwork extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
-    final radius = BorderRadius.circular(tokens.radiusSm);
+    final radius = tokens.sidebarArtworkRadius;
     return IgnorePointer(
       child: SizedBox(
-        height: 120,
+        height: 132,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            gradient: tokens.accentBannerGradient,
+            color: tokens.surface,
             borderRadius: radius,
             border: Border.all(
-              color: tokens.accent.withValues(alpha: 0.34),
+              color: tokens.border.withValues(alpha: 0.72),
             ),
           ),
           child: ClipRRect(
             borderRadius: radius,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Opacity(
-                  opacity: 0.90,
-                  child: Image.asset(
-                    'assets/images/windows_neo_miku_sidebar.png',
-                    fit: BoxFit.cover,
-                    alignment: Alignment.centerRight,
-                    filterQuality: FilterQuality.medium,
-                  ),
-                ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [
-                        tokens.accent.withValues(alpha: 0.46),
-                        tokens.accent.withValues(alpha: 0.08),
-                        Colors.transparent,
-                      ],
-                      stops: const [0, 0.42, 0.72],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 12,
-                  top: 11,
-                  child: Text(
-                    '39',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.78),
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                ),
-              ],
+            child: _WindowsNeoSidebarArtworkLayer(
+              artwork: tokens.identity.sidebarArtwork,
             ),
           ),
         ),
       ),
     );
   }
+}
+
+class _WindowsNeoSidebarArtworkLayer extends StatelessWidget {
+  const _WindowsNeoSidebarArtworkLayer({required this.artwork});
+
+  final WindowsNeoSidebarArtwork artwork;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.windowsNeo;
+    return switch (artwork) {
+      WindowsNeoSidebarArtwork.portrait => Stack(
+        fit: StackFit.expand,
+        children: [
+          Opacity(
+            opacity: 0.90,
+            child: Image.asset(
+              'assets/images/windows_neo_miku_sidebar.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.centerRight,
+              filterQuality: FilterQuality.medium,
+            ),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  tokens.accent.withValues(alpha: 0.46),
+                  tokens.accent.withValues(alpha: 0.08),
+                  Colors.transparent,
+                ],
+                stops: const [0, 0.42, 0.72],
+              ),
+            ),
+          ),
+          Positioned(
+            left: 12,
+            top: 11,
+            child: Text(
+              tokens.shellMark,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.78),
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+      WindowsNeoSidebarArtwork.suppliedStage => const _WindowsNeoArkStage(),
+      _ => _WindowsNeoSidebarPanel(artwork: artwork),
+    };
+  }
+}
+
+class _WindowsNeoArkStage extends StatelessWidget {
+  const _WindowsNeoArkStage();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.windowsNeo;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          'assets/images/windows_neo_sidebar_sunflower.jpg',
+          fit: BoxFit.cover,
+          alignment: const Alignment(0, -0.04),
+          filterQuality: FilterQuality.medium,
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                const Color(0xFF080A0B).withValues(alpha: 0.04),
+                const Color(0xFF080A0B).withValues(alpha: 0.02),
+                const Color(0xFF080A0B).withValues(alpha: 0.40),
+              ],
+              stops: const [0, 0.60, 1],
+            ),
+          ),
+        ),
+        Positioned(
+          left: 8,
+          top: 8,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: const Color(0xFF080A0B).withValues(alpha: 0.72),
+              border: Border(
+                left: BorderSide(color: tokens.accent, width: 2),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(7, 4, 8, 4),
+              child: Text(
+                'MEDIA / ${tokens.shellMark}',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.90),
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.4,
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 8,
+          bottom: 8,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: const Color(0xFF080A0B).withValues(alpha: 0.72),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(7, 4, 9, 4),
+              child: Text(
+                tokens.shellWordmark,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.94),
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.4,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WindowsNeoSidebarPanel extends StatelessWidget {
+  const _WindowsNeoSidebarPanel({required this.artwork});
+
+  final WindowsNeoSidebarArtwork artwork;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.windowsNeo;
+    return switch (artwork) {
+      WindowsNeoSidebarArtwork.instrumentPanel => _WindowsNeoEndfieldStage(
+        tokens: tokens,
+      ),
+      WindowsNeoSidebarArtwork.archivePanel => _WindowsNeoExAstrisStage(
+        tokens: tokens,
+      ),
+      WindowsNeoSidebarArtwork.playfulPanel => _WindowsNeoPopucomStage(
+        tokens: tokens,
+      ),
+      WindowsNeoSidebarArtwork.studioPanel => _WindowsNeoCorporateStage(
+        tokens: tokens,
+      ),
+      _ => const SizedBox.shrink(),
+    };
+  }
+}
+
+class _WindowsNeoEndfieldStage extends StatelessWidget {
+  const _WindowsNeoEndfieldStage({required this.tokens});
+
+  final WindowsNeoTokens tokens;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    fit: StackFit.expand,
+    children: [
+      ColoredBox(color: tokens.surfaceRaised),
+      Positioned(
+        left: 0,
+        top: 0,
+        bottom: 0,
+        child: Container(width: 38, color: tokens.ink),
+      ),
+      Positioned(
+        left: 12,
+        top: 12,
+        child: Text(
+          '01',
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+            color: tokens.accent,
+            fontWeight: FontWeight.w900,
+            height: .8,
+          ),
+        ),
+      ),
+      Positioned(
+        left: 50,
+        top: 16,
+        child: Text(
+          'FIELD / WORKSPACE',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: tokens.ink,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.8,
+          ),
+        ),
+      ),
+      Positioned.fill(
+        child: CustomPaint(
+          painter: _WindowsNeoEndfieldStagePainter(
+            ruleColor: tokens.ink.withValues(alpha: 0.18),
+            signalColor: tokens.accent,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+class _WindowsNeoExAstrisStage extends StatelessWidget {
+  const _WindowsNeoExAstrisStage({required this.tokens});
+
+  final WindowsNeoTokens tokens;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    fit: StackFit.expand,
+    children: [
+      ColoredBox(color: tokens.background),
+      Positioned.fill(
+        child: CustomPaint(
+          painter: _WindowsNeoOrbitStagePainter(
+            lineColor: tokens.accent.withValues(alpha: 0.44),
+            pointColor: tokens.secondaryAccent.withValues(alpha: 0.54),
+          ),
+        ),
+      ),
+      Positioned(
+        left: 12,
+        top: 12,
+        child: Text(
+          'ARCHIVE',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: Colors.white.withValues(alpha: 0.88),
+            fontWeight: FontWeight.w700,
+            letterSpacing: 2.2,
+          ),
+        ),
+      ),
+      Positioned(
+        left: 12,
+        bottom: 12,
+        child: Text(
+          'ORBIT / 03',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: tokens.accent,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.5,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+class _WindowsNeoPopucomStage extends StatelessWidget {
+  const _WindowsNeoPopucomStage({required this.tokens});
+
+  final WindowsNeoTokens tokens;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    fit: StackFit.expand,
+    children: [
+      const ColoredBox(color: Color(0xFF3994FF)),
+      Positioned(
+        right: 12,
+        top: 12,
+        child: Container(
+          width: 54,
+          height: 54,
+          decoration: BoxDecoration(
+            color: tokens.accent,
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0xFF141414), width: 2),
+          ),
+        ),
+      ),
+      Positioned(
+        right: 35,
+        bottom: 14,
+        child: Transform.rotate(
+          angle: .18,
+          child: Container(
+            width: 74,
+            height: 30,
+            decoration: BoxDecoration(
+              color: tokens.tertiaryAccent,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF141414), width: 2),
+              boxShadow: const [
+                BoxShadow(color: Color(0xFF141414), offset: Offset(4, 4)),
+              ],
+            ),
+          ),
+        ),
+      ),
+      Positioned(
+        left: 14,
+        top: 16,
+        child: Text(
+          'PLAY',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.5,
+          ),
+        ),
+      ),
+      Positioned(
+        left: 14,
+        bottom: 15,
+        child: Text(
+          'CO-OP / 04',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.4,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+class _WindowsNeoCorporateStage extends StatelessWidget {
+  const _WindowsNeoCorporateStage({required this.tokens});
+
+  final WindowsNeoTokens tokens;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    fit: StackFit.expand,
+    children: [
+      ColoredBox(color: tokens.ink),
+      Positioned(
+        left: 14,
+        top: 16,
+        child: Text(
+          'STUDIO',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 2.4,
+          ),
+        ),
+      ),
+      Positioned(
+        left: 14,
+        right: 14,
+        bottom: 24,
+        child: Container(
+          height: 1,
+          color: Colors.white.withValues(alpha: 0.78),
+        ),
+      ),
+      Positioned(
+        right: 14,
+        top: 14,
+        bottom: 14,
+        child: Container(width: 3, color: tokens.accent),
+      ),
+      Positioned(
+        left: 14,
+        bottom: 10,
+        child: Text(
+          'WORK / 05',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: tokens.accent,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+class _WindowsNeoEndfieldStagePainter extends CustomPainter {
+  const _WindowsNeoEndfieldStagePainter({
+    required this.ruleColor,
+    required this.signalColor,
+  });
+
+  final Color ruleColor;
+  final Color signalColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rule = Paint()
+      ..color = ruleColor
+      ..strokeWidth = 1;
+    for (var index = 0; index < 4; index++) {
+      final y = 50.0 + index * 18;
+      canvas.drawLine(Offset(50, y), Offset(size.width - 12, y), rule);
+    }
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width - 42, 0)
+        ..lineTo(size.width, 0)
+        ..lineTo(size.width, 36)
+        ..close(),
+      Paint()..color = signalColor,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _WindowsNeoEndfieldStagePainter oldDelegate) =>
+      oldDelegate.ruleColor != ruleColor ||
+      oldDelegate.signalColor != signalColor;
+}
+
+class _WindowsNeoOrbitStagePainter extends CustomPainter {
+  const _WindowsNeoOrbitStagePainter({
+    required this.lineColor,
+    required this.pointColor,
+  });
+
+  final Color lineColor;
+  final Color pointColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final orbit = Paint()
+      ..color = lineColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    final center = Offset(size.width * .68, size.height * .52);
+    canvas
+      ..drawOval(Rect.fromCenter(center: center, width: 152, height: 60), orbit)
+      ..drawOval(Rect.fromCenter(center: center, width: 96, height: 128), orbit)
+      ..drawCircle(center, 3, Paint()..color = pointColor);
+    for (final point in const [
+      Offset(.22, .68),
+      Offset(.84, .26),
+      Offset(.86, .74),
+    ]) {
+      canvas.drawCircle(
+        Offset(size.width * point.dx, size.height * point.dy),
+        1.8,
+        Paint()..color = pointColor,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WindowsNeoOrbitStagePainter oldDelegate) =>
+      oldDelegate.lineColor != lineColor ||
+      oldDelegate.pointColor != pointColor;
 }
 
 class _WindowsNeoSidebarSignature extends StatelessWidget {
@@ -797,20 +1238,22 @@ class _WindowsNeoSidebarSignature extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'MIKU',
+                            tokens.shellWordmark,
                             style: Theme.of(context).textTheme.labelLarge
                                 ?.copyWith(
-                                  color: tokens.ink.withValues(alpha: 0.64),
+                                  color: tokens.navigationForeground.withValues(
+                                    alpha: 0.70,
+                                  ),
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 2.5,
                                 ),
                           ),
                           const SizedBox(height: 1),
                           Text(
-                            '39',
+                            tokens.shellSubmark,
                             style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
-                                  color: tokens.muted,
+                                  color: tokens.navigationMuted,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 1.5,
                                 ),
@@ -884,7 +1327,7 @@ class _WindowsNeoTabStrip extends StatelessWidget {
                 ),
                 const _WindowsNeoRecentTabsMenu(),
                 WindowsNeoHoverHalo(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: tokens.actionRadius,
                   child: SizedBox(
                     width: 40,
                     height: 40,
@@ -1063,7 +1506,7 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
               maxHeight: height,
             ),
             child: WindowsNeoHoverHalo(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: tokens.workspaceTabRadius,
               enabled: !active,
               child: Stack(
                 fit: StackFit.passthrough,
@@ -1076,7 +1519,7 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                           ? null
                           : tokens.surface.withValues(alpha: 0.34),
                       gradient: active ? tokens.workspaceTabGradient : null,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: tokens.workspaceTabRadius,
                       border: Border.all(
                         color: active
                             ? tokens.accent.withValues(alpha: 0.58)
@@ -1085,9 +1528,9 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                     ),
                     child: Material(
                       color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: tokens.workspaceTabRadius,
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: tokens.workspaceTabRadius,
                         hoverColor: tokens.hover,
                         onTap: active
                             ? null

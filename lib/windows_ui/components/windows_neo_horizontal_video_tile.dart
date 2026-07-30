@@ -61,74 +61,76 @@ class _WindowsNeoHorizontalVideoTileState
         onSecondaryTap: saveCover,
         child: Row(
           children: [
-            LayoutBuilder(
-              builder: (context, outer) {
-                final height = outer.maxHeight.isFinite && outer.maxHeight > 0
-                    ? outer.maxHeight
-                    : tokens.horizontalCardHeight;
-                final idealW = height * 16 / 9;
-                final maxW = outer.maxWidth.isFinite
-                    ? outer.maxWidth * 0.52
-                    : idealW;
-                final width = idealW.clamp(0.0, maxW).toDouble();
-                return SizedBox(
-                  width: width,
-                  height: height,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      AnimatedScale(
-                        scale: _hovered ? 1.02 : 1,
-                        duration: context.windowsNeoDuration(
-                          tokens.motionFast,
-                        ),
-                        curve: Curves.easeOut,
-                        child: NetworkImgLayer(
-                          src: item.cover,
-                          width: width,
-                          height: height,
-                          borderRadius: BorderRadius.zero,
-                        ),
-                      ),
-                      if (item.badge case final badge?)
-                        PBadge(text: badge, top: 8, left: 8),
-                      if (item.progress case final progress?
-                          when progress != 0) ...[
-                        Positioned(
-                          right: 8,
-                          bottom: 8,
-                          child: WindowsNeoMediaBadge(
-                            text: progress == -1
-                                ? '\u5df2\u770b\u5b8c'
-                                : '${DurationUtils.formatDuration(progress)}/${DurationUtils.formatDuration(item.duration)}',
+            Flexible(
+              child: LayoutBuilder(
+                builder: (context, outer) {
+                  final height = outer.maxHeight.isFinite && outer.maxHeight > 0
+                      ? outer.maxHeight
+                      : tokens.horizontalCardHeight;
+                  final idealW = height * 16 / 9;
+                  final maxW = outer.maxWidth.isFinite
+                      ? outer.maxWidth * 0.52
+                      : idealW;
+                  final width = idealW.clamp(0.0, maxW).toDouble();
+                  return SizedBox(
+                    width: width,
+                    height: height,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        AnimatedScale(
+                          scale: _hovered ? 1.02 : 1,
+                          duration: context.windowsNeoDuration(
+                            tokens.motionFast,
+                          ),
+                          curve: Curves.easeOut,
+                          child: NetworkImgLayer(
+                            src: item.cover,
+                            width: width,
+                            height: height,
+                            borderRadius: BorderRadius.zero,
                           ),
                         ),
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: VideoProgressIndicator(
-                            color: tokens.accent,
-                            backgroundColor: tokens.border,
-                            progress: progress == -1
-                                ? 1
-                                : item.duration > 0
-                                ? progress / item.duration
-                                : 0,
+                        if (item.badge case final badge?)
+                          PBadge(text: badge, top: 8, left: 8),
+                        if (item.progress case final progress?
+                            when progress != 0) ...[
+                          Positioned(
+                            right: 8,
+                            bottom: 8,
+                            child: WindowsNeoMediaBadge(
+                              text: progress == -1
+                                  ? '\u5df2\u770b\u5b8c'
+                                  : '${DurationUtils.formatDuration(progress)}/${DurationUtils.formatDuration(item.duration)}',
+                            ),
                           ),
-                        ),
-                      ] else if (item.duration > 0)
-                        Positioned(
-                          right: 8,
-                          bottom: 8,
-                          child: WindowsNeoMediaBadge(
-                            text: DurationUtils.formatDuration(item.duration),
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: VideoProgressIndicator(
+                              color: tokens.accent,
+                              backgroundColor: tokens.border,
+                              progress: progress == -1
+                                  ? 1
+                                  : item.duration > 0
+                                  ? progress / item.duration
+                                  : 0,
+                            ),
                           ),
-                        ),
-                    ],
-                  ),
-                );
-              },
+                        ] else if (item.duration > 0)
+                          Positioned(
+                            right: 8,
+                            bottom: 8,
+                            child: WindowsNeoMediaBadge(
+                              text: DurationUtils.formatDuration(item.duration),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
             const WindowsNeoMediaDivider(axis: Axis.vertical),
             Expanded(
@@ -189,24 +191,31 @@ class _WindowsNeoHorizontalVideoTileState
                       ],
                     ),
                     SizedBox(height: tokens.spaceXs),
-                    Row(
-                      children: [
-                        WindowsNeoStat(
-                          type: StatType.play,
-                          value: item.stat.view,
-                        ),
-                        SizedBox(width: tokens.spaceSm),
-                        WindowsNeoStat(
-                          type: StatType.danmaku,
-                          value: item.stat.danmu,
-                        ),
-                        const Spacer(),
-                        if (item.pubdate != null)
-                          Text(
-                            DateFormatUtils.dateFormat(item.pubdate),
-                            style: tokens.cardCaptionStyle(theme.textTheme),
-                          ),
-                      ],
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final compact = constraints.maxWidth < 210;
+                        return Row(
+                          children: [
+                            WindowsNeoStat(
+                              type: StatType.play,
+                              value: item.stat.view,
+                            ),
+                            if (!compact) ...[
+                              SizedBox(width: tokens.spaceSm),
+                              WindowsNeoStat(
+                                type: StatType.danmaku,
+                                value: item.stat.danmu,
+                              ),
+                            ],
+                            const Spacer(),
+                            if (!compact && item.pubdate != null)
+                              Text(
+                                DateFormatUtils.dateFormat(item.pubdate),
+                                style: tokens.cardCaptionStyle(theme.textTheme),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),

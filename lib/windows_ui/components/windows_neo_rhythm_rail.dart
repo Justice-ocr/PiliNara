@@ -14,17 +14,20 @@ class WindowsNeoRhythmRail extends StatelessWidget {
   final bool showBeats;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: height,
-    width: double.infinity,
-    child: CustomPaint(
-      painter: _WindowsNeoRhythmRailPainter(
-        trackColor: context.windowsNeo.rhythmTrackColor,
-        beatColor: context.windowsNeo.accent.withValues(alpha: 0.28),
-        showBeats: showBeats,
+  Widget build(BuildContext context) {
+    final tokens = context.windowsNeo;
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: CustomPaint(
+        painter: _WindowsNeoRhythmRailPainter(
+          trackColor: tokens.rhythmTrackColor,
+          beatColor: tokens.accent.withValues(alpha: 0.28),
+          showBeats: showBeats && tokens.identity.showRhythmTicks,
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// Animated active segment placed over a [WindowsNeoRhythmRail].
@@ -50,7 +53,9 @@ class WindowsNeoActiveBeat extends StatelessWidget {
       height: height,
       decoration: BoxDecoration(
         gradient: tokens.rhythmGradient,
-        borderRadius: BorderRadius.circular(height),
+        borderRadius: BorderRadius.circular(
+          tokens.identity.usesSquaredGeometry ? 0 : height,
+        ),
         boxShadow: active
             ? [
                 BoxShadow(
@@ -113,7 +118,10 @@ class WindowsNeoHeaderWave extends StatelessWidget {
     child: CustomPaint(
       painter: _WindowsNeoHeaderWavePainter(
         primary: context.windowsNeo.accent.withValues(alpha: 0.11),
-        secondary: WindowsNeoTokens.iceCyan.withValues(alpha: 0.075),
+        secondary: context.windowsNeo.structuralSecondaryAccent.withValues(
+          alpha: 0.075,
+        ),
+        flatLine: context.windowsNeo.identity.usesSquaredGeometry,
       ),
     ),
   );
@@ -147,21 +155,33 @@ class WindowsNeoSectionHeader extends StatelessWidget {
           ],
         ),
         SizedBox(height: tokens.spaceXs + 1),
-        const WindowsNeoRhythmRail(height: 3),
+        WindowsNeoRhythmRail(
+          height: 3,
+          showBeats: tokens.identity.showRhythmTicks,
+        ),
       ],
     );
   }
 }
 
 class WindowsNeoTabIndicator extends Decoration {
-  const WindowsNeoTabIndicator({this.width = 38, this.height = 2.5});
+  const WindowsNeoTabIndicator({
+    required this.tokens,
+    this.width = 38,
+    this.height = 2.5,
+  });
 
+  final WindowsNeoTokens tokens;
   final double width;
   final double height;
 
   @override
   BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
-      _WindowsNeoTabIndicatorPainter(width: width, height: height);
+      _WindowsNeoTabIndicatorPainter(
+        tokens: tokens,
+        width: width,
+        height: height,
+      );
 }
 
 class _WindowsNeoRhythmRailPainter extends CustomPainter {
@@ -231,10 +251,12 @@ class _WindowsNeoHeaderWavePainter extends CustomPainter {
   const _WindowsNeoHeaderWavePainter({
     required this.primary,
     required this.secondary,
+    required this.flatLine,
   });
 
   final Color primary;
   final Color secondary;
+  final bool flatLine;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -247,7 +269,9 @@ class _WindowsNeoHeaderWavePainter extends CustomPainter {
       ..color = secondary
       ..strokeWidth = 1;
     final path = Path()..moveTo(0, center);
-    const levels = [0.0, -4.0, 7.0, -10.0, 5.0, -2.0, 8.0, -5.0, 0.0];
+    final levels = flatLine
+        ? const [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        : const [0.0, -4.0, 7.0, -10.0, 5.0, -2.0, 8.0, -5.0, 0.0];
     final step = size.width / (levels.length - 1);
     for (var index = 1; index < levels.length; index++) {
       path.lineTo(step * index, center + levels[index]);
@@ -265,12 +289,19 @@ class _WindowsNeoHeaderWavePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _WindowsNeoHeaderWavePainter oldDelegate) =>
-      oldDelegate.primary != primary || oldDelegate.secondary != secondary;
+      oldDelegate.primary != primary ||
+      oldDelegate.secondary != secondary ||
+      oldDelegate.flatLine != flatLine;
 }
 
 class _WindowsNeoTabIndicatorPainter extends BoxPainter {
-  _WindowsNeoTabIndicatorPainter({required this.width, required this.height});
+  _WindowsNeoTabIndicatorPainter({
+    required this.tokens,
+    required this.width,
+    required this.height,
+  });
 
+  final WindowsNeoTokens tokens;
   final double width;
   final double height;
 
@@ -289,21 +320,27 @@ class _WindowsNeoTabIndicatorPainter extends BoxPainter {
       begin: Alignment.centerLeft,
       end: Alignment.centerRight,
       colors: [
-        WindowsNeoTokens.mikuCyan.withValues(alpha: 0.14),
+        tokens.accent.withValues(alpha: 0.14),
         Colors.white.withValues(alpha: 0.26),
-        WindowsNeoTokens.iceCyan.withValues(alpha: 0.08),
+        tokens.structuralSecondaryAccent.withValues(alpha: 0.08),
       ],
       stops: const [0, 0.68, 1],
     );
+    final selectionRadius = Radius.circular(
+      tokens.workspaceTabRadius.topLeft.x,
+    );
     canvas
       ..drawRRect(
-        RRect.fromRectAndRadius(selectionRect, const Radius.circular(5)),
+        RRect.fromRectAndRadius(selectionRect, selectionRadius),
         Paint()..shader = selectionGradient.createShader(selectionRect),
       )
       ..drawRRect(
-        RRect.fromRectAndRadius(selectionRect, const Radius.circular(5)),
+        RRect.fromRectAndRadius(
+          selectionRect,
+          selectionRadius,
+        ),
         Paint()
-          ..color = WindowsNeoTokens.mikuCyan.withValues(alpha: 0.16)
+          ..color = tokens.accent.withValues(alpha: 0.16)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 0.8,
       );
@@ -314,11 +351,14 @@ class _WindowsNeoTabIndicatorPainter extends BoxPainter {
       width,
       height,
     );
-    const gradient = LinearGradient(
-      colors: [WindowsNeoTokens.mikuCyan, WindowsNeoTokens.iceCyan],
+    final gradient = LinearGradient(
+      colors: [tokens.accent, tokens.structuralSecondaryAccent],
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(rect, Radius.circular(height)),
+      RRect.fromRectAndRadius(
+        rect,
+        Radius.circular(tokens.identity.usesSquaredGeometry ? 0 : height),
+      ),
       Paint()..shader = gradient.createShader(rect),
     );
     if (context == null) return;
@@ -326,7 +366,7 @@ class _WindowsNeoTabIndicatorPainter extends BoxPainter {
     canvas.drawCircle(
       Offset(dotX, rect.center.dy),
       height,
-      Paint()..color = WindowsNeoTokens.iceCyan.withValues(alpha: 0.58),
+      Paint()..color = tokens.structuralSecondaryAccent.withValues(alpha: 0.58),
     );
   }
 }

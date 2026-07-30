@@ -19,7 +19,7 @@ abstract final class WindowsNeoVideoLayout {
       visible ? clampSidePanelWidth(preferredWidth ?? width * 0.32, width) : 0;
 
   static double clampSidePanelWidth(double value, double windowWidth) {
-    final maxWidth = min(maxSidePanelWidth + 80, windowWidth * 0.42);
+    final maxWidth = min(maxSidePanelWidth, windowWidth * 0.42);
     return min(maxWidth, max(minSidePanelWidth, value));
   }
 

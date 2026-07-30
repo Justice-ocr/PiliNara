@@ -42,7 +42,7 @@ class WindowsNeoSectionTabs extends StatelessWidget {
             dividerColor: Colors.transparent,
             dividerHeight: 0,
             indicatorSize: TabBarIndicatorSize.label,
-            indicator: const WindowsNeoTabIndicator(),
+            indicator: WindowsNeoTabIndicator(tokens: context.windowsNeo),
             labelColor: tokens.ink,
             unselectedLabelColor: tokens.muted,
             labelStyle: theme.textTheme.bodyMedium?.copyWith(

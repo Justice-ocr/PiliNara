@@ -1,5 +1,6 @@
 import 'package:PiliPlus/windows_ui/components/windows_neo_backdrop.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -13,6 +14,9 @@ class WindowsNeoPage extends StatelessWidget {
     this.actions = const [],
     this.commandBar,
     this.compactHeader = false,
+    this.stageMode,
+    this.stageState,
+    this.stageIndex = 0,
     this.showBackButton,
     this.onBack,
   });
@@ -24,6 +28,9 @@ class WindowsNeoPage extends StatelessWidget {
   final Widget? commandBar;
   final Widget child;
   final bool compactHeader;
+  final WindowsNeoStageMode? stageMode;
+  final String? stageState;
+  final int stageIndex;
   final bool? showBackButton;
   final VoidCallback? onBack;
 
@@ -136,7 +143,16 @@ class WindowsNeoPage extends StatelessWidget {
                 child: commandBar,
               ),
             ],
-            Expanded(child: child),
+            Expanded(
+              child: stageMode == null
+                  ? child
+                  : WindowsNeoStageFrame(
+                      mode: stageMode!,
+                      stateLabel: stageState,
+                      stateIndex: stageIndex,
+                      child: child,
+                    ),
+            ),
           ],
         ),
       ),

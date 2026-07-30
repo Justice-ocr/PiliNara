@@ -100,8 +100,14 @@ class _WindowsNeoCardShellState extends State<WindowsNeoCardShell> {
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: tokens.cardAccentGradient,
-                        borderRadius: const BorderRadius.vertical(
-                          bottom: Radius.circular(2),
+                        borderRadius: BorderRadius.vertical(
+                          bottom: Radius.circular(
+                            tokens.family == WindowsNeoThemeFamily.miku ||
+                                    tokens.family ==
+                                        WindowsNeoThemeFamily.popucom
+                                ? 2
+                                : 0,
+                          ),
                         ),
                       ),
                     ),

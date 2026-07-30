@@ -102,7 +102,7 @@ class _WindowsNeoVideoSearchTileState extends State<WindowsNeoVideoSearchTile> {
               src: videoItem.cover,
               width: width,
               height: height,
-              borderRadius: BorderRadius.circular(5),
+              borderRadius: context.windowsNeo.cardRadius,
             ),
           ),
           if (videoItem.badge case final badge?)

@@ -19,9 +19,9 @@ class WindowsNeoMediaBadge extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: const Color(0xFF202A2F).withValues(alpha: 0.86),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: tokens.mediaBadgeRadius,
         border: Border.all(
-          color: WindowsNeoTokens.iceCyan.withValues(alpha: 0.62),
+          color: tokens.accent.withValues(alpha: 0.62),
           width: 0.8,
         ),
         boxShadow: [
@@ -38,7 +38,7 @@ class WindowsNeoMediaBadge extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 11, color: WindowsNeoTokens.iceCyan),
+              Icon(icon, size: 11, color: tokens.accent),
               const SizedBox(width: 3),
             ],
             Flexible(
@@ -90,7 +90,7 @@ class WindowsNeoStat extends StatelessWidget {
           height: 3,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: WindowsNeoTokens.iceCyan.withValues(alpha: 0.78),
+            color: tokens.accent.withValues(alpha: 0.78),
           ),
         ),
         const SizedBox(width: 4),
@@ -134,7 +134,7 @@ class WindowsNeoMediaDivider extends StatelessWidget {
             : Alignment.bottomCenter,
         colors: [
           tokens.accent.withValues(alpha: 0.30),
-          WindowsNeoTokens.iceCyan.withValues(alpha: 0.16),
+          tokens.structuralSecondaryAccent.withValues(alpha: 0.16),
           Colors.transparent,
         ],
         stops: const [0, 0.62, 1],

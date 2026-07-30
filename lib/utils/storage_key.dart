@@ -48,6 +48,7 @@ abstract final class SettingBoxKey {
       enableInAppPipToSystemPip = 'enableInAppPipToSystemPip',
       enableWindowsVideoTabs = 'enableWindowsVideoTabs',
       windowsNeoThemeFamily = 'windowsNeoThemeFamily',
+      windowsNeoThemeDepth = 'windowsNeoThemeDepth',
       enableAutoLongPressSpeed = 'enableAutoLongPressSpeed',
       useRelativeSlide = 'useRelativeSlide',
       sliderDuration = 'sliderOffset',

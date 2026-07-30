@@ -58,6 +58,7 @@ import 'package:PiliPlus/utils/theme_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/windows_ui/features/video/windows_neo_video_layout.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:canvas_danmaku/danmaku_screen.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -571,6 +572,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       WindowsNeoTokens.fromTheme(
         ThemeUtils.darkTheme,
         family: WindowsNeoThemeController.family.value,
+        depth: WindowsNeoThemeController.depth.value,
       ).copyWith(
         background: const Color(0xFF0B0D0F),
         sidebar: const Color(0xFF101316),
@@ -586,6 +588,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     final base = WindowsNeoTheme.apply(
       ThemeUtils.darkTheme,
       family: WindowsNeoThemeController.family.value,
+      depth: WindowsNeoThemeController.depth.value,
     );
     final extensions =
         base.extensions.values
@@ -706,8 +709,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
           height: height,
           child: ColoredBox(
             color: Colors.black,
-            child: videoPlayerPanel(
-              false,
+            child: _buildWindowsMediaStage(
               width: playerWidth,
               height: height,
             ),
@@ -757,8 +759,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
           height: playerHeight,
           child: ColoredBox(
             color: Colors.black,
-            child: videoPlayerPanel(
-              false,
+            child: _buildWindowsMediaStage(
               width: width,
               height: playerHeight,
             ),
@@ -809,7 +810,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
               ),
               indicator: BoxDecoration(
                 color: _windowsTokens.accentSurface,
-                borderRadius: BorderRadius.circular(7),
+                borderRadius: _windowsTokens.workspaceTabRadius,
                 boxShadow: [
                   BoxShadow(
                     color: _windowsTokens.accent.withValues(alpha: 0.12),
@@ -830,7 +831,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
             margin: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: _windowsTokens.border.withValues(alpha: 0.68),
-              borderRadius: BorderRadius.circular(1),
+              borderRadius: BorderRadius.zero,
             ),
           ),
           Expanded(
@@ -862,6 +863,20 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       ),
     );
   }
+
+  Widget _buildWindowsMediaStage({
+    required double width,
+    required double height,
+  }) => AnimatedBuilder(
+    animation: _windowsSideTabController,
+    child: videoPlayerPanel(false, width: width, height: height),
+    builder: (context, player) => WindowsNeoMediaStage(
+      mode: WindowsNeoStageMode.live,
+      stateLabel: _liveRoomController.showSuperChat ? 'CHAT / SC' : 'CHAT',
+      stateIndex: _windowsSideTabController.index,
+      child: player!,
+    ),
+  );
 
   Widget _buildWindowsChatPanel() => Column(
     children: [
@@ -1649,15 +1664,15 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                   vertical: 10,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(7),
+                  borderRadius: tokens.actionRadius,
                   borderSide: BorderSide.none,
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(7),
+                  borderRadius: tokens.actionRadius,
                   borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(7),
+                  borderRadius: tokens.actionRadius,
                   borderSide: BorderSide(
                     color: tokens.accent.withValues(alpha: 0.85),
                   ),
@@ -1675,7 +1690,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
             builder: (context) => Material(
               type: MaterialType.transparency,
               child: InkWell(
-                borderRadius: BorderRadius.circular(7),
+                borderRadius: tokens.actionRadius,
                 onTapDown: _liveRoomController.onLikeTapDown,
                 onTapUp: _liveRoomController.onLikeTapUp,
                 onTapCancel: _liveRoomController.onLikeTapUp,

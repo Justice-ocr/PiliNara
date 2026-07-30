@@ -2,7 +2,7 @@ import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 
-/// Adds a local Miku-cyan hover halo without changing a control's layout.
+/// Adds a theme-aware hover halo without changing a control's layout.
 class WindowsNeoHoverHalo extends StatefulWidget {
   const WindowsNeoHoverHalo({
     super.key,
@@ -69,10 +69,10 @@ class _WindowsNeoHoverHaloState extends State<WindowsNeoHoverHalo> {
                         radius: 1.25,
                         colors: [
                           tokens.accent.withValues(alpha: haloAlpha),
-                          WindowsNeoTokens.iceCyan.withValues(
+                          tokens.structuralSecondaryAccent.withValues(
                             alpha: haloAlpha * 0.62,
                           ),
-                          WindowsNeoTokens.sakuraPink.withValues(
+                          tokens.tertiaryAccent.withValues(
                             alpha: haloAlpha * 0.20,
                           ),
                           Colors.transparent,

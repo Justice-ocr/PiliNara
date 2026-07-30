@@ -46,7 +46,7 @@ class WindowsNeoSliverState extends StatelessWidget {
                     alignment: Alignment.center,
                     children: [
                       Text(
-                        '39',
+                        tokens.shellMark,
                         style: textTheme.displayLarge?.copyWith(
                           color: tokens.accent.withValues(alpha: 0.07),
                           fontSize: 92,
