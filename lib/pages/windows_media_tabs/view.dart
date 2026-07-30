@@ -51,6 +51,7 @@ import 'package:PiliPlus/pages/webview/view.dart';
 import 'package:PiliPlus/pages/whisper/view.dart';
 import 'package:PiliPlus/pages/whisper_detail/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_back_shortcut_listener.dart';
 import 'package:PiliPlus/windows_ui/shell/windows_neo_shell.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
@@ -114,18 +115,16 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
 
       return WindowsBackShortcutListener(
         onBack: WindowsVideoTabService.popActiveTab,
+        onCloseTab: WindowsVideoTabService.closeActiveTab,
+        onNextTab: () => WindowsVideoTabService.selectRelative(1),
+        onPreviousTab: () => WindowsVideoTabService.selectRelative(-1),
+        onRestoreTab: WindowsVideoTabService.restoreLastClosedTab,
+        onSearch: () {
+          WindowsVideoTabService.select(WindowsVideoTabService.homeTabId);
+          PageUtils.toSearch();
+        },
         child: CallbackShortcuts(
           bindings: {
-            const SingleActivator(LogicalKeyboardKey.keyW, control: true):
-                WindowsVideoTabService.closeActiveTab,
-            const SingleActivator(LogicalKeyboardKey.tab, control: true): () =>
-                WindowsVideoTabService.selectRelative(1),
-            const SingleActivator(
-              LogicalKeyboardKey.tab,
-              control: true,
-              shift: true,
-            ): () =>
-                WindowsVideoTabService.selectRelative(-1),
             const SingleActivator(LogicalKeyboardKey.escape):
                 WindowsVideoTabService.popActiveTab,
           },

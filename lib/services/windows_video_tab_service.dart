@@ -141,10 +141,15 @@ abstract final class WindowsVideoTabService {
   static final Map<String, _WindowsVideoTabPlayer> _players = {};
   static final Map<String, GlobalKey<NavigatorState>> _navigatorKeys = {};
   static final List<String> _activationHistory = [];
+  static final List<WindowsVideoTabItem> _closedTabs = [];
   static bool _hostMounted = false;
   static Map? currentArguments;
 
-  static bool get enabled => Platform.isWindows && Pref.enableWindowsVideoTabs;
+  @visibleForTesting
+  static bool? enabledOverride;
+
+  static bool get enabled =>
+      enabledOverride ?? (Platform.isWindows && Pref.enableWindowsVideoTabs);
 
   static bool get isNotEmpty => tabs.isNotEmpty;
 
@@ -152,6 +157,7 @@ abstract final class WindowsVideoTabService {
   static const rootRoute = '/';
   static const homeTabId = 'home';
   static const maxMediaTabs = 8;
+  static const maxClosedTabs = 12;
   static const workspaceRoutes = {
     '/download',
     '/fav',
@@ -233,6 +239,9 @@ abstract final class WindowsVideoTabService {
 
   static int get mediaTabCount =>
       tabs.where((item) => item.isHeavyMedia).length;
+
+  static List<WindowsVideoTabItem> get recentlyClosedTabs =>
+      List<WindowsVideoTabItem>.unmodifiable(_closedTabs);
 
   static bool get hasMediaTabs => mediaTabCount > 0;
 
@@ -323,6 +332,88 @@ abstract final class WindowsVideoTabService {
     if (id != null && id != homeTabId) {
       close(id);
     }
+  }
+
+  static bool get canRestoreClosedTab => _closedTabs.isNotEmpty;
+
+  static bool isPinned(String id) {
+    final index = tabs.indexWhere((item) => item.id == id);
+    return index != -1 && tabs[index].arguments['pinned'] == true;
+  }
+
+  static void togglePinned(String id) {
+    final index = tabs.indexWhere((item) => item.id == id);
+    if (index == -1 || tabs[index].isHome) return;
+    final tab = tabs[index];
+    tab.arguments['pinned'] = tab.arguments['pinned'] != true;
+    tab.updatedAt = DateTime.now();
+    tabs.refresh();
+  }
+
+  static bool restoreLastClosedTab() {
+    if (_closedTabs.isEmpty) return false;
+    return _restoreClosedTab(_closedTabs.removeLast());
+  }
+
+  static bool restoreClosedTab(String id) {
+    final index = _closedTabs.lastIndexWhere((tab) => tab.id == id);
+    if (index == -1) return false;
+    return _restoreClosedTab(_closedTabs.removeAt(index));
+  }
+
+  static bool _restoreClosedTab(WindowsVideoTabItem tab) {
+    if (has(tab.id)) {
+      select(tab.id);
+      return true;
+    }
+    final now = DateTime.now();
+    tabs.add(
+      WindowsVideoTabItem(
+        id: tab.id,
+        type: tab.type,
+        arguments: Map<String, dynamic>.from(tab.arguments),
+        createdAt: tab.createdAt,
+        updatedAt: now,
+      ),
+    );
+    select(tab.id);
+    return true;
+  }
+
+  static void closeOthers(String id) {
+    final ids = tabs
+        .where((tab) => !tab.isHome && tab.id != id && !isPinned(tab.id))
+        .map((tab) => tab.id)
+        .toList(growable: false);
+    for (final tabId in ids) {
+      close(tabId);
+    }
+    select(id);
+  }
+
+  static void closeTabsToLeft(String id) => _closeRelativeTabs(id, left: true);
+
+  static void closeTabsToRight(String id) =>
+      _closeRelativeTabs(id, left: false);
+
+  static void _closeRelativeTabs(String id, {required bool left}) {
+    final target = tabs.indexWhere((tab) => tab.id == id);
+    if (target == -1) return;
+    final ids = tabs
+        .asMap()
+        .entries
+        .where(
+          (entry) =>
+              !entry.value.isHome &&
+              !isPinned(entry.value.id) &&
+              (left ? entry.key < target : entry.key > target),
+        )
+        .map((entry) => entry.value.id)
+        .toList(growable: false);
+    for (final tabId in ids) {
+      close(tabId);
+    }
+    select(id);
   }
 
   static void selectRelative(int offset) {
@@ -430,12 +521,14 @@ abstract final class WindowsVideoTabService {
     } else {
       final tab = tabs[index];
       final previousTitle = tab.arguments['title'];
+      final wasPinned = tab.arguments['pinned'] == true;
       tab.arguments
         ..clear()
         ..addAll(normalized);
       if (!tab.arguments.containsKey('title') && previousTitle != null) {
         tab.arguments['title'] = previousTitle;
       }
+      if (wasPinned) tab.arguments['pinned'] = true;
       tab.updatedAt = DateTime.now();
       tabs.refresh();
     }
@@ -515,12 +608,31 @@ abstract final class WindowsVideoTabService {
       final removable = candidates.isNotEmpty ? candidates : fallback;
       if (removable.isEmpty) return;
       removable.sort((a, b) => a.updatedAt.compareTo(b.updatedAt));
-      close(removable.first.id);
+      close(removable.first.id, remember: false);
     }
   }
 
-  static void close(String id) {
+  static void close(String id, {bool remember = true}) {
     if (id == homeTabId) return;
+    final index = tabs.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+    final closingTab = tabs[index];
+    if (remember) {
+      _closedTabs
+        ..removeWhere((item) => item.id == id)
+        ..add(
+          WindowsVideoTabItem(
+            id: closingTab.id,
+            type: closingTab.type,
+            arguments: Map<String, dynamic>.from(closingTab.arguments),
+            createdAt: closingTab.createdAt,
+            updatedAt: closingTab.updatedAt,
+          ),
+        );
+      if (_closedTabs.length > maxClosedTabs) {
+        _closedTabs.removeAt(0);
+      }
+    }
     final deactivate = _deactivators.remove(id);
     if (activeId.value == id) {
       deactivate?.call();
@@ -568,6 +680,7 @@ abstract final class WindowsVideoTabService {
     _activationHistory
       ..clear()
       ..add(homeTabId);
+    _closedTabs.clear();
     tabs
       ..clear()
       ..add(_homeTab());

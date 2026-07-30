@@ -11,9 +11,17 @@ abstract final class WindowsNeoVideoLayout {
   static bool useSidePanel(double width, double height) =>
       width >= sidePanelBreakpoint && height >= sidePanelHeightBreakpoint;
 
-  static double sidePanelWidth(double width, {required bool visible}) => visible
-      ? min(maxSidePanelWidth, max(minSidePanelWidth, width * 0.32))
-      : 0;
+  static double sidePanelWidth(
+    double width, {
+    required bool visible,
+    double? preferredWidth,
+  }) =>
+      visible ? clampSidePanelWidth(preferredWidth ?? width * 0.32, width) : 0;
+
+  static double clampSidePanelWidth(double value, double windowWidth) {
+    final maxWidth = min(maxSidePanelWidth + 80, windowWidth * 0.42);
+    return min(maxWidth, max(minSidePanelWidth, value));
+  }
 
   static WindowsVideoMemberPresentation memberPresentation({
     required bool windowsNeoEnabled,

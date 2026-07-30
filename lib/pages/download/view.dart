@@ -11,6 +11,7 @@ import 'package:PiliPlus/pages/common/fab_mixin.dart';
 import 'package:PiliPlus/pages/common/multi_select/base.dart';
 import 'package:PiliPlus/pages/download/controller.dart';
 import 'package:PiliPlus/pages/download/detail/widgets/item.dart';
+import 'package:PiliPlus/pages/download/downloading/view.dart';
 import 'package:PiliPlus/pages/download/folder/view.dart';
 import 'package:PiliPlus/pages/download/folder_manage/view.dart';
 import 'package:PiliPlus/pages/download/search/view.dart';
@@ -640,6 +641,21 @@ class _DownloadPageState extends State<DownloadPage>
   List<Widget> _windowsHeaderActions(bool isVideoTab) {
     if (isVideoTab) {
       return [
+        Obx(() {
+          final count = _downloadService.waitDownloadQueue.length;
+          return IconButton(
+            tooltip: count == 0 ? '下载任务' : '下载任务 ($count)',
+            onPressed: () => PageUtils.toPage(
+              context,
+              () => const DownloadingPage(),
+            ),
+            icon: Badge.count(
+              isLabelVisible: count > 0,
+              count: count,
+              child: const Icon(Icons.downloading_outlined),
+            ),
+          );
+        }),
         Obx(() {
           final target = _controller.continueTarget.value;
           if (target == null) return const SizedBox.shrink();

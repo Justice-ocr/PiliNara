@@ -94,6 +94,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   bool _closingFromWindowsLiveTabService = false;
   bool _windowsTabActive = true;
   int _windowsLivePlayerMountKey = 0;
+  double? _windowsSidePanelWidth;
   late final TabController _windowsSideTabController;
   final TextEditingController _windowsDanmakuTextController =
       TextEditingController();
@@ -693,10 +694,12 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     final sideWidth = WindowsNeoVideoLayout.sidePanelWidth(
       width,
       visible: true,
+      preferredWidth: _windowsSidePanelWidth,
     );
-    final playerWidth = width - sideWidth;
+    final playerWidth = width - sideWidth - 6;
     return Row(
       children: [
+        _buildWindowsSidePanelResizeHandle(width, sideWidth),
         SizedBox(
           width: playerWidth,
           height: height,
@@ -717,6 +720,29 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       ],
     );
   }
+
+  Widget _buildWindowsSidePanelResizeHandle(double width, double sideWidth) =>
+      MouseRegion(
+        cursor: SystemMouseCursors.resizeColumn,
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onHorizontalDragUpdate: (details) {
+            setState(() {
+              _windowsSidePanelWidth =
+                  WindowsNeoVideoLayout.clampSidePanelWidth(
+                    sideWidth - details.delta.dx,
+                    width,
+                  );
+            });
+          },
+          child: SizedBox(
+            width: 6,
+            child: Center(
+              child: Container(width: 1, color: _windowsTokens.border),
+            ),
+          ),
+        ),
+      );
 
   Widget _buildWindowsCompactLayout(double width, double height) {
     final playerHeight = WindowsNeoVideoLayout.compactPlayerHeight(

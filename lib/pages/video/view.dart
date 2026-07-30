@@ -128,6 +128,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       WindowsVideoContextController();
   late final bool Function() _windowsContextPopper = _popWindowsVideoContext;
   bool _windowsUsesSidePanel = false;
+  double? _windowsSidePanelWidth;
 
   // 归位动画进行中：页面播放器以透明占位先行布局（供量取目标矩形），
   // 恢复握手完成后亮出，期间小窗是唯一可见端

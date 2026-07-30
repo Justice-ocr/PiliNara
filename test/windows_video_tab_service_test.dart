@@ -2,6 +2,24 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  WindowsVideoTabItem tab(String id, {bool pinned = false}) {
+    final now = DateTime(2026);
+    return WindowsVideoTabItem(
+      id: id,
+      type: WindowsMediaTabType.video,
+      arguments: {'bvid': id, if (pinned) 'pinned': true},
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
+
+  setUp(() {
+    WindowsVideoTabService.enabledOverride = true;
+    WindowsVideoTabService.clear();
+  });
+
+  tearDown(() => WindowsVideoTabService.enabledOverride = null);
+
   group('WindowsVideoTabService.keyFromArgs', () {
     test('builds stable keys for supported tab types', () {
       expect(
@@ -132,6 +150,46 @@ void main() {
 
       expect(search.title, '搜索: flutter');
       expect(member.title, '用户 123');
+    });
+  });
+
+  group('desktop tab management', () {
+    test('pins tabs without changing their identity', () {
+      WindowsVideoTabService.tabs.add(tab('video:one'));
+
+      WindowsVideoTabService.togglePinned('video:one');
+
+      expect(WindowsVideoTabService.isPinned('video:one'), isTrue);
+      expect(
+        WindowsVideoTabService.tabs
+            .singleWhere((item) => item.id == 'video:one')
+            .id,
+        'video:one',
+      );
+    });
+
+    test('remembers and restores a closed tab', () {
+      WindowsVideoTabService.tabs.add(tab('video:one'));
+
+      WindowsVideoTabService.close('video:one');
+
+      expect(WindowsVideoTabService.recentlyClosedTabs.single.id, 'video:one');
+      expect(WindowsVideoTabService.restoreLastClosedTab(), isTrue);
+      expect(WindowsVideoTabService.has('video:one'), isTrue);
+    });
+
+    test('keeps pinned tabs when closing other tabs', () {
+      WindowsVideoTabService.tabs.addAll([
+        tab('video:pinned', pinned: true),
+        tab('video:active'),
+        tab('video:other'),
+      ]);
+
+      WindowsVideoTabService.closeOthers('video:active');
+
+      expect(WindowsVideoTabService.has('video:pinned'), isTrue);
+      expect(WindowsVideoTabService.has('video:active'), isTrue);
+      expect(WindowsVideoTabService.has('video:other'), isFalse);
     });
   });
 }

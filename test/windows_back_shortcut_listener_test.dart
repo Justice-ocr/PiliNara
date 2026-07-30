@@ -52,4 +52,33 @@ void main() {
 
     expect(backCount, 0);
   });
+
+  testWidgets('Ctrl+W and Ctrl+Shift+T work while a text field has focus', (
+    tester,
+  ) async {
+    var closeCount = 0;
+    var restoreCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WindowsBackShortcutListener(
+          onBack: () => false,
+          onCloseTab: () => closeCount += 1,
+          onRestoreTab: () => restoreCount += 1,
+          child: const Scaffold(body: TextField(autofocus: true)),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyW);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyT);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+
+    expect(closeCount, 1);
+    expect(restoreCount, 1);
+  });
 }

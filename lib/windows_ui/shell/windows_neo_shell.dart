@@ -53,6 +53,16 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> with WindowListener {
     windowManager.isMaximized().then((value) {
       if (mounted) setState(() => _isMaximized = value);
     });
+    _syncWindowTitle();
+  }
+
+  @override
+  void didUpdateWidget(covariant WindowsNeoShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.activeTab.id != widget.activeTab.id ||
+        oldWidget.activeTab.title != widget.activeTab.title) {
+      _syncWindowTitle();
+    }
   }
 
   @override
@@ -76,8 +86,13 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> with WindowListener {
   @override
   Widget build(BuildContext context) {
     final neoTheme = WindowsNeoTheme.apply(Theme.of(context));
-    return Theme(
+    return AnimatedTheme(
       data: neoTheme,
+      duration: MediaQuery.maybeOf(context)?.disableAnimations == true
+          ? Duration.zero
+          : (neoTheme.extension<WindowsNeoTokens>()?.motionStandard ??
+                const Duration(milliseconds: 200)),
+      curve: Curves.easeOutCubic,
       child: Builder(
         builder: (context) => LayoutBuilder(
           builder: (context, constraints) {
@@ -185,6 +200,10 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> with WindowListener {
 
   void _closeNavigation() {
     if (_navigationOpen) setState(() => _navigationOpen = false);
+  }
+
+  void _syncWindowTitle() {
+    windowManager.setTitle('${widget.activeTab.title} - ${Constants.appName}');
   }
 
   void _openSearch() {
@@ -854,6 +873,7 @@ class _WindowsNeoTabStrip extends StatelessWidget {
                     },
                   ),
                 ),
+                const _WindowsNeoRecentTabsMenu(),
                 WindowsNeoHoverHalo(
                   borderRadius: BorderRadius.circular(8),
                   child: SizedBox(
@@ -951,6 +971,51 @@ class _WindowsNeoTabPresenceState extends State<_WindowsNeoTabPresence>
   }
 }
 
+class _WindowsNeoRecentTabsMenu extends StatelessWidget {
+  const _WindowsNeoRecentTabsMenu();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.windowsNeo;
+    final tabs = WindowsVideoTabService.recentlyClosedTabs.reversed
+        .take(8)
+        .toList(growable: false);
+    return PopupMenuButton<String>(
+      tooltip: '最近关闭的标签页',
+      enabled: tabs.isNotEmpty,
+      icon: Icon(
+        Icons.history_rounded,
+        size: 18,
+        color: tabs.isEmpty
+            ? tokens.muted.withValues(alpha: 0.42)
+            : tokens.muted,
+      ),
+      itemBuilder: (context) => [
+        for (final item in tabs)
+          PopupMenuItem(
+            value: item.id,
+            child: SizedBox(
+              width: 220,
+              child: Row(
+                children: [
+                  Icon(
+                    WindowsNeoWorkspaceTab._iconForItem(item),
+                    size: 17,
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(item.title, overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+      onSelected: WindowsVideoTabService.restoreClosedTab,
+    );
+  }
+}
+
 class WindowsNeoWorkspaceTab extends StatelessWidget {
   const WindowsNeoWorkspaceTab({
     super.key,
@@ -1029,6 +1094,14 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                                 color: active ? tokens.accent : foreground,
                               ),
                               const SizedBox(width: 7),
+                              if (WindowsVideoTabService.isPinned(item.id)) ...[
+                                Icon(
+                                  Icons.push_pin_rounded,
+                                  size: 13,
+                                  color: tokens.accent,
+                                ),
+                                const SizedBox(width: 5),
+                              ],
                               Flexible(
                                 child: Text(
                                   item.title,
@@ -1091,21 +1164,32 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
       ),
       items: [
         if (!item.isHome)
+          PopupMenuItem(
+            value: 'pin',
+            child: Text(
+              WindowsVideoTabService.isPinned(item.id) ? '取消固定' : '固定标签',
+            ),
+          ),
+        if (!item.isHome)
           const PopupMenuItem(value: 'close', child: Text('关闭标签页')),
+        if (WindowsVideoTabService.tabs.indexOf(item) > 1)
+          const PopupMenuItem(value: 'left', child: Text('关闭左侧标签页')),
+        if (WindowsVideoTabService.tabs.indexOf(item) <
+            WindowsVideoTabService.tabs.length - 1)
+          const PopupMenuItem(value: 'right', child: Text('关闭右侧标签页')),
         const PopupMenuItem(value: 'others', child: Text('关闭其他标签页')),
       ],
     );
-    if (action == 'close') {
+    if (action == 'pin') {
+      WindowsVideoTabService.togglePinned(item.id);
+    } else if (action == 'close') {
       await onClose();
+    } else if (action == 'left') {
+      WindowsVideoTabService.closeTabsToLeft(item.id);
+    } else if (action == 'right') {
+      WindowsVideoTabService.closeTabsToRight(item.id);
     } else if (action == 'others') {
-      final ids = WindowsVideoTabService.tabs
-          .where((tab) => !tab.isHome && tab.id != item.id)
-          .map((tab) => tab.id)
-          .toList(growable: false);
-      for (final id in ids) {
-        WindowsVideoTabService.close(id);
-      }
-      WindowsVideoTabService.select(item.id);
+      WindowsVideoTabService.closeOthers(item.id);
     }
   }
 
