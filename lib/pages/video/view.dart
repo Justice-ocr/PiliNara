@@ -122,6 +122,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   VideoReplyController? _savedReplyControllerFromPip;
   bool _closingFromWindowsVideoTabService = false;
   int _windowsVideoPlayerMountKey = 0;
+  int? _windowsMemberPanelMid;
+  bool _windowsUsesSidePanel = false;
 
   // 归位动画进行中：页面播放器以透明占位先行布局（供量取目标矩形），
   // 恢复握手完成后亮出，期间小窗是唯一可见端
@@ -3418,7 +3420,16 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           videoDetailController: videoDetailController,
           ugcIntroController: ugcIntroController,
         );
-      },
-    );
+    }
+  }
+
+  void _closeWindowsMemberPanel() {
+    if (_windowsMemberPanelMid == null || !mounted) return;
+    setState(() => _windowsMemberPanelMid = null);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.delete<HorizontalMemberPageController>(
+        tag: videoDetailController.heroTag,
+      );
+    });
   }
 }

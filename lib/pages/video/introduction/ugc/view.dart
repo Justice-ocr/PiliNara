@@ -784,9 +784,7 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
     return GestureDetector(
       behavior: .opaque,
       onTap: () {
-        if (item.mid == ownerMid &&
-            !isPortrait &&
-            introController.horizontalMemberPage) {
+        if (item.mid == ownerMid) {
           widget.onShowMemberPage(ownerMid);
         } else {
           onTap();

@@ -1,5 +1,7 @@
 import 'dart:math';
 
+enum WindowsVideoMemberPresentation { sidePanel, horizontalSheet, fullPage }
+
 abstract final class WindowsNeoVideoLayout {
   static const sidePanelBreakpoint = 960.0;
   static const sidePanelHeightBreakpoint = 560.0;
@@ -12,6 +14,22 @@ abstract final class WindowsNeoVideoLayout {
   static double sidePanelWidth(double width, {required bool visible}) => visible
       ? min(maxSidePanelWidth, max(minSidePanelWidth, width * 0.32))
       : 0;
+
+  static WindowsVideoMemberPresentation memberPresentation({
+    required bool windowsNeoEnabled,
+    required bool usesSidePanel,
+    required bool isPortrait,
+    required bool horizontalMemberPage,
+  }) {
+    if (windowsNeoEnabled) {
+      return usesSidePanel
+          ? WindowsVideoMemberPresentation.sidePanel
+          : WindowsVideoMemberPresentation.fullPage;
+    }
+    return !isPortrait && horizontalMemberPage
+        ? WindowsVideoMemberPresentation.horizontalSheet
+        : WindowsVideoMemberPresentation.fullPage;
+  }
 
   static double widePlayerHeight(double mainWidth, double height) =>
       min(mainWidth / (16 / 9), height * 0.66);

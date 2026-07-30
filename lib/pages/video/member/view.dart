@@ -36,11 +36,13 @@ class HorizontalMemberPage extends StatefulWidget {
     required this.mid,
     required this.videoDetailController,
     required this.ugcIntroController,
+    this.onClose,
   });
 
   final dynamic mid;
   final VideoDetailController videoDetailController;
   final UgcIntroController ugcIntroController;
+  final VoidCallback? onClose;
 
   @override
   State<HorizontalMemberPage> createState() => _HorizontalMemberPageState();
@@ -203,7 +205,11 @@ class _HorizontalMemberPageState extends State<HorizontalMemberPage> {
                           videoItem: videoItem,
                           bvid: _bvid,
                           onTap: () {
-                            Get.back();
+                            if (widget.onClose case final onClose?) {
+                              onClose();
+                            } else {
+                              Get.back();
+                            }
                             widget.ugcIntroController.onChangeEpisode(
                               BaseEpisodeItem(
                                 bvid: videoItem.bvid,
@@ -351,11 +357,15 @@ class _HorizontalMemberPageState extends State<HorizontalMemberPage> {
                 tapTargetSize: .shrinkWrap,
                 visualDensity: const VisualDensity(vertical: -2),
               ),
-              onPressed: () => PageUtils.toMember(widget.mid),
-              child: const Text(
-                '查看主页',
+              onPressed: () => PageUtils.toMember(
+                widget.mid,
+                fromViewAid: widget.videoDetailController.aid,
+                newTab: widget.onClose != null,
+              ),
+              child: Text(
+                widget.onClose == null ? '查看主页' : '完整主页',
                 maxLines: 1,
-                style: TextStyle(fontSize: 14),
+                style: const TextStyle(fontSize: 14),
               ),
             ),
           ),

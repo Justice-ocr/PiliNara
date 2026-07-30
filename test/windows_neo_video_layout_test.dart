@@ -23,6 +23,48 @@ void main() {
     );
   });
 
+  test('routes member pages into the Windows context panel when it fits', () {
+    expect(
+      WindowsNeoVideoLayout.memberPresentation(
+        windowsNeoEnabled: true,
+        usesSidePanel: true,
+        isPortrait: false,
+        horizontalMemberPage: false,
+      ),
+      WindowsVideoMemberPresentation.sidePanel,
+    );
+    expect(
+      WindowsNeoVideoLayout.memberPresentation(
+        windowsNeoEnabled: true,
+        usesSidePanel: false,
+        isPortrait: false,
+        horizontalMemberPage: true,
+      ),
+      WindowsVideoMemberPresentation.fullPage,
+    );
+  });
+
+  test('keeps the legacy non-Windows member presentation rules', () {
+    expect(
+      WindowsNeoVideoLayout.memberPresentation(
+        windowsNeoEnabled: false,
+        usesSidePanel: false,
+        isPortrait: false,
+        horizontalMemberPage: true,
+      ),
+      WindowsVideoMemberPresentation.horizontalSheet,
+    );
+    expect(
+      WindowsNeoVideoLayout.memberPresentation(
+        windowsNeoEnabled: false,
+        usesSidePanel: true,
+        isPortrait: true,
+        horizontalMemberPage: true,
+      ),
+      WindowsVideoMemberPresentation.fullPage,
+    );
+  });
+
   test('keeps player heights inside their workspace allocation', () {
     expect(WindowsNeoVideoLayout.widePlayerHeight(1280, 800), 528);
     expect(WindowsNeoVideoLayout.compactPlayerHeight(800, 900), 450);
