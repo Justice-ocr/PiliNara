@@ -84,8 +84,17 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> with WindowListener {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final neoTheme = WindowsNeoTheme.apply(Theme.of(context));
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<WindowsNeoThemeFamily>(
+        valueListenable: WindowsNeoThemeController.family,
+        builder: (context, family, _) => _buildThemed(context, family),
+      );
+
+  Widget _buildThemed(
+    BuildContext context,
+    WindowsNeoThemeFamily family,
+  ) {
+    final neoTheme = WindowsNeoTheme.apply(Theme.of(context), family: family);
     return AnimatedTheme(
       data: neoTheme,
       duration: MediaQuery.maybeOf(context)?.disableAnimations == true

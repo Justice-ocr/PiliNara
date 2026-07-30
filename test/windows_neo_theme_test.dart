@@ -82,6 +82,30 @@ void main() {
     expect(SearchResultPage, isA<Type>());
   });
 
+  test('field terminal theme uses compact yellow engineering tokens', () {
+    final theme = WindowsNeoTheme.apply(
+      ThemeData.light(),
+      family: WindowsNeoThemeFamily.fieldTerminal,
+    );
+    final tokens = theme.extension<WindowsNeoTokens>();
+    final darkTokens = WindowsNeoTokens.fromTheme(
+      ThemeData.dark(),
+      family: WindowsNeoThemeFamily.fieldTerminal,
+    );
+
+    expect(tokens, isNotNull);
+    expect(tokens!.family, WindowsNeoThemeFamily.fieldTerminal);
+    expect(tokens.accent, const Color(0xFFFFFA00));
+    expect(tokens.ink, const Color(0xFF191919));
+    expect(tokens.background, const Color(0xFFE9E9E2));
+    expect(tokens.radiusSm, 3);
+    expect(tokens.radiusMd, 5);
+    expect(tokens.radiusLg, 7);
+    expect(tokens.isFieldTerminal, isTrue);
+    expect(darkTokens.background, const Color(0xFF141414));
+    expect(darkTokens.ink, const Color(0xFFF4F4EE));
+  });
+
   testWidgets('shared rhythm markers render without layout exceptions', (
     tester,
   ) async {

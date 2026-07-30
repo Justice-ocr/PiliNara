@@ -1291,6 +1291,9 @@ abstract final class Pref {
   static bool get enableWindowsVideoTabs =>
       _setting.get(SettingBoxKey.enableWindowsVideoTabs, defaultValue: true);
 
+  static int get windowsNeoThemeFamily =>
+      _setting.get(SettingBoxKey.windowsNeoThemeFamily, defaultValue: 0);
+
   static bool get enableSponsorBlock =>
       _setting.get(SettingBoxKey.enableSponsorBlock, defaultValue: false);
 

@@ -86,10 +86,10 @@ List<SettingsModel> get styleSettings => [
     defaultVal: false,
     needReboot: true,
   ),
-  SwitchModel(
+  const SwitchModel(
     title: '自动侧边栏切换',
     subtitle: '屏幕较宽时（如折叠屏展开）自动改用侧边栏。点击自定义触发宽度。',
-    leading: const Icon(Icons.vertical_split_outlined),
+    leading: Icon(Icons.vertical_split_outlined),
     setKey: SettingBoxKey.autoSideBar,
     defaultVal: false,
     onTap: _showSideBarThresholdDialog,
@@ -320,6 +320,15 @@ List<SettingsModel> get styleSettings => [
     items: ThemeType.values,
     onSelected: _setThemeType,
   ),
+  if (Platform.isWindows)
+    NormalModel(
+      onTap: _showWindowsNeoThemeDialog,
+      leading: const Icon(Icons.architecture_outlined),
+      title: 'Windows Neo 主题',
+      getSubtitle: () =>
+          '当前：${WindowsNeoThemeController.family.value.label} · '
+          '${WindowsNeoThemeController.family.value.description}',
+    ),
   SwitchModel(
     leading: const Icon(Icons.invert_colors),
     title: '纯黑主题',

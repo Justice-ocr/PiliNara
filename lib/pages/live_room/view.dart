@@ -567,9 +567,10 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   late EdgeInsets padding;
   late bool isPortrait;
 
-  late final WindowsNeoTokens _windowsTokens =
+  WindowsNeoTokens get _windowsTokens =>
       WindowsNeoTokens.fromTheme(
         ThemeUtils.darkTheme,
+        family: WindowsNeoThemeController.family.value,
       ).copyWith(
         background: const Color(0xFF0B0D0F),
         sidebar: const Color(0xFF101316),
@@ -578,14 +579,14 @@ class _LiveRoomPageState extends State<LiveRoomPage>
         border: const Color(0xFF343A40),
         muted: const Color(0xFF9AA4AE),
         hover: const Color(0xFF252B31),
-        accent: WindowsNeoTokens.mikuCyan,
-        accentSurface: const Color(0xFF173B3A),
-        accentSoft: const Color(0xFF172E2E),
         ink: const Color(0xFFF3F5F7),
       );
 
   ThemeData get _windowsLiveTheme {
-    final base = WindowsNeoTheme.apply(ThemeUtils.darkTheme);
+    final base = WindowsNeoTheme.apply(
+      ThemeUtils.darkTheme,
+      family: WindowsNeoThemeController.family.value,
+    );
     final extensions =
         base.extensions.values
             .where((item) => item is! WindowsNeoTokens)

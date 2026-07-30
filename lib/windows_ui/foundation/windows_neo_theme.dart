@@ -1,12 +1,48 @@
 import 'dart:ui' show FontFeature, lerpDouble;
 
+import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/material.dart';
+
+/// Visual families available to the Windows-only desktop workspace.
+enum WindowsNeoThemeFamily {
+  miku('Miku Cyan', '青绿舞台'),
+  fieldTerminal('Field Terminal', '现场终端'),
+  ;
+
+  const WindowsNeoThemeFamily(this.label, this.description);
+
+  final String label;
+  final String description;
+
+  static WindowsNeoThemeFamily fromStorageValue(int value) =>
+      WindowsNeoThemeFamily.values.elementAtOrNull(value) ??
+      WindowsNeoThemeFamily.miku;
+}
+
+/// Keeps the Windows theme live while leaving the global light/dark preference
+/// and non-Windows platforms untouched.
+abstract final class WindowsNeoThemeController {
+  static final ValueNotifier<WindowsNeoThemeFamily> family = ValueNotifier(
+    WindowsNeoThemeFamily.fromStorageValue(Pref.windowsNeoThemeFamily),
+  );
+
+  static Future<void> select(WindowsNeoThemeFamily value) async {
+    family.value = value;
+    await GStorage.setting.put(
+      SettingBoxKey.windowsNeoThemeFamily,
+      value.index,
+    );
+  }
+}
 
 /// Miku-cyan dashboard language for Windows Neo.
 /// Airy surfaces, low-noise borders, and a bright cyan focal color.
 @immutable
 class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
   const WindowsNeoTokens({
+    required this.family,
     required this.background,
     required this.sidebar,
     required this.surface,
@@ -45,8 +81,45 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
   static const Color sakuraPink = Color(0xFFFFA2BD);
   static const Color inkDefault = Color(0xFF2C3A43);
 
-  factory WindowsNeoTokens.fromTheme(ThemeData theme) {
+  factory WindowsNeoTokens.fromTheme(
+    ThemeData theme, {
+    WindowsNeoThemeFamily family = WindowsNeoThemeFamily.miku,
+  }) {
     final isDark = theme.brightness == Brightness.dark;
+    if (family == WindowsNeoThemeFamily.fieldTerminal) {
+      const signalYellow = Color(0xFFFFFA00);
+      final surface = isDark
+          ? const Color(0xFF20201E)
+          : const Color(0xFFF7F7F3);
+      return WindowsNeoTokens(
+        family: family,
+        background: isDark ? const Color(0xFF141414) : const Color(0xFFE9E9E2),
+        sidebar: isDark ? const Color(0xFF1D1D1C) : const Color(0xFFDDDCD5),
+        surface: surface,
+        surfaceRaised: isDark
+            ? const Color(0xFF292927)
+            : const Color(0xFFFFFFFF),
+        border: isDark ? const Color(0xFF565650) : const Color(0xFF96968D),
+        muted: isDark ? const Color(0xFFBDBDB5) : const Color(0xFF595952),
+        hover: isDark ? const Color(0xFF2C2C29) : const Color(0xFFE0E0D9),
+        accent: signalYellow,
+        accentSurface: Color.alphaBlend(
+          signalYellow.withValues(alpha: isDark ? 0.18 : 0.34),
+          surface,
+        ),
+        accentSoft: Color.alphaBlend(
+          signalYellow.withValues(alpha: isDark ? 0.10 : 0.18),
+          surface,
+        ),
+        ink: isDark ? const Color(0xFFF4F4EE) : const Color(0xFF191919),
+        radiusSm: 3,
+        radiusMd: 5,
+        radiusLg: 7,
+        motionFast: const Duration(milliseconds: 150),
+        motionStandard: const Duration(milliseconds: 220),
+        motionPage: const Duration(milliseconds: 270),
+      );
+    }
     // Windows Neo has its own visual language. Keep its primary signal stable
     // instead of inheriting a potentially forest-green user seed.
     const accent = mikuCyan;
@@ -54,6 +127,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     // stack. The player can therefore remain a neutral dark surface.
     final surface = isDark ? const Color(0xFF202A2F) : const Color(0xFFFAFDFC);
     return WindowsNeoTokens(
+      family: family,
       background: isDark ? const Color(0xFF11191D) : const Color(0xFFEEF6F5),
       sidebar: isDark ? const Color(0xFF172327) : const Color(0xFFD0E7E5),
       surface: surface,
@@ -74,6 +148,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     );
   }
 
+  final WindowsNeoThemeFamily family;
   final Color background;
   final Color sidebar;
   final Color surface;
@@ -110,11 +185,13 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
   BorderRadius get chipRadius => BorderRadius.circular(radiusSm);
   BorderRadius get panelRadius => BorderRadius.circular(radiusLg);
 
+  bool get isFieldTerminal => family == WindowsNeoThemeFamily.fieldTerminal;
+
   List<BoxShadow> get cardShadow => [
     BoxShadow(
-      color: const Color(0xFF18383B).withValues(alpha: 0.065),
-      blurRadius: 18,
-      offset: const Offset(0, 6),
+      color: ink.withValues(alpha: isFieldTerminal ? 0.055 : 0.065),
+      blurRadius: isFieldTerminal ? 12 : 18,
+      offset: Offset(0, isFieldTerminal ? 4 : 6),
     ),
   ];
 
@@ -128,8 +205,10 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
 
   LinearGradient get accentBannerGradient => LinearGradient(
     colors: [
-      Color.lerp(accent, mikuCyan, 0.25)!,
-      Color.lerp(accent, const Color(0xFF75D8D2), 0.45)!,
+      accent,
+      isFieldTerminal
+          ? Color.alphaBlend(ink.withValues(alpha: 0.12), accent)
+          : Color.lerp(accent, const Color(0xFF75D8D2), 0.45)!,
     ],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
@@ -154,8 +233,12 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     end: Alignment.centerRight,
     colors: [
       accent.withValues(alpha: 0.82),
-      iceCyan.withValues(alpha: 0.48),
-      sakuraPink.withValues(alpha: 0.22),
+      (isFieldTerminal ? ink : iceCyan).withValues(
+        alpha: isFieldTerminal ? 0.30 : 0.48,
+      ),
+      (isFieldTerminal ? surface : sakuraPink).withValues(
+        alpha: isFieldTerminal ? 0.56 : 0.22,
+      ),
     ],
     stops: const [0, 0.62, 1],
   );
@@ -165,7 +248,9 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
   LinearGradient get rhythmGradient => LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [accent, iceCyan, sakuraPink.withValues(alpha: 0.42)],
+    colors: isFieldTerminal
+        ? [accent, accent, ink.withValues(alpha: 0.44)]
+        : [accent, iceCyan, sakuraPink.withValues(alpha: 0.42)],
     stops: const [0, 0.78, 1],
   );
 
@@ -251,6 +336,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     Duration? motionLoading,
     Duration? motionStagger,
   }) => WindowsNeoTokens(
+    family: family,
     background: background ?? this.background,
     sidebar: sidebar ?? this.sidebar,
     surface: surface ?? this.surface,
@@ -287,6 +373,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
   WindowsNeoTokens lerp(WindowsNeoTokens? other, double t) {
     if (other == null) return this;
     return WindowsNeoTokens(
+      family: t < 0.5 ? family : other.family,
       background: Color.lerp(background, other.background, t)!,
       sidebar: Color.lerp(sidebar, other.sidebar, t)!,
       surface: Color.lerp(surface, other.surface, t)!,
@@ -338,8 +425,11 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
 }
 
 abstract final class WindowsNeoTheme {
-  static ThemeData apply(ThemeData base) {
-    final tokens = WindowsNeoTokens.fromTheme(base);
+  static ThemeData apply(
+    ThemeData base, {
+    WindowsNeoThemeFamily family = WindowsNeoThemeFamily.miku,
+  }) {
+    final tokens = WindowsNeoTokens.fromTheme(base, family: family);
     final extensions =
         base.extensions.values
             .where((item) => item is! WindowsNeoTokens)
@@ -389,7 +479,7 @@ abstract final class WindowsNeoTheme {
         color: tokens.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 10,
-        shadowColor: const Color(0xFF18383B).withValues(alpha: 0.12),
+        shadowColor: tokens.ink.withValues(alpha: 0.12),
         shape: RoundedRectangleBorder(
           borderRadius: tokens.cardRadius,
           side: BorderSide(color: tokens.border),
@@ -399,7 +489,7 @@ abstract final class WindowsNeoTheme {
         backgroundColor: tokens.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 16,
-        shadowColor: const Color(0xFF18383B).withValues(alpha: 0.16),
+        shadowColor: tokens.ink.withValues(alpha: 0.16),
         barrierColor: Colors.black.withValues(alpha: 0.30),
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
@@ -415,7 +505,7 @@ abstract final class WindowsNeoTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 12,
         modalElevation: 18,
-        shadowColor: const Color(0xFF18383B).withValues(alpha: 0.16),
+        shadowColor: tokens.ink.withValues(alpha: 0.16),
         modalBarrierColor: Colors.black.withValues(alpha: 0.30),
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
