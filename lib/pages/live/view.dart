@@ -175,7 +175,10 @@ class _LivePageState extends State<LivePage>
                       context: context,
                       tooltip: '全部标签',
                       icon: const Icon(Icons.widgets),
-                      onPressed: () => Get.to(const LiveAreaPage()),
+                      onPressed: () => PageUtils.toPage(
+                        context,
+                        () => const LiveAreaPage(),
+                      ),
                     ),
                   ],
                 ),
@@ -309,7 +312,10 @@ class _LivePageState extends State<LivePage>
                 ),
               ),
               moreTextButton(
-                onTap: () => Get.to(const LiveFollowPage()),
+                onTap: () => PageUtils.toPage(
+                  context,
+                  () => const LiveFollowPage(),
+                ),
                 color: theme.colorScheme.outline,
               ),
             ],
@@ -344,7 +350,10 @@ class _LivePageState extends State<LivePage>
                   return Align(
                     alignment: const Alignment(0, -0.3),
                     child: GestureDetector(
-                      onTap: () => Get.to(const LiveFollowPage()),
+                      onTap: () => PageUtils.toPage(
+                        context,
+                        () => const LiveFollowPage(),
+                      ),
                       child: Container(
                         width: 40,
                         height: 40,

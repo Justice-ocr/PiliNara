@@ -446,93 +446,6 @@ class _WindowsNeoTabIndicatorPainter extends BoxPainter {
   void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
     final size = configuration.size;
     if (size == null) return;
-    final context = configuration.textDirection;
-    final selectionRect = Rect.fromLTWH(
-      offset.dx - 11,
-      offset.dy + 4,
-      size.width + 22,
-      size.height - 7,
-    );
-    final selectionGradient = switch (tokens.family) {
-      WindowsNeoThemeFamily.miku => LinearGradient(
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
-        colors: [
-          tokens.accent.withValues(alpha: 0.14),
-          Colors.white.withValues(alpha: 0.26),
-          tokens.structuralSecondaryAccent.withValues(alpha: 0.08),
-        ],
-        stops: const [0, 0.68, 1],
-      ),
-      WindowsNeoThemeFamily.endfield => LinearGradient(
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
-        colors: [
-          tokens.accent.withValues(alpha: 0.30),
-          tokens.accent.withValues(alpha: 0.08),
-          Colors.transparent,
-        ],
-        stops: const [0, 0.62, 1],
-      ),
-      WindowsNeoThemeFamily.ark => LinearGradient(
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
-        colors: [
-          tokens.accent.withValues(alpha: 0.18),
-          tokens.accent.withValues(alpha: 0.06),
-          Colors.transparent,
-        ],
-        stops: const [0, 0.56, 1],
-      ),
-      WindowsNeoThemeFamily.exAstris => LinearGradient(
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
-        colors: [
-          tokens.secondaryAccent.withValues(alpha: 0.12),
-          tokens.accent.withValues(alpha: 0.13),
-          Colors.transparent,
-        ],
-        stops: const [0, 0.58, 1],
-      ),
-      WindowsNeoThemeFamily.popucom => LinearGradient(
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
-        colors: [
-          tokens.accent.withValues(alpha: 0.36),
-          tokens.secondaryAccent.withValues(alpha: 0.16),
-          Colors.white.withValues(alpha: 0.14),
-        ],
-        stops: const [0, 0.66, 1],
-      ),
-      WindowsNeoThemeFamily.corporate => LinearGradient(
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
-        colors: [
-          tokens.accent.withValues(alpha: 0.24),
-          tokens.accent.withValues(alpha: 0.06),
-          Colors.transparent,
-        ],
-        stops: const [0, 0.64, 1],
-      ),
-    };
-    final selectionRadius = Radius.circular(
-      tokens.workspaceTabRadius.topLeft.x,
-    );
-    canvas
-      ..drawRRect(
-        RRect.fromRectAndRadius(selectionRect, selectionRadius),
-        Paint()..shader = selectionGradient.createShader(selectionRect),
-      )
-      ..drawRRect(
-        RRect.fromRectAndRadius(
-          selectionRect,
-          selectionRadius,
-        ),
-        Paint()
-          ..color = tokens.accent.withValues(alpha: 0.16)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.8,
-      );
     final left = offset.dx + (size.width - width) / 2;
     final rect = Rect.fromLTWH(
       left,
@@ -551,13 +464,6 @@ class _WindowsNeoTabIndicatorPainter extends BoxPainter {
         ),
       ),
       Paint()..shader = gradient.createShader(rect),
-    );
-    if (context == null) return;
-    final dotX = context == TextDirection.ltr ? rect.right : rect.left;
-    canvas.drawCircle(
-      Offset(dotX, rect.center.dy),
-      height,
-      Paint()..color = tokens.structuralSecondaryAccent.withValues(alpha: 0.58),
     );
   }
 }

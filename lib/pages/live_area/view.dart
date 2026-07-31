@@ -119,6 +119,7 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
                                       itemBuilder: (context, index) {
                                         final item = e.areaList![index];
                                         return _tagItem(
+                                          context: context,
                                           theme: theme,
                                           item: item,
                                           onPressed: () {
@@ -208,6 +209,7 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
                 children: response
                     .map(
                       (item) => _favTagItem(
+                        context: context,
                         theme: theme,
                         item: item,
                         onPressed: () {
@@ -231,6 +233,7 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
   }
 
   Widget _tagItem({
+    required BuildContext context,
     required ThemeData theme,
     required AreaItem item,
     required VoidCallback onPressed,
@@ -245,8 +248,9 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
           return;
         }
 
-        Get.to(
-          LiveAreaDetailPage(
+        PageUtils.toPage(
+          context,
+          () => LiveAreaDetailPage(
             areaId: item.id,
             parentAreaId: item.parentId,
             parentName: item.parentName ?? '',
@@ -314,6 +318,7 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
   }
 
   Widget _favTagItem({
+    required BuildContext context,
     required ThemeData theme,
     required AreaItem item,
     required VoidCallback onPressed,
@@ -340,8 +345,9 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
                 return;
               }
 
-              Get.to(
-                LiveAreaDetailPage(
+              PageUtils.toPage(
+                context,
+                () => LiveAreaDetailPage(
                   areaId: item.id,
                   parentAreaId: item.parentId,
                   parentName: item.parentName ?? '',

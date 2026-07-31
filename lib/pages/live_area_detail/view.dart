@@ -49,7 +49,10 @@ class _LiveAreaDetailPageState extends State<LiveAreaDetailPage> {
         title: Text(widget.parentName),
         actions: [
           IconButton(
-            onPressed: () => Get.to(const LiveSearchPage()),
+            onPressed: () => PageUtils.toPage(
+              context,
+              () => const LiveSearchPage(),
+            ),
             icon: const Icon(Icons.search),
           ),
           const SizedBox(width: 16),
