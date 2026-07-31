@@ -460,6 +460,9 @@ class _PipWidgetState extends State<PipWidget>
     duration: PipTransitionCoordinator.closeFadeDuration,
   );
 
+  double _baseLong = 200; // 当前设备档的长边基准(未乘 _scale),build 时更新
+  double _baseShort = 112;
+
   double get _width =>
       (PipOverlayService.isVertical ? _baseShort : _baseLong) * _scale;
   double get _height =>
@@ -728,6 +731,13 @@ class _PipWidgetState extends State<PipWidget>
   void _clampPositionInScreen(Size screenSize) {
     _left = _left!.clamp(0.0, max(0.0, screenSize.width - _width)).toDouble();
     _top = _top!.clamp(0.0, max(0.0, screenSize.height - _height)).toDouble();
+  }
+
+  @override
+  void didChangeMetrics() {
+    // 屏幕旋转 / 桌面窗口尺寸变化：触发重建，让 build 按新尺寸把小窗位置
+    // 钳回界内。仅重建、不改 _left/_top 意图值，窗口恢复时能自动回原位。
+    if (mounted) setState(() {});
   }
 
   @override

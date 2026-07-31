@@ -578,6 +578,13 @@ class _LivePipWidgetState extends State<LivePipWidget>
   }
 
   @override
+  void didChangeMetrics() {
+    // 屏幕旋转 / 桌面窗口尺寸变化：触发重建，让 build 按新尺寸把小窗位置
+    // 钳回界内。仅重建、不改 _left/_top 意图值，窗口恢复时能自动回原位。
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     // 按当前窗口短边分档:手机维持现状,平板/桌面放大
