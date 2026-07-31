@@ -16,9 +16,17 @@ class WindowsNeoMediaBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
+    final background = switch (tokens.family) {
+      WindowsNeoThemeFamily.miku => const Color(0xFF202A2F),
+      WindowsNeoThemeFamily.endfield => tokens.ink,
+      WindowsNeoThemeFamily.ark => tokens.chromeSurface,
+      WindowsNeoThemeFamily.exAstris => tokens.background,
+      WindowsNeoThemeFamily.popucom => const Color(0xFF252B35),
+      WindowsNeoThemeFamily.corporate => tokens.chromeSurface,
+    };
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xFF202A2F).withValues(alpha: 0.86),
+        color: background.withValues(alpha: 0.86),
         borderRadius: tokens.mediaBadgeRadius,
         border: Border.all(
           color: tokens.accent.withValues(alpha: 0.62),
@@ -82,6 +90,12 @@ class WindowsNeoStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
+    final usesRoundMarker = switch (tokens.family) {
+      WindowsNeoThemeFamily.miku ||
+      WindowsNeoThemeFamily.exAstris ||
+      WindowsNeoThemeFamily.popucom => true,
+      _ => false,
+    };
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -89,8 +103,8 @@ class WindowsNeoStat extends StatelessWidget {
           width: 3,
           height: 3,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
             color: tokens.accent.withValues(alpha: 0.78),
+            shape: usesRoundMarker ? BoxShape.circle : BoxShape.rectangle,
           ),
         ),
         const SizedBox(width: 4),

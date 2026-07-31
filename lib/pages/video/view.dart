@@ -84,6 +84,7 @@ import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_context_panel.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/features/video/windows_neo_video_layout.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
@@ -2447,7 +2448,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: isWindowsNeo ? context.windowsNeo.surface : null,
+        color: isWindowsNeo
+            ? (neoDarkTabSurface ? neoTokens.chromeSurface : neoTokens.surface)
+            : null,
         border: Border(
           bottom: BorderSide(
             color: theme.dividerColor.withValues(alpha: 0.1),

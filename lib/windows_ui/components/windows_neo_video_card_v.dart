@@ -43,6 +43,11 @@ class _WindowsNeoVideoCardVState extends State<WindowsNeoVideoCardV> {
     final metaHeight = MediaQuery.textScalerOf(
       context,
     ).scale(tokens.videoCardMetaHeight);
+    final coverScale = switch (tokens.family) {
+      WindowsNeoThemeFamily.miku || WindowsNeoThemeFamily.popucom => 1.02,
+      WindowsNeoThemeFamily.exAstris => 1.01,
+      _ => 1.0,
+    };
 
     void saveCover() => imageSaveDialog(
       title: item.title,
@@ -67,7 +72,7 @@ class _WindowsNeoVideoCardVState extends State<WindowsNeoVideoCardV> {
                 children: [
                   LayoutBuilder(
                     builder: (context, constraints) => AnimatedScale(
-                      scale: _hovered ? 1.02 : 1,
+                      scale: _hovered ? coverScale : 1,
                       duration: context.windowsNeoDuration(tokens.motionFast),
                       curve: Curves.easeOut,
                       child: NetworkImgLayer(

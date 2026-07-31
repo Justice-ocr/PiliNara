@@ -37,34 +37,65 @@ class WindowsNeoContextPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
+    final darkHeader = switch (tokens.family) {
+      WindowsNeoThemeFamily.ark ||
+      WindowsNeoThemeFamily.exAstris ||
+      WindowsNeoThemeFamily.corporate => true,
+      _ => false,
+    };
+    final foreground = darkHeader ? Colors.white : tokens.ink;
     return Column(
       children: [
-        SizedBox(
-          height: 46,
-          child: Row(
-            children: [
-              IconButton(
-                tooltip: backTooltip,
-                onPressed: onBack,
-                icon: const Icon(Icons.arrow_back, size: 19),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: darkHeader ? tokens.chromeSurface : tokens.surface,
+            border: Border(
+              bottom: BorderSide(
+                color: darkHeader
+                    ? Colors.white.withValues(alpha: 0.16)
+                    : tokens.border,
               ),
-              const SizedBox(width: 2),
-              Expanded(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+            ),
+          ),
+          child: SizedBox(
+            height: 46,
+            child: IconTheme(
+              data: IconThemeData(color: foreground),
+              child: Row(
+                children: [
+                  IconButton(
+                    tooltip: backTooltip,
+                    onPressed: onBack,
+                    icon: const Icon(Icons.arrow_back, size: 19),
                   ),
-                ),
+                  const SizedBox(width: 2),
+                  Container(
+                    width: tokens.family == WindowsNeoThemeFamily.exAstris
+                        ? 2
+                        : 3,
+                    height: 18,
+                    color: tokens.accent,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: foreground,
+                        fontWeight: FontWeight.w600,
+                        fontFamilyFallback: tokens.displayFontFallback,
+                      ),
+                    ),
+                  ),
+                  ...actions,
+                  const SizedBox(width: 4),
+                ],
               ),
-              ...actions,
-              const SizedBox(width: 4),
-            ],
+            ),
           ),
         ),
-        Divider(height: 1, color: tokens.border),
         Expanded(child: child),
       ],
     );

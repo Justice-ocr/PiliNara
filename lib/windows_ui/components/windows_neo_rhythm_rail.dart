@@ -54,7 +54,7 @@ class WindowsNeoActiveBeat extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: tokens.rhythmGradient,
         borderRadius: BorderRadius.circular(
-          tokens.identity.usesSquaredGeometry ? 0 : height,
+          tokens.family == WindowsNeoThemeFamily.miku ? height : 0,
         ),
         boxShadow: active
             ? [
@@ -75,15 +75,22 @@ class WindowsNeoLoadingMarker extends StatelessWidget {
   const WindowsNeoLoadingMarker({super.key});
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 2,
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: context.windowsNeo.rhythmGradient,
-        borderRadius: BorderRadius.circular(2),
+  Widget build(BuildContext context) {
+    final tokens = context.windowsNeo;
+    final radius = switch (tokens.family) {
+      WindowsNeoThemeFamily.miku => 2.0,
+      _ => 0.0,
+    };
+    return SizedBox(
+      height: 2,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: tokens.rhythmGradient,
+          borderRadius: BorderRadius.circular(radius),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// Compact vertical beat used beside shared page titles.
@@ -142,6 +149,10 @@ class WindowsNeoSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
+    final markerRadius = switch (tokens.family) {
+      WindowsNeoThemeFamily.miku => 2.0,
+      _ => 0.0,
+    };
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -152,7 +163,7 @@ class WindowsNeoSectionHeader extends StatelessWidget {
               height: 18,
               decoration: BoxDecoration(
                 gradient: tokens.rhythmGradient,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(markerRadius),
               ),
             ),
             SizedBox(width: tokens.spaceSm),
@@ -256,7 +267,7 @@ class _WindowsNeoHeaderBeatPainter extends CustomPainter {
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           lineRect,
-          Radius.circular(family == WindowsNeoThemeFamily.popucom ? 2 : 0),
+          Radius.circular(family == WindowsNeoThemeFamily.miku ? 2 : 0),
         ),
         Paint()..shader = gradient.createShader(lineRect),
       );
@@ -370,11 +381,8 @@ class _WindowsNeoHeaderWavePainter extends CustomPainter {
           ..drawCircle(orbitCenter, 3, primaryPaint);
       case WindowsNeoThemeFamily.popucom:
         canvas
-          ..drawRRect(
-            RRect.fromRectAndRadius(
-              Rect.fromLTWH(size.width * .20, 6, size.width * .56, 30),
-              const Radius.circular(15),
-            ),
+          ..drawRect(
+            Rect.fromLTWH(size.width * .20, 6, size.width * .56, 30),
             primaryPaint,
           )
           ..drawCircle(Offset(size.width * .28, center), 5, secondaryPaint)
@@ -445,16 +453,68 @@ class _WindowsNeoTabIndicatorPainter extends BoxPainter {
       size.width + 22,
       size.height - 7,
     );
-    final selectionGradient = LinearGradient(
-      begin: Alignment.centerLeft,
-      end: Alignment.centerRight,
-      colors: [
-        tokens.accent.withValues(alpha: 0.14),
-        Colors.white.withValues(alpha: 0.26),
-        tokens.structuralSecondaryAccent.withValues(alpha: 0.08),
-      ],
-      stops: const [0, 0.68, 1],
-    );
+    final selectionGradient = switch (tokens.family) {
+      WindowsNeoThemeFamily.miku => LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          tokens.accent.withValues(alpha: 0.14),
+          Colors.white.withValues(alpha: 0.26),
+          tokens.structuralSecondaryAccent.withValues(alpha: 0.08),
+        ],
+        stops: const [0, 0.68, 1],
+      ),
+      WindowsNeoThemeFamily.endfield => LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          tokens.accent.withValues(alpha: 0.30),
+          tokens.accent.withValues(alpha: 0.08),
+          Colors.transparent,
+        ],
+        stops: const [0, 0.62, 1],
+      ),
+      WindowsNeoThemeFamily.ark => LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          tokens.accent.withValues(alpha: 0.18),
+          tokens.accent.withValues(alpha: 0.06),
+          Colors.transparent,
+        ],
+        stops: const [0, 0.56, 1],
+      ),
+      WindowsNeoThemeFamily.exAstris => LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          tokens.secondaryAccent.withValues(alpha: 0.12),
+          tokens.accent.withValues(alpha: 0.13),
+          Colors.transparent,
+        ],
+        stops: const [0, 0.58, 1],
+      ),
+      WindowsNeoThemeFamily.popucom => LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          tokens.accent.withValues(alpha: 0.36),
+          tokens.secondaryAccent.withValues(alpha: 0.16),
+          Colors.white.withValues(alpha: 0.14),
+        ],
+        stops: const [0, 0.66, 1],
+      ),
+      WindowsNeoThemeFamily.corporate => LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          tokens.accent.withValues(alpha: 0.24),
+          tokens.accent.withValues(alpha: 0.06),
+          Colors.transparent,
+        ],
+        stops: const [0, 0.64, 1],
+      ),
+    };
     final selectionRadius = Radius.circular(
       tokens.workspaceTabRadius.topLeft.x,
     );
@@ -486,7 +546,9 @@ class _WindowsNeoTabIndicatorPainter extends BoxPainter {
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         rect,
-        Radius.circular(tokens.identity.usesSquaredGeometry ? 0 : height),
+        Radius.circular(
+          tokens.family == WindowsNeoThemeFamily.miku ? height : 0,
+        ),
       ),
       Paint()..shader = gradient.createShader(rect),
     );

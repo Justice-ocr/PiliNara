@@ -250,6 +250,9 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
         ),
         const SizedBox(width: 6),
       ],
+      stageMode: WindowsNeoStageMode.browse,
+      stageScene: WindowsNeoStageScene.archive,
+      stageIndex: _dynamicsController.tabController.index,
       commandBar: _buildWindowsTabs(),
       child: LayoutBuilder(
         builder: (context, constraints) {

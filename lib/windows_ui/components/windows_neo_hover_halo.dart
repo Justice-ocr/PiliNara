@@ -63,6 +63,20 @@ class _WindowsNeoHoverHaloState extends State<WindowsNeoHoverHalo> {
           ],
         ),
       ),
+      WindowsNeoThemeFamily.corporate => BoxDecoration(
+        borderRadius: widget.borderRadius,
+        border: Border(
+          bottom: BorderSide(color: tokens.accent, width: visible ? 2 : 1),
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [
+            tokens.accent.withValues(alpha: haloAlpha * 0.40),
+            Colors.transparent,
+          ],
+        ),
+      ),
       _ => BoxDecoration(
         borderRadius: widget.borderRadius,
         border: Border(

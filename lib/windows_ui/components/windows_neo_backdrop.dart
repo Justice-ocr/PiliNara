@@ -10,28 +10,65 @@ class WindowsNeoBackdrop extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final artworkAsset = tokens.family.backdropAsset;
     return Stack(
       children: [
-        Positioned.fill(
-          child: IgnorePointer(
-            child: CustomPaint(
-              painter: _WindowsNeoDotGrid(
-                dotColor: tokens.accent.withValues(alpha: dark ? 0.045 : 0.055),
-                watermarkColor: tokens.accent.withValues(
-                  alpha: dark ? 0.09 : 0.045,
+        if (artworkAsset != null) ...[
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: dark ? 0.16 : 0.11,
+                child: Image.asset(
+                  artworkAsset,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.centerRight,
+                  filterQuality: FilterQuality.medium,
                 ),
-                motifColor: tokens.stageMotifColor.withValues(
-                  alpha: dark ? 0.065 : 0.045,
-                ),
-                backdropPattern: tokens.identity.backdropPattern,
-                family: tokens.family,
-                depth: tokens.depth,
-                shellMark: tokens.shellMark,
-                shellWordmark: tokens.shellWordmark,
               ),
             ),
           ),
-        ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      tokens.background.withValues(alpha: 0.78),
+                      tokens.background.withValues(alpha: 0.48),
+                      tokens.background.withValues(alpha: 0.70),
+                    ],
+                    stops: const [0, 0.46, 1],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+        if (tokens.family == WindowsNeoThemeFamily.miku)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: _WindowsNeoDotGrid(
+                  dotColor: tokens.accent.withValues(
+                    alpha: dark ? 0.045 : 0.055,
+                  ),
+                  watermarkColor: tokens.accent.withValues(
+                    alpha: dark ? 0.09 : 0.045,
+                  ),
+                  motifColor: tokens.stageMotifColor.withValues(
+                    alpha: dark ? 0.065 : 0.045,
+                  ),
+                  backdropPattern: tokens.identity.backdropPattern,
+                  family: tokens.family,
+                  depth: tokens.depth,
+                  shellMark: tokens.shellMark,
+                  shellWordmark: tokens.shellWordmark,
+                ),
+              ),
+            ),
+          ),
         child,
       ],
     );
@@ -99,35 +136,35 @@ class _WindowsNeoDotGrid extends CustomPainter {
   void _paintFamilyWordmarks(Canvas canvas, Size size) {
     final (offset, fontSize, rotation) = switch (family) {
       WindowsNeoThemeFamily.endfield => (
-        Offset(size.width - 164, size.height * .16),
-        112.0,
-        0.0,
-      ),
+          Offset(size.width - 164, size.height * .16),
+          112.0,
+          0.0,
+        ),
       WindowsNeoThemeFamily.ark => (
-        Offset(size.width - 254, size.height * .16),
-        86.0,
-        -.06,
-      ),
+          Offset(size.width - 254, size.height * .16),
+          86.0,
+          -.06,
+        ),
       WindowsNeoThemeFamily.exAstris => (
-        Offset(size.width - 198, size.height * .16),
-        88.0,
-        0.0,
-      ),
+          Offset(size.width - 198, size.height * .16),
+          88.0,
+          0.0,
+        ),
       WindowsNeoThemeFamily.popucom => (
-        Offset(size.width - 194, size.height * .16),
-        86.0,
-        -.08,
-      ),
+          Offset(size.width - 194, size.height * .16),
+          86.0,
+          -.08,
+        ),
       WindowsNeoThemeFamily.corporate => (
-        Offset(size.width - 176, size.height * .16),
-        94.0,
-        0.0,
-      ),
+          Offset(size.width - 176, size.height * .16),
+          94.0,
+          0.0,
+        ),
       WindowsNeoThemeFamily.miku => (
-        Offset(size.width - 210, size.height * .20),
-        94.0,
-        -.10,
-      ),
+          Offset(size.width - 210, size.height * .20),
+          94.0,
+          -.10,
+        ),
     };
     _paintWordmark(
       canvas,
@@ -336,15 +373,12 @@ class _WindowsNeoDotGrid extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
     for (var i = 0; i < 6; i++) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            size.width - 300 + i * 40,
-            size.height - 90 - (i.isEven ? 0 : 18),
-            24,
-            24,
-          ),
-          const Radius.circular(5),
+      canvas.drawRect(
+        Rect.fromLTWH(
+          size.width - 300 + i * 40,
+          size.height - 90 - (i.isEven ? 0 : 18),
+          24,
+          24,
         ),
         paint,
       );
@@ -404,9 +438,9 @@ class _WindowsNeoDotGrid extends CustomPainter {
           color: outline ? null : watermarkColor,
           foreground: outline
               ? (Paint()
-                  ..color = watermarkColor
-                  ..style = PaintingStyle.stroke
-                  ..strokeWidth = .85)
+                ..color = watermarkColor
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = .85)
               : null,
           fontSize: fontSize,
           fontWeight: weight,

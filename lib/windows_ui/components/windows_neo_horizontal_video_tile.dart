@@ -44,6 +44,11 @@ class _WindowsNeoHorizontalVideoTileState
     final item = widget.videoItem;
     final theme = Theme.of(context);
     final tokens = context.windowsNeo;
+    final coverScale = switch (tokens.family) {
+      WindowsNeoThemeFamily.miku || WindowsNeoThemeFamily.popucom => 1.02,
+      WindowsNeoThemeFamily.exAstris => 1.01,
+      _ => 1.0,
+    };
 
     void saveCover() => imageSaveDialog(
       bvid: item.bvid,
@@ -79,7 +84,7 @@ class _WindowsNeoHorizontalVideoTileState
                       fit: StackFit.expand,
                       children: [
                         AnimatedScale(
-                          scale: _hovered ? 1.02 : 1,
+                          scale: _hovered ? coverScale : 1,
                           duration: context.windowsNeoDuration(
                             tokens.motionFast,
                           ),

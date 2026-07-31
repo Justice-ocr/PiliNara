@@ -151,6 +151,8 @@ class _MediaPageState extends CommonPageState<MinePage>
           ? const BackButton()
           : Icon(Icons.person_outline, color: context.windowsNeo.accent),
       actions: _windowsHeaderActions,
+      stageMode: WindowsNeoStageMode.browse,
+      stageScene: WindowsNeoStageScene.profile,
       child: refreshIndicator(
         onRefresh: controller.onRefresh,
         child: ListView(

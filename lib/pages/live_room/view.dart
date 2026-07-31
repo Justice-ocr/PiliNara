@@ -59,6 +59,7 @@ import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/windows_ui/features/video/windows_neo_video_layout.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:canvas_danmaku/danmaku_screen.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -773,9 +774,25 @@ class _LiveRoomPageState extends State<LiveRoomPage>
 
   Widget _buildWindowsSidePanel() {
     final showSuperChat = _liveRoomController.showSuperChat;
+    final darkPanel = switch (_windowsTokens.family) {
+      WindowsNeoThemeFamily.ark ||
+      WindowsNeoThemeFamily.exAstris ||
+      WindowsNeoThemeFamily.corporate => true,
+      _ => false,
+    };
+    final panelForeground = darkPanel ? Colors.white : _windowsTokens.ink;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: _windowsTokens.surface,
+        color: darkPanel
+            ? _windowsTokens.chromeSurface
+            : _windowsTokens.surface,
+        border: Border(
+          left: BorderSide(
+            color: darkPanel
+                ? Colors.white.withValues(alpha: 0.14)
+                : _windowsTokens.border.withValues(alpha: 0.72),
+          ),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.34),
@@ -808,19 +825,15 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                 horizontal: 5,
                 vertical: 5,
               ),
-              indicator: BoxDecoration(
-                color: _windowsTokens.accentSurface,
-                borderRadius: _windowsTokens.workspaceTabRadius,
-                boxShadow: [
-                  BoxShadow(
-                    color: _windowsTokens.accent.withValues(alpha: 0.12),
-                    blurRadius: 10,
-                  ),
-                ],
+              indicator: WindowsNeoTabIndicator(
+                tokens: _windowsTokens,
+                width: 30,
               ),
               labelStyle: const TextStyle(fontWeight: FontWeight.w700),
-              labelColor: _windowsTokens.ink,
-              unselectedLabelColor: _windowsTokens.muted,
+              labelColor: panelForeground,
+              unselectedLabelColor: darkPanel
+                  ? Colors.white.withValues(alpha: 0.62)
+                  : _windowsTokens.muted,
               overlayColor: WidgetStatePropertyAll(
                 _windowsTokens.hover.withValues(alpha: 0.7),
               ),
@@ -872,6 +885,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     child: videoPlayerPanel(false, width: width, height: height),
     builder: (context, player) => WindowsNeoMediaStage(
       mode: WindowsNeoStageMode.live,
+      scene: WindowsNeoStageScene.live,
       stateLabel: _liveRoomController.showSuperChat ? 'CHAT / SC' : 'CHAT',
       stateIndex: _windowsSideTabController.index,
       child: player!,
@@ -1607,11 +1621,31 @@ class _LiveRoomPageState extends State<LiveRoomPage>
 
   Widget _buildWindowsInlineInput() {
     final tokens = _windowsTokens;
+    final darkComposer = switch (tokens.family) {
+      WindowsNeoThemeFamily.ark ||
+      WindowsNeoThemeFamily.exAstris ||
+      WindowsNeoThemeFamily.corporate => true,
+      _ => false,
+    };
+    final composerSurface = darkComposer
+        ? tokens.chromeSurface
+        : tokens.surfaceRaised;
+    final composerInk = darkComposer ? Colors.white : tokens.ink;
+    final sendForeground = tokens.accent.computeLuminance() > 0.50
+        ? Colors.black
+        : Colors.white;
     return Container(
       constraints: const BoxConstraints(minHeight: 62, maxHeight: 126),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
       decoration: BoxDecoration(
-        color: tokens.surfaceRaised,
+        color: composerSurface,
+        border: Border(
+          top: BorderSide(
+            color: darkComposer
+                ? Colors.white.withValues(alpha: 0.16)
+                : tokens.border.withValues(alpha: 0.72),
+          ),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.24),
@@ -1653,12 +1687,18 @@ class _LiveRoomPageState extends State<LiveRoomPage>
               maxLines: 4,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _sendWindowsDanmaku(),
-              style: TextStyle(color: tokens.ink, fontSize: 14),
+              style: TextStyle(color: composerInk, fontSize: 14),
               decoration: InputDecoration(
                 hintText: '输入弹幕，按 Enter 发送',
-                hintStyle: TextStyle(color: tokens.muted),
+                hintStyle: TextStyle(
+                  color: darkComposer
+                      ? Colors.white.withValues(alpha: 0.50)
+                      : tokens.muted,
+                ),
                 filled: true,
-                fillColor: tokens.hover.withValues(alpha: 0.62),
+                fillColor: darkComposer
+                    ? Colors.white.withValues(alpha: 0.07)
+                    : tokens.hover.withValues(alpha: 0.62),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 10,
@@ -1718,7 +1758,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                 onPressed: canSend ? _sendWindowsDanmaku : null,
                 style: IconButton.styleFrom(
                   backgroundColor: tokens.accent,
-                  foregroundColor: const Color(0xFF071312),
+                  foregroundColor: sendForeground,
                   disabledBackgroundColor: tokens.hover,
                   disabledForegroundColor: tokens.muted,
                 ),

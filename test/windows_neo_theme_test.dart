@@ -181,15 +181,75 @@ void main() {
     expect(ark.structuralSecondaryAccent, ark.accent);
     expect(exAstris.cardRadius, BorderRadius.zero);
     expect(exAstris.panelRadius, BorderRadius.zero);
-    expect(exAstris.mediaBadgeRadius.topLeft.x, 999);
+    expect(exAstris.mediaBadgeRadius, BorderRadius.zero);
     expect(corporate.cardRadius, BorderRadius.zero);
     expect(corporate.panelRadius, BorderRadius.zero);
     expect(corporate.chromeSurface, const Color(0xFF050505));
-    expect(popucom.cardRadius.topLeft.x, 12);
-    expect(popucom.workspaceTabRadius.topLeft.x, 10);
+    expect(popucom.cardRadius, BorderRadius.zero);
+    expect(popucom.workspaceTabRadius, BorderRadius.zero);
     expect(popucom.chromeSurface, const Color(0xFF252B35));
     expect(ark.displayFontFallback, contains('Arial Narrow'));
     expect(exAstris.displayFontFallback, contains('Noto Serif SC'));
+  });
+
+  test('only Miku keeps soft-surface geometry', () {
+    final theme = ThemeData.light();
+    for (final family in WindowsNeoThemeFamily.values.where(
+      (family) => family != WindowsNeoThemeFamily.miku,
+    )) {
+      final tokens = WindowsNeoTokens.fromTheme(theme, family: family);
+      expect(tokens.radiusSm, 0, reason: family.name);
+      expect(tokens.radiusMd, 0, reason: family.name);
+      expect(tokens.radiusLg, 0, reason: family.name);
+      expect(tokens.cardRadius, BorderRadius.zero, reason: family.name);
+      expect(tokens.chipRadius, BorderRadius.zero, reason: family.name);
+      expect(tokens.panelRadius, BorderRadius.zero, reason: family.name);
+      expect(
+        tokens.workspaceTabRadius,
+        BorderRadius.zero,
+        reason: family.name,
+      );
+      expect(
+        tokens.sidebarArtworkRadius,
+        BorderRadius.zero,
+        reason: family.name,
+      );
+      expect(
+        tokens.navigationItemRadius,
+        BorderRadius.zero,
+        reason: family.name,
+      );
+      expect(tokens.mediaBadgeRadius, BorderRadius.zero, reason: family.name);
+      expect(tokens.actionRadius, BorderRadius.zero, reason: family.name);
+    }
+  });
+
+  test('Miku visual identity is isolated from every other family', () {
+    for (final definition in WindowsNeoThemeRegistry.values) {
+      if (definition.family == WindowsNeoThemeFamily.miku) {
+        expect(
+          definition.identity.sidebarArtwork,
+          WindowsNeoSidebarArtwork.portrait,
+        );
+        expect(definition.identity.shellMark, '39');
+        continue;
+      }
+      expect(
+        definition.identity.sidebarArtwork,
+        isNot(WindowsNeoSidebarArtwork.portrait),
+        reason: definition.family.name,
+      );
+      expect(
+        definition.identity.shellMark,
+        isNot('39'),
+        reason: definition.family.name,
+      );
+      expect(
+        definition.identity.shellWordmark,
+        isNot('MIKU'),
+        reason: definition.family.name,
+      );
+    }
   });
 
   testWidgets('stage modes render across every theme family', (tester) async {
@@ -197,7 +257,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: WindowsNeoTheme.apply(ThemeData.light(), family: family),
-          home: Scaffold(
+          home: const Scaffold(
             body: SizedBox(
               width: 1200,
               height: 720,
@@ -227,6 +287,45 @@ void main() {
       );
       await tester.pump();
       expect(tester.takeException(), isNull, reason: family.name);
+    }
+  });
+
+  testWidgets('scene compositions render across every family', (tester) async {
+    for (final family in WindowsNeoThemeFamily.values) {
+      for (final scene in WindowsNeoStageScene.values) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: WindowsNeoTheme.apply(ThemeData.light(), family: family),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1200,
+                height: 720,
+                child: scene.mode == WindowsNeoStageMode.browse
+                    ? WindowsNeoStageFrame(
+                        mode: scene.mode,
+                        scene: scene,
+                        stateLabel: scene.label,
+                        stateIndex: scene.index,
+                        child: const SizedBox.expand(),
+                      )
+                    : WindowsNeoMediaStage(
+                        mode: scene.mode,
+                        scene: scene,
+                        stateLabel: scene.label,
+                        stateIndex: scene.index,
+                        child: const ColoredBox(color: Colors.black),
+                      ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: '${family.name}/${scene.name}',
+        );
+      }
     }
   });
 

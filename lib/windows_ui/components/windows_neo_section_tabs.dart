@@ -22,6 +22,13 @@ class WindowsNeoSectionTabs extends StatelessWidget {
     final theme = Theme.of(context);
     final tokens = context.windowsNeo;
     final padding = horizontalPadding ?? tokens.pagePadding - 4;
+    final onDarkChrome = switch (tokens.family) {
+      WindowsNeoThemeFamily.ark ||
+      WindowsNeoThemeFamily.exAstris ||
+      WindowsNeoThemeFamily.corporate => true,
+      _ => false,
+    };
+    final foreground = onDarkChrome ? Colors.white : tokens.ink;
     return SizedBox(
       height: tokens.sectionTabHeight,
       child: Stack(
@@ -43,8 +50,10 @@ class WindowsNeoSectionTabs extends StatelessWidget {
             dividerHeight: 0,
             indicatorSize: TabBarIndicatorSize.label,
             indicator: WindowsNeoTabIndicator(tokens: context.windowsNeo),
-            labelColor: tokens.ink,
-            unselectedLabelColor: tokens.muted,
+            labelColor: foreground,
+            unselectedLabelColor: onDarkChrome
+                ? Colors.white.withValues(alpha: 0.62)
+                : tokens.muted,
             labelStyle: theme.textTheme.bodyMedium?.copyWith(
               fontSize: 13,
               fontWeight: FontWeight.w700,

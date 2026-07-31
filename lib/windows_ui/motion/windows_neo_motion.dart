@@ -243,20 +243,33 @@ class _WindowsNeoStaggeredRevealState extends State<WindowsNeoStaggeredReveal>
     parent: _controller,
     curve: Curves.easeOutCubic,
   );
-  late final Animation<Offset> _offset =
-      Tween<Offset>(
-        begin: const Offset(0, 0.018),
-        end: Offset.zero,
-      ).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-      );
+  late Animation<Offset> _offset;
   Timer? _timer;
   bool _scheduled = false;
+  WindowsNeoThemeFamily? _motionFamily;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _controller.duration = context.windowsNeo.motionStandard;
+    final family = context.windowsNeo.family;
+    if (_motionFamily != family) {
+      _motionFamily = family;
+      _offset =
+          Tween<Offset>(
+            begin: switch (family) {
+              WindowsNeoThemeFamily.endfield => const Offset(-0.014, 0),
+              WindowsNeoThemeFamily.ark => const Offset(-0.016, 0),
+              WindowsNeoThemeFamily.exAstris => const Offset(0, 0.012),
+              WindowsNeoThemeFamily.popucom => const Offset(0, 0.020),
+              WindowsNeoThemeFamily.corporate => const Offset(0.014, 0),
+              WindowsNeoThemeFamily.miku => const Offset(0, 0.018),
+            },
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+          );
+    }
     if (context.windowsNeoReduceMotion) {
       _timer?.cancel();
       _controller.value = 1;

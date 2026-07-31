@@ -29,6 +29,7 @@ class WindowsNeoHome extends StatelessWidget {
         title: '\u9996\u9875',
         compactHeader: true,
         stageMode: WindowsNeoStageMode.browse,
+        stageScene: WindowsNeoStageScene.home,
         stageIndex: index,
         stageState: homeController.tabs[index].label,
         leading: Icon(Icons.home_outlined, color: context.windowsNeo.accent),

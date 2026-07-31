@@ -3,7 +3,7 @@ import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
 
-/// Cyan card shell with a short, non-layout-shifting hover lift.
+/// Theme-aware card shell with a short, non-layout-shifting focus response.
 class WindowsNeoCardShell extends StatefulWidget {
   const WindowsNeoCardShell({
     super.key,
@@ -31,8 +31,14 @@ class _WindowsNeoCardShellState extends State<WindowsNeoCardShell> {
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
     final highlighted = widget.hovered || _focused;
+    final hoverOffset = switch (tokens.family) {
+      WindowsNeoThemeFamily.miku ||
+      WindowsNeoThemeFamily.popucom => const Offset(0, -0.012),
+      WindowsNeoThemeFamily.exAstris => const Offset(0, -0.005),
+      _ => Offset.zero,
+    };
     return AnimatedSlide(
-      offset: highlighted ? const Offset(0, -0.012) : Offset.zero,
+      offset: highlighted ? hoverOffset : Offset.zero,
       duration: context.windowsNeoDuration(tokens.motionFast),
       curve: Curves.easeOutCubic,
       child: WindowsNeoHoverHalo(
@@ -102,11 +108,7 @@ class _WindowsNeoCardShellState extends State<WindowsNeoCardShell> {
                         gradient: tokens.cardAccentGradient,
                         borderRadius: BorderRadius.vertical(
                           bottom: Radius.circular(
-                            tokens.family == WindowsNeoThemeFamily.miku ||
-                                    tokens.family ==
-                                        WindowsNeoThemeFamily.popucom
-                                ? 2
-                                : 0,
+                            tokens.family == WindowsNeoThemeFamily.miku ? 2 : 0,
                           ),
                         ),
                       ),

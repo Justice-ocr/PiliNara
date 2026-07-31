@@ -96,6 +96,8 @@ class _FollowPageState extends State<FollowPage> {
       color: context.windowsNeo.accent,
     ),
     actions: isOwner ? _windowsHeaderActions(context) : const [],
+    stageMode: WindowsNeoStageMode.browse,
+    stageScene: WindowsNeoStageScene.profile,
     child: isOwner
         ? Obx(() => _buildBody(_followController.followState.value))
         : _childPage(),
