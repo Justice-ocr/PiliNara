@@ -73,9 +73,8 @@ extension WindowsNeoThemeFamilyArtwork on WindowsNeoThemeFamily {
           'assets/images/windows_neo_ex_astris_sidebar.png',
         WindowsNeoThemeFamily.popucom =>
           'assets/images/windows_neo_popucom_sidebar.png',
-        // The provider rejected the Corporate render, so it keeps its deliberate
-        // monochrome fallback instead of referencing a missing asset.
-        WindowsNeoThemeFamily.corporate => null,
+        WindowsNeoThemeFamily.corporate =>
+          'assets/images/windows_neo_corporate_sidebar.png',
         WindowsNeoThemeFamily.miku => null,
       };
 }
