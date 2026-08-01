@@ -1116,6 +1116,7 @@ class _PipWidgetState extends State<PipWidget>
                   ),
                 ),
               ),
+              ),
             ),
           );
         },
