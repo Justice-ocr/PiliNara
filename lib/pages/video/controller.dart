@@ -163,6 +163,7 @@ class VideoDetailController extends GetxController
     }
     return PlPlayerController.ensureInstance();
   }
+
   bool get setSystemBrightness => plPlayerController.setSystemBrightness;
   bool get removeSafeArea => plPlayerController.removeSafeArea;
   double get uiScale => plPlayerController.uiScale;
@@ -418,8 +419,7 @@ class VideoDetailController extends GetxController
       final fsQa = isWiFi ? Pref.defaultVideoQa : Pref.defaultVideoQaCellular;
       final curHighestVideoQa = data.dash!.video!.first.quality.code;
       int targetQa = curHighestVideoQa;
-      if (data.acceptQuality?.isNotEmpty == true &&
-          fsQa <= curHighestVideoQa) {
+      if (data.acceptQuality?.isNotEmpty == true && fsQa <= curHighestVideoQa) {
         targetQa = data.acceptQuality!.findClosestTarget(
           (e) => e <= fsQa,
           (a, b) => a > b ? a : b,
@@ -993,7 +993,9 @@ class VideoDetailController extends GetxController
     // 触发不必要的异步操作和 UI 更新
     if (isClosed) {
       if (kDebugMode) {
-        debugPrint('[VideoDetail] playerInit: controller is closed, skipping resource loading');
+        debugPrint(
+          '[VideoDetail] playerInit: controller is closed, skipping resource loading',
+        );
       }
       return;
     }
@@ -1118,19 +1120,148 @@ class VideoDetailController extends GetxController
         } else if (playUrlStartTime != null) {
           defaultST = playUrlStartTime;
         }
+        _lastQueryBvid = bvid;
+        _lastQueryCid = cid.value;
+      }
+      if (plPlayerController.enableSponsorBlock && isBlock && !fromReset) {
+        querySponsorBlock(bvid: bvid, cid: cid.value);
+      }
+      if (plPlayerController.cacheVideoQa == null) {
+        final isWiFi = await ConnectivityUtils.isWiFi;
+        final halfScreenQa = Pref.defaultVideoQaHalfScreen;
+        final fullScreenQa = isWiFi
+            ? Pref.defaultVideoQa
+            : Pref.defaultVideoQaCellular;
+        plPlayerController
+          ..cacheVideoQa =
+              !plPlayerController.isFullScreen.value && halfScreenQa != null
+              ? min(halfScreenQa, fullScreenQa)
+              : fullScreenQa
+          ..cacheAudioQa = isWiFi
+              ? Pref.defaultAudioQa
+              : Pref.defaultAudioQaCellular;
       }
 
-      if (!isUgc && !fromReset && plPlayerController.enablePgcSkip) {
-        if (data.clipInfoList case final clipInfoList?) {
-          resetBlock();
-          handleSBData(clipInfoList);
+      final result = await VideoHttp.videoUrl(
+        cid: cid.value,
+        bvid: bvid,
+        epid: epId,
+        seasonId: seasonId,
+        tryLook: plPlayerController.tryLook,
+        videoType: _actualVideoType ?? videoType,
+        language: currLang.value,
+        voiceBalance: plPlayerController.enableAudioNormalization,
+      );
+
+      if (result case Success(:final response)) {
+        data = response;
+
+        languages.value = data.language?.items;
+        currLang.value = data.curLanguage;
+
+        volume = data.volume;
+
+        if (!fromReset) {
+          final progress = args.remove('progress');
+          final playUrlStartTime = defaultST == null
+              ? _resolvePlayUrlStartTime(
+                  lastPlayTime: data.lastPlayTime,
+                  lastPlayCid: data.lastPlayCid,
+                )
+              : null;
+          if (progress != null) {
+            defaultST = Duration(milliseconds: progress);
+          } else if (playUrlStartTime != null) {
+            defaultST = playUrlStartTime;
+          }
         }
-      }
 
-      if (data.acceptDesc?.contains('试看') == true) {
-        SmartDialog.showToast(
-          '该视频为专属视频，仅提供试看',
-          displayTime: const Duration(seconds: 3),
+        if (!isUgc && !fromReset && plPlayerController.enablePgcSkip) {
+          if (data.clipInfoList case final clipInfoList?) {
+            resetBlock();
+            handleSBData(clipInfoList);
+          }
+        }
+
+        if (data.acceptDesc?.contains('试看') == true) {
+          SmartDialog.showToast(
+            '该视频为专属视频，仅提供试看',
+            displayTime: const Duration(seconds: 3),
+          );
+        }
+        if (data.dash == null && data.durl != null) {
+          final first = data.durl!.first;
+          videoUrl = VideoUtils.getCdnUrl(first.playUrls);
+          audioUrl = '';
+
+          // 实际为FLV/MP4格式，但已被淘汰，这里仅做兜底处理
+          final videoQuality = VideoQuality.fromCode(data.quality!);
+          firstVideo = VideoItem(
+            id: data.quality!,
+            baseUrl: videoUrl,
+            codecs: 'avc1',
+            quality: videoQuality,
+          );
+          _setVideoHeight();
+          currentDecodeFormats = VideoDecodeFormatType.fromString('avc1');
+          currentVideoQa.value = videoQuality;
+          if (reinitializePlayer) {
+            await _initPlayerIfNeeded(autoFullScreenFlag);
+          } else {
+            // 从 PiP 返回时，重新初始化 SponsorBlock
+            if (plPlayerController.enableSponsorBlock &&
+                segmentList.isNotEmpty) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                initSkip();
+              });
+            }
+          }
+          isQuerying = false;
+          return;
+        }
+        if (data.dash == null) {
+          SmartDialog.showToast('视频资源不存在');
+          _autoPlay.value = false;
+          videoState.value = false;
+          if (plPlayerController.isFullScreen.value) {
+            plPlayerController.triggerFullScreen(status: false);
+          }
+          isQuerying = false;
+          return;
+        }
+        final List<VideoItem> videoList = data.dash!.video!;
+        // if (kDebugMode) debugPrint("allVideosList:${allVideosList}");
+        // 当前可播放的最高质量视频
+        final curHighestVideoQa = videoList.first.quality.code;
+        // 预设的画质为null，则当前可用的最高质量
+        int targetVideoQa = curHighestVideoQa;
+        if (data.acceptQuality?.isNotEmpty == true &&
+            plPlayerController.cacheVideoQa! <= curHighestVideoQa) {
+          // 如果预设的画质低于当前最高
+          targetVideoQa = data.acceptQuality!.findClosestTarget(
+            (e) => e <= plPlayerController.cacheVideoQa!,
+            (a, b) => a > b ? a : b,
+          );
+        }
+        currentVideoQa.value = VideoQuality.fromCode(targetVideoQa);
+
+        /// 取出符合当前画质的videoList
+        final List<VideoItem> videosList = videoList
+            .where((e) => e.quality.code == targetVideoQa)
+            .toList();
+
+        /// 优先顺序 设置中指定解码格式 -> 当前可选的首个解码格式
+        final List<FormatItem> supportFormats = data.supportFormats!;
+        // 根据画质选编码格式
+        final List<String> supportDecodeFormats = supportFormats
+            .firstWhere(
+              (e) => e.quality == targetVideoQa,
+              orElse: () => supportFormats.first,
+            )
+            .codecs!;
+        currentDecodeFormats = VideoUtils.selectCodec(
+          supportDecodeFormats,
+          preferCodecs,
         );
       }
       if (data.dash == null) {
@@ -1669,6 +1800,35 @@ class VideoDetailController extends GetxController
           res.toast();
         }
       }
+      /*
+      if (response.subtitle?.subtitles case final sub? when (sub.isNotEmpty)) {
+        _setSubtitle(sub);
+      } else if (!Accounts.heartbeat.isLogin) {
+        final res = await DmGrpc.dmView(aid, cid.value);
+        if (res case Success(:final response)) {
+          if (response.hasSubtitle() &&
+              response.subtitle.subtitles.isNotEmpty) {
+            _setSubtitle(
+              response.subtitle.subtitles
+                  .map(
+                    (i) => Subtitle(
+                      lan: i.lan,
+                      lanDoc: i.lanDoc,
+                      subtitleUrl: i.subtitleUrl.replaceFirst(
+                        RegExp('^https?:'),
+                        '',
+                      ),
+                      isAi: i.type == .AI,
+                    ),
+                  )
+                  .toList()
+                ..sort(),
+            );
+          }
+        } else {
+          res.toast();
+      }
+*/
     }
   }
 
