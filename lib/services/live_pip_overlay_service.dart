@@ -760,6 +760,58 @@ class _LivePipWidgetState extends State<LivePipWidget>
                                 blurRadius: 12,
                                 spreadRadius: 2,
                               ),
+                              // 底部控制栏:播放/暂停居中(小窗主键居中的
+                              // 通用心智,与视频小窗键位对齐);左槽与刷新
+                              // 等宽占位,spaceEvenly 下主键即精确居中
+                              Positioned(
+                                left: 0,
+                                right: 0,
+                                bottom: 8,
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    const SizedBox(width: 22),
+                                    // 播放/暂停
+                                    Obx(() {
+                                      final isPlaying =
+                                          widget
+                                              .plPlayerController
+                                              .playerStatus
+                                              .value ==
+                                          PlayerStatus.playing;
+                                      return GestureDetector(
+                                        onTap: () {
+                                          _resetHideTimer();
+                                          if (isPlaying) {
+                                            widget.plPlayerController.pause();
+                                          } else {
+                                            widget.plPlayerController.play();
+                                          }
+                                        },
+                                        child: Icon(
+                                          isPlaying
+                                              ? Icons.pause
+                                              : Icons.play_arrow,
+                                          color: Colors.white,
+                                          size: 30,
+                                        ),
+                                      );
+                                    }),
+                                    // 刷新:直播卡死自救;低频操作降为
+                                    // 70% 白(medium-emphasis),平衡主键
+                                    // 居中后偏右的视觉重量
+                                    GestureDetector(
+                                      onTap: _onRefresh,
+                                      child: const Icon(
+                                        Icons.refresh,
+                                        color: Colors.white70,
+                                        size: 22,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
                           child: ClipRRect(
