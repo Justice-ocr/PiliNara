@@ -946,7 +946,6 @@ class _LivePipWidgetState extends State<LivePipWidget>
                   ),
                 ),
               ),
-              ),
             ),
           );
         },

@@ -1115,6 +1115,7 @@ class _PipWidgetState extends State<PipWidget>
                     /* Legacy Windows PiP controls retained in history; the animated implementation below supersedes them.
                   ),
                 ),
+                ),
               ),
               ),
             ),
