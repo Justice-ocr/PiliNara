@@ -19,8 +19,7 @@ class HistoryCardItem extends StatelessWidget {
   static const double _cardWidth = 180.0;
   static const double _cardHeight = 110.0;
 
-  bool get _isArticle =>
-      item.history.business?.contains('article') == true;
+  bool get _isArticle => item.history.business?.contains('article') == true;
 
   bool get _isLive => item.history.business == 'live';
 

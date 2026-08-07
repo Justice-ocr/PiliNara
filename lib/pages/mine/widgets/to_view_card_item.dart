@@ -30,7 +30,8 @@ class ToViewCardItem extends StatelessWidget {
       return;
     }
     try {
-      final cid = item.cid ?? await SearchHttp.ab2c(aid: item.aid, bvid: item.bvid);
+      final cid =
+          item.cid ?? await SearchHttp.ab2c(aid: item.aid, bvid: item.bvid);
       if (cid != null) {
         PageUtils.toVideoPage(
           aid: item.aid,

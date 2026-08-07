@@ -211,7 +211,8 @@ abstract final class VideoHttp {
         }
         if (applyFullFilter) {
           // 开关开启：全局黑名单 + 完整过滤（时长、播放量、点赞率、标题关键词、推荐屏蔽用户）
-          if (!isWhitelisted && GlobalData().blackMids.contains(i['owner']['mid'])) {
+          if (!isWhitelisted &&
+              GlobalData().blackMids.contains(i['owner']['mid'])) {
             continue;
           }
           final item = HotVideoItemModel.fromJson(i);
@@ -987,7 +988,8 @@ abstract final class VideoHttp {
         );
         if (applyFullFilter) {
           // 开关开启：全局黑名单 + 完整过滤（时长、播放量、点赞率、标题关键词、推荐屏蔽用户）
-          if (!isWhitelisted && GlobalData().blackMids.contains(i['owner']['mid'])) {
+          if (!isWhitelisted &&
+              GlobalData().blackMids.contains(i['owner']['mid'])) {
             continue;
           }
           final item = HotVideoItemModel.fromJson(i);

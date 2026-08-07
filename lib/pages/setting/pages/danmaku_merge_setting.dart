@@ -55,8 +55,7 @@ class _DanmakuMergeSettingPageState extends State<DanmakuMergeSettingPage> {
       Pref.mergeDanmakuMaxCosine,
       _cosinePresets,
     );
-    _representativePercent =
-        Pref.mergeDanmakuRepresentativePercent.toDouble();
+    _representativePercent = Pref.mergeDanmakuRepresentativePercent.toDouble();
     _usePinyin = Pref.mergeDanmakuUsePinyin;
     _crossMode = Pref.mergeDanmakuCrossMode;
     _skipSubtitle = Pref.mergeDanmakuSkipSubtitle;
@@ -234,7 +233,10 @@ class _DanmakuMergeSettingPageState extends State<DanmakuMergeSettingPage> {
               subtitle: Text('重复 ${_enlargeThreshold.round()} 条以上开始放大'),
               trailing: Text(
                 '${_enlargeThreshold.round()}',
-                style: TextStyle(color: theme.colorScheme.primary, fontSize: 16),
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontSize: 16,
+                ),
               ),
             ),
             Padding(
@@ -259,7 +261,10 @@ class _DanmakuMergeSettingPageState extends State<DanmakuMergeSettingPage> {
               subtitle: Text('对数底数 ${_enlargeLogBase.round()}（越小放大越快）'),
               trailing: Text(
                 '${_enlargeLogBase.round()}',
-                style: TextStyle(color: theme.colorScheme.primary, fontSize: 16),
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontSize: 16,
+                ),
               ),
             ),
             Padding(
@@ -425,8 +430,8 @@ class _DanmakuMergeSettingPageState extends State<DanmakuMergeSettingPage> {
         Pref.mergeDanmakuMaxCosine,
         _cosinePresets,
       );
-      _representativePercent =
-          Pref.mergeDanmakuRepresentativePercent.toDouble();
+      _representativePercent = Pref.mergeDanmakuRepresentativePercent
+          .toDouble();
       _usePinyin = Pref.mergeDanmakuUsePinyin;
       _crossMode = Pref.mergeDanmakuCrossMode;
       _skipSubtitle = Pref.mergeDanmakuSkipSubtitle;

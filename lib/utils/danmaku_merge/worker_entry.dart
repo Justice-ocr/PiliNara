@@ -63,8 +63,9 @@ void danmakuMergeWorkerMain(List<Object?> args) {
       final merged = clusterer.mergeSegment(
         segmentIndex: task.segmentIndex,
         currentSegment: DmSegMobileReply.fromBuffer(task.currentSegment).elems,
-        nextSegmentPrefix:
-            DmSegMobileReply.fromBuffer(task.nextSegmentPrefix).elems,
+        nextSegmentPrefix: DmSegMobileReply.fromBuffer(
+          task.nextSegmentPrefix,
+        ).elems,
       );
       if (kDebugMode) {
         debugPrint(
@@ -77,8 +78,8 @@ void danmakuMergeWorkerMain(List<Object?> args) {
         DanmakuMergeResultPayload(
           taskId: task.taskId,
           segmentIndex: task.segmentIndex,
-          mergedSegment:
-              (DmSegMobileReply()..elems.addAll(merged)).writeToBuffer(),
+          mergedSegment: (DmSegMobileReply()..elems.addAll(merged))
+              .writeToBuffer(),
         ).toMessage(),
       );
     } catch (error, stackTrace) {

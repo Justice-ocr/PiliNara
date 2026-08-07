@@ -477,14 +477,15 @@ class PlDanmakuController {
       _queuedSeg.remove(request.segmentIndex);
       _activeDownloads++;
       unawaited(
-        queryDanmaku(request.segmentIndex, isPrefetch: request.isPrefetch)
-            .catchError(Utils.reportError)
-            .whenComplete(() {
-              _activeDownloads--;
-              if (!_disposed) {
-                _pumpDownloadQueue();
-              }
-            }),
+        queryDanmaku(
+          request.segmentIndex,
+          isPrefetch: request.isPrefetch,
+        ).catchError(Utils.reportError).whenComplete(() {
+          _activeDownloads--;
+          if (!_disposed) {
+            _pumpDownloadQueue();
+          }
+        }),
       );
     }
   }

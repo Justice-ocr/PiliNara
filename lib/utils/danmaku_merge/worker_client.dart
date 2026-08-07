@@ -53,10 +53,10 @@ class DanmakuMergeWorkerClient {
         taskId: taskId,
         segmentIndex: segmentIndex,
         config: config,
-        currentSegment:
-            (DmSegMobileReply()..elems.addAll(currentSegment)).writeToBuffer(),
-        nextSegmentPrefix:
-            (DmSegMobileReply()..elems.addAll(nextSegmentPrefix)).writeToBuffer(),
+        currentSegment: (DmSegMobileReply()..elems.addAll(currentSegment))
+            .writeToBuffer(),
+        nextSegmentPrefix: (DmSegMobileReply()..elems.addAll(nextSegmentPrefix))
+            .writeToBuffer(),
       ).toMessage(),
     );
     return completer.future;
@@ -113,7 +113,9 @@ class DanmakuMergeWorkerClient {
       _receivePort = ReceivePort();
       _subscription = _receivePort!.listen(_handleMessage);
 
-      final dictContent = await dictionaryLoader(DanmakuPinyinEncoder.assetPath);
+      final dictContent = await dictionaryLoader(
+        DanmakuPinyinEncoder.assetPath,
+      );
       if (kDebugMode) {
         debugPrint(
           '[DanmakuMergeWorker] spawning isolate, dictLength=${dictContent.length}',

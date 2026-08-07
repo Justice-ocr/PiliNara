@@ -66,8 +66,9 @@ class DanmakuClusterer {
 
     final output = <DanmakuElem>[];
 
-    final ListQueue<DanmakuMergeCluster>? activeClustersFlat =
-        config.crossMode ? ListQueue<DanmakuMergeCluster>() : null;
+    final ListQueue<DanmakuMergeCluster>? activeClustersFlat = config.crossMode
+        ? ListQueue<DanmakuMergeCluster>()
+        : null;
     final Map<int, ListQueue<DanmakuMergeCluster>>? activeClustersByMode =
         config.crossMode ? null : <int, ListQueue<DanmakuMergeCluster>>{};
 

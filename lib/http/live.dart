@@ -840,7 +840,10 @@ abstract final class LiveHttp {
   }
 
   static String _hex(Random random, int length) {
-    return List.generate(length, (_) => random.nextInt(16).toRadixString(16)).join();
+    return List.generate(
+      length,
+      (_) => random.nextInt(16).toRadixString(16),
+    ).join();
   }
 
   static String _hexVariant(Random random) {
@@ -848,9 +851,13 @@ abstract final class LiveHttp {
   }
 
   static String _randomString(int length) {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const chars =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random();
-    return List.generate(length, (_) => chars[random.nextInt(chars.length)]).join();
+    return List.generate(
+      length,
+      (_) => chars[random.nextInt(chars.length)],
+    ).join();
   }
 
   static String _clientSign(Map<String, dynamic> data) {
@@ -870,7 +877,8 @@ abstract final class LiveHttp {
   }) async {
     final uuid = _hbUuid;
     final clickId = _hbClickId;
-    if (uuid == null || clickId == null) return const Error('heartbeat not initialized');
+    if (uuid == null || clickId == null)
+      return const Error('heartbeat not initialized');
 
     _hbSeqId++;
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
