@@ -26,6 +26,13 @@ jobs:
           channel: stable
           flutter-version-file: pubspec.yaml
 
+      - name: Configure Git dependencies
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config --global url."https://x-access-token:$env:GH_TOKEN@github.com/bggRGjQaUbCoE/".insteadOf "https://github.com/bggRGjQaUbCoE/"
+
       - name: Apply Patch
         shell: pwsh
         run: lib/scripts/patch.ps1 windows
