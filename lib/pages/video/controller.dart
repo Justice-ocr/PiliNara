@@ -182,6 +182,7 @@ class VideoDetailController extends GetxController
   double? brightness;
 
   late final headerCtrKey = GlobalKey<TimeBatteryMixin>();
+  late final pipHeaderCtrKey = GlobalKey<TimeBatteryMixin>();
 
   Box setting = GStorage.setting;
 

@@ -77,6 +77,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
   late bool isPortrait;
   late double maxWidth;
   late double maxHeight;
+  late ThemeData theme;
 
   @override
   void didChangeDependencies() {
