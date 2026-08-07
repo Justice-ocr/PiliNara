@@ -19,12 +19,15 @@ import 'package:PiliPlus/common/widgets/scroll_physics.dart'
     show tabBarScrollPhysics;
 import 'package:PiliPlus/models/common/live/live_contribution_rank_type.dart';
 import 'package:PiliPlus/models_new/live/live_danmaku/danmaku_msg.dart';
+import 'package:PiliPlus/models_new/live/live_emote/emoticon.dart';
 import 'package:PiliPlus/models_new/live/live_room_info_h5/data.dart';
 import 'package:PiliPlus/models_new/live/live_superchat/item.dart';
 import 'package:PiliPlus/pages/danmaku/danmaku_model.dart';
 import 'package:PiliPlus/pages/live_room/contribution_rank/controller.dart';
 import 'package:PiliPlus/pages/live_room/contribution_rank/view.dart';
 import 'package:PiliPlus/pages/live_room/controller.dart';
+import 'package:PiliPlus/pages/live_emote/controller.dart';
+import 'package:PiliPlus/pages/live_emote/view.dart';
 import 'package:PiliPlus/pages/live_room/superchat/superchat_card.dart';
 import 'package:PiliPlus/pages/live_room/superchat/superchat_panel.dart';
 import 'package:PiliPlus/pages/live_room/widgets/bottom_control.dart';
@@ -102,6 +105,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       TextEditingController();
   late final FocusNode _windowsDanmakuFocusNode;
   bool _windowsDanmakuSending = false;
+  bool _windowsEmotePanelVisible = false;
 
   late final GlobalKey pageKey = GlobalKey();
   late final GlobalKey chatKey = GlobalKey();
@@ -543,6 +547,9 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     _windowsSideTabController.dispose();
     _windowsDanmakuTextController.dispose();
     _windowsDanmakuFocusNode.dispose();
+    Get.delete<LiveEmotePanelController>(
+      tag: _liveRoomController.roomId.toString(),
+    );
     super.dispose();
   }
 
@@ -895,16 +902,33 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   Widget _buildWindowsChatPanel() => Column(
     children: [
       Expanded(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: LiveRoomChatPanel(
-            key: chatKey,
-            isPP: false,
-            roomId: _liveRoomController.roomId,
-            liveRoomController: _liveRoomController,
-            hideSuperChat: true,
-            onAtUser: _insertWindowsMention,
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final emotePanelHeight = min(380.0, constraints.maxHeight - 8);
+            return Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: LiveRoomChatPanel(
+                    key: chatKey,
+                    isPP: false,
+                    roomId: _liveRoomController.roomId,
+                    liveRoomController: _liveRoomController,
+                    hideSuperChat: true,
+                    onAtUser: _insertWindowsMention,
+                  ),
+                ),
+                if (_windowsEmotePanelVisible && emotePanelHeight > 0)
+                  Positioned(
+                    left: 8,
+                    right: 8,
+                    bottom: 0,
+                    height: emotePanelHeight,
+                    child: _buildWindowsEmotePanel(),
+                  ),
+              ],
+            );
+          },
         ),
       ),
       _buildWindowsInlineInput(),
@@ -1588,6 +1612,73 @@ class _LiveRoomPageState extends State<LiveRoomPage>
 
   void _focusWindowsDanmaku() => _windowsDanmakuFocusNode.requestFocus();
 
+  void _toggleWindowsEmotePanel() {
+    if (kReleaseMode && !_liveRoomController.isLogin) {
+      SmartDialog.showToast('账号未登录');
+      return;
+    }
+    setState(() => _windowsEmotePanelVisible = !_windowsEmotePanelVisible);
+  }
+
+  void _insertWindowsEmote(Emoticon emote, double? _, double? __) {
+    final emoji = emote.emoji;
+    if (emoji == null || emoji.isEmpty) return;
+    final value = _windowsDanmakuTextController.value;
+    final selection = value.selection.isValid
+        ? value.selection
+        : TextSelection.collapsed(offset: value.text.length);
+    final text = value.text.replaceRange(selection.start, selection.end, emoji);
+    _windowsDanmakuTextController.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(
+        offset: selection.start + emoji.length,
+      ),
+    );
+    setState(() => _windowsEmotePanelVisible = false);
+    _windowsDanmakuFocusNode.requestFocus();
+  }
+
+  Future<void> _sendWindowsEmoticon(Emoticon emote) async {
+    final emoticonUnique = emote.emoticonUnique;
+    if (emoticonUnique == null ||
+        emoticonUnique.isEmpty ||
+        _windowsDanmakuSending) {
+      return;
+    }
+    setState(() {
+      _windowsDanmakuSending = true;
+      _windowsEmotePanelVisible = false;
+    });
+    final res = await LiveHttp.sendLiveMsg(
+      roomId: _liveRoomController.roomId,
+      msg: emoticonUnique,
+      dmType: 1,
+      emoticonOptions: '[object Object]',
+    );
+    if (!mounted) return;
+    if (!res.isSuccess) res.toast();
+    setState(() => _windowsDanmakuSending = false);
+  }
+
+  Widget _buildWindowsEmotePanel() => DecoratedBox(
+    decoration: BoxDecoration(
+      color: _windowsTokens.chromeSurface,
+      border: Border.all(color: _windowsTokens.border.withValues(alpha: 0.82)),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.36),
+          blurRadius: 18,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    ),
+    child: LiveEmotePanel(
+      roomId: _liveRoomController.roomId,
+      onChoose: _insertWindowsEmote,
+      onSendEmoticonUnique: _sendWindowsEmoticon,
+    ),
+  );
+
   KeyEventResult _handleWindowsDanmakuKey(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
       _sendWindowsDanmaku();
@@ -1722,9 +1813,14 @@ class _LiveRoomPageState extends State<LiveRoomPage>
           ),
           IconButton(
             tooltip: '表情',
-            onPressed: () => _liveRoomController.onSendDanmaku(true),
-            color: tokens.muted,
-            icon: const Icon(Icons.emoji_emotions_outlined, size: 20),
+            onPressed: _toggleWindowsEmotePanel,
+            color: _windowsEmotePanelVisible ? tokens.accent : tokens.muted,
+            icon: Icon(
+              _windowsEmotePanelVisible
+                  ? Icons.emoji_emotions
+                  : Icons.emoji_emotions_outlined,
+              size: 20,
+            ),
           ),
           Builder(
             builder: (context) => Material(

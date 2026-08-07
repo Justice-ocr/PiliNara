@@ -6,6 +6,7 @@ import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart';
 import 'package:PiliPlus/common/widgets/video_popup_menu.dart';
 import 'package:PiliPlus/models/common/stat_type.dart';
 import 'package:PiliPlus/models/horizontal_video_model.dart';
+import 'package:PiliPlus/models/model_hot_video_item.dart';
 import 'package:PiliPlus/models_new/pgc/pgc_rank/pgc_rank_item_model.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
@@ -44,6 +45,8 @@ class _WindowsNeoHorizontalVideoTileState
     final item = widget.videoItem;
     final theme = Theme.of(context);
     final tokens = context.windowsNeo;
+    final publishedAt =
+        item.pubdate ?? (item is HotVideoItemModel ? item.ctime : null);
     final coverScale = switch (tokens.family) {
       WindowsNeoThemeFamily.miku || WindowsNeoThemeFamily.popucom => 1.02,
       WindowsNeoThemeFamily.exAstris => 1.01,
@@ -195,14 +198,14 @@ class _WindowsNeoHorizontalVideoTileState
                     SizedBox(height: tokens.spaceXs),
                     LayoutBuilder(
                       builder: (context, constraints) {
-                        final compact = constraints.maxWidth < 210;
+                        final showDanmaku = constraints.maxWidth >= 245;
                         return Row(
                           children: [
                             WindowsNeoStat(
                               type: StatType.play,
                               value: item.stat.view,
                             ),
-                            if (!compact) ...[
+                            if (showDanmaku) ...[
                               SizedBox(width: tokens.spaceSm),
                               WindowsNeoStat(
                                 type: StatType.danmaku,
@@ -210,9 +213,11 @@ class _WindowsNeoHorizontalVideoTileState
                               ),
                             ],
                             const Spacer(),
-                            if (!compact && item.pubdate != null)
+                            if (publishedAt != null)
                               Text(
-                                DateFormatUtils.dateFormat(item.pubdate),
+                                DateFormatUtils.dateFormat(publishedAt),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: tokens.cardCaptionStyle(theme.textTheme),
                               ),
                           ],
