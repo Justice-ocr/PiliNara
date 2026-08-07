@@ -1,5 +1,6 @@
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+import 'package:PiliPlus/http/live.dart';
 import 'package:PiliPlus/models_new/live/live_feed_index/card_data_list_item.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
@@ -8,6 +9,7 @@ import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 class WindowsNeoLiveCard extends StatefulWidget {
   const WindowsNeoLiveCard({
@@ -85,6 +87,76 @@ class WindowsNeoLiveCardSkeleton extends StatelessWidget {
 class _WindowsNeoLiveCardState extends State<WindowsNeoLiveCard> {
   bool _hovered = false;
 
+  void _showFeedbackDialog(BuildContext context) {
+    final feedback = widget.item.feedback;
+    final roomId = widget.item.roomid;
+    if (feedback == null || feedback.isEmpty || roomId == null) return;
+
+    final theme = Theme.of(context);
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('反馈直播间'),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final group in feedback) ...[
+                  Text(group.title ?? '', style: theme.textTheme.titleSmall),
+                  if ((group.subtitle ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      group.subtitle!,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final reason in group.reasons ?? const [])
+                        ActionChip(
+                          label: Text(reason.name ?? ''),
+                          onPressed: () async {
+                            Navigator.of(dialogContext).pop();
+                            SmartDialog.showLoading(msg: '正在提交');
+                            final res = await LiveHttp.liveFeedback(
+                              roomId,
+                              reason.id!,
+                              reason.idType!,
+                            );
+                            SmartDialog.dismiss();
+                            if (res.isSuccess) {
+                              SmartDialog.showToast('提交成功');
+                            } else {
+                              res.toast();
+                            }
+                          },
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                ],
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('取消'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
@@ -122,6 +194,22 @@ class _WindowsNeoLiveCardState extends State<WindowsNeoLiveCard> {
                         type: .emote,
                       ),
                     ),
+                    if (item.feedback?.isNotEmpty == true)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: AnimatedOpacity(
+                          opacity: _hovered ? 1 : 0,
+                          duration: context.windowsNeoDuration(
+                            tokens.motionFast,
+                          ),
+                          child: IconButton.filledTonal(
+                            tooltip: '反馈直播间',
+                            onPressed: () => _showFeedbackDialog(context),
+                            icon: const Icon(Icons.flag_outlined, size: 17),
+                          ),
+                        ),
+                      ),
                     Positioned(
                       left: 8,
                       right: 8,
