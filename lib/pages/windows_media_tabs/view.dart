@@ -114,6 +114,7 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
       }
       final activeId = tabs[activeIndex].id;
       final splitTabs = WindowsVideoTabService.splitTabs;
+      final maximizedSplitTab = WindowsVideoTabService.maximizedSplitTab;
 
       return WindowsBackShortcutListener(
         onBack: WindowsVideoTabService.popActiveTab,
@@ -143,6 +144,7 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
                 tabs: tabs,
                 activeId: activeId,
                 splitTabs: splitTabs,
+                maximizedSplitTab: maximizedSplitTab,
                 tabBuilder: _buildTabNavigator,
               ),
             ),
@@ -421,12 +423,14 @@ class WindowsMediaTabStack extends StatelessWidget {
     required this.tabs,
     required this.activeId,
     required this.splitTabs,
+    required this.maximizedSplitTab,
     required this.tabBuilder,
   });
 
   final List<WindowsVideoTabItem> tabs;
   final String activeId;
   final List<WindowsVideoTabItem> splitTabs;
+  final String? maximizedSplitTab;
   final Widget Function(WindowsVideoTabItem item) tabBuilder;
 
   @override
@@ -436,6 +440,8 @@ class WindowsMediaTabStack extends StatelessWidget {
       final splitBounds = isSplit
           ? _splitBounds(constraints, splitTabs.length)
           : const <String, Rect>{};
+      final isMaximized =
+          isSplit && maximizedSplitTab != null && splitBounds.containsKey(maximizedSplitTab);
       return Stack(
         fit: StackFit.expand,
         children: [
@@ -443,12 +449,19 @@ class WindowsMediaTabStack extends StatelessWidget {
             _buildTabSlot(
               context,
               item,
-              bounds: splitBounds[item.id],
-              visible: isSplit
+              bounds: isMaximized && item.id == maximizedSplitTab
+                  ? Rect.fromLTWH(0, 0, constraints.maxWidth, constraints.maxHeight)
+                  : splitBounds[item.id],
+              layoutVisible: isSplit
+                  ? splitBounds.containsKey(item.id) &&
+                        (!isMaximized || item.id == maximizedSplitTab)
+                  : item.id == activeId,
+              stageVisible: isSplit
                   ? splitBounds.containsKey(item.id)
                   : item.id == activeId,
               focused: item.id == activeId,
               split: isSplit,
+              maximized: isMaximized && item.id == maximizedSplitTab,
             ),
         ],
       );
@@ -471,19 +484,26 @@ class WindowsMediaTabStack extends StatelessWidget {
     BuildContext context,
     WindowsVideoTabItem item, {
     required Rect? bounds,
-    required bool visible,
+    required bool layoutVisible,
+    required bool stageVisible,
     required bool focused,
     required bool split,
+    required bool maximized,
   }) {
     final child = Offstage(
-      offstage: !visible,
+      offstage: !layoutVisible,
       child: Listener(
         behavior: HitTestBehavior.opaque,
-        onPointerDown: split && visible
+        onPointerDown: split && layoutVisible
             ? (_) => WindowsVideoTabService.focusSplitTab(item.id)
             : null,
-        child: DecoratedBox(
-          decoration: split && visible
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onDoubleTap: split && layoutVisible
+              ? () => WindowsVideoTabService.toggleSplitMaximized(item.id)
+              : null,
+          child: DecoratedBox(
+            decoration: split && layoutVisible
               ? BoxDecoration(
                   border: Border.all(
                     color: focused
@@ -497,7 +517,29 @@ class WindowsMediaTabStack extends StatelessWidget {
                   ),
                 )
               : const BoxDecoration(),
-          child: _buildStage(item, visible: visible, focused: focused),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                _buildStage(
+                  item,
+                  visible: stageVisible,
+                  focused: focused,
+                ),
+                if (split && layoutVisible)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: _buildSplitTitleBar(
+                      context,
+                      item,
+                      focused: focused,
+                      maximized: maximized,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -513,6 +555,102 @@ class WindowsMediaTabStack extends StatelessWidget {
       child: child,
     );
   }
+
+  Widget _buildSplitTitleBar(
+    BuildContext context,
+    WindowsVideoTabItem item, {
+    required bool focused,
+    required bool maximized,
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    final muted = WindowsVideoTabService.muteStateFor(item.id);
+    return Material(
+      color: colors.surface.withValues(alpha: 0.94),
+      child: Container(
+        height: 32,
+        padding: const EdgeInsets.only(left: 10, right: 2),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: colors.outline.withValues(alpha: 0.24)),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                item.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ),
+            Obx(
+              () {
+                final isMuted = muted?.value ?? false;
+                return _buildSplitAction(
+                  tooltip: isMuted ? '\u53d6\u6d88\u9759\u97f3' : '\u9759\u97f3',
+                  icon: isMuted ? Icons.volume_off_outlined : Icons.volume_up_outlined,
+                  selected: isMuted,
+                  onPressed: muted == null
+                      ? null
+                      : () => WindowsVideoTabService.setSplitTabMuted(
+                          item.id,
+                          !isMuted,
+                        ),
+                );
+              },
+            ),
+            _buildSplitAction(
+              tooltip: '\u8bbe\u4e3a\u4e3b\u97f3\u8f68',
+              icon: Icons.volume_up_rounded,
+              selected: focused,
+              onPressed: () => WindowsVideoTabService.setSplitPrimaryAudio(item.id),
+            ),
+            _buildSplitAction(
+              tooltip: maximized ? '\u6062\u590d\u5206\u5c4f' : '\u6700\u5927\u5316\u5f53\u524d\u7a97\u683c',
+              icon: maximized ? Icons.close_fullscreen : Icons.open_in_full,
+              selected: maximized,
+              onPressed: () => WindowsVideoTabService.toggleSplitMaximized(item.id),
+            ),
+            _buildSplitAction(
+              tooltip: '\u4ece\u5206\u5c4f\u79fb\u9664',
+              icon: Icons.grid_view_outlined,
+              onPressed: () => WindowsVideoTabService.removeFromSplit(item.id),
+            ),
+            _buildSplitAction(
+              tooltip: '\u5173\u95ed\u6807\u7b7e',
+              icon: Icons.close,
+              destructive: true,
+              onPressed: () => WindowsVideoTabService.close(item.id),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSplitAction({
+    required String tooltip,
+    required IconData icon,
+    VoidCallback? onPressed,
+    bool selected = false,
+    bool destructive = false,
+  }) => SizedBox(
+    width: 28,
+    height: 28,
+    child: IconButton(
+      tooltip: tooltip,
+      iconSize: 16,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+      color: destructive ? Colors.redAccent : null,
+      style: selected
+          ? IconButton.styleFrom(backgroundColor: Colors.white24)
+          : null,
+      onPressed: onPressed,
+      icon: Icon(icon),
+    ),
+  );
 
   Map<String, Rect> _splitBounds(BoxConstraints constraints, int count) {
     const gap = 1.0;

@@ -419,6 +419,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         deactivate: _deactivateWindowsVideoTab,
         close: _closeWindowsVideoTab,
         present: _presentWindowsVideoTab,
+        muteState: videoDetailController.plPlayerController.muted,
+        setMuted: videoDetailController.plPlayerController.setMuted,
       );
       WindowsVideoTabService.registerContextPopper(
         videoDetailController.args,

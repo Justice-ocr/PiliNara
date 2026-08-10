@@ -307,6 +307,8 @@ class _LiveRoomPageState extends State<LiveRoomPage>
         deactivate: _deactivateWindowsLiveTab,
         close: _closeWindowsLiveTab,
         present: _presentWindowsLiveTab,
+        muteState: plPlayerController.muted,
+        setMuted: plPlayerController.setMuted,
       );
     }
     PlPlayerController.setPlayCallBack(plPlayerController.play);

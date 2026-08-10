@@ -203,7 +203,9 @@ class PlPlayerController with BlockConfigMixin {
   /// [videoController] instance of Player
   VideoController? get videoController => _videoController;
 
-  bool isMuted = false;
+  final RxBool muted = false.obs;
+
+  bool get isMuted => muted.value;
 
   /// 听视频
   late final RxBool onlyPlayAudio = false.obs;
@@ -596,7 +598,7 @@ class PlPlayerController with BlockConfigMixin {
   }
 
   Future<void> setMuted(bool muted) async {
-    isMuted = muted;
+    this.muted.value = muted;
     final controller = _videoPlayerController;
     if (controller == null) return;
     try {
