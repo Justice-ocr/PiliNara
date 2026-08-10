@@ -1468,7 +1468,7 @@ class _WindowsNeoTabStrip extends StatelessWidget {
                     width: 40,
                     height: 40,
                     child: IconButton(
-                      tooltip: '鍒嗗睆鎾斁',
+                      tooltip: '\u5206\u5c4f\u64ad\u653e',
                       iconSize: 18,
                       onPressed: onSplit,
                       icon: const Icon(Icons.splitscreen_outlined),

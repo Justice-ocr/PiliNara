@@ -141,7 +141,6 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
               onSplit: _showSplitSelection,
               child: WindowsMediaTabStack(
                 tabs: tabs,
-                activeIndex: activeIndex,
                 activeId: activeId,
                 splitTabs: splitTabs,
                 tabBuilder: _buildTabNavigator,
@@ -420,50 +419,41 @@ class WindowsMediaTabStack extends StatelessWidget {
   const WindowsMediaTabStack({
     super.key,
     required this.tabs,
-    required this.activeIndex,
     required this.activeId,
     required this.splitTabs,
     required this.tabBuilder,
   });
 
   final List<WindowsVideoTabItem> tabs;
-  final int activeIndex;
   final String activeId;
   final List<WindowsVideoTabItem> splitTabs;
   final Widget Function(WindowsVideoTabItem item) tabBuilder;
 
   @override
-  Widget build(BuildContext context) {
-    if (splitTabs.length >= 2) {
-      final selectedIds = splitTabs.map((item) => item.id).toSet();
-      final panes = [
-        for (final item in splitTabs) _buildSplitPane(context, item),
-      ];
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final isSplit = splitTabs.length >= 2;
+      final splitBounds = isSplit
+          ? _splitBounds(constraints, splitTabs.length)
+          : const <String, Rect>{};
       return Stack(
         fit: StackFit.expand,
         children: [
-          _buildSplitLayout(panes),
           for (final item in tabs)
-            if (!selectedIds.contains(item.id))
-              Offstage(
-                offstage: true,
-                child: _buildStage(item, visible: false, focused: false),
-              ),
+            _buildTabSlot(
+              context,
+              item,
+              bounds: splitBounds[item.id],
+              visible: isSplit
+                  ? splitBounds.containsKey(item.id)
+                  : item.id == activeId,
+              focused: item.id == activeId,
+              split: isSplit,
+            ),
         ],
       );
-    }
-    return IndexedStack(
-      index: activeIndex,
-      children: [
-        for (var index = 0; index < tabs.length; index++)
-          _buildStage(
-            tabs[index],
-            visible: index == activeIndex,
-            focused: index == activeIndex,
-          ),
-      ],
-    );
-  }
+    },
+  );
 
   Widget _buildStage(
     WindowsVideoTabItem item, {
@@ -477,72 +467,89 @@ class WindowsMediaTabStack extends StatelessWidget {
     child: RepaintBoundary(child: tabBuilder(item)),
   );
 
-  Widget _buildSplitPane(BuildContext context, WindowsVideoTabItem item) {
-    final focused = item.id == activeId;
-    return Listener(
-      behavior: HitTestBehavior.opaque,
-      onPointerDown: (_) => WindowsVideoTabService.focusSplitTab(item.id),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: focused
-                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.72)
-                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.28),
-            width: focused ? 2 : 1,
-          ),
+  Widget _buildTabSlot(
+    BuildContext context,
+    WindowsVideoTabItem item, {
+    required Rect? bounds,
+    required bool visible,
+    required bool focused,
+    required bool split,
+  }) {
+    final child = Offstage(
+      offstage: !visible,
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: split && visible
+            ? (_) => WindowsVideoTabService.focusSplitTab(item.id)
+            : null,
+        child: DecoratedBox(
+          decoration: split && visible
+              ? BoxDecoration(
+                  border: Border.all(
+                    color: focused
+                        ? Theme.of(context).colorScheme.primary.withValues(
+                            alpha: 0.72,
+                          )
+                        : Theme.of(context).colorScheme.outline.withValues(
+                            alpha: 0.28,
+                          ),
+                    width: focused ? 2 : 1,
+                  ),
+                )
+              : const BoxDecoration(),
+          child: _buildStage(item, visible: visible, focused: focused),
         ),
-        child: _buildStage(item, visible: true, focused: focused),
       ),
+    );
+    if (bounds == null) {
+      return Positioned.fill(key: ValueKey(item.id), child: child);
+    }
+    return Positioned(
+      key: ValueKey(item.id),
+      left: bounds.left,
+      top: bounds.top,
+      width: bounds.width,
+      height: bounds.height,
+      child: child,
     );
   }
 
-  Widget _buildSplitLayout(List<Widget> panes) {
-    return switch (panes.length) {
-      2 => Row(
-          children: [
-            Expanded(child: panes[0]),
-            const VerticalDivider(width: 1),
-            Expanded(child: panes[1]),
-          ],
-        ),
-      3 => Row(
-          children: [
-            Expanded(child: panes[0]),
-            const VerticalDivider(width: 1),
-            Expanded(
-              child: Column(
-                children: [
-                  Expanded(child: panes[1]),
-                  const Divider(height: 1),
-                  Expanded(child: panes[2]),
-                ],
-              ),
-            ),
-          ],
-        ),
-      _ => Column(
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(child: panes[0]),
-                  const VerticalDivider(width: 1),
-                  Expanded(child: panes[1]),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(child: panes[2]),
-                  const VerticalDivider(width: 1),
-                  Expanded(child: panes[3]),
-                ],
-              ),
-            ),
-          ],
-        ),
+  Map<String, Rect> _splitBounds(BoxConstraints constraints, int count) {
+    const gap = 1.0;
+    final width = constraints.maxWidth;
+    final height = constraints.maxHeight;
+    final halfWidth = (width - gap) / 2;
+    final halfHeight = (height - gap) / 2;
+    final panes = switch (count) {
+      2 => [
+          Rect.fromLTWH(0, 0, halfWidth, height),
+          Rect.fromLTWH(halfWidth + gap, 0, halfWidth, height),
+        ],
+      3 => [
+          Rect.fromLTWH(0, 0, halfWidth, height),
+          Rect.fromLTWH(halfWidth + gap, 0, halfWidth, halfHeight),
+          Rect.fromLTWH(
+            halfWidth + gap,
+            halfHeight + gap,
+            halfWidth,
+            halfHeight,
+          ),
+        ],
+      _ => [
+          Rect.fromLTWH(0, 0, halfWidth, halfHeight),
+          Rect.fromLTWH(halfWidth + gap, 0, halfWidth, halfHeight),
+          Rect.fromLTWH(0, halfHeight + gap, halfWidth, halfHeight),
+          Rect.fromLTWH(
+            halfWidth + gap,
+            halfHeight + gap,
+            halfWidth,
+            halfHeight,
+          ),
+        ],
+    };
+    return {
+      for (var index = 0; index < splitTabs.length; index++)
+        splitTabs[index].id: panes[index],
     };
   }
 }
