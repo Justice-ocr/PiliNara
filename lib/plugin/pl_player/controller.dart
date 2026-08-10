@@ -579,15 +579,30 @@ class PlPlayerController with BlockConfigMixin {
   bool _splitAudioSuppressed = false;
 
   bool get splitAudioSuppressed => _splitAudioSuppressed;
+  bool get _isOutputMuted => _splitAudioSuppressed || isMuted;
+
+  double get _effectivePlayerVolume =>
+      _isOutputMuted ? 0 : volume.value * 100;
 
   Future<void> setSplitAudioSuppressed(bool suppressed) async {
     _splitAudioSuppressed = suppressed;
     final controller = _videoPlayerController;
     if (controller == null) return;
     try {
-      await controller.setVolume(suppressed ? 0 : volume.value * 100);
+      await controller.setVolume(_effectivePlayerVolume);
     } catch (err) {
       if (kDebugMode) debugPrint('split audio volume: $err');
+    }
+  }
+
+  Future<void> setMuted(bool muted) async {
+    isMuted = muted;
+    final controller = _videoPlayerController;
+    if (controller == null) return;
+    try {
+      await controller.setVolume(_effectivePlayerVolume);
+    } catch (err) {
+      if (kDebugMode) debugPrint('player mute: $err');
     }
   }
 
@@ -953,7 +968,7 @@ class PlPlayerController with BlockConfigMixin {
       'video-sync': Pref.videoSync,
       if (Platform.isAndroid) 'ao': Pref.audioOutput,
       'volume':
-          (_splitAudioSuppressed
+          (_isOutputMuted
                   ? 0
                   : PlatformUtils.isMobile
                   ? (Pref.enableAppVolume
@@ -1512,14 +1527,14 @@ class PlPlayerController with BlockConfigMixin {
       try {
         if (PlatformUtils.isDesktop) {
           await _videoPlayerController!.setVolume(
-            _splitAudioSuppressed ? 0 : volume * 100,
+            _isOutputMuted ? 0 : volume * 100,
           );
         } else {
           // 移动平台：根据设置选择音量控制方式
           if (Pref.enableAppVolume) {
             // 应用内音量模式：使用 media_kit 控制应用内音量
             _videoPlayerController?.setVolume(
-              _splitAudioSuppressed ? 0 : volume * 100,
+              _isOutputMuted ? 0 : volume * 100,
             );
           } else {
             // 默认模式：控制系统音量
