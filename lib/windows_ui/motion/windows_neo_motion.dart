@@ -143,10 +143,14 @@ class WindowsNeoPageStage extends StatefulWidget {
     super.key,
     required this.active,
     required this.child,
+    this.visible,
+    this.focused,
   });
 
   final bool active;
   final Widget child;
+  final bool? visible;
+  final bool? focused;
 
   @override
   State<WindowsNeoPageStage> createState() => _WindowsNeoPageStageState();
@@ -157,7 +161,7 @@ class _WindowsNeoPageStageState extends State<WindowsNeoPageStage>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 240),
-    value: widget.active ? 1 : 0,
+    value: (widget.visible ?? widget.active) ? 1 : 0,
   );
   late final Animation<double> _opacity = CurvedAnimation(
     parent: _controller,
@@ -176,15 +180,17 @@ class _WindowsNeoPageStageState extends State<WindowsNeoPageStage>
     super.didChangeDependencies();
     _controller.duration = context.windowsNeo.motionPage;
     if (context.windowsNeoReduceMotion) {
-      _controller.value = widget.active ? 1 : 0;
+      _controller.value = (widget.visible ?? widget.active) ? 1 : 0;
     }
   }
 
   @override
   void didUpdateWidget(covariant WindowsNeoPageStage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.active == widget.active) return;
-    if (!widget.active) {
+    final oldVisible = oldWidget.visible ?? oldWidget.active;
+    final visible = widget.visible ?? widget.active;
+    if (oldVisible == visible) return;
+    if (!visible) {
       _controller.value = 0;
     } else if (context.windowsNeoReduceMotion) {
       _controller.value = 1;
@@ -201,13 +207,21 @@ class _WindowsNeoPageStageState extends State<WindowsNeoPageStage>
 
   @override
   Widget build(BuildContext context) {
+    final visible = widget.visible ?? widget.active;
+    final focused = widget.focused ?? widget.active;
     return IgnorePointer(
-      ignoring: !widget.active,
+      ignoring: !visible,
       child: FadeTransition(
         opacity: _opacity,
         child: SlideTransition(
           position: _offset,
-          child: TickerMode(enabled: widget.active, child: widget.child),
+          child: TickerMode(
+            enabled: visible,
+            child: ExcludeFocus(
+              excluding: !focused,
+              child: widget.child,
+            ),
+          ),
         ),
       ),
     );

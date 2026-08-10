@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
@@ -305,6 +306,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
         activate: _activateWindowsLiveTab,
         deactivate: _deactivateWindowsLiveTab,
         close: _closeWindowsLiveTab,
+        present: _presentWindowsLiveTab,
       );
     }
     PlPlayerController.setPlayCallBack(plPlayerController.play);
@@ -486,38 +488,36 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   }
 
   void _activateWindowsLiveTab() {
+    _presentWindowsLiveTab(true, true);
+  }
+
+  void _deactivateWindowsLiveTab() {
+    _presentWindowsLiveTab(false, false);
+  }
+
+  void _presentWindowsLiveTab(bool visible, bool focused) {
     if (!mounted) return;
-    _windowsTabActive = true;
-    plPlayerController.visible = true;
-    WindowsVideoTabService.setActive(_liveTabArgs);
-    plPlayerController.activateAsGlobal();
-    PlPlayerController.setPlayCallBack(plPlayerController.play);
-    if (plPlayerController.playerStatus.isPlaying) {
+    _windowsTabActive = visible;
+    plPlayerController.visible = visible;
+    if (focused) {
+      plPlayerController.activateAsGlobal();
+      PlPlayerController.setPlayCallBack(plPlayerController.play);
+    }
+    unawaited(plPlayerController.setSplitAudioSuppressed(!focused));
+    if (focused && plPlayerController.playerStatus.isPlaying) {
       _liveRoomController
         ..danmakuController?.resume()
         ..startLiveTimer()
         ..startLiveMsg();
+    } else {
+      _liveRoomController
+        ..cancelLiveTimer()
+        ..closeLiveMsg();
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _restoreWindowsLivePlayerSurface();
-    });
-    final route = ModalRoute.of(context);
-    if (route != null && !route.isCurrent) {
-      Navigator.of(context).popUntil((candidate) => candidate == route);
-      return;
+    if (visible) {
+      _windowsLivePlayerMountKey++;
+      _liveRoomController.isLoaded.refresh();
     }
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  void _deactivateWindowsLiveTab() {
-    if (!mounted || !_windowsTabActive) return;
-    _windowsTabActive = false;
-    plPlayerController.visible = false;
-    _liveRoomController
-      ..cancelLiveTimer()
-      ..closeLiveMsg();
     setState(() {});
   }
 

@@ -576,6 +576,20 @@ class PlPlayerController with BlockConfigMixin {
   Box video = GStorage.video;
 
   bool visible = true;
+  bool _splitAudioSuppressed = false;
+
+  bool get splitAudioSuppressed => _splitAudioSuppressed;
+
+  Future<void> setSplitAudioSuppressed(bool suppressed) async {
+    _splitAudioSuppressed = suppressed;
+    final controller = _videoPlayerController;
+    if (controller == null) return;
+    try {
+      await controller.setVolume(suppressed ? 0 : volume.value * 100);
+    } catch (err) {
+      if (kDebugMode) debugPrint('split audio volume: $err');
+    }
+  }
 
   DeviceOrientation? _orientation;
   late final checkIsAutoRotate = Platform.isAndroid && mode != .gravity;
@@ -939,7 +953,9 @@ class PlPlayerController with BlockConfigMixin {
       'video-sync': Pref.videoSync,
       if (Platform.isAndroid) 'ao': Pref.audioOutput,
       'volume':
-          (PlatformUtils.isMobile
+          (_splitAudioSuppressed
+                  ? 0
+                  : PlatformUtils.isMobile
                   ? (Pref.enableAppVolume
                         ? volume.value * 100
                         : Pref.playerVolume)
@@ -1495,12 +1511,16 @@ class PlPlayerController with BlockConfigMixin {
       this.volume.value = volume;
       try {
         if (PlatformUtils.isDesktop) {
-          await _videoPlayerController!.setVolume(volume * 100);
+          await _videoPlayerController!.setVolume(
+            _splitAudioSuppressed ? 0 : volume * 100,
+          );
         } else {
           // 移动平台：根据设置选择音量控制方式
           if (Pref.enableAppVolume) {
             // 应用内音量模式：使用 media_kit 控制应用内音量
-            _videoPlayerController?.setVolume(volume * 100);
+            _videoPlayerController?.setVolume(
+              _splitAudioSuppressed ? 0 : volume * 100,
+            );
           } else {
             // 默认模式：控制系统音量
             FlutterVolumeController.updateShowSystemUI(false);

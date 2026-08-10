@@ -134,8 +134,13 @@ class WindowsVideoTabItem {
 abstract final class WindowsVideoTabService {
   static final RxList<WindowsVideoTabItem> tabs = <WindowsVideoTabItem>[].obs;
   static final RxnString activeId = RxnString();
+  static final RxSet<String> splitTabIds = <String>{}.obs;
+  static final RxSet<String> splitDraftTabIds = <String>{}.obs;
+  static final RxBool splitSelectionMode = false.obs;
   static final Map<String, void Function()> _activators = {};
   static final Map<String, void Function()> _deactivators = {};
+  static final Map<String, void Function(bool visible, bool focused)>
+  _presenters = {};
   static final Map<String, void Function()> _closers = {};
   static final Map<String, List<bool Function()>> _contextPoppers = {};
   static final Map<String, _WindowsVideoTabPlayer> _players = {};
@@ -157,6 +162,7 @@ abstract final class WindowsVideoTabService {
   static const rootRoute = '/';
   static const homeTabId = 'home';
   static const maxMediaTabs = 8;
+  static const maxSplitTabs = 4;
   static const maxClosedTabs = 12;
   static const workspaceRoutes = {
     '/download',
@@ -244,6 +250,107 @@ abstract final class WindowsVideoTabService {
       List<WindowsVideoTabItem>.unmodifiable(_closedTabs);
 
   static bool get hasMediaTabs => mediaTabCount > 0;
+
+  static bool get isSplitActive => splitTabIds.length >= 2;
+
+  static bool get canApplySplitSelection =>
+      splitDraftTabIds.length >= 2 && splitDraftTabIds.length <= maxSplitTabs;
+
+  static List<WindowsVideoTabItem> get splitTabs => tabs
+      .where((item) => splitTabIds.contains(item.id))
+      .toList(growable: false);
+
+  static bool isSplitTab(String id) => splitTabIds.contains(id);
+
+  static bool isVisibleTab(String id) =>
+      isSplitActive ? splitTabIds.contains(id) : activeId.value == id;
+
+  static bool isSplitCandidate(WindowsVideoTabItem item) => item.isHeavyMedia;
+
+  static void beginSplitSelection() {
+    if (!enabled) return;
+    ensureHomeTab();
+    splitDraftTabIds
+      ..clear()
+      ..addAll(
+        isSplitActive
+            ? splitTabIds
+            : activeId.value != null &&
+                    tabs.any(
+                      (item) =>
+                          item.id == activeId.value && item.isHeavyMedia,
+                    )
+                ? <String>{activeId.value!}
+                : <String>{},
+      );
+    splitDraftTabIds.refresh();
+    splitSelectionMode.value = true;
+  }
+
+  static void toggleSplitDraft(String id) {
+    if (!splitSelectionMode.value) return;
+    WindowsVideoTabItem? item;
+    for (final candidate in tabs) {
+      if (candidate.id == id) {
+        item = candidate;
+        break;
+      }
+    }
+    if (item == null || !item.isHeavyMedia) return;
+    if (splitDraftTabIds.contains(id)) {
+      splitDraftTabIds.remove(id);
+    } else if (splitDraftTabIds.length < maxSplitTabs) {
+      splitDraftTabIds.add(id);
+    }
+    splitDraftTabIds.refresh();
+  }
+
+  static void cancelSplitSelection() {
+    splitSelectionMode.value = false;
+    splitDraftTabIds.clear();
+    splitDraftTabIds.refresh();
+  }
+
+  static bool applySplitSelection() {
+    if (!canApplySplitSelection) return false;
+    splitTabIds
+      ..clear()
+      ..addAll(splitDraftTabIds);
+    splitTabIds.refresh();
+    splitSelectionMode.value = false;
+    splitDraftTabIds.clear();
+    splitDraftTabIds.refresh();
+    if (!splitTabIds.contains(activeId.value)) {
+      activeId.value = splitTabIds.first;
+      currentArguments = tabs
+          .firstWhere((item) => item.id == activeId.value)
+          .arguments;
+      _rememberActive(activeId.value!);
+    }
+    _syncPresentation();
+    return true;
+  }
+
+  static void exitSplit() {
+    splitTabIds.clear();
+    splitTabIds.refresh();
+    splitSelectionMode.value = false;
+    splitDraftTabIds.clear();
+    splitDraftTabIds.refresh();
+    _syncPresentation();
+  }
+
+  static void focusSplitTab(String id) {
+    if (!isSplitActive || !splitTabIds.contains(id)) {
+      select(id);
+      return;
+    }
+    if (activeId.value == id) return;
+    activeId.value = id;
+    currentArguments = tabs.firstWhere((item) => item.id == id).arguments;
+    _rememberActive(id);
+    _syncPresentation();
+  }
 
   static void setHostMounted(bool value) {
     _hostMounted = value;
@@ -533,11 +640,13 @@ abstract final class WindowsVideoTabService {
       tabs.refresh();
     }
     if (activate) {
-      _deactivateCurrent(exceptId: id);
+      if (isSplitActive && !splitTabIds.contains(id)) {
+        exitSplit();
+      }
       activeId.value = id;
       currentArguments = normalized;
       _rememberActive(id);
-      _activators[id]?.call();
+      _syncPresentation();
     }
     if (type == WindowsMediaTabType.video || type == WindowsMediaTabType.live) {
       _trimMediaTabs(keepId: id);
@@ -562,10 +671,13 @@ abstract final class WindowsVideoTabService {
     final id = keyFromArgs(arguments);
     final index = tabs.indexWhere((item) => item.id == id);
     if (id.isNotEmpty && index != -1) {
-      _deactivateCurrent(exceptId: id);
+      if (isSplitActive && !splitTabIds.contains(id)) {
+        exitSplit();
+      }
       activeId.value = id;
       currentArguments = tabs[index].isHome ? null : tabs[index].arguments;
       _rememberActive(id);
+      _syncPresentation();
     }
   }
 
@@ -617,6 +729,8 @@ abstract final class WindowsVideoTabService {
     final index = tabs.indexWhere((item) => item.id == id);
     if (index == -1) return;
     final closingTab = tabs[index];
+    final closingFocusedTab = activeId.value == id;
+    final closingSplitTab = splitTabIds.contains(id);
     if (remember) {
       _closedTabs
         ..removeWhere((item) => item.id == id)
@@ -634,24 +748,36 @@ abstract final class WindowsVideoTabService {
       }
     }
     final deactivate = _deactivators.remove(id);
-    if (activeId.value == id) {
+    if (closingFocusedTab) {
       deactivate?.call();
     }
     final close = _closers.remove(id);
     _activators.remove(id);
+    _presenters.remove(id);
     _contextPoppers.remove(id);
     _players.remove(id)?.dispose();
     _navigatorKeys.remove(id);
     _activationHistory.remove(id);
     tabs.removeWhere((item) => item.id == id);
-    if (activeId.value == id) {
-      final nextId = _activationHistory.reversed.firstWhere(
-        has,
-        orElse: () => homeTabId,
-      );
+    splitTabIds.remove(id);
+    splitDraftTabIds.remove(id);
+    if (splitTabIds.length < 2) {
+      splitTabIds.clear();
+    }
+    splitTabIds.refresh();
+    splitDraftTabIds.refresh();
+    if (closingFocusedTab) {
+      final nextId = closingSplitTab && isSplitActive
+          ? splitTabIds.first
+          : _activationHistory.reversed.firstWhere(
+              has,
+              orElse: () => homeTabId,
+            );
       activeId.value = null;
       ensureHomeTab();
       select(nextId);
+    } else {
+      _syncPresentation();
     }
     if (!_hostMounted && Get.currentRoute != hostRoute) {
       close?.call();
@@ -668,6 +794,7 @@ abstract final class WindowsVideoTabService {
     _closers.clear();
     _activators.clear();
     _deactivators.clear();
+    _presenters.clear();
     _contextPoppers.clear();
     for (final close in closers) {
       close();
@@ -681,6 +808,9 @@ abstract final class WindowsVideoTabService {
       ..clear()
       ..add(homeTabId);
     _closedTabs.clear();
+    splitTabIds.clear();
+    splitDraftTabIds.clear();
+    splitSelectionMode.value = false;
     tabs
       ..clear()
       ..add(_homeTab());
@@ -730,6 +860,7 @@ abstract final class WindowsVideoTabService {
     required void Function() activate,
     required void Function() deactivate,
     required void Function() close,
+    void Function(bool visible, bool focused)? present,
   }) {
     if (!enabled) return;
     final id = keyFromArgs(arguments);
@@ -737,6 +868,10 @@ abstract final class WindowsVideoTabService {
     _activators[id] = activate;
     _deactivators[id] = deactivate;
     _closers[id] = close;
+    if (present != null) {
+      _presenters[id] = present;
+    }
+    _syncPresentation();
   }
 
   static void unregisterRoute(Map arguments, void Function() close) {
@@ -747,6 +882,7 @@ abstract final class WindowsVideoTabService {
       _closers.remove(id);
       _activators.remove(id);
       _deactivators.remove(id);
+      _presenters.remove(id);
     }
   }
 
@@ -792,11 +928,13 @@ abstract final class WindowsVideoTabService {
     ensureHomeTab();
     final index = tabs.indexWhere((item) => item.id == id);
     if (index != -1) {
-      _deactivateCurrent(exceptId: id);
+      if (isSplitActive && !splitTabIds.contains(id)) {
+        exitSplit();
+      }
       activeId.value = id;
       currentArguments = tabs[index].isHome ? null : tabs[index].arguments;
       _rememberActive(id);
-      _activators[id]?.call();
+      _syncPresentation();
     }
   }
 
@@ -804,6 +942,26 @@ abstract final class WindowsVideoTabService {
     final current = activeId.value;
     if (current == null || current == exceptId) return;
     _deactivators[current]?.call();
+  }
+
+  static void _syncPresentation() {
+    final focused = activeId.value;
+    final visibleIds = isSplitActive
+        ? splitTabIds
+        : (focused == null ? <String>{} : <String>{focused});
+    for (final item in tabs) {
+      final id = item.id;
+      final visible = visibleIds.contains(id);
+      final isFocused = id == focused;
+      final presenter = _presenters[id];
+      if (presenter != null) {
+        presenter(visible, isFocused);
+      } else if (isFocused) {
+        _activators[id]?.call();
+      } else if (!visible) {
+        _deactivators[id]?.call();
+      }
+    }
   }
 
   static Future<void>? showHost({bool off = false}) {

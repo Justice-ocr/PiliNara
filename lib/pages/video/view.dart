@@ -418,6 +418,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         activate: _activateWindowsVideoTab,
         deactivate: _deactivateWindowsVideoTab,
         close: _closeWindowsVideoTab,
+        present: _presentWindowsVideoTab,
       );
       WindowsVideoTabService.registerContextPopper(
         videoDetailController.args,
@@ -902,32 +903,33 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   }
 
   void _activateWindowsVideoTab() {
-    if (!mounted) return;
-    WindowsVideoTabService.setActive(videoDetailController.args);
-    videoDetailController.plPlayerController.activateAsGlobal();
-    plPlayerController = videoDetailController.plPlayerController;
-    plPlayerController!.visible = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _restoreWindowsVideoPlayerSurface();
-    });
-    final route = ModalRoute.of(context);
-    if (route != null && !route.isCurrent) {
-      Navigator.of(context).popUntil((candidate) => candidate == route);
-      return;
-    }
-    if (isShowing) {
-      _restoreWindowsVideoPlayerSurface();
-      return;
-    }
-    didPopNext();
+    _presentWindowsVideoTab(true, true);
   }
 
   void _deactivateWindowsVideoTab() {
+    _presentWindowsVideoTab(false, false);
+  }
+
+  void _presentWindowsVideoTab(bool visible, bool focused) {
     if (!mounted) return;
-    isShowing = false;
-    _syncWindowsVideoTabProgress();
-    videoDetailController.plPlayerController.visible = false;
-    videoDetailController.videoState.value = false;
+    final player = videoDetailController.plPlayerController;
+    isShowing = focused;
+    player.visible = visible;
+    videoDetailController.videoState.value = visible;
+    if (focused) {
+      player.activateAsGlobal();
+      PlPlayerController.setPlayCallBack(player.play);
+      plPlayerController = player;
+      _syncWindowsVideoTabProgress();
+    }
+    unawaited(player.setSplitAudioSuppressed(!focused));
+    if (visible) {
+      _windowsVideoPlayerMountKey++;
+      videoDetailController.videoState.refresh();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && focused) _restoreWindowsVideoPlayerSurface();
+      });
+    }
   }
 
   void _restoreWindowsVideoPlayerSurface() {

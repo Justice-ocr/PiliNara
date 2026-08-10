@@ -31,12 +31,14 @@ class WindowsNeoShell extends StatefulWidget {
     required this.tabs,
     required this.activeTab,
     required this.child,
+    required this.onSplit,
   });
 
   final MainController mainController;
   final List<WindowsVideoTabItem> tabs;
   final WindowsVideoTabItem activeTab;
   final Widget child;
+  final VoidCallback onSplit;
 
   @override
   State<WindowsNeoShell> createState() => _WindowsNeoShellState();
@@ -147,6 +149,7 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> with WindowListener {
                                     tabs: widget.tabs,
                                     activeId: widget.activeTab.id,
                                     onSearch: _openSearch,
+                                    onSplit: widget.onSplit,
                                   ),
                                   Expanded(child: widget.child),
                                 ],
@@ -1408,11 +1411,13 @@ class _WindowsNeoTabStrip extends StatelessWidget {
     required this.tabs,
     required this.activeId,
     required this.onSearch,
+    required this.onSplit,
   });
 
   final List<WindowsVideoTabItem> tabs;
   final String activeId;
   final VoidCallback onSearch;
+  final VoidCallback onSplit;
 
   @override
   Widget build(BuildContext context) {
@@ -1457,6 +1462,19 @@ class _WindowsNeoTabStrip extends StatelessWidget {
                   ),
                 ),
                 const _WindowsNeoRecentTabsMenu(),
+                WindowsNeoHoverHalo(
+                  borderRadius: tokens.actionRadius,
+                  child: SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: IconButton(
+                      tooltip: '鍒嗗睆鎾斁',
+                      iconSize: 18,
+                      onPressed: onSplit,
+                      icon: const Icon(Icons.splitscreen_outlined),
+                    ),
+                  ),
+                ),
                 WindowsNeoHoverHalo(
                   borderRadius: tokens.actionRadius,
                   child: SizedBox(

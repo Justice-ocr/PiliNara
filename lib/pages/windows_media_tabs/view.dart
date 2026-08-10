@@ -136,10 +136,13 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
               mainController: _mainController,
               tabs: tabs,
               activeTab: tabs[activeIndex],
-              child: WindowsMediaTabStack(
-                tabs: tabs,
-                activeIndex: activeIndex,
-                tabBuilder: _buildTabNavigator,
+              onSplit: _showSplitSelection,
+              child: Obx(
+                () => WindowsMediaTabStack(
+                  tabs: tabs,
+                  activeIndex: activeIndex,
+                  tabBuilder: _buildTabNavigator,
+                ),
               ),
             ),
           ),
@@ -154,6 +157,82 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
       key: key,
       onGenerateRoute: (settings) => _buildRoute(item, settings),
     );
+  }
+
+  void _showSplitSelection() {
+    WindowsVideoTabService.beginSplitSelection();
+    var applied = false;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Obx(() {
+        final candidates = WindowsVideoTabService.tabs
+            .where(WindowsVideoTabService.isSplitCandidate)
+            .toList(growable: false);
+        final canApply = WindowsVideoTabService.canApplySplitSelection;
+        return AlertDialog(
+          title: const Text('选择分屏标签'),
+          content: SizedBox(
+            width: 440,
+            child: candidates.isEmpty
+                ? const Center(child: Text('请先打开视频或直播标签'))
+                : ListView(
+                    shrinkWrap: true,
+                    children: [
+                      for (final item in candidates)
+                        CheckboxListTile(
+                          value: WindowsVideoTabService.splitDraftTabIds
+                              .contains(item.id),
+                          dense: true,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(
+                            item.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(item.type == WindowsMediaTabType.live
+                              ? '直播'
+                              : '视频'),
+                          onChanged: (value) {
+                            if (value != null) {
+                              WindowsVideoTabService.toggleSplitDraft(item.id);
+                            }
+                          },
+                        ),
+                    ],
+                  ),
+          ),
+          actions: [
+            if (WindowsVideoTabService.isSplitActive)
+              TextButton(
+                onPressed: () {
+                  WindowsVideoTabService.exitSplit();
+                  applied = true;
+                  Navigator.of(context).pop();
+                },
+                child: const Text('退出分屏'),
+              ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: canApply
+                  ? () {
+                      applied = WindowsVideoTabService.applySplitSelection();
+                      if (applied) Navigator.of(context).pop();
+                    }
+                  : null,
+              child: Text(
+                '开始分屏${WindowsVideoTabService.splitDraftTabIds.length}/4',
+              ),
+            ),
+          ],
+        );
+      }),
+    ).whenComplete(() {
+      if (!applied) WindowsVideoTabService.cancelSplitSelection();
+    });
   }
 
   Route<dynamic> _buildRoute(
@@ -349,20 +428,117 @@ class WindowsMediaTabStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (WindowsVideoTabService.isSplitActive) {
+      final splitTabs = WindowsVideoTabService.splitTabs;
+      final selectedIds = splitTabs.map((item) => item.id).toSet();
+      final panes = [
+        for (final item in splitTabs) _buildSplitPane(context, item),
+      ];
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          _buildSplitLayout(panes),
+          for (final item in tabs)
+            if (!selectedIds.contains(item.id))
+              Offstage(
+                offstage: true,
+                child: _buildStage(item, visible: false, focused: false),
+              ),
+        ],
+      );
+    }
     return IndexedStack(
       index: activeIndex,
       children: [
         for (var index = 0; index < tabs.length; index++)
-          WindowsNeoPageStage(
-            key: ValueKey(tabs[index].id),
-            active: index == activeIndex,
-            child: ExcludeFocus(
-              excluding: index != activeIndex,
-              child: RepaintBoundary(child: tabBuilder(tabs[index])),
-            ),
+          _buildStage(
+            tabs[index],
+            visible: index == activeIndex,
+            focused: index == activeIndex,
           ),
       ],
     );
+  }
+
+  Widget _buildStage(
+    WindowsVideoTabItem item, {
+    required bool visible,
+    required bool focused,
+  }) => WindowsNeoPageStage(
+    key: ValueKey(item.id),
+    active: focused,
+    visible: visible,
+    focused: focused,
+    child: RepaintBoundary(child: tabBuilder(item)),
+  );
+
+  Widget _buildSplitPane(BuildContext context, WindowsVideoTabItem item) {
+    final focused = item.id == WindowsVideoTabService.activeId.value;
+    return Listener(
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: (_) => WindowsVideoTabService.focusSplitTab(item.id),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: focused
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.72)
+                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.28),
+            width: focused ? 2 : 1,
+          ),
+        ),
+        child: _buildStage(item, visible: true, focused: focused),
+      ),
+    );
+  }
+
+  Widget _buildSplitLayout(List<Widget> panes) {
+    return switch (panes.length) {
+      2 => Row(
+          children: [
+            Expanded(child: panes[0]),
+            const VerticalDivider(width: 1),
+            Expanded(child: panes[1]),
+          ],
+        ),
+      3 => Row(
+          children: [
+            Expanded(child: panes[0]),
+            const VerticalDivider(width: 1),
+            Expanded(
+              child: Column(
+                children: [
+                  Expanded(child: panes[1]),
+                  const Divider(height: 1),
+                  Expanded(child: panes[2]),
+                ],
+              ),
+            ),
+          ],
+        ),
+      _ => Column(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(child: panes[0]),
+                  const VerticalDivider(width: 1),
+                  Expanded(child: panes[1]),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(child: panes[2]),
+                  const VerticalDivider(width: 1),
+                  Expanded(child: panes[3]),
+                ],
+              ),
+            ),
+          ],
+        ),
+    };
   }
 }
 
