@@ -138,6 +138,8 @@ abstract final class WindowsVideoTabService {
   static final RxSet<String> splitDraftTabIds = <String>{}.obs;
   static final RxBool splitSelectionMode = false.obs;
   static final RxnString maximizedSplitTabId = RxnString();
+  static final RxDouble splitHorizontalRatio = 0.5.obs;
+  static final RxDouble splitVerticalRatio = 0.5.obs;
   static final Map<String, void Function()> _activators = {};
   static final Map<String, void Function()> _deactivators = {};
   static final Map<String, void Function(bool visible, bool focused)>
@@ -383,6 +385,19 @@ abstract final class WindowsVideoTabService {
     if (!isSplitActive || !splitTabIds.contains(id)) return;
     focusSplitTab(id);
     maximizedSplitTabId.value = maximizedSplitTabId.value == id ? null : id;
+  }
+
+  static void setSplitHorizontalRatio(double ratio) {
+    splitHorizontalRatio.value = ratio.clamp(0.15, 0.85);
+  }
+
+  static void setSplitVerticalRatio(double ratio) {
+    splitVerticalRatio.value = ratio.clamp(0.15, 0.85);
+  }
+
+  static void resetSplitBounds() {
+    splitHorizontalRatio.value = 0.5;
+    splitVerticalRatio.value = 0.5;
   }
 
   static void removeFromSplit(String id) {

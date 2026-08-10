@@ -115,6 +115,9 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
       final activeId = tabs[activeIndex].id;
       final splitTabs = WindowsVideoTabService.splitTabs;
       final maximizedSplitTab = WindowsVideoTabService.maximizedSplitTab;
+      final splitHorizontalRatio =
+          WindowsVideoTabService.splitHorizontalRatio.value;
+      final splitVerticalRatio = WindowsVideoTabService.splitVerticalRatio.value;
 
       return WindowsBackShortcutListener(
         onBack: WindowsVideoTabService.popActiveTab,
@@ -145,6 +148,8 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
                 activeId: activeId,
                 splitTabs: splitTabs,
                 maximizedSplitTab: maximizedSplitTab,
+                splitHorizontalRatio: splitHorizontalRatio,
+                splitVerticalRatio: splitVerticalRatio,
                 tabBuilder: _buildTabNavigator,
               ),
             ),
@@ -424,6 +429,8 @@ class WindowsMediaTabStack extends StatelessWidget {
     required this.activeId,
     required this.splitTabs,
     required this.maximizedSplitTab,
+    required this.splitHorizontalRatio,
+    required this.splitVerticalRatio,
     required this.tabBuilder,
   });
 
@@ -431,15 +438,16 @@ class WindowsMediaTabStack extends StatelessWidget {
   final String activeId;
   final List<WindowsVideoTabItem> splitTabs;
   final String? maximizedSplitTab;
+  final double splitHorizontalRatio;
+  final double splitVerticalRatio;
   final Widget Function(WindowsVideoTabItem item) tabBuilder;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final isSplit = splitTabs.length >= 2;
-      final splitBounds = isSplit
-          ? _splitBounds(constraints, splitTabs.length)
-          : const <String, Rect>{};
+      final geometry = isSplit ? _splitGeometry(constraints) : null;
+      final splitBounds = geometry?.bounds ?? const <String, Rect>{};
       final isMaximized =
           isSplit && maximizedSplitTab != null && splitBounds.containsKey(maximizedSplitTab);
       return Stack(
@@ -463,6 +471,9 @@ class WindowsMediaTabStack extends StatelessWidget {
               split: isSplit,
               maximized: isMaximized && item.id == maximizedSplitTab,
             ),
+          if (isSplit && !isMaximized)
+            for (final divider in geometry!.dividers)
+              _buildSplitDivider(context, constraints, divider),
         ],
       );
     },
@@ -652,44 +663,155 @@ class WindowsMediaTabStack extends StatelessWidget {
     ),
   );
 
-  Map<String, Rect> _splitBounds(BoxConstraints constraints, int count) {
+  _SplitGeometry _splitGeometry(BoxConstraints constraints) {
     const gap = 1.0;
+    const minimumPaneWidth = 280.0;
+    const minimumPaneHeight = 160.0;
     final width = constraints.maxWidth;
     final height = constraints.maxHeight;
-    final halfWidth = (width - gap) / 2;
-    final halfHeight = (height - gap) / 2;
-    final panes = switch (count) {
+    final minHorizontal = width <= 0 ? 0.5 : minimumPaneWidth / width;
+    final minVertical = height <= 0 ? 0.5 : minimumPaneHeight / height;
+    final horizontal = _clampRatio(
+      splitHorizontalRatio,
+      minHorizontal,
+      1 - minHorizontal,
+    );
+    final vertical = _clampRatio(
+      splitVerticalRatio,
+      minVertical,
+      1 - minVertical,
+    );
+    final dividerX = (width - gap) * horizontal;
+    final dividerY = (height - gap) * vertical;
+    final leftWidth = dividerX;
+    final rightWidth = width - dividerX - gap;
+    final topHeight = dividerY;
+    final bottomHeight = height - dividerY - gap;
+    final panes = switch (splitTabs.length) {
       2 => [
-          Rect.fromLTWH(0, 0, halfWidth, height),
-          Rect.fromLTWH(halfWidth + gap, 0, halfWidth, height),
+          Rect.fromLTWH(0, 0, leftWidth, height),
+          Rect.fromLTWH(dividerX + gap, 0, rightWidth, height),
         ],
       3 => [
-          Rect.fromLTWH(0, 0, halfWidth, height),
-          Rect.fromLTWH(halfWidth + gap, 0, halfWidth, halfHeight),
+          Rect.fromLTWH(0, 0, leftWidth, height),
+          Rect.fromLTWH(dividerX + gap, 0, rightWidth, topHeight),
           Rect.fromLTWH(
-            halfWidth + gap,
-            halfHeight + gap,
-            halfWidth,
-            halfHeight,
+            dividerX + gap,
+            dividerY + gap,
+            rightWidth,
+            bottomHeight,
           ),
         ],
       _ => [
-          Rect.fromLTWH(0, 0, halfWidth, halfHeight),
-          Rect.fromLTWH(halfWidth + gap, 0, halfWidth, halfHeight),
-          Rect.fromLTWH(0, halfHeight + gap, halfWidth, halfHeight),
+          Rect.fromLTWH(0, 0, leftWidth, topHeight),
+          Rect.fromLTWH(dividerX + gap, 0, rightWidth, topHeight),
+          Rect.fromLTWH(0, dividerY + gap, leftWidth, bottomHeight),
           Rect.fromLTWH(
-            halfWidth + gap,
-            halfHeight + gap,
-            halfWidth,
-            halfHeight,
+            dividerX + gap,
+            dividerY + gap,
+            rightWidth,
+            bottomHeight,
           ),
         ],
     };
-    return {
-      for (var index = 0; index < splitTabs.length; index++)
-        splitTabs[index].id: panes[index],
-    };
+    final dividers = <_SplitDivider>[
+      _SplitDivider.vertical(
+        offset: dividerX + gap / 2,
+        length: height,
+        ratio: horizontal,
+      ),
+      if (splitTabs.length >= 3)
+        _SplitDivider.horizontal(
+          offset: dividerY + gap / 2,
+          start: splitTabs.length == 3 ? dividerX + gap : 0,
+          length: splitTabs.length == 3 ? rightWidth : width,
+          ratio: vertical,
+        ),
+    ];
+    return _SplitGeometry(
+      bounds: {
+        for (var index = 0; index < splitTabs.length; index++)
+          splitTabs[index].id: panes[index],
+      },
+      dividers: dividers,
+    );
   }
+
+  double _clampRatio(double value, double min, double max) {
+    if (min > max) return 0.5;
+    return value.clamp(min, max).toDouble();
+  }
+
+  Widget _buildSplitDivider(
+    BuildContext context,
+    BoxConstraints constraints,
+    _SplitDivider divider,
+  ) {
+    final vertical = divider.axis == Axis.vertical;
+    return Positioned(
+      left: vertical ? divider.offset - 4 : divider.start,
+      top: vertical ? 0 : divider.offset - 4,
+      width: vertical ? 8 : divider.length,
+      height: vertical ? divider.length : 8,
+      child: MouseRegion(
+        cursor: vertical
+            ? SystemMouseCursors.resizeColumn
+            : SystemMouseCursors.resizeRow,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onDoubleTap: WindowsVideoTabService.resetSplitBounds,
+          onHorizontalDragUpdate: vertical
+              ? (details) => WindowsVideoTabService.setSplitHorizontalRatio(
+                  splitHorizontalRatio + details.delta.dx / constraints.maxWidth,
+                )
+              : null,
+          onVerticalDragUpdate: vertical
+              ? null
+              : (details) => WindowsVideoTabService.setSplitVerticalRatio(
+                  splitVerticalRatio + details.delta.dy / constraints.maxHeight,
+                ),
+          child: Center(
+            child: Container(
+              width: vertical ? 1 : double.infinity,
+              height: vertical ? double.infinity : 1,
+              color: Theme.of(context).colorScheme.outline.withValues(
+                alpha: 0.42,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SplitGeometry {
+  const _SplitGeometry({required this.bounds, required this.dividers});
+
+  final Map<String, Rect> bounds;
+  final List<_SplitDivider> dividers;
+}
+
+class _SplitDivider {
+  const _SplitDivider.vertical({
+    required this.offset,
+    required this.length,
+    required this.ratio,
+  })  : axis = Axis.vertical,
+        start = 0;
+
+  const _SplitDivider.horizontal({
+    required this.offset,
+    required this.start,
+    required this.length,
+    required this.ratio,
+  }) : axis = Axis.horizontal;
+
+  final Axis axis;
+  final double offset;
+  final double start;
+  final double length;
+  final double ratio;
 }
 
 class _UnknownWindowsTabRoute extends StatelessWidget {
