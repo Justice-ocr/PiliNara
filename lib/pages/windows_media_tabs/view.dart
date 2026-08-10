@@ -112,6 +112,8 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
           }
         });
       }
+      final activeId = tabs[activeIndex].id;
+      final splitTabs = WindowsVideoTabService.splitTabs;
 
       return WindowsBackShortcutListener(
         onBack: WindowsVideoTabService.popActiveTab,
@@ -137,12 +139,12 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
               tabs: tabs,
               activeTab: tabs[activeIndex],
               onSplit: _showSplitSelection,
-              child: Obx(
-                () => WindowsMediaTabStack(
-                  tabs: tabs,
-                  activeIndex: activeIndex,
-                  tabBuilder: _buildTabNavigator,
-                ),
+              child: WindowsMediaTabStack(
+                tabs: tabs,
+                activeIndex: activeIndex,
+                activeId: activeId,
+                splitTabs: splitTabs,
+                tabBuilder: _buildTabNavigator,
               ),
             ),
           ),
@@ -419,17 +421,20 @@ class WindowsMediaTabStack extends StatelessWidget {
     super.key,
     required this.tabs,
     required this.activeIndex,
+    required this.activeId,
+    required this.splitTabs,
     required this.tabBuilder,
   });
 
   final List<WindowsVideoTabItem> tabs;
   final int activeIndex;
+  final String activeId;
+  final List<WindowsVideoTabItem> splitTabs;
   final Widget Function(WindowsVideoTabItem item) tabBuilder;
 
   @override
   Widget build(BuildContext context) {
-    if (WindowsVideoTabService.isSplitActive) {
-      final splitTabs = WindowsVideoTabService.splitTabs;
+    if (splitTabs.length >= 2) {
       final selectedIds = splitTabs.map((item) => item.id).toSet();
       final panes = [
         for (final item in splitTabs) _buildSplitPane(context, item),
@@ -473,7 +478,7 @@ class WindowsMediaTabStack extends StatelessWidget {
   );
 
   Widget _buildSplitPane(BuildContext context, WindowsVideoTabItem item) {
-    final focused = item.id == WindowsVideoTabService.activeId.value;
+    final focused = item.id == activeId;
     return Listener(
       behavior: HitTestBehavior.opaque,
       onPointerDown: (_) => WindowsVideoTabService.focusSplitTab(item.id),

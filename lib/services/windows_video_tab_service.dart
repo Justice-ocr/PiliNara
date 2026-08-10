@@ -251,7 +251,7 @@ abstract final class WindowsVideoTabService {
 
   static bool get hasMediaTabs => mediaTabCount > 0;
 
-  static bool get isSplitActive => splitTabIds.length >= 2;
+  static bool get isSplitActive => splitTabs.length >= 2;
 
   static bool get canApplySplitSelection =>
       splitDraftTabIds.length >= 2 && splitDraftTabIds.length <= maxSplitTabs;
