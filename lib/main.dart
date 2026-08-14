@@ -185,8 +185,6 @@ void main(List<String> arguments) async {
       ScreenBrightnessPlatform.instance.setAutoReset(false);
     }
   } else if (PlatformUtils.isDesktop) {
-    FocusManager.instance.addEarlyKeyEventHandler(_onKeyEvent);
-
     await windowManager.ensureInitialized();
 
     final windowOptions = WindowOptions(
