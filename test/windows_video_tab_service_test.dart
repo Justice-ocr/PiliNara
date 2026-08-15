@@ -154,6 +154,50 @@ void main() {
   });
 
   group('desktop tab management', () {
+    test('keeps multiple media tabs audible outside split mode', () async {
+      WindowsVideoTabService.upsert({'bvid': 'one'});
+      WindowsVideoTabService.upsert({'bvid': 'two'});
+
+      expect(
+        WindowsVideoTabService.audibleTabIds,
+        containsAll(['video:one', 'video:two']),
+      );
+      expect(
+        WindowsVideoTabService.shouldSuppressTabAudio('video:one', false),
+        isFalse,
+      );
+      expect(
+        WindowsVideoTabService.shouldSuppressTabAudio('video:two', false),
+        isFalse,
+      );
+
+      await WindowsVideoTabService.setTabAudioEnabled('video:one', false);
+      expect(
+        WindowsVideoTabService.shouldSuppressTabAudio('video:one', false),
+        isTrue,
+      );
+      expect(
+        WindowsVideoTabService.shouldSuppressTabAudio('video:two', false),
+        isFalse,
+      );
+    });
+
+    test('suppresses audible tabs outside the active split', () {
+      WindowsVideoTabService.upsert({'bvid': 'one'});
+      WindowsVideoTabService.upsert({'bvid': 'two'});
+      WindowsVideoTabService.upsert({'bvid': 'outside'});
+      WindowsVideoTabService.beginSplitSelection();
+      WindowsVideoTabService.toggleSplitDraft('video:outside');
+      WindowsVideoTabService.toggleSplitDraft('video:one');
+      WindowsVideoTabService.toggleSplitDraft('video:two');
+      expect(WindowsVideoTabService.applySplitSelection(), isTrue);
+
+      expect(
+        WindowsVideoTabService.shouldSuppressTabAudio('video:outside', false),
+        isTrue,
+      );
+    });
+
     test('pins tabs without changing their identity', () {
       WindowsVideoTabService.tabs.add(tab('video:one'));
 

@@ -1717,6 +1717,41 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                                       ),
                                 ),
                               ),
+                              if (item.isHeavyMedia)
+                                Obx(
+                                  () {
+                                    final audible = WindowsVideoTabService
+                                        .isTabAudioEnabled(item.id);
+                                    return SizedBox(
+                                      width: 28,
+                                      height: 28,
+                                      child: IconButton(
+                                        tooltip: audible ? '移出混音' : '加入混音',
+                                        padding: EdgeInsets.zero,
+                                        iconSize: 14,
+                                        color: audible
+                                            ? tokens.accent
+                                            : foreground,
+                                        style: audible
+                                            ? IconButton.styleFrom(
+                                                backgroundColor: tokens.accent
+                                                    .withValues(alpha: 0.12),
+                                              )
+                                            : null,
+                                        onPressed: () => WindowsVideoTabService
+                                            .setTabAudioEnabled(
+                                          item.id,
+                                          !audible,
+                                        ),
+                                        icon: Icon(
+                                          audible
+                                              ? Icons.volume_up_rounded
+                                              : Icons.volume_off_outlined,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
                               if (!item.isHome)
                                 SizedBox(
                                   width: 28,
@@ -1769,6 +1804,15 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
               WindowsVideoTabService.isPinned(item.id) ? '取消固定' : '固定标签',
             ),
           ),
+        if (item.isHeavyMedia)
+          PopupMenuItem(
+            value: 'audio',
+            child: Text(
+              WindowsVideoTabService.isTabAudioEnabled(item.id)
+                  ? '移出混音'
+                  : '加入混音',
+            ),
+          ),
         if (!item.isHome)
           const PopupMenuItem(value: 'close', child: Text('关闭标签页')),
         if (WindowsVideoTabService.tabs.indexOf(item) > 1)
@@ -1781,6 +1825,11 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
     );
     if (action == 'pin') {
       WindowsVideoTabService.togglePinned(item.id);
+    } else if (action == 'audio') {
+      await WindowsVideoTabService.setTabAudioEnabled(
+        item.id,
+        !WindowsVideoTabService.isTabAudioEnabled(item.id),
+      );
     } else if (action == 'close') {
       await onClose();
     } else if (action == 'left') {

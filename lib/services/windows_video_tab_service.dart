@@ -144,10 +144,9 @@ abstract final class WindowsVideoTabService {
   static final Map<String, void Function()> _activators = {};
   static final Map<String, void Function()> _deactivators = {};
   static final Map<String, void Function(bool visible, bool focused)>
-  _presenters = {};
+      _presenters = {};
   static final Map<String, RxBool> _muteStates = {};
-  static final Map<String, Future<void> Function(bool muted)> _muteSetters =
-      {};
+  static final Map<String, Future<void> Function(bool muted)> _muteSetters = {};
   static final Map<String, void Function()> _closers = {};
   static final Map<String, List<bool Function()>> _contextPoppers = {};
   static final Map<String, _WindowsVideoTabPlayer> _players = {};
@@ -278,8 +277,16 @@ abstract final class WindowsVideoTabService {
 
   static bool isSplitAudioEnabled(String id) => audibleTabIds.contains(id);
 
-  static bool shouldSuppressTabAudio(String id, bool focused) =>
-      isSplitActive ? !audibleTabIds.contains(id) : !focused;
+  static bool isTabAudioEnabled(String id) => audibleTabIds.contains(id);
+
+  static bool shouldSuppressTabAudio(String id, bool focused) {
+    // Focus controls keyboard/media commands; it must not decide whether a
+    // background tab is audible. In split mode, tabs outside the split are
+    // always suppressed even when they remain in the shared audio set.
+    if (isSplitActive && !splitTabIds.contains(id)) return true;
+    if (audibleTabIds.isEmpty && focused && !isSplitActive) return false;
+    return !audibleTabIds.contains(id);
+  }
 
   static RxBool? muteStateFor(String id) => _muteStates[id];
 
@@ -298,8 +305,7 @@ abstract final class WindowsVideoTabService {
             ? splitTabIds
             : activeId.value != null &&
                     tabs.any(
-                      (item) =>
-                          item.id == activeId.value && item.isHeavyMedia,
+                      (item) => item.id == activeId.value && item.isHeavyMedia,
                     )
                 ? <String>{activeId.value!}
                 : <String>{},
@@ -345,17 +351,19 @@ abstract final class WindowsVideoTabService {
     splitDraftTabIds.refresh();
     if (!splitTabIds.contains(activeId.value)) {
       activeId.value = splitTabIds.first;
-      currentArguments = tabs
-          .firstWhere((item) => item.id == activeId.value)
-          .arguments;
+      currentArguments =
+          tabs.firstWhere((item) => item.id == activeId.value).arguments;
       _rememberActive(activeId.value!);
     }
+    // Keep the shared audio set when entering split mode. Tabs outside the
+    // split are ignored by shouldSuppressTabAudio and become audible again
+    // when split mode is exited.
     audibleTabIds
       ..clear()
-      ..addAll(previousAudible.intersection(splitTabIds));
-    if (audibleTabIds.isEmpty) {
+      ..addAll(previousAudible);
+    if (audibleTabIds.intersection(splitTabIds).isEmpty) {
       final activeIdValue = activeId.value;
-      if (activeIdValue != null) {
+      if (activeIdValue != null && splitTabIds.contains(activeIdValue)) {
         audibleTabIds.add(activeIdValue);
       }
     }
@@ -366,13 +374,16 @@ abstract final class WindowsVideoTabService {
 
   static void exitSplit() {
     splitTabIds.clear();
-    audibleTabIds.clear();
     splitTabIds.refresh();
     audibleTabIds.refresh();
     maximizedSplitTabId.value = null;
     splitSelectionMode.value = false;
     splitDraftTabIds.clear();
     splitDraftTabIds.refresh();
+    final activeIdValue = activeId.value;
+    if (audibleTabIds.isEmpty && activeIdValue != null) {
+      _ensureTabAudible(activeIdValue);
+    }
     _syncPresentation();
   }
 
@@ -399,14 +410,26 @@ abstract final class WindowsVideoTabService {
     bool enabled,
   ) async {
     if (!isSplitActive || !splitTabIds.contains(id)) return;
+    await setTabAudioEnabled(id, enabled);
+  }
+
+  static Future<void> setTabAudioEnabled(
+    String id,
+    bool enabled,
+  ) async {
+    if (!_isHeavyMediaTab(id)) return;
     if (enabled) {
       audibleTabIds.add(id);
     } else {
       audibleTabIds.remove(id);
     }
-    if (audibleTabIds.isEmpty) {
+    final hasAudibleSplitTab =
+        isSplitActive && audibleTabIds.any((id) => splitTabIds.contains(id));
+    if ((!isSplitActive && audibleTabIds.isEmpty) ||
+        (isSplitActive && !hasAudibleSplitTab)) {
       final activeIdValue = activeId.value;
-      if (activeIdValue != null) {
+      if (activeIdValue != null &&
+          (!isSplitActive || splitTabIds.contains(activeIdValue))) {
         audibleTabIds.add(activeIdValue);
       }
     }
@@ -756,6 +779,7 @@ abstract final class WindowsVideoTabService {
       }
       activeId.value = id;
       currentArguments = normalized;
+      if (!isSplitActive) _ensureTabAudible(id);
       _rememberActive(id);
       _syncPresentation();
     }
@@ -787,6 +811,7 @@ abstract final class WindowsVideoTabService {
       }
       activeId.value = id;
       currentArguments = tabs[index].isHome ? null : tabs[index].arguments;
+      if (!isSplitActive) _ensureTabAudible(id);
       _rememberActive(id);
       _syncPresentation();
     }
@@ -1074,6 +1099,7 @@ abstract final class WindowsVideoTabService {
       }
       activeId.value = id;
       currentArguments = tabs[index].isHome ? null : tabs[index].arguments;
+      if (!isSplitActive) _ensureTabAudible(id);
       _rememberActive(id);
       _syncPresentation();
     }
@@ -1103,6 +1129,14 @@ abstract final class WindowsVideoTabService {
         _deactivators[id]?.call();
       }
     }
+  }
+
+  static bool _isHeavyMediaTab(String id) =>
+      tabs.any((item) => item.id == id && item.isHeavyMedia);
+
+  static void _ensureTabAudible(String id) {
+    if (!_isHeavyMediaTab(id)) return;
+    if (audibleTabIds.add(id)) audibleTabIds.refresh();
   }
 
   static Future<void>? showHost({bool off = false}) {

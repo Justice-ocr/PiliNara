@@ -587,8 +587,8 @@ class PlPlayerController with BlockConfigMixin {
       _isOutputMuted ? 0 : volume.value * 100;
 
   /// Temporarily suppress a retained tab's output without changing its manual
-  /// mute preference or playback state. This is used to give the focused tab
-  /// audio priority in both normal and split-tab layouts.
+  /// mute preference or playback state. Windows tab layouts use this to apply
+  /// the shared audio-mix membership without pausing retained playback.
   Future<void> setTabAudioSuppressed(bool suppressed) async {
     _tabAudioSuppressed = suppressed;
     final controller = _videoPlayerController;
