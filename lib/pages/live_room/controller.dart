@@ -496,6 +496,8 @@ class LiveRoomController extends GetxController {
   }
 
   String? _preferredCastUrl() {
+    final stream = this.stream;
+    if (stream == null) return null;
     final currentCastUrl = _currentCastUrl();
     if (currentCastUrl != null) {
       return currentCastUrl;
@@ -551,7 +553,7 @@ class LiveRoomController extends GetxController {
   }
 
   String? _currentCastUrl() {
-    final streamItem = stream.getOrFirst(streamIndex);
+    final streamItem = stream!.getOrFirst(streamIndex);
     final formatItem = streamItem.format.getOrFirst(formatIndex);
     final codecItem = formatItem.codec.getOrFirst(codecIndex);
     final url = VideoUtils.getLiveCdnUrl(codecItem, index: liveUrlIndex);
