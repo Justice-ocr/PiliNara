@@ -126,6 +126,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   VideoReplyController? _savedReplyControllerFromPip;
   bool _closingFromWindowsVideoTabService = false;
   int _windowsVideoPlayerMountKey = 0;
+  bool _windowsVideoPlayerSurfaceAttached = false;
+  bool _windowsVideoPlayerSurfaceRestorePending = false;
   final WindowsVideoContextController _windowsContextController =
       WindowsVideoContextController();
   late final bool Function() _windowsContextPopper = _popWindowsVideoContext;
@@ -682,6 +684,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   // 播放器状态监听
   Future<void> playerListener(PlayerStatus status) async {
     final isPlaying = status.isPlaying;
+    if (WindowsVideoTabService.enabled && isPlaying) {
+      _restoreWindowsVideoPlayerSurface();
+    }
     try {
       if (videoDetailController.scrollCtr.hasClients) {
         if (isPlaying) {
@@ -918,29 +923,38 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       plPlayerController = player;
       _syncWindowsVideoTabProgress();
     }
-    // A normal tab switch keeps every page alive in an Offstage slot. Tearing
-    // down the player widget here detaches media-kit's Windows video surface,
-    // which causes a visible playback interruption when it is attached again.
-    // Only restore a surface when it is genuinely absent (for example after a
-    // PiP/nested-route return), never merely because the tab became active.
+    // A normal tab switch keeps every page alive in an Offstage slot. Attach
+    // the Windows video surface once when it first becomes visible, but never
+    // detach/recreate it for subsequent ordinary tab switches.
     if (visible && !videoDetailController.videoState.value) {
       videoDetailController.videoState.value = true;
     }
+    if (visible) _restoreWindowsVideoPlayerSurface();
     unawaited(player.setTabAudioSuppressed(!focused));
   }
 
-  void _restoreWindowsVideoPlayerSurface() {
+  void _restoreWindowsVideoPlayerSurface({bool force = false}) {
     if (!WindowsVideoTabService.enabled || !mounted) return;
+    if ((!force && _windowsVideoPlayerSurfaceAttached) ||
+        _windowsVideoPlayerSurfaceRestorePending) {
+      return;
+    }
     final id = WindowsVideoTabService.keyFromArgs(videoDetailController.args);
     if (WindowsVideoTabService.activeId.value != id) return;
     if (!videoDetailController.autoPlay ||
         plPlayerController?.videoController == null) {
       return;
     }
-    _windowsVideoPlayerMountKey++;
-    videoDetailController.videoState.value = true;
-    videoDetailController.videoState.refresh();
-    setState(() {});
+    _windowsVideoPlayerSurfaceRestorePending = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _windowsVideoPlayerSurfaceRestorePending = false;
+      if (!mounted || WindowsVideoTabService.activeId.value != id) return;
+      _windowsVideoPlayerMountKey++;
+      _windowsVideoPlayerSurfaceAttached = true;
+      videoDetailController.videoState.value = true;
+      videoDetailController.videoState.refresh();
+      setState(() {});
+    });
   }
 
   void _closeWindowsVideoTab() {
@@ -1021,6 +1035,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     //    避免两份 PLVideoPlayer 同时渲染
     // 2. 确保下次 didPopNext 时 videoState.value = true 能触发 Obx 刷新
     videoDetailController.videoState.value = false;
+    _windowsVideoPlayerSurfaceAttached = false;
 
     // 4. 处理播放器实例
     if (plPlayerController != null) {
@@ -1050,7 +1065,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     if (WindowsVideoTabService.enabled) {
       videoDetailController.plPlayerController.activateAsGlobal();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _restoreWindowsVideoPlayerSurface();
+        _restoreWindowsVideoPlayerSurface(force: true);
       });
     }
 
