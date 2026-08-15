@@ -611,6 +611,25 @@ class WindowsMediaTabStack extends StatelessWidget {
                 );
               },
             ),
+            Obx(
+              () {
+                final isAudible = WindowsVideoTabService.isSplitAudioEnabled(
+                  item.id,
+                );
+                return _buildSplitAction(
+                  tooltip: isAudible ? '移出混音' : '加入混音',
+                  icon: isAudible
+                      ? Icons.volume_up_rounded
+                      : Icons.volume_off_outlined,
+                  selected: isAudible,
+                  onPressed: () =>
+                      WindowsVideoTabService.setSplitTabAudioEnabled(
+                        item.id,
+                        !isAudible,
+                      ),
+                );
+              },
+            ),
             _buildSplitAction(
               tooltip: '\u8bbe\u4e3a\u4e3b\u97f3\u8f68',
               icon: Icons.volume_up_rounded,

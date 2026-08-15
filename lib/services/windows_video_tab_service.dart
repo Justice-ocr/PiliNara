@@ -135,6 +135,7 @@ abstract final class WindowsVideoTabService {
   static final RxList<WindowsVideoTabItem> tabs = <WindowsVideoTabItem>[].obs;
   static final RxnString activeId = RxnString();
   static final RxSet<String> splitTabIds = <String>{}.obs;
+  static final RxSet<String> audibleTabIds = <String>{}.obs;
   static final RxSet<String> splitDraftTabIds = <String>{}.obs;
   static final RxBool splitSelectionMode = false.obs;
   static final RxnString maximizedSplitTabId = RxnString();
@@ -275,6 +276,11 @@ abstract final class WindowsVideoTabService {
 
   static bool isSplitTab(String id) => splitTabIds.contains(id);
 
+  static bool isSplitAudioEnabled(String id) => audibleTabIds.contains(id);
+
+  static bool shouldSuppressTabAudio(String id, bool focused) =>
+      isSplitActive ? !audibleTabIds.contains(id) : !focused;
+
   static RxBool? muteStateFor(String id) => _muteStates[id];
 
   static bool isVisibleTab(String id) =>
@@ -328,6 +334,7 @@ abstract final class WindowsVideoTabService {
 
   static bool applySplitSelection() {
     if (!canApplySplitSelection) return false;
+    final previousAudible = Set<String>.from(audibleTabIds);
     splitTabIds
       ..clear()
       ..addAll(splitDraftTabIds);
@@ -343,13 +350,22 @@ abstract final class WindowsVideoTabService {
           .arguments;
       _rememberActive(activeId.value!);
     }
+    audibleTabIds
+      ..clear()
+      ..addAll(previousAudible.intersection(splitTabIds));
+    if (audibleTabIds.isEmpty && activeId.value case final activeIdValue?) {
+      audibleTabIds.add(activeIdValue);
+    }
+    audibleTabIds.refresh();
     _syncPresentation();
     return true;
   }
 
   static void exitSplit() {
     splitTabIds.clear();
+    audibleTabIds.clear();
     splitTabIds.refresh();
+    audibleTabIds.refresh();
     maximizedSplitTabId.value = null;
     splitSelectionMode.value = false;
     splitDraftTabIds.clear();
@@ -375,10 +391,30 @@ abstract final class WindowsVideoTabService {
     await setter(muted);
   }
 
+  static Future<void> setSplitTabAudioEnabled(
+    String id,
+    bool enabled,
+  ) async {
+    if (!isSplitActive || !splitTabIds.contains(id)) return;
+    if (enabled) {
+      audibleTabIds.add(id);
+    } else {
+      audibleTabIds.remove(id);
+    }
+    if (audibleTabIds.isEmpty && activeId.value case final activeIdValue?) {
+      audibleTabIds.add(activeIdValue);
+    }
+    audibleTabIds.refresh();
+    _syncPresentation();
+  }
+
   static Future<void> setSplitPrimaryAudio(String id) async {
     if (!isSplitActive || !splitTabIds.contains(id)) return;
     focusSplitTab(id);
+    audibleTabIds.add(id);
+    audibleTabIds.refresh();
     await setSplitTabMuted(id, false);
+    _syncPresentation();
   }
 
   static void toggleSplitMaximized(String id) {
@@ -831,6 +867,7 @@ abstract final class WindowsVideoTabService {
     _activationHistory.remove(id);
     tabs.removeWhere((item) => item.id == id);
     splitTabIds.remove(id);
+    audibleTabIds.remove(id);
     splitDraftTabIds.remove(id);
     if (maximizedSplitTabId.value == id) {
       maximizedSplitTabId.value = null;
@@ -839,6 +876,7 @@ abstract final class WindowsVideoTabService {
       splitTabIds.clear();
     }
     splitTabIds.refresh();
+    audibleTabIds.refresh();
     splitDraftTabIds.refresh();
     if (closingFocusedTab) {
       final nextId = closingSplitTab && isSplitActive
@@ -852,6 +890,14 @@ abstract final class WindowsVideoTabService {
       select(nextId);
     } else {
       _syncPresentation();
+    }
+    if (isSplitActive && audibleTabIds.isEmpty) {
+      final fallbackAudioId = activeId.value;
+      if (fallbackAudioId != null && splitTabIds.contains(fallbackAudioId)) {
+        audibleTabIds.add(fallbackAudioId);
+        audibleTabIds.refresh();
+        _syncPresentation();
+      }
     }
     if (!_hostMounted && Get.currentRoute != hostRoute) {
       close?.call();
@@ -885,9 +931,11 @@ abstract final class WindowsVideoTabService {
       ..add(homeTabId);
     _closedTabs.clear();
     splitTabIds.clear();
+    audibleTabIds.clear();
     splitDraftTabIds.clear();
     splitSelectionMode.value = false;
     maximizedSplitTabId.value = null;
+    audibleTabIds.refresh();
     tabs
       ..clear()
       ..add(_homeTab());

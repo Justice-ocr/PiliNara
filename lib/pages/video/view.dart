@@ -930,7 +930,14 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       videoDetailController.videoState.value = true;
     }
     if (visible) _restoreWindowsVideoPlayerSurface();
-    unawaited(player.setTabAudioSuppressed(!focused));
+    final tabId = WindowsVideoTabService.keyFromArgs(
+      videoDetailController.args,
+    );
+    unawaited(
+      player.setTabAudioSuppressed(
+        WindowsVideoTabService.shouldSuppressTabAudio(tabId, focused),
+      ),
+    );
   }
 
   void _restoreWindowsVideoPlayerSurface({bool force = false}) {

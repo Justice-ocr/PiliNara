@@ -495,7 +495,12 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       plPlayerController.activateAsGlobal();
       PlPlayerController.setPlayCallBack(plPlayerController.play);
     }
-    unawaited(plPlayerController.setTabAudioSuppressed(!focused));
+    final tabId = WindowsVideoTabService.keyFromArgs(_liveTabArgs);
+    unawaited(
+      plPlayerController.setTabAudioSuppressed(
+        WindowsVideoTabService.shouldSuppressTabAudio(tabId, focused),
+      ),
+    );
     if (focused && plPlayerController.playerStatus.isPlaying) {
       _liveRoomController
         ..danmakuController?.resume()
