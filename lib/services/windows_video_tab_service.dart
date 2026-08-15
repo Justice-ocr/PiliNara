@@ -353,8 +353,11 @@ abstract final class WindowsVideoTabService {
     audibleTabIds
       ..clear()
       ..addAll(previousAudible.intersection(splitTabIds));
-    if (audibleTabIds.isEmpty && activeId.value case final activeIdValue?) {
-      audibleTabIds.add(activeIdValue);
+    if (audibleTabIds.isEmpty) {
+      final activeIdValue = activeId.value;
+      if (activeIdValue != null) {
+        audibleTabIds.add(activeIdValue);
+      }
     }
     audibleTabIds.refresh();
     _syncPresentation();
@@ -401,8 +404,11 @@ abstract final class WindowsVideoTabService {
     } else {
       audibleTabIds.remove(id);
     }
-    if (audibleTabIds.isEmpty && activeId.value case final activeIdValue?) {
-      audibleTabIds.add(activeIdValue);
+    if (audibleTabIds.isEmpty) {
+      final activeIdValue = activeId.value;
+      if (activeIdValue != null) {
+        audibleTabIds.add(activeIdValue);
+      }
     }
     audibleTabIds.refresh();
     _syncPresentation();
