@@ -578,22 +578,25 @@ class PlPlayerController with BlockConfigMixin {
   Box video = GStorage.video;
 
   bool visible = true;
-  bool _splitAudioSuppressed = false;
+  bool _tabAudioSuppressed = false;
 
-  bool get splitAudioSuppressed => _splitAudioSuppressed;
-  bool get _isOutputMuted => _splitAudioSuppressed || isMuted;
+  bool get tabAudioSuppressed => _tabAudioSuppressed;
+  bool get _isOutputMuted => _tabAudioSuppressed || isMuted;
 
   double get _effectivePlayerVolume =>
       _isOutputMuted ? 0 : volume.value * 100;
 
-  Future<void> setSplitAudioSuppressed(bool suppressed) async {
-    _splitAudioSuppressed = suppressed;
+  /// Temporarily suppress a retained tab's output without changing its manual
+  /// mute preference or playback state. This is used to give the focused tab
+  /// audio priority in both normal and split-tab layouts.
+  Future<void> setTabAudioSuppressed(bool suppressed) async {
+    _tabAudioSuppressed = suppressed;
     final controller = _videoPlayerController;
     if (controller == null) return;
     try {
       await controller.setVolume(_effectivePlayerVolume);
     } catch (err) {
-      if (kDebugMode) debugPrint('split audio volume: $err');
+      if (kDebugMode) debugPrint('tab audio volume: $err');
     }
   }
 

@@ -682,11 +682,6 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   // 播放器状态监听
   Future<void> playerListener(PlayerStatus status) async {
     final isPlaying = status.isPlaying;
-    if (WindowsVideoTabService.enabled && isPlaying) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _restoreWindowsVideoPlayerSurface();
-      });
-    }
     try {
       if (videoDetailController.scrollCtr.hasClients) {
         if (isPlaying) {
@@ -917,21 +912,21 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     final player = videoDetailController.plPlayerController;
     isShowing = focused;
     player.visible = visible;
-    videoDetailController.videoState.value = visible;
     if (focused) {
       player.activateAsGlobal();
       PlPlayerController.setPlayCallBack(player.play);
       plPlayerController = player;
       _syncWindowsVideoTabProgress();
     }
-    unawaited(player.setSplitAudioSuppressed(!focused));
-    if (visible) {
-      _windowsVideoPlayerMountKey++;
-      videoDetailController.videoState.refresh();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && focused) _restoreWindowsVideoPlayerSurface();
-      });
+    // A normal tab switch keeps every page alive in an Offstage slot. Tearing
+    // down the player widget here detaches media-kit's Windows video surface,
+    // which causes a visible playback interruption when it is attached again.
+    // Only restore a surface when it is genuinely absent (for example after a
+    // PiP/nested-route return), never merely because the tab became active.
+    if (visible && !videoDetailController.videoState.value) {
+      videoDetailController.videoState.value = true;
     }
+    unawaited(player.setTabAudioSuppressed(!focused));
   }
 
   void _restoreWindowsVideoPlayerSurface() {

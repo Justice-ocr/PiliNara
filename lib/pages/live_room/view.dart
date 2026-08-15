@@ -98,8 +98,6 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   // 标志位：是否正在进入 PiP 模式
   bool _isEnteringPipMode = false;
   bool _closingFromWindowsLiveTabService = false;
-  bool _windowsTabActive = true;
-  int _windowsLivePlayerMountKey = 0;
   double? _windowsSidePanelWidth;
   late final TabController _windowsSideTabController;
   final TextEditingController _windowsDanmakuTextController =
@@ -469,13 +467,6 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   }
 
   void playerListener(PlayerStatus status) {
-    if (WindowsVideoTabService.enabled &&
-        _windowsTabActive &&
-        status.isPlaying) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _restoreWindowsLivePlayerSurface();
-      });
-    }
     if (status.isPlaying) {
       _liveRoomController
         ..danmakuController?.resume()
@@ -499,13 +490,12 @@ class _LiveRoomPageState extends State<LiveRoomPage>
 
   void _presentWindowsLiveTab(bool visible, bool focused) {
     if (!mounted) return;
-    _windowsTabActive = visible;
     plPlayerController.visible = visible;
     if (focused) {
       plPlayerController.activateAsGlobal();
       PlPlayerController.setPlayCallBack(plPlayerController.play);
     }
-    unawaited(plPlayerController.setSplitAudioSuppressed(!focused));
+    unawaited(plPlayerController.setTabAudioSuppressed(!focused));
     if (focused && plPlayerController.playerStatus.isPlaying) {
       _liveRoomController
         ..danmakuController?.resume()
@@ -516,23 +506,6 @@ class _LiveRoomPageState extends State<LiveRoomPage>
         ..cancelLiveTimer()
         ..closeLiveMsg();
     }
-    if (visible) {
-      _windowsLivePlayerMountKey++;
-      _liveRoomController.isLoaded.refresh();
-    }
-    setState(() {});
-  }
-
-  void _restoreWindowsLivePlayerSurface() {
-    if (!WindowsVideoTabService.enabled || !mounted || !_windowsTabActive) {
-      return;
-    }
-    if (!_liveRoomController.isLoaded.value ||
-        plPlayerController.videoController == null) {
-      return;
-    }
-    _windowsLivePlayerMountKey++;
-    _liveRoomController.isLoaded.refresh();
     setState(() {});
   }
 
@@ -692,7 +665,10 @@ class _LiveRoomPageState extends State<LiveRoomPage>
         needDm: !plPlayerController.pipNoDanmaku,
       );
     } else if (WindowsVideoTabService.enabled) {
-      child = _windowsTabActive ? childWhenWindowsNeo : const SizedBox.shrink();
+      // The media-tab host already puts inactive tabs in Offstage. Keeping the
+      // live page mounted avoids detaching and recreating the Windows video
+      // surface on every ordinary tab switch.
+      child = childWhenWindowsNeo;
     } else {
       child = childWhenDisabled;
     }
@@ -1027,8 +1003,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
           final roomInfoH5 = _liveRoomController.roomInfoH5.value;
           return PLVideoPlayer(
             key: ValueKey(
-              'live-player-${_liveRoomController.roomId}-'
-              '$isPipMode-$_windowsLivePlayerMountKey',
+              'live-player-${_liveRoomController.roomId}-$isPipMode',
             ),
             maxWidth: width,
             maxHeight: height,
