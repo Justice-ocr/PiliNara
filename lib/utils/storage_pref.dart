@@ -510,6 +510,11 @@ abstract final class Pref {
     return CDNService.backupUrl;
   }
 
+  static String? get customCDNUrl {
+    final value = _setting.get(SettingBoxKey.customCDNUrl);
+    return value is String && value.isNotEmpty ? value : null;
+  }
+
   static String get banWordForRecommend =>
       _setting.get(SettingBoxKey.banWordForRecommend, defaultValue: '');
 
@@ -557,9 +562,6 @@ abstract final class Pref {
 
   static double get blockLimit =>
       _setting.get(SettingBoxKey.blockLimit, defaultValue: 0.0);
-
-  static double get refreshDragPercentage =>
-      _setting.get(SettingBoxKey.refreshDragPercentage, defaultValue: 0.25);
 
   static double get refreshDisplacement => _setting.get(
     SettingBoxKey.refreshDisplacement,

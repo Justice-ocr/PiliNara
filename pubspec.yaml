@@ -21,7 +21,7 @@ version: 2.1.0+1
 
 environment:
   sdk: ">=3.12.0"
-  flutter: 3.44.8
+  flutter: 3.47.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -281,6 +281,7 @@ flutter:
     - path: assets/shaders/
     - assets/danmaku_merge/pinyin_dict.txt
     - assets/danmaku_merge/NOTICE.pakku
+    - assets/cdn_nodes.json
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
 

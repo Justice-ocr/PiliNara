@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:io' show Platform;
-import 'dart:math' show max;
+import 'dart:math' show max, min;
 
+import 'package:PiliPlus/common/widgets/pip_control_button.dart';
 import 'package:PiliPlus/common/widgets/pip_mini_video_content.dart';
 import 'package:PiliPlus/pages/live_room/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/services/pip_transition_coordinator.dart';
+import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -82,6 +84,22 @@ class LivePipOverlayService {
   static bool get isInPipMode => _isInPipMode;
 
   static T? getSavedController<T>() => _savedController as T?;
+
+  /// 退休被遗弃的旧直播 controller：其 onClose 在进小窗时因 isInPipMode
+  /// 跳过了清理，路由注销后无人再触发，弹幕 WS 流、开播计时器与媒体通知
+  /// 条目会随每次恢复/接管泄漏。仅在新页面将新建 controller 接管的路径调用；
+  /// didPopNext 归位（页面仍在栈内）复用同一实例，不得调用。
+  static void cleanupSavedController() {
+    final saved = _savedController;
+    if (saved is! LiveRoomController) {
+      return;
+    }
+    saved
+      ..closeLiveMsg()
+      ..cancelLiveTimer()
+      ..cancelLikeTimer();
+    videoPlayerServiceHandler?.onVideoDetailDispose(saved.heroTag);
+  }
 
   static void startLivePip({
     required BuildContext context,
@@ -436,22 +454,53 @@ class _LivePipWidgetState extends State<LivePipWidget>
 
   void _onDoubleTap() {
     final screenSize = MediaQuery.of(context).size;
-    // 档位目标同样钳入连续区间(上限 0.95×短边):窄屏设备上 2.0 档由此
-    // 封顶不再溢出,双击最大档与捏合/滚轮上限统一。钳后与当前值几乎重合
-    // (已停在封顶档)则跳回 1.0 档,保证循环不卡死
+    // 档位目标同样钳入连续区间(上限按方向分流:横屏 0.95×短边;竖屏
+    // factor×min(屏高,屏宽×宽高比),竖屏屏 0.8 / 横屏屏 0.95):窄屏/横屏
+    // 屏幕上 2.0 档由此封顶不再溢出。钳后与当前值几乎重合(已停在封顶
+    // 档)则跳回 1.0 档,保证循环不卡死
     double next = _scale < 1.1 ? 1.5 : (_scale < 1.6 ? 2.0 : 1.0);
-    next = PipWindowMemory.clampScaleContinuous(next, screenSize);
+    next = PipWindowMemory.clampScaleContinuous(
+      next,
+      screenSize,
+      isVertical: LivePipOverlayService.isVertical,
+    );
     if ((next - _scale).abs() < 0.05) {
-      next = PipWindowMemory.clampScaleContinuous(1.0, screenSize);
+      next = PipWindowMemory.clampScaleContinuous(
+        1.0,
+        screenSize,
+        isVertical: LivePipOverlayService.isVertical,
+      );
     }
+    // 双击档位切换:按缩放前窗口距屏幕四边的距离,选较近的一对边作为锚定,
+    // 缩放后保持该边缘到屏幕边缘的距离不变。
+    // 否则贴右窗口放大→缩小会"跑到左边":放大时钳制把 _left 顶到
+    // screenW-w2(贴右);缩小时 _left=screenW-w2 落在合法区间内不变,
+    // 但右边缘变成 screenW-w2+w3 < screenW,视觉上窗口向左缩。
+    final oldLeft = _left ?? 0.0;
+    final oldTop = _top ?? 0.0;
+    final oldWidth = _width;
+    final oldHeight = _height;
+    final distLeft = oldLeft;
+    final distRight = screenSize.width - oldLeft - oldWidth;
+    final distTop = oldTop;
+    final distBottom = screenSize.height - oldTop - oldHeight;
+
     setState(() {
       _scale = next;
 
-      // 缩放后立即计算并约束位置，防止按钮或部分窗口超出屏幕
-      _left = (_left ?? 0.0)
+      // 水平:距左≤距右则左锚定(_left 不变),否则右锚定(右边缘到屏距离不变)
+      final double newLeft = distLeft <= distRight
+          ? oldLeft
+          : screenSize.width - distRight - _width;
+      // 垂直:距上≤距下则上锚定(_top 不变),否则下锚定(下边缘到屏距离不变)
+      final double newTop = distTop <= distBottom
+          ? oldTop
+          : screenSize.height - distBottom - _height;
+      // 兜底钳制,防极端窗口/旋转后越界
+      _left = newLeft
           .clamp(0.0, max(0.0, screenSize.width - _width))
           .toDouble();
-      _top = (_top ?? 0.0)
+      _top = newTop
           .clamp(0.0, max(0.0, screenSize.height - _height))
           .toDouble();
     });
@@ -464,7 +513,11 @@ class _LivePipWidgetState extends State<LivePipWidget>
   void _applyScaleAroundCenter(double targetScale, Size screenSize) {
     final centerX = _left! + _width / 2;
     final centerY = _top! + _height / 2;
-    _scale = PipWindowMemory.clampScaleContinuous(targetScale, screenSize);
+    _scale = PipWindowMemory.clampScaleContinuous(
+      targetScale,
+      screenSize,
+      isVertical: LivePipOverlayService.isVertical,
+    );
     _left = centerX - _width / 2; // _width 已反映新 _scale
     _top = centerY - _height / 2;
     _clampPositionInScreen(screenSize);
@@ -488,6 +541,14 @@ class _LivePipWidgetState extends State<LivePipWidget>
     // 按当前窗口短边分档:手机维持现状,平板/桌面放大
     _baseLong = PipWindowMemory.basePipLong(screenSize);
     _baseShort = PipWindowMemory.basePipShort(screenSize);
+    // 旋转/窗口尺寸变化后按新屏幕重新钳制 scale:竖屏屏拉大后转横屏时
+    // 上限变小,超出即自动缩小;同时回写会话记忆,恢复时保持缩小后的值
+    _scale = PipWindowMemory.clampScaleContinuous(
+      _scale,
+      screenSize,
+      isVertical: LivePipOverlayService.isVertical,
+    );
+    PipWindowMemory.scale = _scale;
 
     // 恢复上次摆放位置（会话级记忆）；越界（旋转/窗口尺寸变化）时钳回屏内
     _left ??= (PipWindowMemory.position?.dx ?? screenSize.width - _width - 16)
@@ -538,7 +599,26 @@ class _LivePipWidgetState extends State<LivePipWidget>
               phase == PipPhase.entering || phase == PipPhase.restoring;
           final bool interactive = phase == PipPhase.active && !_isClosing;
 
-          return Positioned(
+          // 控件触控目标随窗口短边自适应
+          final double shortSide = min(_width, _height);
+          final double topControl = (shortSide * 0.38)
+              .clamp(28.0, 37.0)
+              .toDouble();
+          final double bottomControl = (shortSide - 2 - topControl - 4)
+              .clamp(40.0, 48.0)
+              .toDouble();
+
+          // AnimatedPositioned 与下方 AnimatedContainer 共用相同的
+          // duration/curve 条件:双击档位切换时位置与尺寸同步 250ms 过渡,
+          // 否则右边缘双击放大时"位置先瞬移、尺寸后长大"地抽搐
+          // (左边缘因 _left 钳制后仍为 0 不受影响,故仅右侧显现)。
+          // inTransition(收起/归位)与 _instantResize(捏合/滚轮)期间归零,
+          // 与 AnimatedContainer 行为一致。
+          return AnimatedPositioned(
+            duration: inTransition || _instantResize
+                ? Duration.zero
+                : const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
             left: rect.left,
             top: rect.top,
             child: IgnorePointer(
@@ -655,90 +735,101 @@ class _LivePipWidgetState extends State<LivePipWidget>
                                       ),
                                     ),
                                   ),
-                                  // 左上角关闭：先播缩小淡出再 stopLivePip
+                                  // 左上角关闭：先播缩小淡出再 stopLivePip。
+                                  // 次要按钮触控目标仅比图标大一圈,
+                                  // 同系统 PiP 顶部按钮,降低误触
                                   Positioned(
-                                    top: 3,
+                                    top: 2,
                                     left: 4,
-                                    child: GestureDetector(
+                                    child: PipControlButton(
+                                      targetSize: topControl,
                                       onTap: _beginClose,
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Icon(
-                                          Icons.close,
-                                          color: Colors.white,
-                                          size: 21,
-                                        ),
+                                      icon: const Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                        size: 21,
                                       ),
                                     ),
                                   ),
-                                  // 右上角放大/还原：归位动画启动，窗口保持显示飞向页面
+                                  // 右上角放大/还原：归位动画启动，窗口保持显示飞向页面。
+                                  // 次要按钮,触控目标仅比图标大一圈
                                   Positioned(
-                                    top: 3,
+                                    top: 2,
                                     right: 4,
-                                    child: GestureDetector(
+                                    child: PipControlButton(
+                                      targetSize: topControl,
                                       onTap: () {
                                         _hideTimer?.cancel();
                                         widget.onReturn();
                                       },
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Icon(
-                                          Icons.open_in_full,
-                                          color: Colors.white,
-                                          size: 18,
-                                        ),
+                                      icon: const Icon(
+                                        Icons.open_in_full,
+                                        color: Colors.white,
+                                        size: 18,
                                       ),
                                     ),
                                   ),
                                   // 底部控制栏:播放/暂停居中(小窗主键居中的
-                                  // 通用心智,与视频小窗键位对齐);左槽与刷新
-                                  // 等宽占位,spaceEvenly 下主键即精确居中
+                                  // 通用心智,与视频小窗键位对齐);左/右等宽
+                                  // 单元格使主键精确居中。主操作按钮触控目标
+                                  // 自适应(正常档 48,窄窗见 bottomControl)
                                   Positioned(
                                     left: 0,
                                     right: 0,
-                                    bottom: 8,
+                                    bottom: 4,
                                     child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
                                       children: [
-                                        const SizedBox(width: 22),
+                                        // 左槽占位,与右侧等宽
+                                        const Expanded(
+                                          child: SizedBox.shrink(),
+                                        ),
                                         // 播放/暂停
-                                        Obx(() {
-                                          final isPlaying =
-                                              widget
-                                                  .plPlayerController
-                                                  .playerStatus
-                                                  .value ==
-                                              PlayerStatus.playing;
-                                          return GestureDetector(
-                                            onTap: () {
-                                              _resetHideTimer();
-                                              if (isPlaying) {
-                                                widget.plPlayerController
-                                                    .pause();
-                                              } else {
-                                                widget.plPlayerController
-                                                    .play();
-                                              }
-                                            },
-                                            child: Icon(
-                                              isPlaying
-                                                  ? Icons.pause
-                                                  : Icons.play_arrow,
-                                              color: Colors.white,
-                                              size: 30,
-                                            ),
-                                          );
-                                        }),
+                                        Expanded(
+                                          child: Center(
+                                            child: Obx(() {
+                                              final isPlaying =
+                                                  widget
+                                                      .plPlayerController
+                                                      .playerStatus
+                                                      .value ==
+                                                  PlayerStatus.playing;
+                                              return PipControlButton(
+                                                targetSize: bottomControl,
+                                                onTap: () {
+                                                  _resetHideTimer();
+                                                  if (isPlaying) {
+                                                    widget.plPlayerController
+                                                        .pause();
+                                                  } else {
+                                                    widget.plPlayerController
+                                                        .play();
+                                                  }
+                                                },
+                                                icon: Icon(
+                                                  isPlaying
+                                                      ? Icons.pause
+                                                      : Icons.play_arrow,
+                                                  color: Colors.white,
+                                                  size: 30,
+                                                ),
+                                              );
+                                            }),
+                                          ),
+                                        ),
                                         // 刷新:直播卡死自救;低频操作降为
                                         // 70% 白(medium-emphasis),平衡主键
                                         // 居中后偏右的视觉重量
-                                        GestureDetector(
-                                          onTap: _onRefresh,
-                                          child: const Icon(
-                                            Icons.refresh,
-                                            color: Colors.white70,
-                                            size: 22,
+                                        Expanded(
+                                          child: Center(
+                                            child: PipControlButton(
+                                              targetSize: bottomControl,
+                                              onTap: _onRefresh,
+                                              icon: const Icon(
+                                                Icons.refresh,
+                                                color: Colors.white70,
+                                                size: 22,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ],
