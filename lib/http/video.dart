@@ -156,7 +156,7 @@ abstract final class VideoHttp {
     );
 
     if (res.data['code'] == 0) {
-      final list = <RcmdVideoItemAppModel>[];
+      List<RcmdVideoItemAppModel> list = <RcmdVideoItemAppModel>[];
       final bool removeBlockedRcmd = Pref.removeBlockedRcmd;
       for (final i in res.data['data']['items']) {
         final upMid = safeToInt(i['args']?['up_id']);
