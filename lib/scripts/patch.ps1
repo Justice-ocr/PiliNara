@@ -235,6 +235,22 @@ switch ($platform.ToLower()) {
 
 flutter pub get
 
+# material_ui replaces Flutter's material library in the application. The
+# pinned GetX fork still imports Flutter material directly, which creates
+# incompatible ThemeData/ThemeMode types. Keep the dependency patch local to
+# the build so pub cache sources remain untouched in the repository.
+$GetPackageDir = Get-ChildItem "$PubCacheDir/git" -Directory |
+    Where-Object { $_.Name -like "getx-*" } |
+    Select-Object -First 1
+if ($GetPackageDir) {
+    Get-ChildItem "$($GetPackageDir.FullName)/lib" -Recurse -Filter *.dart |
+        ForEach-Object {
+            (Get-Content $_.FullName -Raw) -replace
+                "package:flutter/material.dart", "package:material_ui/material_ui.dart" |
+                Set-Content -NoNewline $_.FullName
+        }
+}
+
 $MaterialUiDir = Get-ChildItem "$PubCacheDir/hosted/pub.dev" -Directory |
     Where-Object { $_.Name -like "material_ui-*" } |
     Select-Object -First 1
@@ -258,3 +274,9 @@ foreach ($patch in $patches_material) {
         throw "$LASTEXITCODE"
     }
 }
+
+# Flutter 3.47 removed LocalHistoryEntry.popGestureEnabled. material_ui 1.0.0
+# still passes it while constructing a persistent bottom sheet entry.
+$MaterialScaffold = Join-Path $MaterialUiDir.FullName "lib/src/scaffold.dart"
+(Get-Content $MaterialScaffold -Raw) -replace "(?m)^\s*popGestureEnabled:\s*true,\r?\n", "" |
+    Set-Content -NoNewline $MaterialScaffold

@@ -5,7 +5,7 @@ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/select_mask.dart';
 import 'package:PiliPlus/models_new/download/bili_download_entry_info.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as path;
 
 class DownloadFolderCard extends StatelessWidget {
@@ -102,7 +102,9 @@ class DownloadFolderCard extends StatelessWidget {
 
   Widget _buildCover(BuildContext context, double width, double height) {
     if (entry case final entry?) {
-      final coverFile = File(path.join(entry.entryDirPath, PathUtils.coverName));
+      final coverFile = File(
+        path.join(entry.entryDirPath, PathUtils.coverName),
+      );
       if (coverFile.existsSync()) {
         return Image.file(
           coverFile,

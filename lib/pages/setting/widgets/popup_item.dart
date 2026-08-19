@@ -3,7 +3,6 @@ import 'package:PiliPlus/common/widgets/flutter/popup_menu.dart';
 import 'package:PiliPlus/models/common/enum_with_label.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
-import 'package:flutter/material.dart' as material show PopupMenuItem;
 
 typedef PopupMenuItemSelected<T> =
     void Function(T value, VoidCallback setState);
@@ -83,7 +82,7 @@ class _PopupListTileState<T> extends State<PopupListTile<T>> {
           child: item.child,
         );
       }
-      if (item is material.PopupMenuItem<T>) {
+      if (item is PopupMenuItem<T>) {
         return CustomPopupMenuItem<T>(
           value: item.value,
           height: item.height,

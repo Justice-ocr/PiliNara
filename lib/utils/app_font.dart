@@ -42,11 +42,11 @@ abstract final class AppFont {
       allowedExtensions: allowedExtensions,
       withData: true,
     );
-    if (result == null || result.files.isEmpty) {
+    if (result == null || result.isEmpty) {
       return false;
     }
 
-    final picked = result.files.single;
+    final picked = result.single;
     final extension = path
         .extension(picked.path ?? picked.name)
         .replaceFirst('.', '')
@@ -61,17 +61,12 @@ abstract final class AppFont {
     }
 
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final targetPath = path.join(fontDir.path, 'custom_font_$timestamp.$extension');
+    final targetPath = path.join(
+      fontDir.path,
+      'custom_font_$timestamp.$extension',
+    );
     final targetFile = File(targetPath);
-    if (picked.bytes case final Uint8List bytes) {
-      await targetFile.writeAsBytes(bytes, flush: true);
-    } else {
-      final sourcePath = picked.path;
-      if (sourcePath == null || sourcePath.isEmpty) {
-        throw StateError('missing font bytes');
-      }
-      await File(sourcePath).copy(targetPath);
-    }
+    await targetFile.writeAsBytes(await picked.readAsBytes(), flush: true);
 
     final fontFamily = 'custom_font_$timestamp';
     try {
@@ -127,9 +122,9 @@ abstract final class AppFont {
     required String fontFamily,
   }) async {
     final bytes = await File(fontPath).readAsBytes();
-    await (FontLoader(fontFamily)
-          ..addFont(Future.value(ByteData.sublistView(bytes))))
-        .load();
+    await (FontLoader(
+      fontFamily,
+    )..addFont(Future.value(ByteData.sublistView(bytes)))).load();
   }
 
   static Future<bool> _cleanupFontDir({String? excludePath}) async {
@@ -146,7 +141,10 @@ abstract final class AppFont {
       if (excludePath != null && path.equals(entity.path, excludePath)) {
         continue;
       }
-      final extension = path.extension(entity.path).replaceFirst('.', '').toLowerCase();
+      final extension = path
+          .extension(entity.path)
+          .replaceFirst('.', '')
+          .toLowerCase();
       if (!allowedExtensions.contains(extension)) {
         continue;
       }

@@ -42,11 +42,11 @@ abstract final class DanmakuFont {
       allowedExtensions: allowedExtensions,
       withData: true,
     );
-    if (result == null || result.files.isEmpty) {
+    if (result == null || result.isEmpty) {
       return false;
     }
 
-    final picked = result.files.single;
+    final picked = result.single;
     final extension = path
         .extension(picked.path ?? picked.name)
         .replaceFirst('.', '')
@@ -61,24 +61,25 @@ abstract final class DanmakuFont {
     }
 
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final targetPath = path.join(fontDir.path, 'custom_danmaku_font_$timestamp.$extension');
+    final targetPath = path.join(
+      fontDir.path,
+      'custom_danmaku_font_$timestamp.$extension',
+    );
     final targetFile = File(targetPath);
-    if (picked.bytes case final Uint8List bytes) {
-      await targetFile.writeAsBytes(bytes, flush: true);
-    } else {
-      final sourcePath = picked.path;
-      if (sourcePath == null || sourcePath.isEmpty) {
-        throw StateError('missing font bytes');
-      }
-      await File(sourcePath).copy(targetPath);
-    }
+    await targetFile.writeAsBytes(await picked.readAsBytes(), flush: true);
 
     final fontFamily = 'custom_danmaku_font_$timestamp';
     try {
       await _loadFont(fontPath: targetPath, fontFamily: fontFamily);
       final previousFontPath = Pref.customDanmakuFontPath;
-      await GStorage.setting.put(SettingBoxKey.customDanmakuFontPath, targetPath);
-      await GStorage.setting.put(SettingBoxKey.customDanmakuFontFamily, fontFamily);
+      await GStorage.setting.put(
+        SettingBoxKey.customDanmakuFontPath,
+        targetPath,
+      );
+      await GStorage.setting.put(
+        SettingBoxKey.customDanmakuFontFamily,
+        fontFamily,
+      );
       await GStorage.setting.put(
         SettingBoxKey.customDanmakuFontName,
         path.basename(picked.path ?? picked.name),
@@ -127,9 +128,9 @@ abstract final class DanmakuFont {
     required String fontFamily,
   }) async {
     final bytes = await File(fontPath).readAsBytes();
-    await (FontLoader(fontFamily)
-          ..addFont(Future.value(ByteData.sublistView(bytes))))
-        .load();
+    await (FontLoader(
+      fontFamily,
+    )..addFont(Future.value(ByteData.sublistView(bytes)))).load();
   }
 
   static Future<bool> _cleanupFontDir({String? excludePath}) async {
@@ -146,7 +147,10 @@ abstract final class DanmakuFont {
       if (excludePath != null && path.equals(entity.path, excludePath)) {
         continue;
       }
-      final extension = path.extension(entity.path).replaceFirst('.', '').toLowerCase();
+      final extension = path
+          .extension(entity.path)
+          .replaceFirst('.', '')
+          .toLowerCase();
       if (!allowedExtensions.contains(extension)) {
         continue;
       }

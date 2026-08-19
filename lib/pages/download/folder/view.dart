@@ -15,7 +15,7 @@ import 'package:PiliPlus/pages/download/widgets/folder_dialog.dart';
 import 'package:PiliPlus/services/download/download_collection_service.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
-import 'package:flutter/material.dart'
+import 'package:material_ui/material_ui.dart'
     hide SliverGridDelegateWithMaxCrossAxisExtent;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -49,7 +49,9 @@ class _DownloadFolderPageState extends State<DownloadFolderPage> {
   @override
   void dispose() {
     _progress.dispose();
-    if (Get.isRegistered<DownloadFolderDetailController>(tag: widget.folderId)) {
+    if (Get.isRegistered<DownloadFolderDetailController>(
+      tag: widget.folderId,
+    )) {
       Get.delete<DownloadFolderDetailController>(tag: widget.folderId);
     }
     super.dispose();
@@ -179,15 +181,18 @@ class _DownloadFolderPageState extends State<DownloadFolderPage> {
                 },
                 child: Text(
                   '更新',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ),
               TextButton(
                 style: TextButton.styleFrom(
                   visualDensity: VisualDensity.compact,
                 ),
-                onPressed:
-                    _controller.checkedCount == 0 ? null : _addSelectedToFolder,
+                onPressed: _controller.checkedCount == 0
+                    ? null
+                    : _addSelectedToFolder,
                 child: const Text('添加到'),
               ),
               if (Platform.isAndroid)
@@ -195,8 +200,9 @@ class _DownloadFolderPageState extends State<DownloadFolderPage> {
                   style: TextButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                   ),
-                  onPressed:
-                      _controller.checkedCount == 0 ? null : _exportSelected,
+                  onPressed: _controller.checkedCount == 0
+                      ? null
+                      : _exportSelected,
                   child: const Text('导出'),
                 ),
             ],
@@ -299,12 +305,12 @@ class _DownloadFolderPageState extends State<DownloadFolderPage> {
                         showTitle: true,
                         onDeleteRequested: (menuContext) =>
                             confirmRemoveEntriesFromFolder(
-                          context: menuContext,
-                          collectionService: _collectionService,
-                          downloadService: _downloadService,
-                          folderId: widget.folderId,
-                          entries: [entry],
-                        ),
+                              context: menuContext,
+                              collectionService: _collectionService,
+                              downloadService: _downloadService,
+                              folderId: widget.folderId,
+                              entries: [entry],
+                            ),
                         deleteLabel: '移出文件夹',
                         deleteConfirmText: '确定从当前文件夹移除？',
                         controller: _controller,
