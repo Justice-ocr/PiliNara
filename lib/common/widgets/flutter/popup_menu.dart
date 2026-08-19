@@ -4,7 +4,7 @@
 
 // ignore_for_file: prefer_initializing_formals
 
-import 'package:flutter/material.dart' hide PopupMenuItem;
+import 'package:material_ui/material_ui.dart' hide PopupMenuItem;
 import 'package:flutter/material.dart' as material show PopupMenuItem;
 
 const _kDefaultPopupMenuPadding = EdgeInsets.all(8);
@@ -232,7 +232,6 @@ class StaticPopupMenuButton<T> extends StatelessWidget {
     );
   }
 }
-
 class CustomPopupMenuItem<T> extends PopupMenuEntry<T> {
   const CustomPopupMenuItem({
     super.key,
