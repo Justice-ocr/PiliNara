@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/skeleton/msg_feed_top.dart';
-import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/widgets/sliver/sliver_floating_header.dart';
 import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/pages/search_panel/user/controller.dart';
@@ -7,9 +6,12 @@ import 'package:PiliPlus/pages/search_panel/user/widgets/item.dart';
 import 'package:PiliPlus/pages/search_panel/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_search_skeletons.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:material_ui/material_ui.dart'
     hide SliverGridDelegateWithMaxCrossAxisExtent;
+import 'package:get/get.dart';
 
 class SearchUserPanel extends CommonSearchPanel {
   const SearchUserPanel({
@@ -138,11 +140,20 @@ class _SearchUserPanelState
   }
 
   @override
-  Widget get buildLoading => SliverGrid(
-    gridDelegate: gridDelegate,
-    delegate: const SliverSingleChildDelegate(
-      count: 10,
-      child: MsgFeedTopSkeleton(),
-    ),
-  );
+  Widget get buildLoading => WindowsVideoTabService.enabled
+      ? SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          sliver: WindowsNeoSliverLoadingPulse(
+            sliver: SliverGrid.builder(
+              gridDelegate: gridDelegate,
+              itemBuilder: (_, _) => const WindowsNeoSearchCompactSkeleton(),
+              itemCount: 10,
+            ),
+          ),
+        )
+      : SliverGrid.builder(
+          gridDelegate: gridDelegate,
+          itemBuilder: (_, _) => const MsgFeedTopSkeleton(),
+          itemCount: 10,
+        );
 }

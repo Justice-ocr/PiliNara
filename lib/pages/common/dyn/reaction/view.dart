@@ -6,8 +6,9 @@ import 'package:PiliPlus/common/widgets/pendant_avatar.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/dynamic/dyn_reaction/item.dart';
 import 'package:PiliPlus/pages/common/dyn/reaction/controller.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
+import 'package:get/get.dart';
 
 class DynReactPage extends StatelessWidget {
   const DynReactPage({
@@ -76,7 +77,7 @@ class DynReactPage extends StatelessWidget {
     }
 
     final child = CustomScrollView(
-      key: const PageStorageKey(DynType.reaction),
+      key: const PageStorageKey('dynamic-reaction'),
       slivers: [
         SliverPadding(
           padding: .only(

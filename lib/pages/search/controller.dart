@@ -10,10 +10,13 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
-import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:get/get.dart';
 import 'package:stream_transform/stream_transform.dart';
 
 mixin DebounceStreamMixin<T> {
@@ -164,34 +167,40 @@ class SSearchController extends GetxController
   }
 
   // 搜索
-  void submit() {
+  Future<void> submit() async {
     if (controller.text.isEmpty) {
-      if (hintText.isNullOrEmpty) return;
+      if (hintText.isNullOrEmpty) {
+        return;
+      }
       controller.text = hintText!;
       validateUid();
     }
 
     if (recordSearchHistory.value) {
-      final index = historyList.indexOf(controller.text);
-      if (index != 0) {
-        if (index != -1) historyList.removeAt(index);
-        historyList.insert(0, controller.text);
-        GStorage.historyWord.put('cacheList', historyList);
-      }
+      historyList
+        ..remove(controller.text)
+        ..insert(0, controller.text);
+      GStorage.historyWord.put('cacheList', historyList);
     }
 
     searchFocusNode.unfocus();
-    Get.toNamed(
-      '/searchResult',
-      parameters: {
-        'tag': tag,
-        'keyword': controller.text,
-      },
-      arguments: {
-        'initIndex': initIndex,
-        'fromSearch': true,
-      },
-    )?.whenComplete(searchFocusNode.requestFocus);
+    if (WindowsVideoTabService.enabled) {
+      WindowsVideoTabService.popActiveTabToRoot();
+    }
+    await PageUtils.toSearchResult(
+      controller.text,
+      tag: tag,
+      initIndex: initIndex,
+      fromSearch: !WindowsVideoTabService.enabled,
+    );
+    searchFocusNode.requestFocus();
+    if (PlatformUtils.isDesktop) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        controller.selection = TextSelection.collapsed(
+          offset: controller.text.length,
+        );
+      });
+    }
   }
 
   Future<void> queryRecommendList() async {

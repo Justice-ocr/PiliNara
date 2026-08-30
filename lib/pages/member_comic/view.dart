@@ -6,8 +6,8 @@ import 'package:PiliPlus/pages/member_comic/controller.dart';
 import 'package:PiliPlus/pages/member_comic/widgets/item.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
-import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class MemberComic extends StatefulWidget {
   const MemberComic({

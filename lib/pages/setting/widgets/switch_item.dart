@@ -4,8 +4,9 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 class SetSwitchItem extends StatefulWidget {
   final String title;

@@ -5,9 +5,15 @@ import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:PiliPlus/pages/search_panel/video/controller.dart';
 import 'package:PiliPlus/pages/search_panel/view.dart';
-import 'package:PiliPlus/utils/grid.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/utils/grid.dart'
+    hide SliverGridDelegateWithMaxCrossAxisExtent;
+import 'package:PiliPlus/windows_ui/components/windows_neo_search_skeletons.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_video_search_tile.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class SearchVideoPanel extends CommonSearchPanel {
   const SearchVideoPanel({

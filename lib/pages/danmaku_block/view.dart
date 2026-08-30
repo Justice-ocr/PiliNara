@@ -3,8 +3,7 @@ import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/dialog/export_import.dart';
 import 'package:PiliPlus/common/widgets/keep_alive_wrapper.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
+import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/models/common/dm_block_type.dart';
 import 'package:PiliPlus/models/user/danmaku_block.dart';
 import 'package:PiliPlus/models/user/danmaku_rule.dart';
@@ -14,10 +13,11 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
 
 class DanmakuBlockPage extends StatefulWidget {
   const DanmakuBlockPage({super.key});
@@ -29,18 +29,11 @@ class DanmakuBlockPage extends StatefulWidget {
 class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
   final DanmakuBlockController _controller = Get.put(DanmakuBlockController());
   late PlPlayerController plPlayerController;
-  late EdgeInsets padding;
 
   @override
   void initState() {
     super.initState();
     plPlayerController = Get.arguments as PlPlayerController;
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    padding = MediaQuery.viewPaddingOf(context);
   }
 
   @override
@@ -53,7 +46,10 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('弹幕屏蔽'),
         actions: [
@@ -70,50 +66,41 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
             ),
           ),
         ],
-      ),
-      body: Column(
-        children: [
-          TabBar(
-            controller: _controller.tabController,
-            tabs: DmBlockType.values
-                .map(
-                  (e) => Obx(
-                    () => Tab(
-                      text: '${e.label}(${_controller.rules[e.index].length})',
-                    ),
+        bottom: TabBar(
+          isScrollable: isWindowsNeo,
+          tabAlignment: isWindowsNeo ? TabAlignment.start : null,
+          dividerColor: isWindowsNeo ? context.windowsNeo.border : null,
+          controller: _controller.tabController,
+          tabs: DmBlockType.values
+              .map(
+                (e) => Obx(
+                  () => Tab(
+                    text: '${e.label}(${_controller.rules[e.index].length})',
                   ),
-                )
-                .toList(),
-          ),
-          Expanded(
-            child: tabBarView(
-              controller: _controller.tabController,
-              children: DmBlockType.values
-                  .map(
-                    (e) => KeepAliveWrapper(
-                      child: Obx(
-                        () =>
-                            tabViewBuilder(e.index, _controller.rules[e.index]),
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-        ],
+                ),
+              )
+              .toList(),
+        ),
       ),
-      fab: Padding(
-        padding: .only(
-          right: kFloatingActionButtonMargin + padding.right,
-          bottom: kFloatingActionButtonMargin + padding.bottom,
-        ),
-        child: FloatingActionButton(
-          tooltip: '添加',
-          onPressed: () => _showAddDialog(
-            DmBlockType.values[_controller.tabController.index],
-          ),
-          child: const Icon(Icons.add),
-        ),
+      body: tabBarView(
+        controller: _controller.tabController,
+        children: DmBlockType.values
+            .map(
+              (e) => KeepAliveWrapper(
+                child: _windowsTabView(
+                  Obx(
+                    () => tabViewBuilder(e.index, _controller.rules[e.index]),
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+      floatingActionButton: FloatingActionButton(
+        tooltip: '添加',
+        onPressed: () =>
+            _showAddDialog(DmBlockType.values[_controller.tabController.index]),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -125,7 +112,10 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
     final isWindowsNeo = WindowsVideoTabService.enabled;
     return ListView.separated(
       itemCount: list.length,
-      padding: .only(bottom: padding.bottom + 100),
+      padding: EdgeInsets.only(
+        top: isWindowsNeo ? 16 : 0,
+        bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
+      ),
       itemBuilder: (context, itemIndex) {
         final SimpleRule item = list[itemIndex];
         final child = iconButton(

@@ -1,13 +1,13 @@
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models/common/dynamic/up_panel_position.dart';
+import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models/dynamics/up.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
 import 'package:PiliPlus/pages/live_follow/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
-import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -19,12 +19,11 @@ import 'package:hive_ce/hive.dart';
 
 class UpPanel extends StatefulWidget {
   const UpPanel({
-    super.key,
-    required this.upData,
     required this.dynamicsController,
+    this.horizontal,
+    super.key,
   });
 
-  final FollowUpModel upData;
   final DynamicsController dynamicsController;
   final bool? horizontal;
 
@@ -41,12 +40,16 @@ class _UpPanelState extends State<UpPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final accountService = controller.accountService;
+    if (!accountService.isLogin.value) {
+      return const SizedBox.shrink();
+    }
     final theme = Theme.of(context);
-    final upData = widget.upData;
-    final upList = upData.upList;
-    final liveList = upData.liveUsers?.items;
+    final upData = controller.upState.value.data;
+    final List<UpItem> upList = upData.upList;
+    final List<LiveUserItem>? liveList = upData.liveUsers?.items;
     return CustomScrollView(
-      scrollDirection: isTop ? .horizontal : .vertical,
+      scrollDirection: isTop ? Axis.horizontal : Axis.vertical,
       physics: const AlwaysScrollableScrollPhysics(),
       controller: controller.scrollController,
       slivers: [
@@ -58,11 +61,11 @@ class _UpPanelState extends State<UpPanel> {
             onLongPress: toFollowPage,
             onSecondaryTap: PlatformUtils.isMobile ? null : toFollowPage,
             child: Container(
-              alignment: .center,
+              alignment: Alignment.center,
               height: isTop ? 76 : 60,
-              padding: isTop ? const .only(left: 12, right: 6) : null,
+              padding: isTop ? const EdgeInsets.only(left: 12, right: 6) : null,
               child: Text.rich(
-                textAlign: .center,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
                   color: theme.colorScheme.primary,
@@ -75,7 +78,7 @@ class _UpPanelState extends State<UpPanel> {
                     if (!isTop) ...[
                       const TextSpan(text: '\n'),
                       WidgetSpan(
-                        alignment: .middle,
+                        alignment: PlaceholderAlignment.middle,
                         child: Icon(
                           controller.showLiveUp
                               ? Icons.expand_less
@@ -86,7 +89,7 @@ class _UpPanelState extends State<UpPanel> {
                       ),
                     ] else
                       WidgetSpan(
-                        alignment: .middle,
+                        alignment: PlaceholderAlignment.middle,
                         child: Icon(
                           controller.showLiveUp
                               ? Icons.keyboard_arrow_right
@@ -125,7 +128,7 @@ class _UpPanelState extends State<UpPanel> {
                   theme,
                   UpItem(
                     uname: '我',
-                    face: controller.accountService.face.value,
+                    face: accountService.face.value,
                     mid: Accounts.main.mid,
                   ),
                 ),
@@ -133,7 +136,7 @@ class _UpPanelState extends State<UpPanel> {
             );
           },
         ),
-        if (upList != null && upList.isNotEmpty)
+        if (upList.isNotEmpty)
           SliverList.builder(
             itemCount: upList.length,
             itemBuilder: (context, index) {
@@ -145,43 +148,49 @@ class _UpPanelState extends State<UpPanel> {
     );
   }
 
-  void _onSelect(UpItem item) {
-    item.hasUpdate = false;
-    controller.onSelectUp(item.mid);
+  void _onSelect(UpItem data) {
+    controller
+      ..currentMid = data.mid
+      ..onSelectUp(data.mid);
+
+    data.hasUpdate = false;
+
     setState(() {});
   }
 
-  Widget upItemBuild(ThemeData theme, UpItem item) {
+  Widget upItemBuild(ThemeData theme, UpItem data) {
     final currentMid = controller.currentMid;
-    final isLive = item is LiveUserItem;
-    final isCurrent = isLive || currentMid == item.mid || currentMid == -1;
+    final isLive = data is LiveUserItem;
+    final isCurrent = isLive || currentMid == data.mid || currentMid == -1;
 
-    final isAll = item.mid == -1;
-    void toMemberPage() => Get.toNamed('/member?mid=${item.mid}');
+    final isAll = data.mid == -1;
+    void toMemberPage() => PageUtils.toMember(data.mid);
 
     Widget avatar;
     if (isAll) {
       avatar = DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           shape: .circle,
-          color: Color(0xFF5CB67B),
+          border: Border.all(
+            width: 5,
+            color: const Color(0xFF5CB67B),
+          ),
         ),
         child: Image.asset(
           width: 38,
           height: 38,
           cacheWidth: 38.cacheSize(context),
-          Assets.logo2,
-          color: Colors.white,
+          Assets.logo,
         ),
       );
     } else {
       avatar = Padding(
-        padding: const .symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
         child: NetworkImgLayer(
           width: 38,
           height: 38,
-          src: item.face,
-          type: .avatar,
+          src: data.face,
+          type: ImageType.avatar,
         ),
       );
       if (isLive) {
@@ -201,7 +210,7 @@ class _UpPanelState extends State<UpPanel> {
             ),
           ],
         );
-      } else if (item.hasUpdate ?? false) {
+      } else if (data.hasUpdate ?? false) {
         avatar = Stack(
           clipBehavior: .none,
           children: [
@@ -226,9 +235,9 @@ class _UpPanelState extends State<UpPanel> {
         onTap: () {
           feedBack();
           if (isLive) {
-            PageUtils.toLiveRoom(item.roomId);
+            PageUtils.toLiveRoom(data.roomId);
           } else {
-            _onSelect(item);
+            _onSelect(data);
           }
         },
         // onDoubleTap: isLive ? () => _onSelect(data) : null,
@@ -238,18 +247,18 @@ class _UpPanelState extends State<UpPanel> {
           opacity: isCurrent ? 1 : 0.6,
           child: Column(
             spacing: 4,
-            mainAxisSize: .min,
-            mainAxisAlignment: .center,
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               avatar,
               Padding(
-                padding: const .symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Text(
-                  isTop ? '${remarkedName(item.mid, item.uname!)}\n' : remarkedName(item.mid, item.uname!),
+                  isTop ? '${data.uname}\n' : data.uname!,
                   maxLines: 2,
-                  textAlign: .center,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: currentMid == item.mid
+                    color: currentMid == data.mid
                         ? theme.colorScheme.primary
                         : theme.colorScheme.outline,
                     height: 1.1,

@@ -14,4 +14,9 @@ enum VideoDecodeFormatType {
 
   static VideoDecodeFormatType fromString(String val) =>
       values.firstWhere((i) => i.codes.any(val.startsWith));
+
+  static VideoDecodeFormatType fromCode(String val) => values.firstWhere(
+    (i) => i.name == val || i.codes.any(val.startsWith),
+    orElse: () => AVC,
+  );
 }

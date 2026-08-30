@@ -7,8 +7,11 @@ import 'package:PiliPlus/pages/rank/zone/controller.dart';
 import 'package:PiliPlus/pages/rank/zone/widget/pgc_rank_item.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_horizontal_video_tile.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:material_ui/material_ui.dart'
+    hide SliverGridDelegateWithMaxCrossAxisExtent;
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
 
 class ZonePage extends StatefulWidget {
   const ZonePage({super.key, this.rid, this.seasonType});

@@ -1,7 +1,7 @@
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/custom_height_widget.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
-import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
+import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/pages/common/common_page.dart';
 import 'package:PiliPlus/pages/home/controller.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
@@ -10,10 +10,11 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
-import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/features/home/windows_neo_home.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,7 +25,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends CommonPageState<HomePage>
     with AutomaticKeepAliveClientMixin {
-  late ColorScheme _colorScheme;
   final _homeController = Get.putOrFind(HomeController.new);
   final _mainController = Get.find<MainController>();
 
@@ -35,14 +35,15 @@ class _HomePageState extends CommonPageState<HomePage>
   bool get wantKeepAlive => true;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _colorScheme = ColorScheme.of(context);
-  }
-
-  @override
   Widget build(BuildContext context) {
     super.build(context);
+    if (WindowsVideoTabService.enabled) {
+      return WindowsNeoHome(
+        homeController: _homeController,
+        mainController: _mainController,
+      );
+    }
+    final theme = Theme.of(context);
     Widget tabBar;
     if (_homeController.tabs.length > 1) {
       tabBar = Padding(
@@ -61,11 +62,7 @@ class _HomePageState extends CommonPageState<HomePage>
             onTap: (_) {
               feedBack();
               if (!_homeController.tabController.indexIsChanging) {
-                if (Pref.enableCurrentPageRefresh) {
-                  _homeController.toTopAndRefresh();
-                } else {
-                  _homeController.animateToTop();
-                }
+                _homeController.animateToTop();
               }
             },
           ),
@@ -74,7 +71,7 @@ class _HomePageState extends CommonPageState<HomePage>
       if (_homeController.hideTopBar &&
           _mainController.barHideType == .instant) {
         tabBar = Material(
-          color: _colorScheme.surface,
+          color: theme.colorScheme.surface,
           child: tabBar,
         );
       }
@@ -85,7 +82,7 @@ class _HomePageState extends CommonPageState<HomePage>
       children: [
         if (!_mainController.useSideBar &&
             MediaQuery.sizeOf(context).isPortrait)
-          customAppBar(),
+          customAppBar(theme),
         tabBar,
         Expanded(
           child: onBuild(
@@ -99,15 +96,15 @@ class _HomePageState extends CommonPageState<HomePage>
     );
   }
 
-  Widget customAppBar() {
+  Widget customAppBar(ThemeData theme) {
     const padding = EdgeInsets.fromLTRB(14, 6, 14, 0);
     final child = Row(
       children: [
-        searchBar(),
+        searchBar(theme),
         const SizedBox(width: 4),
         msgBadge(_mainController),
         const SizedBox(width: 8),
-        userAvatar(colorScheme: _colorScheme, mainController: _mainController),
+        userAvatar(theme: theme, mainController: _mainController),
       ],
     );
     if (_homeController.hideTopBar) {
@@ -150,17 +147,17 @@ class _HomePageState extends CommonPageState<HomePage>
     );
   }
 
-  Widget searchBar() {
+  Widget searchBar(ThemeData theme) {
     const borderRadius = BorderRadius.all(Radius.circular(25));
     return Expanded(
       child: SizedBox(
         height: 44,
         child: Material(
           borderRadius: borderRadius,
-          color: _colorScheme.onSecondaryContainer.withValues(alpha: 0.05),
+          color: theme.colorScheme.onSecondaryContainer.withValues(alpha: 0.05),
           child: InkWell(
             borderRadius: borderRadius,
-            splashColor: _colorScheme.primaryContainer.withValues(
+            splashColor: theme.colorScheme.primaryContainer.withValues(
               alpha: 0.3,
             ),
             onTap: () => PageUtils.toSearch(
@@ -173,7 +170,7 @@ class _HomePageState extends CommonPageState<HomePage>
                 const SizedBox(width: 14),
                 Icon(
                   Icons.search_outlined,
-                  color: _colorScheme.onSecondaryContainer,
+                  color: theme.colorScheme.onSecondaryContainer,
                   semanticLabel: '搜索',
                 ),
                 const SizedBox(width: 10),
@@ -183,7 +180,7 @@ class _HomePageState extends CommonPageState<HomePage>
                       _homeController.defaultSearch.value,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: _colorScheme.outline),
+                      style: TextStyle(color: theme.colorScheme.outline),
                     ),
                   ),
                 ),
@@ -198,7 +195,7 @@ class _HomePageState extends CommonPageState<HomePage>
 }
 
 Widget userAvatar({
-  required ColorScheme colorScheme,
+  required ThemeData theme,
   required MainController mainController,
 }) {
   return Semantics(
@@ -220,7 +217,7 @@ Widget userAvatar({
                   type: .transparency,
                   child: InkWell(
                     onTap: mainController.toMinePage,
-                    splashColor: colorScheme.primaryContainer.withValues(
+                    splashColor: theme.colorScheme.primaryContainer.withValues(
                       alpha: 0.3,
                     ),
                     customBorder: const CircleBorder(),
@@ -237,12 +234,12 @@ Widget userAvatar({
                             padding: const .all(2),
                             decoration: BoxDecoration(
                               shape: .circle,
-                              color: colorScheme.secondaryContainer,
+                              color: theme.colorScheme.secondaryContainer,
                             ),
                             child: Icon(
                               size: 14,
                               MdiIcons.incognito,
-                              color: colorScheme.onSecondaryContainer,
+                              color: theme.colorScheme.onSecondaryContainer,
                             ),
                           ),
                         )
@@ -259,13 +256,13 @@ Widget userAvatar({
             tooltip: '点击登录',
             style: IconButton.styleFrom(
               padding: .zero,
-              backgroundColor: colorScheme.onInverseSurface,
+              backgroundColor: theme.colorScheme.onInverseSurface,
             ),
             onPressed: mainController.toMinePage,
             icon: Icon(
               Icons.person_rounded,
               size: 22,
-              color: colorScheme.primary,
+              color: theme.colorScheme.primary,
             ),
           ),
         );

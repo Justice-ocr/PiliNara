@@ -1,6 +1,4 @@
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/view_insets_safe_area.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/pages/search/controller.dart' show DebounceStreamState;
 import 'package:PiliPlus/pages/setting/models/dynamics_settings.dart';
@@ -15,8 +13,9 @@ import 'package:PiliPlus/pages/setting/models/video_settings.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 import 'package:waterfall_flow/waterfall_flow.dart'
     hide SliverWaterfallFlowDelegateWithMaxCrossAxisExtent;
 
@@ -66,7 +65,10 @@ class _SettingsSearchPageState
 
   @override
   Widget build(BuildContext context) {
-    return SimpleScaffold(
+    return Scaffold(
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.background
+          : null,
       appBar: AppBar(
         actions: [
           IconButton(
@@ -100,17 +102,31 @@ class _SettingsSearchPageState
           ),
         ),
       ),
-      body: ViewInsetsSafeArea(
-        child: CustomScrollView(
-          slivers: [
-            ViewSliverSafeArea(
+      body: CustomScrollView(
+        slivers: [
+          ViewSliverSafeArea(
+            sliver: SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                WindowsVideoTabService.enabled ? 20 : 0,
+                WindowsVideoTabService.enabled ? 16 : 0,
+                WindowsVideoTabService.enabled ? 20 : 0,
+                WindowsVideoTabService.enabled ? 100 : 0,
+              ),
               sliver: Obx(
                 () => _list.isEmpty
                     ? const HttpError()
                     : SliverWaterfallFlow(
                         gridDelegate:
                             SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: Grid.smallCardWidth * 2,
+                              maxCrossAxisExtent: WindowsVideoTabService.enabled
+                                  ? 440
+                                  : Grid.smallCardWidth * 2,
+                              mainAxisSpacing: WindowsVideoTabService.enabled
+                                  ? 12
+                                  : 0,
+                              crossAxisSpacing: WindowsVideoTabService.enabled
+                                  ? 12
+                                  : 0,
                             ),
                         delegate: SliverChildBuilderDelegate(
                           (_, index) => _list[index].widget,
@@ -119,8 +135,8 @@ class _SettingsSearchPageState
                       ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

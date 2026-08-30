@@ -22,7 +22,6 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/extension/context_ext.dart';
-import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
@@ -34,9 +33,10 @@ import 'package:PiliPlus/utils/url_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:material_ui/material_ui.dart';
+import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 abstract final class PageUtils {
@@ -564,6 +564,25 @@ abstract final class PageUtils {
     }
   }
 
+  static void onHorizontalPreviewState(
+    ScaffoldState state,
+    List<SourceModel> imgList,
+    int index,
+  ) {
+    state.showBottomSheet(
+      constraints: const BoxConstraints(),
+      (context) => GalleryViewer(
+        sources: imgList,
+        initIndex: index,
+        quality: GlobalData().imgQuality,
+      ),
+      enableDrag: false,
+      elevation: 0.0,
+      backgroundColor: Colors.transparent,
+      sheetAnimationStyle: AnimationStyle.noAnimation,
+    );
+  }
+
   static void inAppWebview(
     String url, {
     bool off = false,
@@ -571,10 +590,10 @@ abstract final class PageUtils {
     if (Pref.openInBrowser) {
       launchURL(url);
     } else {
-      Get.offOrToNamed(
+      toDupNamed(
         '/webview',
         parameters: {'url': url},
-        arguments: const {'inApp': true},
+        arguments: {'inApp': true},
         off: off,
       );
     }
@@ -585,7 +604,7 @@ abstract final class PageUtils {
     LaunchMode mode = LaunchMode.externalApplication,
   }) async {
     try {
-      final uri = Uri.parse(url);
+      final Uri uri = Uri.parse(url);
       if (!await launchUrl(uri, mode: mode)) {
         SmartDialog.showToast('Could not launch $url');
       }
@@ -605,12 +624,18 @@ abstract final class PageUtils {
         launchURL(url);
       }
     } else {
-      Get.offOrToNamed(
-        '/webview',
-        parameters: {'url': url, ...?parameters},
-        preventDuplicates: off,
-        off: off,
-      );
+      if (off) {
+        toDupNamed(
+          '/webview',
+          parameters: {
+            'url': url,
+            ...?parameters,
+          },
+          off: true,
+        );
+      } else {
+        PiliScheme.routePushFromUrl(url, parameters: parameters);
+      }
     }
   }
 
@@ -667,12 +692,21 @@ abstract final class PageUtils {
     if (roomId == null) {
       return;
     }
-    Get.offOrToNamed(
-      '/liveRoom',
-      arguments: roomId,
-      off: off,
-      preventDuplicates: off,
+    WindowsVideoTabService.upsert(
+      {
+        'roomId': roomId,
+      },
+      type: WindowsMediaTabType.live,
     );
+    if (WindowsVideoTabService.enabled) {
+      WindowsVideoTabService.showHost(off: off);
+      return;
+    }
+    if (off) {
+      Get.offNamed('/liveRoom', arguments: {'roomId': roomId});
+    } else {
+      PageUtils.toDupNamed('/liveRoom', arguments: {'roomId': roomId});
+    }
   }
 
   static Future<void>? toVideoPage({
@@ -706,7 +740,23 @@ abstract final class PageUtils {
       'heroTag': Utils.makeHeroTag(cid),
       ...?extraArguments,
     };
-    return PageUtils.toDupNamed('/videoV', arguments: arguments, off: off);
+    WindowsVideoTabService.upsert(arguments);
+    if (WindowsVideoTabService.enabled) {
+      return WindowsVideoTabService.showHost(off: off);
+    }
+    if (off) {
+      return Get.offNamed(
+        '/videoV',
+        arguments: arguments,
+        preventDuplicates: false,
+      );
+    } else {
+      return Get.toNamed(
+        '/videoV',
+        arguments: arguments,
+        preventDuplicates: false,
+      );
+    }
   }
 
   static final _pgcRegex = RegExp(r'(ep|ss)(\d+)');
@@ -907,17 +957,33 @@ abstract final class PageUtils {
     }
   }
 
-  @pragma('vm:prefer-inline')
-  static Future<T?>? toDupNamed<T>(
+  static Future<T?>? toDupNamed<T extends Object?>(
     String page, {
     dynamic arguments,
     Map<String, String>? parameters,
     bool off = false,
-  }) => Get.offOrToNamed(
-    page,
-    arguments: arguments,
-    parameters: parameters,
-    preventDuplicates: false,
-    off: off,
-  );
+  }) {
+    final nested = WindowsVideoTabService.pushNamedInActiveTab<T>(
+      page,
+      arguments: arguments,
+      parameters: parameters,
+      replace: off,
+    );
+    if (nested != null) return nested;
+    if (off) {
+      return Get.offNamed<T>(
+        page,
+        arguments: arguments,
+        parameters: parameters,
+        preventDuplicates: false,
+      );
+    } else {
+      return Get.toNamed<T>(
+        page,
+        arguments: arguments,
+        parameters: parameters,
+        preventDuplicates: false,
+      );
+    }
+  }
 }

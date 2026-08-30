@@ -68,6 +68,12 @@ abstract final class RecommendFilter {
         rcmdUpNameRegExp.hasMatch(name);
   }
 
+  static bool filterVideoTags(Iterable<String>? tags) {
+    return enableVideoTagFilter &&
+        tags != null &&
+        tags.any(videoTagRegExp.hasMatch);
+  }
+
   static bool filterUser(int? mid) {
     return recommendBlockedMids.isNotEmpty &&
         mid != null &&

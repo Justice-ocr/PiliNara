@@ -1,7 +1,6 @@
 import 'dart:math' show max;
 
 import 'package:PiliPlus/common/skeleton/msg_feed_top.dart';
-import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/dialog/simple_dialog_option.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
@@ -9,7 +8,6 @@ import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/pair.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/grpc/bilibili/app/im/v1.pbenum.dart'
     show IMSettingType;
 import 'package:PiliPlus/http/loading_state.dart';
@@ -21,8 +19,10 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
+import 'package:get/get.dart';
 
 class LikeMePage extends StatefulWidget {
   const LikeMePage({super.key});
@@ -37,7 +37,14 @@ class _LikeMePageState extends State<LikeMePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final horizontalPadding = max(
+      18.0,
+      (MediaQuery.sizeOf(context).width - 960) / 2,
+    );
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('收到的赞'),
         actions: [
@@ -80,72 +87,68 @@ class _LikeMePageState extends State<LikeMePage> {
   }
 
   Widget _buildBody(ThemeData theme, LoadingState loadingState) {
-    switch (loadingState) {
-      case Loading():
-        return const SliverPrototypeExtentList(
-          prototypeItem: MsgFeedTopSkeleton(),
-          delegate: SliverSingleChildDelegate(
-            count: 12,
-            child: MsgFeedTopSkeleton(),
-          ),
-        );
-      case Success(:final response):
-        final divider = Divider(
-          indent: 72,
-          endIndent: 20,
-          height: 6,
-          color: Colors.grey.withValues(alpha: 0.1),
-        );
-        return Builder(
-          builder: (context) {
-            Pair<List<MsgLikeItem>, List<MsgLikeItem>> pair = response;
-            List<MsgLikeItem> latest = pair.first;
-            List<MsgLikeItem> total = pair.second;
-            if (latest.isNotEmpty || total.isNotEmpty) {
-              return SliverMainAxisGroup(
-                slivers: [
-                  if (latest.isNotEmpty) ...[
-                    _buildHeader(theme, '最新'),
-                    SliverList.separated(
-                      itemBuilder: (context, index) {
-                        if (total.isEmpty && index == latest.length - 1) {
-                          _likeMeController.onLoadMore();
-                        }
-                        return _buildItem(theme, latest[index], (id) {
-                          _likeMeController.onRemove(id, index, true);
-                        });
-                      },
-                      itemCount: latest.length,
-                      separatorBuilder: (context, index) => divider,
-                    ),
-                  ],
-                  if (total.isNotEmpty) ...[
-                    _buildHeader(theme, '累计'),
-                    SliverList.separated(
-                      itemBuilder: (context, index) {
-                        if (index == total.length - 1) {
-                          _likeMeController.onLoadMore();
-                        }
-                        return _buildItem(theme, total[index], (id) {
-                          _likeMeController.onRemove(id, index, false);
-                        });
-                      },
-                      itemCount: total.length,
-                      separatorBuilder: (context, index) => divider,
-                    ),
-                  ],
+    late final divider = Divider(
+      indent: WindowsVideoTabService.enabled ? 0 : 72,
+      endIndent: WindowsVideoTabService.enabled ? 0 : 20,
+      height: WindowsVideoTabService.enabled ? 1 : 6,
+      color: WindowsVideoTabService.enabled
+          ? context.windowsNeo.border
+          : Colors.grey.withValues(alpha: 0.1),
+    );
+    return switch (loadingState) {
+      Loading() => SliverList.builder(
+        itemCount: 12,
+        itemBuilder: (context, index) => const MsgFeedTopSkeleton(),
+      ),
+      Success(:final response) => Builder(
+        builder: (context) {
+          Pair<List<MsgLikeItem>, List<MsgLikeItem>> pair = response;
+          List<MsgLikeItem> latest = pair.first;
+          List<MsgLikeItem> total = pair.second;
+          if (latest.isNotEmpty || total.isNotEmpty) {
+            return SliverMainAxisGroup(
+              slivers: [
+                if (latest.isNotEmpty) ...[
+                  _buildHeader(theme, '最新'),
+                  SliverList.separated(
+                    itemBuilder: (context, index) {
+                      if (total.isEmpty && index == latest.length - 1) {
+                        _likeMeController.onLoadMore();
+                      }
+                      return _buildItem(theme, latest[index], (id) {
+                        _likeMeController.onRemove(id, index, true);
+                      });
+                    },
+                    itemCount: latest.length,
+                    separatorBuilder: (context, index) => divider,
+                  ),
                 ],
-              );
-            }
-            return HttpError(onReload: _likeMeController.onReload);
-          },
-        );
-      case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _likeMeController.onReload,
-        );
-    }
+                if (total.isNotEmpty) ...[
+                  _buildHeader(theme, '累计'),
+                  SliverList.separated(
+                    itemBuilder: (context, index) {
+                      if (index == total.length - 1) {
+                        _likeMeController.onLoadMore();
+                      }
+                      return _buildItem(theme, total[index], (id) {
+                        _likeMeController.onRemove(id, index, false);
+                      });
+                    },
+                    itemCount: total.length,
+                    separatorBuilder: (context, index) => divider,
+                  ),
+                ],
+              ],
+            );
+          }
+          return HttpError(onReload: _likeMeController.onReload);
+        },
+      ),
+      Error(:final errMsg) => HttpError(
+        errMsg: errMsg,
+        onReload: _likeMeController.onReload,
+      ),
+    };
   }
 
   Widget _buildHeader(ThemeData theme, String title) {

@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/member/contribute_type.dart';
@@ -10,8 +9,9 @@ import 'package:PiliPlus/pages/member_season_series/widget/season_series_card.da
 import 'package:PiliPlus/pages/member_video/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class SeasonSeriesPage extends StatefulWidget {
   const SeasonSeriesPage({
@@ -91,7 +91,11 @@ class _SeasonSeriesPageState extends State<SeasonSeriesPage>
                           ? item.meta!.seasonId
                           : item.meta!.seriesId;
                       Get.to(
-                        SimpleScaffold(
+                        Scaffold(
+                          backgroundColor: WindowsVideoTabService.enabled
+                              ? context.windowsNeo.background
+                              : null,
+                          resizeToAvoidBottomInset: false,
                           appBar: AppBar(title: Text(item.meta!.name!)),
                           body: ViewSafeArea(
                             child: MemberVideo(

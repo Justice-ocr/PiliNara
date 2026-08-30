@@ -5,8 +5,11 @@ import 'package:PiliPlus/pages/search_panel/article/widgets/item.dart';
 import 'package:PiliPlus/pages/search_panel/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_search_skeletons.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class SearchArticlePanel extends CommonSearchPanel {
   const SearchArticlePanel({

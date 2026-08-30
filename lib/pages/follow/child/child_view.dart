@@ -1,11 +1,9 @@
 import 'dart:math';
 
 import 'package:PiliPlus/common/skeleton/msg_feed_top.dart';
-import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/widgets/button/more_btn.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/follow_order_type.dart';
 import 'package:PiliPlus/models_new/follow/list.dart';
@@ -18,8 +16,10 @@ import 'package:PiliPlus/pages/share/view.dart' show UserModel;
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class FollowChildPage extends StatefulWidget {
   const FollowChildPage({
@@ -129,30 +129,47 @@ class _FollowChildPageState extends State<FollowChildPage>
     }
     if (widget.onSelect != null ||
         (widget.controller?.isOwner == true && widget.tagid == null)) {
-      return ScaffoldLayout(
-        body: fabAnimWrapper(child: child),
-        fab: SlideTransition(
-          position: fabAnimation,
-          child: Padding(
-            padding: .only(
-              right: kFloatingActionButtonMargin + padding.right,
-              bottom: kFloatingActionButtonMargin + padding.bottom,
-            ),
-            child: FloatingActionButton.extended(
-              onPressed: () => _followController
-                ..setOrderType(
-                  _followController.orderType.value == FollowOrderType.def
-                      ? FollowOrderType.attention
-                      : FollowOrderType.def,
-                )
-                ..onReload(),
-              icon: const Icon(Icons.format_list_bulleted, size: 20),
-              label: Obx(
-                () => Text(_followController.orderType.value.title),
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          NotificationListener<UserScrollNotification>(
+            onNotification: (notification) {
+              final direction = notification.direction;
+              if (direction == .forward) {
+                showFab();
+              } else if (direction == .reverse) {
+                hideFab();
+              }
+              return false;
+            },
+            child: child,
+          ),
+          Positioned(
+            right: kFloatingActionButtonMargin + padding.right,
+            bottom: 0,
+            child: SlideTransition(
+              position: fabAnimation,
+              child: Padding(
+                padding: .only(
+                  bottom: kFloatingActionButtonMargin + padding.bottom,
+                ),
+                child: FloatingActionButton.extended(
+                  onPressed: () => _followController
+                    ..setOrderType(
+                      _followController.orderType.value == FollowOrderType.def
+                          ? FollowOrderType.attention
+                          : FollowOrderType.def,
+                    )
+                    ..onReload(),
+                  icon: const Icon(Icons.format_list_bulleted, size: 20),
+                  label: Obx(
+                    () => Text(_followController.orderType.value.title),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+        ],
       );
     }
     return child;
@@ -160,12 +177,9 @@ class _FollowChildPageState extends State<FollowChildPage>
 
   Widget _buildBody(LoadingState<List<FollowItemModel>?> loadingState) {
     return switch (loadingState) {
-      Loading() => const SliverPrototypeExtentList(
-        prototypeItem: MsgFeedTopSkeleton(),
-        delegate: SliverSingleChildDelegate(
-          count: 12,
-          child: MsgFeedTopSkeleton(),
-        ),
+      Loading() => SliverList.builder(
+        itemCount: 12,
+        itemBuilder: (context, index) => const MsgFeedTopSkeleton(),
       ),
       Success(:final response) =>
         response != null && response.isNotEmpty

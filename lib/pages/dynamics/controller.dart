@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:PiliPlus/http/dynamics.dart';
+import 'package:PiliPlus/http/follow.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/dynamic/dynamics_type.dart';
 import 'package:PiliPlus/models/dynamics/up.dart';
-import 'package:PiliPlus/pages/common/common_data_controller.dart';
+import 'package:PiliPlus/models_new/follow/data.dart';
+import 'package:PiliPlus/models_new/follow/list.dart';
+import 'package:PiliPlus/pages/common/common_controller.dart';
 import 'package:PiliPlus/pages/dynamics_tab/controller.dart';
 import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
@@ -12,23 +15,27 @@ import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:easy_debounce/easy_throttle.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart' show TabController;
 
-class DynamicsController
-    extends CommonDataController<FollowUpModel, FollowUpModel>
-    with GetSingleTickerProviderStateMixin, AccountMixin {
+class DynamicsController extends GetxController
+    with GetSingleTickerProviderStateMixin, ScrollOrRefreshMixin, AccountMixin {
+  @override
+  final ScrollController scrollController = ScrollController();
   late final TabController tabController;
 
-  final Set<int> tempBannedList = <int>{};
+  late final RxInt mid = (-1).obs;
+  late int currentMid = -1;
 
-  String? _offset;
-  late int _page = 1;
-  late bool _isEnd = false;
+  Set<int> tempBannedList = <int>{};
+
+  final Rx<LoadingState<FollowUpModel>> upState =
+      LoadingState<FollowUpModel>.loading().obs;
+  late int _upPage = 1;
+  late bool _upEnd = false;
   Set<UpItem>? _cacheUpList;
-  late int hostMid = -1, currentMid = -1;
-  late bool showLiveUp = Pref.expandDynLivePanel;
   late final _showAllUp = Pref.dynamicsShowAllFollowedUp;
+  late bool showLiveUp = Pref.expandDynLivePanel;
 
   final upPanelPosition = Pref.upPanelPosition;
 
@@ -49,73 +56,157 @@ class DynamicsController
   void onInit() {
     super.onInit();
     tabController = TabController(
-      vsync: this,
       length: DynamicsTabType.values.length,
+      vsync: this,
       initialIndex: Pref.defaultDynamicTypeIndex,
     );
-    queryData();
+    queryFollowUp();
   }
 
-  void _jumpToTab(int mid) {
-    tabController.index = mid == -1 ? 0 : 4;
+  void onLoadMoreUp() {
+    if (_showAllUp) {
+      queryAllUp();
+    } else {
+      queryUpList();
+    }
+  }
+
+  Future<void> queryUpList() async {
+    if (isQuerying || _upEnd) return;
+    isQuerying = true;
+
+    final res = await DynamicsHttp.dynUpList(upState.value.data.offset);
+
+    if (res case Success(:final response)) {
+      if (response.hasMore == false || response.offset.isNullOrEmpty) {
+        _upEnd = true;
+      }
+      final upData = upState.value.data
+        ..hasMore = response.hasMore
+        ..offset = response.offset;
+      final list = response.upList;
+      if (list != null && list.isNotEmpty) {
+        upData.upList.addAll(list);
+        upState.refresh();
+      }
+    }
+
+    isQuerying = false;
+  }
+
+  Future<void> queryAllUp() async {
+    if (isQuerying || _upEnd) return;
+    isQuerying = true;
+
+    final res = await FollowHttp.followings(
+      vmid: Accounts.main.mid,
+      pn: _upPage,
+      orderType: 'attention',
+      ps: 50,
+    );
+
+    if (res case Success(:final response)) {
+      _upPage++;
+      final list = response.list ?? const <FollowItemModel>[];
+      if (list.isEmpty) {
+        _upEnd = true;
+      }
+      upState
+        ..value.data.upList.addAll(
+          list..removeWhere((e) => _cacheUpList?.contains(e) == true),
+        )
+        ..refresh();
+    }
+
+    isQuerying = false;
+  }
+
+  late bool isQuerying = false;
+  Future<void> queryFollowUp() async {
+    if (isQuerying) return;
+    isQuerying = true;
+
+    if (!accountService.isLogin.value) {
+      upState.value = const Error(null);
+      isQuerying = false;
+      return;
+    }
+
+    // reset
+    _upEnd = false;
+    if (_showAllUp) _upPage = 1;
+
+    final res = await Future.wait([
+      DynamicsHttp.followUp(),
+      if (_showAllUp)
+        FollowHttp.followings(
+          vmid: Accounts.main.mid,
+          pn: _upPage,
+          orderType: 'attention',
+          ps: 50,
+        ),
+    ]);
+
+    final first = res.first;
+    if (first case final Success<FollowUpModel> i) {
+      final data = i.response;
+      final second = res.elementAtOrNull(1);
+      if (second case final Success<FollowData> j) {
+        final data1 = j.response;
+        final list1 = data1.list ?? const <FollowItemModel>[];
+
+        _upPage++;
+        if (list1.isEmpty || list1.length >= (data1.total ?? 0)) {
+          _upEnd = true;
+        }
+
+        final list = data.upList;
+        list.addAll(list1..removeWhere((_cacheUpList = list.toSet()).contains));
+      }
+      if (!_showAllUp) {
+        if (data.hasMore == false || data.offset.isNullOrEmpty) {
+          _upEnd = true;
+        }
+      }
+      upState.value = Success(data);
+    } else {
+      upState.value = const Error(null);
+    }
+
+    isQuerying = false;
   }
 
   void onSelectUp(int mid) {
-    if (currentMid == mid) {
-      _jumpToTab(mid);
+    if (this.mid.value == mid) {
+      tabController.index = (mid == -1 ? 0 : 4);
       if (mid == -1) {
-        singleRefresh();
+        queryFollowUp();
       }
       controller?.onReload();
       return;
     }
 
-    if (mid != -1) {
-      hostMid = mid;
-      try {
-        Get.find<DynamicsTabController>(
-          tag: DynamicsTabType.up.name,
-        ).onReload();
-      } catch (_) {}
-    }
-
-    currentMid = mid;
-    _jumpToTab(mid);
-  }
-
-  Future<void> singleRefresh() {
-    if (_showAllUp) {
-      _page = 1;
-      _cacheUpList = null;
-    }
-    _offset = null;
-    _isEnd = false;
-    return super.onRefresh();
+    this.mid.value = mid;
+    tabController.index = (mid == -1 ? 0 : 4);
   }
 
   @override
   Future<void> onRefresh() {
-    return _showRefreshFor(controller);
+    _refreshFollowUp();
+    return controller?.showRefresh() ?? Future.value();
   }
 
-  @override
-  Future<void> showRefresh() =>
-      _showRefreshFor(controller);
-
-  Future<void> _showRefreshFor(DynamicsTabController? ctr) {
-    final refreshState = ctr?.refreshKey.currentState;
-    if (refreshState != null) {
-      return refreshState.show();
+  void _refreshFollowUp() {
+    if (_showAllUp) {
+      _upPage = 1;
+      _cacheUpList = null;
     }
-    return Future.wait([
-      singleRefresh(),
-      if (ctr case final tabCtr?) tabCtr.onRefresh(),
-    ]);
+    queryFollowUp();
   }
 
   @override
-  Future<void> animateToTop() {
-    return Future.wait([
+  Future<void> animateToTop() async {
+    await Future.wait([
       if (controller case final ctr?) ctr.animateToTop(),
       scrollController.animToTop(),
     ]);
@@ -144,94 +235,12 @@ class DynamicsController
   }
 
   @override
-  void toTopAndRefresh() {
-    EasyThrottle.throttle(
-      topAndRefreshThrottleKey,
-      const Duration(milliseconds: 500),
-      () async {
-        final ctr = controller;
-        final shouldScrollChild =
-            ctr?.scrollController.hasClients == true &&
-            ctr!.scrollController.position.pixels != 0;
-        final shouldScrollParent =
-            scrollController.hasClients &&
-            scrollController.position.pixels != 0;
-        if (shouldScrollChild || shouldScrollParent) {
-          await animateToTop();
-        }
-        await _showRefreshFor(ctr);
-      },
-    );
-  }
-
-  @override
   void onClose() {
     tabController.dispose();
+    scrollController.dispose();
     super.onClose();
   }
 
   @override
-  void onChangeAccount(bool isLogin) => onReload();
-
-  @override
-  Future<LoadingState<FollowUpModel>> customGetData() {
-    if (_offset == null) {
-      return DynamicsHttp.followUp();
-    }
-    if (_showAllUp) {
-      return DynamicsHttp.followings(
-        vmid: Accounts.main.mid,
-        pn: _page,
-        orderType: 'attention',
-        ps: 50,
-      );
-    } else {
-      return DynamicsHttp.dynUpList(_offset);
-    }
-  }
-
-  @override
-  Future<void> queryData([bool isRefresh = true]) {
-    if (!isRefresh && _isEnd) return Future.value();
-    return super.queryData(isRefresh);
-  }
-
-  @override
-  bool customHandleResponse(bool isRefresh, Success<FollowUpModel> response) {
-    final res = response.response;
-
-    if (_showAllUp) {
-      if (res.upList?.isNotEmpty != true) {
-        _isEnd = true;
-      }
-    } else {
-      _offset = res.offset;
-      if (res.hasMore != true || _offset.isNullOrEmpty) {
-        _isEnd = true;
-      }
-    }
-
-    if (isRefresh) {
-      if (_showAllUp) {
-        _offset = '';
-        _cacheUpList = res.upList?.toSet();
-      }
-      loadingState.value = response;
-    } else {
-      if (_showAllUp) {
-        _page++;
-      }
-
-      if (res.upList case final upList? when upList.isNotEmpty) {
-        if (_showAllUp && _cacheUpList != null) {
-          upList.removeWhere(_cacheUpList!.contains);
-        }
-        loadingState
-          ..value.data.addAllUpList(upList)
-          ..refresh();
-      }
-    }
-
-    return true;
-  }
+  void onChangeAccount(bool isLogin) => _refreshFollowUp();
 }

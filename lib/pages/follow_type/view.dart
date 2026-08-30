@@ -1,8 +1,6 @@
 import 'package:PiliPlus/common/skeleton/msg_feed_top.dart';
-import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/follow/list.dart';
@@ -10,9 +8,10 @@ import 'package:PiliPlus/pages/follow/widgets/follow_item.dart';
 import 'package:PiliPlus/pages/follow_type/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart'
     hide SliverGridDelegateWithMaxCrossAxisExtent;
+import 'package:get/get.dart';
 
 abstract class FollowTypePageState<T extends StatefulWidget> extends State<T> {
   FollowTypeController get controller;
@@ -22,7 +21,10 @@ abstract class FollowTypePageState<T extends StatefulWidget> extends State<T> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).colorScheme;
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: appBar,
       body: refreshIndicator(
         onRefresh: controller.onRefresh,
@@ -68,12 +70,10 @@ abstract class FollowTypePageState<T extends StatefulWidget> extends State<T> {
     LoadingState<List<FollowItemModel>?> loadingState,
   ) {
     return switch (loadingState) {
-      Loading() => SliverGrid(
+      Loading() => SliverGrid.builder(
         gridDelegate: gridDelegate,
-        delegate: const SliverSingleChildDelegate(
-          count: 16,
-          child: MsgFeedTopSkeleton(),
-        ),
+        itemBuilder: (context, index) => const MsgFeedTopSkeleton(),
+        itemCount: 16,
       ),
       Success(:final response) =>
         response != null && response.isNotEmpty

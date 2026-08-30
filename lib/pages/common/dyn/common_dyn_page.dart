@@ -1,16 +1,12 @@
 import 'package:PiliPlus/common/skeleton/video_reply.dart';
-import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/scaffold/mini_scaffold.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/sliver/sliver_pinned_header.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/grpc/bilibili/main/community/reply/v1.pb.dart'
     show ReplyInfo;
 import 'package:PiliPlus/http/loading_state.dart';
-import 'package:PiliPlus/models/common/enum_with_label.dart';
 import 'package:PiliPlus/pages/common/dyn/common_dyn_controller.dart';
 import 'package:PiliPlus/pages/common/fab_mixin.dart';
 import 'package:PiliPlus/pages/video/reply/vote/reply_vote_item.dart';
@@ -23,61 +19,40 @@ import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:easy_debounce/easy_throttle.dart';
-import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
-
-enum DynType implements EnumWithLabel {
-  reply('评论'),
-  reaction('赞与转发');
-
-  @override
-  final String label;
-  const DynType(this.label);
-}
+import 'package:get/get.dart';
 
 abstract class CommonDynPageState<T extends StatefulWidget> extends State<T>
-    with
-        SingleTickerProviderStateMixin<T>,
-        BaseFabMixin,
-        FabMixin,
-        CommonDynPageMixin<T> {}
-
-abstract class CommonDynPageMultiState<T extends StatefulWidget>
-    extends State<T>
-    with
-        TickerProviderStateMixin<T>,
-        BaseFabMixin,
-        FabMixin,
-        CommonDynPageMixin<T> {
-  late final TabController tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    tabController = TabController(length: DynType.values.length, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    tabController.dispose();
-    super.dispose();
-  }
-}
-
-mixin CommonDynPageMixin<T extends StatefulWidget>
-    on State<T>, TickerProvider, BaseFabMixin<T>, FabMixin<T> {
+    with SingleTickerProviderStateMixin, BaseFabMixin, FabMixin {
   CommonDynController get controller;
+
+  late final ScrollController scrollController;
 
   bool get horizontalPreview => !isPortrait && controller.horizontalPreview;
 
   dynamic get arguments;
 
-  late ThemeData theme;
   late EdgeInsets padding;
   late bool isPortrait;
   late double maxWidth;
   late double maxHeight;
   late ThemeData theme;
+
+  @override
+  void initState() {
+    super.initState();
+    scrollController = ScrollController()..addListener(listener);
+  }
+
+  void listener() {
+    final pos = scrollController.positions;
+    controller.showTitle.value = pos.first.pixels > 55;
+    if (pos.any((e) => e.userScrollDirection == .forward)) {
+      showFab();
+    } else if (pos.any((e) => e.userScrollDirection == .reverse)) {
+      hideFab();
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -91,21 +66,21 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
   }
 
   @override
-  bool onNotification(UserScrollNotification notification) {
-    if (notification.metrics.axisDirection == .down) {
-      return super.onNotification(notification);
-    }
-    return false;
+  void dispose() {
+    scrollController
+      ..removeListener(listener)
+      ..dispose();
+    super.dispose();
   }
 
-  Widget buildReplyHeader() {
+  Widget buildReplyHeader(ThemeData theme) {
     final secondary = theme.colorScheme.secondary;
     return SliverPinnedHeader(
       backgroundColor: theme.colorScheme.surface,
       child: Padding(
         padding: const .fromLTRB(12, 2.5, 6, 2.5),
         child: Row(
-          mainAxisAlignment: .spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Obx(
               () {
@@ -121,7 +96,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
               icon: Icon(Icons.sort, size: 16, color: secondary),
               label: Obx(
                 () => Text(
-                  controller.sortType.value.descShort,
+                  controller.sortType.value.label,
                   style: TextStyle(fontSize: 13, color: secondary),
                 ),
               ),
@@ -132,95 +107,86 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
     );
   }
 
-  Widget replyList(LoadingState<List<ReplyInfo>?> loadingState) {
-    switch (loadingState) {
-      case Loading():
-        return const SliverPrototypeExtentList(
-          prototypeItem: VideoReplySkeleton(),
-          delegate: SliverSingleChildDelegate(
-            count: 12,
-            child: VideoReplySkeleton(),
-          ),
-        );
-      case Success(:final response):
-        if (response != null && response.isNotEmpty) {
-          var count = response.length + 1;
-          final voteCard = controller.voteCard;
-          final hasVote = voteCard != null;
-          if (hasVote) {
-            count++;
-          }
-          return SliverList.builder(
-            itemCount: count,
-            itemBuilder: (context, index) {
-              if (hasVote) {
-                if (index == 0) {
-                  return buildVoteCard(context, theme.colorScheme, voteCard);
-                } else {
-                  index--;
-                }
-              }
-              if (index == response.length) {
-                controller.onLoadMore();
-                return Container(
-                  alignment: Alignment.center,
-                  margin: EdgeInsets.only(bottom: padding.bottom),
-                  height: 125,
-                  child: Text(
-                    controller.isEnd ? '没有更多了' : '加载中...',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.outline,
-                    ),
-                  ),
-                );
-              } else {
-                return ReplyItemGrpc(
-                  replyItem: response[index],
-                  replyLevel: 1,
-                  replyReply: replyReply,
-                  onReply: controller.onReply,
-                  onDelete: (item, subIndex) =>
-                      controller.onRemove(index, item, subIndex),
-                  upMid: controller.upMid,
-                  onViewImage: hideFab,
-                  onCheckReply: controller.onCheckReply,
-                  onToggleTop: (item) => controller.onToggleTop(
-                    item,
-                    index,
-                    controller.oid,
-                    controller.replyType,
-                  ),
-                );
-              }
-            },
-          );
-        }
-
-        final child = HttpError(
-          errMsg: '还没有评论',
-          onReload: controller.onReload,
-        );
-        if (controller.voteCard case final voteCard?) {
-          return SliverMainAxisGroup(
-            slivers: [
-              SliverToBoxAdapter(
-                child: buildVoteCard(context, theme.colorScheme, voteCard),
+  Widget replyList(
+    ThemeData theme,
+    LoadingState<List<ReplyInfo>?> loadingState,
+  ) {
+    return switch (loadingState) {
+      Loading() => SliverList.builder(
+        itemCount: 12,
+        itemBuilder: (context, index) => const VideoReplySkeleton(),
+      ),
+      Success(:final response) =>
+        response != null && response.isNotEmpty
+            ? SliverList.builder(
+                itemCount:
+                    response.length + 1 + (controller.voteCard == null ? 0 : 1),
+                itemBuilder: (context, index) {
+                  final voteCard = controller.voteCard;
+                  if (voteCard != null) {
+                    if (index == 0) {
+                      return buildVoteCard(
+                        context,
+                        theme.colorScheme,
+                        voteCard,
+                      );
+                    }
+                    index--;
+                  }
+                  if (index == response.length) {
+                    controller.onLoadMore();
+                    return Container(
+                      alignment: Alignment.center,
+                      margin: EdgeInsets.only(bottom: padding.bottom),
+                      height: 125,
+                      child: Text(
+                        controller.isEnd ? '没有更多了' : '加载中...',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                    );
+                  } else {
+                    return ReplyItemGrpc(
+                      replyItem: response[index],
+                      replyLevel: 1,
+                      replyReply: (replyItem, id) =>
+                          replyReply(context, replyItem, id, theme),
+                      onReply: controller.onReply,
+                      onDelete: (item, subIndex) =>
+                          controller.onRemove(index, item, subIndex),
+                      upMid: controller.upMid,
+                      onViewImage: hideFab,
+                      onCheckReply: (item) =>
+                          controller.onCheckReply(item, isManual: true),
+                      onToggleTop: (item) => controller.onToggleTop(
+                        item,
+                        index,
+                        controller.oid,
+                        controller.replyType,
+                      ),
+                    );
+                  }
+                },
+              )
+            : HttpError(
+                errMsg: '还没有评论',
+                onReload: controller.onReload,
               ),
-              child,
-            ],
-          );
-        }
-        return child;
-      case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: controller.onReload,
-        );
-    }
+      Error(:final errMsg) => HttpError(
+        errMsg: errMsg,
+        onReload: controller.onReload,
+      ),
+    };
   }
 
-  void replyReply(ReplyInfo replyItem, int? id) {
+  void replyReply(
+    BuildContext context,
+    ReplyInfo replyItem,
+    int? id,
+    ThemeData theme,
+  ) {
     EasyThrottle.throttle('replyReply', const Duration(milliseconds: 500), () {
       int oid = replyItem.oid.toInt();
       int rpid = replyItem.id.toInt();
@@ -241,7 +207,8 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
           ),
         );
         if (showBackBtn) {
-          return SimpleScaffold(
+          return Scaffold(
+            resizeToAvoidBottomInset: false,
             appBar: AppBar(
               title: const Text('评论详情'),
               shape: Border(
@@ -263,11 +230,11 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
           arguments: arguments,
         );
       } else {
-        final scaffoldState = MiniScaffold.maybeOf(context);
+        final scaffoldState = Scaffold.maybeOf(context);
         if (scaffoldState != null) {
           hideFab();
           scaffoldState.showBottomSheet(
-            constraints: const BoxConstraints(),
+            backgroundColor: Colors.transparent,
             (context) => replyReplyPage(showBackBtn: false),
           );
         } else {
@@ -325,10 +292,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
       : const NoBottomPaddingFabLocation();
 
   Widget get fabButton => Padding(
-    padding: .only(
-      right: kFloatingActionButtonMargin + padding.right,
-      bottom: kFloatingActionButtonMargin + padding.bottom,
-    ),
+    padding: .only(bottom: padding.bottom + kFloatingActionButtonMargin),
     child: replyButton,
   );
 

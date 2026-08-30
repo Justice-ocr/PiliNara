@@ -8,10 +8,10 @@ import 'package:PiliPlus/pages/download/search/controller.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart'
     hide SliverGridDelegateWithMaxCrossAxisExtent;
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:get/get.dart';
 
 class DownloadSearchPage extends StatefulWidget {
   const DownloadSearchPage({
@@ -31,8 +31,7 @@ class _DownloadSearchPageState
           DownloadSearchPage,
           List<BiliDownloadEntryInfo>,
           BiliDownloadEntryInfo
-        >
-    with GridMixin {
+        > {
   @override
   DownloadSearchController controller = Get.put(DownloadSearchController());
   final _downloadService = Get.find<DownloadService>();
@@ -86,8 +85,15 @@ class _DownloadSearchPageState
   @override
   Widget buildList(List<BiliDownloadEntryInfo> list) {
     if (list.isNotEmpty) {
-      return SliverGrid.builder(
-        gridDelegate: gridDelegate,
+      final grid = SliverGrid.builder(
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : 2,
+          crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : 0,
+          mainAxisExtent: WindowsVideoTabService.enabled ? 112 : 100,
+          maxCrossAxisExtent: WindowsVideoTabService.enabled
+              ? 520
+              : Grid.smallCardWidth * 2,
+        ),
         itemBuilder: (context, index) {
           final entry = list[index];
           return DetailItem(

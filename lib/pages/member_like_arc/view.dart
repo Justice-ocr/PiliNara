@@ -1,9 +1,7 @@
 import 'package:PiliPlus/common/skeleton/video_card_v.dart';
-import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/member/coin_like_arc/item.dart';
 import 'package:PiliPlus/pages/member_coin_arc/widgets/item.dart';
@@ -12,8 +10,9 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class MemberLikeArcPage extends StatefulWidget {
   const MemberLikeArcPage({
@@ -45,7 +44,10 @@ class _MemberLikeArcPageState extends State<MemberLikeArcPage> {
   @override
   Widget build(BuildContext context) {
     final padding = MediaQuery.viewPaddingOf(context);
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(
           '${widget.mid == mid ? '我' : '${widget.name}'}的推荐',
@@ -85,12 +87,10 @@ class _MemberLikeArcPageState extends State<MemberLikeArcPage> {
 
   Widget _buildBody(LoadingState<List<CoinLikeArcItem>?> loadingState) {
     return switch (loadingState) {
-      Loading() => SliverGrid(
+      Loading() => SliverGrid.builder(
         gridDelegate: gridDelegate,
-        delegate: const SliverSingleChildDelegate(
-          count: 16,
-          child: VideoCardVSkeleton(),
-        ),
+        itemCount: 16,
+        itemBuilder: (context, index) => const VideoCardVSkeleton(),
       ),
       Success(:final response) =>
         response != null && response.isNotEmpty

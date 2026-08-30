@@ -1,5 +1,5 @@
 import 'package:PiliPlus/pages/setting/models/block_settings.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class BlockSetting extends StatefulWidget {
   const BlockSetting({super.key, this.showAppBar = true});

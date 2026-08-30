@@ -1,13 +1,12 @@
 import 'package:PiliPlus/common/widgets/appbar/appbar.dart';
+import 'package:PiliPlus/common/widgets/flutter/page/tabs.dart';
 import 'package:PiliPlus/common/widgets/flutter/popup_menu.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/gesture/horizontal_drag_gesture_recognizer.dart';
 import 'package:PiliPlus/common/widgets/keep_alive_wrapper.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/scroll_physics.dart'
-    show tabBarScrollPhysics;
+import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/history/list.dart';
 import 'package:PiliPlus/models_new/history/tab.dart';
@@ -17,8 +16,13 @@ import 'package:PiliPlus/pages/history/widgets/item.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_section_tabs.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
+import 'package:material_ui/material_ui.dart' hide TabBarView;
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key, this.type});
@@ -103,58 +107,22 @@ class _HistoryPageState extends State<HistoryPage>
               currCtr().handleSelect();
             }
           },
-          child: SimpleScaffold(
-            appBar: MultiSelectAppBarWidget(
-              visible: enableMultiSelect,
-              ctr: currCtr(),
-              child: _buildAppBar,
-            ),
-            body: Padding(
-              padding: .only(left: padding.left, right: padding.right),
-              child: Obx(() {
-                final tabs = _historyController.tabs;
-                if (tabs.isEmpty) {
-                  return child;
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ?_buildPauseTip,
-                    TabBar(
-                      controller: _historyController.tabController,
-                      onTap: (index) {
-                        if (!_historyController
-                            .tabController!
-                            .indexIsChanging) {
-                          currCtr().scrollController.animToTop();
-                        } else {
-                          if (enableMultiSelect) {
-                            currCtr(
-                              _historyController.tabController!.previousIndex,
-                            ).handleSelect();
-                          }
-                        }
-                      },
-                      tabs: [
-                        const Tab(text: '全部'),
-                        ...tabs.map((item) => Tab(text: item.name)),
-                      ],
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                        physics: enableMultiSelect
-                            ? const NeverScrollableScrollPhysics()
-                            : tabBarScrollPhysics,
-                        controller: _historyController.tabController,
-                        horizontalDragGestureRecognizer:
-                            CustomHorizontalDragGestureRecognizer.new,
-                        children: [
-                          KeepAliveWrapper(child: child),
-                          ...tabs.map(
-                            (item) => HistoryPage(type: item.type),
-                          ),
-                        ],
-                      ),
+          child: isWindowsNeo && !enableMultiSelect
+              ? _buildWindowsPage(child, _historyController.tabs)
+              : Scaffold(
+                  backgroundColor: isWindowsNeo
+                      ? context.windowsNeo.background
+                      : null,
+                  resizeToAvoidBottomInset: false,
+                  appBar: MultiSelectAppBarWidget(
+                    visible: enableMultiSelect,
+                    ctr: currCtr(),
+                    child: _buildAppBar,
+                  ),
+                  body: Padding(
+                    padding: EdgeInsets.only(
+                      left: padding.left,
+                      right: padding.right,
                     ),
                     child: Obx(() {
                       final tabs = _historyController.tabs;
@@ -301,6 +269,7 @@ class _HistoryPageState extends State<HistoryPage>
 
   AppBar get _buildAppBar => AppBar(
     title: const Text('观看记录'),
+    bottom: _buildPauseTip,
     actions: [
       IconButton(
         tooltip: '搜索',

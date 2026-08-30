@@ -1,11 +1,9 @@
 import 'dart:math' show max;
 
 import 'package:PiliPlus/common/skeleton/msg_feed_top.dart';
-import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models_new/blacklist/list.dart';
@@ -14,8 +12,10 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class BlackListPage extends StatefulWidget {
   const BlackListPage({super.key});
@@ -39,7 +39,14 @@ class _BlackListPageState extends State<BlackListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final horizontalPadding = max(
+      18.0,
+      (MediaQuery.sizeOf(context).width - 820) / 2,
+    );
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Obx(
           () => Text(
@@ -74,12 +81,9 @@ class _BlackListPageState extends State<BlackListPage> {
     final isWindowsNeo = WindowsVideoTabService.enabled;
     late final style = TextStyle(color: Theme.of(context).colorScheme.outline);
     return switch (loadingState) {
-      Loading() => const SliverPrototypeExtentList(
-        prototypeItem: MsgFeedTopSkeleton(),
-        delegate: SliverSingleChildDelegate(
-          count: 12,
-          child: MsgFeedTopSkeleton(),
-        ),
+      Loading() => SliverList.builder(
+        itemCount: 12,
+        itemBuilder: (context, index) => const MsgFeedTopSkeleton(),
       ),
       Success(:final response) =>
         response != null && response.isNotEmpty

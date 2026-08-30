@@ -9,4 +9,6 @@ enum DynamicBadgeMode implements EnumWithLabel {
   @override
   final String label;
   const DynamicBadgeMode(this.label);
+
+  String get desc => label;
 }

@@ -5,7 +5,7 @@
 // ignore_for_file: prefer_initializing_formals, uri_does_not_exist_in_doc_import
 
 /// @docImport 'package:flutter/cupertino.dart';
-/// @docImport 'package:flutter/material.dart';
+/// @docImport 'package:material_ui/material_ui.dart';
 ///
 /// @docImport 'app.dart';
 /// @docImport 'context_menu_controller.dart';

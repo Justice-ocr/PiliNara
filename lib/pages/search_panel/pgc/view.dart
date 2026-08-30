@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/skeleton/media_bangumi.dart';
-import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/pages/search_panel/controller.dart';
@@ -7,9 +6,11 @@ import 'package:PiliPlus/pages/search_panel/pgc/widgets/item.dart';
 import 'package:PiliPlus/pages/search_panel/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_search_skeletons.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:material_ui/material_ui.dart'
     hide SliverGridDelegateWithMaxCrossAxisExtent;
+import 'package:get/get.dart';
 
 class SearchPgcPanel extends CommonSearchPanel {
   const SearchPgcPanel({
@@ -84,15 +85,24 @@ class _SearchPgcPanelState
   }
 
   @override
-  Widget get buildLoading => SliverGrid(
-    gridDelegate: SliverGridDelegateWithExtentAndRatio(
-      mainAxisSpacing: 2,
-      maxCrossAxisExtent: Grid.smallCardWidth * 2,
-      childAspectRatio: Style.aspectRatio * 1.5,
-    ),
-    delegate: const SliverSingleChildDelegate(
-      count: 10,
-      child: MediaPgcSkeleton(),
-    ),
-  );
+  Widget get buildLoading => WindowsVideoTabService.enabled
+      ? SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          sliver: WindowsNeoSliverLoadingPulse(
+            sliver: SliverGrid.builder(
+              gridDelegate: gridDelegate,
+              itemBuilder: (_, _) => const WindowsNeoSearchPgcSkeleton(),
+              itemCount: 10,
+            ),
+          ),
+        )
+      : SliverGrid.builder(
+          gridDelegate: SliverGridDelegateWithExtentAndRatio(
+            mainAxisSpacing: 2,
+            maxCrossAxisExtent: Grid.smallCardWidth * 2,
+            childAspectRatio: Style.aspectRatio * 1.5,
+          ),
+          itemBuilder: (_, _) => const MediaPgcSkeleton(),
+          itemCount: 10,
+        );
 }

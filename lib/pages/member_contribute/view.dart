@@ -10,8 +10,9 @@ import 'package:PiliPlus/pages/member_season_series/view.dart';
 import 'package:PiliPlus/pages/member_video/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class MemberContribute extends StatefulWidget {
   const MemberContribute({

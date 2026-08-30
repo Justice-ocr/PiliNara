@@ -28,10 +28,13 @@ import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:material_ui/material_ui.dart' hide ListTile;
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart' hide ListTile;
 
 class MinePage extends StatefulWidget {
   const MinePage({super.key, this.showBackBtn = false});
@@ -401,7 +404,7 @@ class _MediaPageState extends CommonPageState<MinePage>
               iconSize: iconSize,
               padding: padding,
               style: style,
-              tooltip: '切换至${controller.nextThemeType.label}主题',
+              tooltip: '切换至${controller.nextThemeType.desc}主题',
               onPressed: controller.onChangeTheme,
               icon: controller.themeType.value.icon,
             );

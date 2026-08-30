@@ -12,6 +12,8 @@ enum ThemeType implements EnumWithLabel {
   final String label;
   const ThemeType(this.label);
 
+  String get desc => label;
+
   ThemeMode get toThemeMode => switch (this) {
     ThemeType.light => ThemeMode.light,
     ThemeType.dark => ThemeMode.dark,

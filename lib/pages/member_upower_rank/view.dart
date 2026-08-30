@@ -4,16 +4,17 @@ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/keep_alive_wrapper.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
+import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models_new/upower_rank/rank_info.dart';
 import 'package:PiliPlus/pages/member_upower_rank/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
+import 'package:get/get.dart';
 
 class UpowerRankPage extends StatefulWidget {
   const UpowerRankPage({
@@ -94,7 +95,9 @@ class _UpowerRankPageState extends State<UpowerRankPage>
       ),
     );
     if (widget.privilegeType == null) {
-      return SimpleScaffold(
+      return Scaffold(
+        backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+        resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: Text('$_name的充电排行榜${_count == null ? '' : '($_count)'}'),
           actions: [

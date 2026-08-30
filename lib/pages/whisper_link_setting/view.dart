@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/widgets/pendant_avatar.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/msg/im_user_infos/datum.dart';
 import 'package:PiliPlus/models_new/msg/msg_dnd/uid_setting.dart';
@@ -8,8 +7,10 @@ import 'package:PiliPlus/pages/whisper_link_setting/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class WhisperLinkSettingPage extends StatefulWidget {
   const WhisperLinkSettingPage({
@@ -53,7 +54,9 @@ class _WhisperLinkSettingPageState extends State<WhisperLinkSettingPage> {
           ? context.windowsNeo.border
           : theme.colorScheme.outline.withValues(alpha: 0.1),
     );
-    return SimpleScaffold(
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('聊天设置')),
       body: LayoutBuilder(
         builder: (context, constraints) {

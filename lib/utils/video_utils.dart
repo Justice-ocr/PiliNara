@@ -1,7 +1,6 @@
 import 'package:PiliPlus/models/common/video/cdn_type.dart';
 import 'package:PiliPlus/models/common/video/video_decode_type.dart';
 import 'package:PiliPlus/models_new/live/live_room_play_info/codec.dart';
-import 'package:PiliPlus/utils/cdn_node_store.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
@@ -17,7 +16,7 @@ abstract final class VideoUtils {
   /// Returns the first preferred codec available in [codecs], falling back to
   /// the stream's first advertised codec. Keeping this policy in one place
   /// makes playback and download selection behave identically.
-  static VideoDecodeFormatType selectCodec(
+  static VideoDecodeFormatType selectCodecLegacy(
     List<String> codecs,
     List<VideoDecodeFormatType> preferCodecs,
   ) {
@@ -44,31 +43,24 @@ abstract final class VideoUtils {
     '.akamaized.net',
   ];
 
-  // host 首段为 API/上报类前缀的域名不参与自定义节点替换
   static final _blockedHostPrefix = RegExp(r'^(?:bvc|data|pbp|api)\w*\.');
 
   static bool _isReplaceableMediaHost(String host) {
     final lower = host.toLowerCase();
-    if (_blockedHostPrefix.hasMatch(lower)) {
-      return false;
-    }
+    if (_blockedHostPrefix.hasMatch(lower)) return false;
     return lower == 'edge.mountaintoys.cn' ||
         _mediaHostSuffixes.any(lower.endsWith);
   }
 
-  /// 完整 URL 提取 host；纯 host 不得含路径/查询/锚点；空白视为 null
+  /// Accepts either a host or a complete URL. Paths, queries, and fragments
+  /// are rejected for host-only input so a CDN replacement cannot create an
+  /// invalid media URL.
   static String? normalizeCustomCDNHost(String? value) {
     final trimmed = value?.trim();
-    if (trimmed == null || trimmed.isEmpty) {
-      return null;
-    }
+    if (trimmed == null || trimmed.isEmpty) return null;
     final uri = Uri.tryParse(trimmed);
-    if (uri == null) {
-      return null;
-    }
-    if (uri.hasScheme) {
-      return uri.host.isEmpty ? null : uri.host;
-    }
+    if (uri == null) return null;
+    if (uri.hasScheme) return uri.host.isEmpty ? null : uri.host;
     if (trimmed.contains('/') ||
         trimmed.contains('?') ||
         trimmed.contains('#') ||
@@ -78,17 +70,11 @@ abstract final class VideoUtils {
     return trimmed;
   }
 
-  /// 当前生效 CDN 的展示文本：自定义节点优先反查节点表标注地区运营商
   static String effectiveCdnDesc() {
     final host = customCDNUrl;
-    if (host == null) {
-      return cdnService.desc;
-    }
-    return CdnNodeStore.labelOf(host) ?? '自定义：$host';
+    return host == null ? cdnService.desc : '自定义：$host';
   }
 
-  /// [customHost] 显式指定自定义节点（节点测速用）；未传时按 [applyCustomCDN]
-  /// 决定是否采用全局自定义节点。全局自定义生效时完全旁路枚举语义。
   static String getCdnUrl(
     Iterable<String> urls, {
     CDNService? defaultCDNService,
@@ -98,9 +84,7 @@ abstract final class VideoUtils {
   }) {
     defaultCDNService ??= cdnService;
     customHost ??= applyCustomCDN ? customCDNUrl : null;
-    if (isAudio && disableAudioCDN) {
-      customHost = null;
-    }
+    if (isAudio && disableAudioCDN) customHost = null;
 
     if (customHost == null && defaultCDNService == CDNService.baseUrl) {
       return urls.first;

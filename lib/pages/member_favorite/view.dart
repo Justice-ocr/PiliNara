@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/skeleton/video_card_h.dart';
-import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/sliver/sliver_pinned_header.dart';
@@ -9,8 +8,9 @@ import 'package:PiliPlus/pages/member_favorite/controller.dart';
 import 'package:PiliPlus/pages/member_favorite/widget/item.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class MemberFavorite extends StatefulWidget {
   const MemberFavorite({
@@ -73,13 +73,21 @@ class _MemberFavoriteState extends State<MemberFavorite>
   ) {
     return switch (loadingState) {
       Loading() => SliverPadding(
-        padding: const EdgeInsets.only(top: 7),
-        sliver: SliverGrid(
-          gridDelegate: gridDelegate,
-          delegate: const SliverSingleChildDelegate(
-            count: 10,
-            child: VideoCardHSkeleton(),
-          ),
+        padding: EdgeInsets.only(
+          top: WindowsVideoTabService.enabled ? 0 : 7,
+        ),
+        sliver: SliverGrid.builder(
+          gridDelegate: WindowsVideoTabService.enabled
+              ? SliverGridDelegateWithExtentAndRatio(
+                  maxCrossAxisExtent: 520,
+                  childAspectRatio: 4.2,
+                  minHeight: 112,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                )
+              : Grid.videoCardHDelegate(context),
+          itemBuilder: (context, index) => const VideoCardHSkeleton(),
+          itemCount: 10,
         ),
       ),
       Success(:final response) =>
@@ -191,18 +199,15 @@ class _MemberFavoriteState extends State<MemberFavorite>
               itemCount: list.length,
               itemBuilder: (context, index) {
                 final item = list[index];
-                return SizedBox(
-                  height: 110,
-                  child: MemberFavItem(
-                    item: item,
-                    onDelete: (isDeleted) {
-                      if (isDeleted ?? false) {
-                        _controller.favState
-                          ..value.mediaListResponse?.list?.remove(item)
-                          ..refresh();
-                      }
-                    },
-                  ),
+                final child = MemberFavItem(
+                  item: item,
+                  onDelete: (isDeleted) {
+                    if (isDeleted ?? false) {
+                      _controller.favState
+                        ..value.mediaListResponse?.list?.remove(item)
+                        ..refresh();
+                    }
+                  },
                 );
                 return WindowsVideoTabService.enabled
                     ? child

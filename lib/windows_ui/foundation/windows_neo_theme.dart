@@ -3,7 +3,7 @@ import 'dart:ui' show FontFeature, lerpDouble;
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Visual families available to the Windows-only desktop workspace.
 enum WindowsNeoThemeFamily {

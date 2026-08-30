@@ -399,7 +399,7 @@ class PlDanmakuController {
   }
 
   int? get _maxSegmentIndex {
-    final totalDurationMs = _plPlayerController.duration.value * 1000;
+    final totalDurationMs = _plPlayerController.duration.value.inMilliseconds;
     if (totalDurationMs <= 0) {
       return null;
     }

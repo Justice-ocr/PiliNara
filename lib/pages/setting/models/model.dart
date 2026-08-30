@@ -124,7 +124,7 @@ class PopupModel<T extends EnumWithLabel> extends SettingsModel {
       final v = value();
       return (v, v.label);
     },
-    itemBuilder: (_) => enumItemBuilder(items),
+    itemBuilder: (_) => enumItemBuilder(items.toList()),
     onSelected: onSelected,
   );
 }

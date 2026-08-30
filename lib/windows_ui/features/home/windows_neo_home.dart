@@ -8,7 +8,7 @@ import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_section_tabs.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class WindowsNeoHome extends StatelessWidget {
   const WindowsNeoHome({

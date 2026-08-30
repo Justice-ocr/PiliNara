@@ -2,8 +2,7 @@ import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/keep_alive_wrapper.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
+import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models_new/live/live_area_list/area_item.dart';
@@ -13,10 +12,12 @@ import 'package:PiliPlus/pages/live_area_detail/view.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_sortable_wrap/sortable_wrap.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart';
 
 class LiveAreaPage extends StatefulWidget {
   const LiveAreaPage({super.key});
@@ -32,7 +33,26 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final padding = MediaQuery.viewPaddingOf(context);
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_controller.isLogin)
+          Obx(() => _buildFavWidget(theme, _controller.favState.value)),
+        Expanded(
+          child: Obx(
+            () => _buildBody(
+              theme,
+              padding.bottom,
+              _controller.loadingState.value,
+            ),
+          ),
+        ),
+      ],
+    );
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('全部标签'),
         actions: _controller.isLogin

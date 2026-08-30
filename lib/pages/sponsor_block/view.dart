@@ -1,6 +1,5 @@
 import 'package:PiliPlus/common/widgets/flutter/popup_menu.dart';
 import 'package:PiliPlus/common/widgets/pair.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/http/constants.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/http/loading_state.dart';
@@ -18,12 +17,12 @@ import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:crypto/crypto.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart';
 
 class SponsorBlockPage extends StatefulWidget {
   const SponsorBlockPage({super.key});
@@ -526,52 +525,18 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
       ),
     );
 
-    return SimpleScaffold(
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('空降助手')),
-      body: CustomScrollView(
-        slivers: [
-          dividerL,
-          SliverToBoxAdapter(child: _serverStatusItem(theme, titleStyle)),
-          dividerL,
-          SliverToBoxAdapter(
-            child: _blockLimitItem(theme, titleStyle, subTitleStyle),
-          ),
-          sliverDivider,
-          SliverToBoxAdapter(child: _blockToastItem(titleStyle)),
-          sliverDivider,
-          SliverToBoxAdapter(
-            child: _blockSkipWhenSeekIntoSegmentItem(
-              titleStyle,
-              subTitleStyle,
-            ),
-          ),
-          sliverDivider,
-          SliverToBoxAdapter(child: _blockTrackItem(titleStyle, subTitleStyle)),
-          sliverDivider,
-          SliverToBoxAdapter(
-            child: _blockUserInfo(theme, titleStyle, subTitleStyle),
-          ),
-          dividerL,
-          SliverList.separated(
-            itemCount: _blockSettings.length,
-            itemBuilder: (context, index) =>
-                _buildItem(theme, index, _blockSettings[index]),
-            separatorBuilder: (context, index) => divider,
-          ),
-          dividerL,
-          SliverToBoxAdapter(
-            child: _userIdItem(theme, titleStyle, subTitleStyle),
-          ),
-          sliverDivider,
-          SliverToBoxAdapter(
-            child: _blockServerItem(theme, titleStyle, subTitleStyle),
-          ),
-          dividerL,
-          SliverToBoxAdapter(child: _aboutItem(titleStyle, subTitleStyle)),
-          dividerL,
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 55 + MediaQuery.viewPaddingOf(context).bottom,
+      body: _windowsBody(
+        CustomScrollView(
+          slivers: [
+            dividerL,
+            SliverToBoxAdapter(child: _serverStatusItem(theme, titleStyle)),
+            dividerL,
+            SliverToBoxAdapter(
+              child: _blockLimitItem(theme, titleStyle, subTitleStyle),
             ),
             sliverDivider,
             SliverToBoxAdapter(child: _blockToastItem(titleStyle)),

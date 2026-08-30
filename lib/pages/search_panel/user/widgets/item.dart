@@ -1,10 +1,8 @@
 import 'package:PiliPlus/common/widgets/pendant_avatar.dart';
 import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
-import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:material_ui/material_ui.dart';
 
 class SearchUserItem extends StatelessWidget {
@@ -45,26 +43,10 @@ class SearchUserItem extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Flexible(
-                      child: Text.rich(
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: item.uname!,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            if (remarkOf(item.mid) case final remark?)
-                              TextSpan(
-                                text: '（$remark）',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: ColorScheme.of(context).primary,
-                                ),
-                              ),
-                          ],
-                        ),
+                    Text(
+                      item.uname!,
+                      style: const TextStyle(
+                        fontSize: 14,
                       ),
                     ),
                     const SizedBox(width: 6),

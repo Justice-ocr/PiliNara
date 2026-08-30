@@ -8,6 +8,7 @@ import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/extra_hittest_stack.dart';
+import 'package:PiliPlus/common/widgets/flutter/page/page_view.dart';
 import 'package:PiliPlus/common/widgets/flutter/popup_menu.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
 import 'package:PiliPlus/common/widgets/flutter/text_field/controller.dart';
@@ -15,9 +16,9 @@ import 'package:PiliPlus/common/widgets/gesture/horizontal_drag_gesture_recogniz
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/keep_alive_wrapper.dart';
 import 'package:PiliPlus/common/widgets/route_aware_mixin.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/scroll_physics.dart'
-    show tabBarScrollPhysics;
+import 'package:PiliPlus/common/widgets/scroll_physics.dart';
+import 'package:PiliPlus/http/live.dart';
+import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models/common/live/live_contribution_rank_type.dart';
 import 'package:PiliPlus/models_new/live/live_danmaku/danmaku_msg.dart';
 import 'package:PiliPlus/models_new/live/live_emote/emoticon.dart';
@@ -66,10 +67,12 @@ import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:canvas_danmaku/danmaku_screen.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
+import 'package:material_ui/material_ui.dart' hide PageView;
+import 'package:flutter/services.dart'
+    show KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 
 const baseWhite = Color(0xFFEEEEEE);
@@ -111,66 +114,13 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   late final GlobalKey scKey = GlobalKey();
   late final GlobalKey playerKey = GlobalKey();
 
-  // 归位动画进行中：页面播放器以透明占位先行布局（供量取目标矩形），
-  // 恢复握手完成后亮出，期间小窗是唯一可见端
-  bool _pipRestoreInFlight = false;
-  int _pipRestoreRectAttempts = 0;
+  Object? get _routeArgs => widget.arguments ?? Get.arguments;
 
-  // 页面根参照系：归位目标矩形以此量取，规避路由转场期间的整页偏移
-  final _pageRootKey = GlobalKey();
-
-  /// 量取页面播放器矩形（收起源矩形用全局坐标；归位目标以页面根为参照系）
-  Rect? _livePlayerRect({bool relativeToPage = false}) {
-    final renderObject = playerKey.currentContext?.findRenderObject();
-    if (renderObject is! RenderBox ||
-        !renderObject.attached ||
-        !renderObject.hasSize ||
-        // 未加载完成时播放器区是零尺寸 SizedBox.shrink,视为未量到
-        renderObject.size.isEmpty) {
-      return null;
-    }
-    if (relativeToPage) {
-      final pageRenderObject = _pageRootKey.currentContext?.findRenderObject();
-      if (pageRenderObject is RenderBox && pageRenderObject.attached) {
-        return renderObject.localToGlobal(
-              Offset.zero,
-              ancestor: pageRenderObject,
-            ) &
-            renderObject.size;
-      }
-      return null;
-    }
-    return renderObject.localToGlobal(Offset.zero) & renderObject.size;
-  }
-
-  /// C1/C2 共用：页面就绪后量取归位目标矩形并上报协调器（最多重试 10 帧）
-  void _scheduleLivePipRestoreAttach() {
-    _pipRestoreRectAttempts = 0;
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _attachLivePipRestore(),
-    );
-  }
-
-  void _attachLivePipRestore() {
-    if (!mounted || !_pipRestoreInFlight) return;
-    final targetRect = _livePlayerRect(relativeToPage: true);
-    if (targetRect == null && _pipRestoreRectAttempts++ < 10) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _attachLivePipRestore(),
-      );
-      return;
-    }
-    LivePipOverlayService.transition.attachRestorePage(
-      targetRect: targetRect,
-      onCompleted: () {
-        if (!mounted) {
-          _pipRestoreInFlight = false;
-          return;
-        }
-        setState(() => _pipRestoreInFlight = false);
-      },
-    );
-  }
+  Map<String, dynamic> get _liveTabArgs => {
+    'roomId': _liveRoomController.roomId,
+    'title': _liveRoomController.title.value,
+    'mediaTabType': WindowsMediaTabType.live.name,
+  };
 
   // 归位动画进行中：页面播放器以透明占位先行布局（供量取目标矩形），
   // 恢复握手完成后亮出，期间小窗是唯一可见端
@@ -261,7 +211,8 @@ class _LiveRoomPageState extends State<LiveRoomPage>
 
     // 无论是否是同一个房间，既然进入了直播详情页，就关闭现有的小窗（不销毁播放器）
     if (LivePipOverlayService.isInPipMode) {
-      // 本页随后会新建 controller 并自开弹幕流/通知条目，旧 controller 就此退休
+      // A new page will own the shared player; retire the PiP controller's
+      // message stream and timers before taking it over.
       LivePipOverlayService.cleanupSavedController();
       if (isReturningFromPip &&
           LivePipOverlayService.transition.phase == PipPhase.restoring) {
@@ -282,7 +233,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       PipOverlayService.stopPip(
         callOnClose: false,
         releaseSavedOwner: true,
-        // 小窗 owner 的视频页仍在栈内时只暂停不 dispose，避免破坏其计数
+        // The originating video page may still be in the route stack.
         disposeSavedOwnerPlayer: VideoStackManager.getCount() == 0,
       );
     }
@@ -451,13 +402,23 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     removeObserverMobile(this);
     plPlayerController.removeStatusLister(playerListener);
 
-    if (plPlayerController.playerStatus.isPlaying &&
-        !isFullScreen &&
-        _shouldStartLivePip()) {
+    if (WindowsVideoTabService.enabled) {
+      _liveRoomController
+        ..isPlaying = plPlayerController.playerStatus.isPlaying
+        ..cancelLiveTimer()
+        ..closeLiveMsg();
+      super.didPushNext();
+      return;
+    }
+
+    // 如果正在播放且不是全屏状态，启动小窗
+    if (plPlayerController.playerStatus.isPlaying && !isFullScreen) {
       _startLivePipIfNeeded();
     } else {
+      // 不启动小窗，只暂停
       _liveRoomController
         ..danmakuController?.clear()
+        ..danmakuController?.pause()
         ..cancelLiveTimer()
         ..closeLiveMsg()
         ..isPlaying = plPlayerController.playerStatus.isPlaying;
@@ -692,7 +653,9 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     return KeyedSubtree(
       key: _pageRootKey,
       child: Theme(
-        data: ThemeUtils.darkTheme,
+        data: WindowsVideoTabService.enabled
+            ? _windowsLiveTheme
+            : ThemeUtils.darkTheme,
         child: child,
       ),
     );
@@ -1212,8 +1175,6 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       return;
     }
     _liveRoomController.isInPipMode.value = false;
-    // 路由 pop 时 onClose 已因 isInPipMode 跳过清理，下方 Get.delete 对已
-    // 注销实例是空操作，弹幕流与计时器需在此显式关闭
     _liveRoomController
       ..closeLiveMsg()
       ..cancelLiveTimer()
@@ -1270,7 +1231,10 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                 );
               },
             ),
-          ScaffoldLayout(
+          Scaffold(
+            primary: !plPlayerController.removeSafeArea,
+            resizeToAvoidBottomInset: false,
+            backgroundColor: Colors.transparent,
             appBar: isWindowMode && isFullScreen && !isPortrait
                 ? null
                 : _buildAppBar(isFullScreen),
@@ -1429,7 +1393,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                       NetworkImgLayer(
                         width: 34,
                         height: 34,
-                        type: .avatar,
+                        type: ImageType.avatar,
                         src: roomInfoH5.anchorInfo!.baseInfo!.face,
                       ),
                       Flexible(
@@ -1621,13 +1585,14 @@ class _LiveRoomPageState extends State<LiveRoomPage>
         ..onSendDanmaku(),
     );
     return Padding(
-      padding: .only(bottom: 12, top: isPortrait ? 12 : 0),
+      padding: EdgeInsets.only(bottom: 12, top: isPortrait ? 12 : 0),
       child: _liveRoomController.showSuperChat
-          ? PageView(
+          ? PageView<CustomHorizontalDragGestureRecognizer>(
               key: pageKey,
               controller: _liveRoomController.pageController,
-              physics: tabBarScrollPhysics,
-              onPageChanged: _liveRoomController.pageIndex.call,
+              physics: clampingScrollPhysics,
+              onPageChanged: (value) =>
+                  _liveRoomController.pageIndex.value = value,
               horizontalDragGestureRecognizer:
                   CustomHorizontalDragGestureRecognizer.new,
               children: [
@@ -1949,7 +1914,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                 Obx(
                   () {
                     final enableShowLiveDanmaku =
-                        plPlayerController.enableShowLiveDanmaku.value;
+                        plPlayerController.enableShowDanmaku.value;
                     return SizedBox(
                       width: 34,
                       height: 34,
@@ -1957,8 +1922,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                         style: IconButton.styleFrom(padding: .zero),
                         onPressed: () {
                           final newVal = !enableShowLiveDanmaku;
-                          plPlayerController.enableShowLiveDanmaku.value =
-                              newVal;
+                          plPlayerController.enableShowDanmaku.value = newVal;
                           if (!plPlayerController.tempPlayerConf) {
                             GStorage.setting.put(
                               SettingBoxKey.enableShowLiveDanmaku,
@@ -2232,7 +2196,7 @@ class _LiveDanmakuState extends State<LiveDanmaku> {
     final option = DanmakuOptions.get(notFullscreen: widget.notFullscreen);
     return Obx(
       () => AnimatedOpacity(
-        opacity: plPlayerController.enableShowLiveDanmaku.value
+        opacity: plPlayerController.enableShowDanmaku.value
             ? plPlayerController.danmakuOpacity.value
             : 0,
         duration: const Duration(milliseconds: 100),

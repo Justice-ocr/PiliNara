@@ -1,5 +1,5 @@
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Real workspace modes used to compose the Windows stage. The mode is fed by
 /// the current page, while [stateLabel] mirrors an already-visible page state.

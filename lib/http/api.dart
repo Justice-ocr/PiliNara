@@ -47,9 +47,7 @@ abstract final class Api {
   // https://api.bilibili.com/x/web-interface/archive/like
   // static const String likeVideo = '/x/web-interface/archive/like';
 
-  /// web端点赞接口（无access_key时fallback）
   static const String likeVideoWeb = '/x/web-interface/archive/like';
-
 
   // 改用app端点赞接口
   static const String likeVideo = '${HttpString.appBaseUrl}/x/v2/view/like';
@@ -79,7 +77,6 @@ abstract final class Api {
   // csrf	str	CSRF Token（位于cookie）	必要
   // https://api.bilibili.com/x/web-interface/coin/add
 
-  /// web端投币接口（无access_key时fallback）
   static const String coinVideoWeb = '/x/web-interface/coin/add';
 
   // static const String coinVideo = '/x/web-interface/coin/add';
@@ -193,6 +190,7 @@ abstract final class Api {
   // 删除评论
   // https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/comment/action.md
   static const String replyDel = '/x/v2/reply/del';
+  static const String replyReport = '/x/v2/reply/report';
 
   // 用户(被)关注数、投稿数
   // https://api.bilibili.com/x/relation/stat?vmid=697166795
@@ -205,6 +203,7 @@ abstract final class Api {
 
   // 获取用户信息
   static const String userInfo = '/x/web-interface/nav';
+  static const String memberWebAccount = '/x/member/web/account';
 
   // 获取当前用户状态
   static const String userStatOwner = '/x/web-interface/nav/stat';
@@ -232,6 +231,7 @@ abstract final class Api {
   // https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/all?timezone_offset=-480&type=video&page=1&features=itemOpusStyle
   // https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/all?host_mid=548196587&offset=&page=1&features=itemOpusStyle
   static const String followDynamic = '/x/polymer/web-dynamic/v1/feed/all';
+  static const String dynReaction = '/x/polymer/web-dynamic/v1/detail/reaction';
 
   // 动态点赞
   // static const String likeDynamic =
@@ -334,6 +334,15 @@ abstract final class Api {
 
   static const String liveFeedback =
       '${HttpString.liveBaseUrl}/xlive/app-interface/v2/index/feedback';
+
+  static const String liveFansMedalPanel =
+      '${HttpString.liveBaseUrl}/xlive/app-ucenter/v1/fansMedal/panel';
+
+  static const String liveFansMedalWear =
+      '${HttpString.liveBaseUrl}/xlive/app-ucenter/v1/fansMedal/wear';
+
+  static const String liveFansMedalTakeOff =
+      '${HttpString.liveBaseUrl}/xlive/app-ucenter/v1/fansMedal/take_off';
 
   // 直播间弹幕预获取
   // roomid roomId
@@ -622,8 +631,6 @@ abstract final class Api {
 
   static const String oauth2AccessToken =
       '${HttpString.passBaseUrl}/x/passport-login/oauth2/access_token';
-
-  static const String memberWebAccount = '/x/member/web/account';
 
   /// 密码加密密钥
   /// disable_rcmd
@@ -1028,20 +1035,4 @@ abstract final class Api {
   static const String bubble = '/x/tribee/v1/dyn/all';
 
   static const String sortFollowTag = '/x/relation/tags/update_sort';
-
-  static const String replyReport = '/x/v2/reply/report';
-
-  static const String dynReaction = '/x/polymer/web-dynamic/v1/detail/reaction';
-
-  static const String liveFeedback =
-      '${HttpString.liveBaseUrl}/xlive/app-interface/v2/index/feedback';
-
-  static const String liveFansMedalPanel =
-      '${HttpString.liveBaseUrl}/xlive/app-ucenter/v1/fansMedal/panel';
-
-  static const String liveFansMedalWear =
-      '${HttpString.liveBaseUrl}/xlive/app-ucenter/v1/fansMedal/wear';
-
-  static const String liveFansMedalTakeOff =
-      '${HttpString.liveBaseUrl}/xlive/app-ucenter/v1/fansMedal/take_off';
 }

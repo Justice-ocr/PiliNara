@@ -12,6 +12,7 @@ import 'package:PiliPlus/models/common/dynamic/dynamics_type.dart';
 import 'package:PiliPlus/models/common/reply/reply_option_type.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/models/dynamics/up.dart';
+import 'package:PiliPlus/models_new/follow/data.dart';
 import 'package:PiliPlus/models/dynamics/vote_model.dart';
 import 'package:PiliPlus/models_new/article/article_info/data.dart';
 import 'package:PiliPlus/models_new/article/article_list/data.dart';
@@ -85,7 +86,7 @@ abstract final class DynamicsHttp {
     }
   }
 
-  static Future<LoadingState<FollowUpModel>> dynUpList(String? offset) async {
+  static Future<LoadingState<DynUpList>> dynUpList(String? offset) async {
     final res = await Request().get(
       Api.dynUplist,
       queryParameters: {
@@ -95,13 +96,13 @@ abstract final class DynamicsHttp {
       },
     );
     if (res.data['code'] == 0) {
-      return Success(FollowUpModel.fromUpList(res.data['data']));
+      return Success(DynUpList.fromJson(res.data['data']));
     } else {
       return Error(res.data['message']);
     }
   }
 
-  static Future<LoadingState<FollowUpModel>> followings({
+  static Future<LoadingState<FollowData>> followings({
     int? vmid,
     int? pn,
     int ps = 20,
@@ -118,7 +119,7 @@ abstract final class DynamicsHttp {
       },
     );
     if (res.data['code'] == 0) {
-      return Success(FollowUpModel.fromFollowList(res.data['data']));
+      return Success(FollowData.fromJson(res.data['data']));
     } else {
       return Error(errorMsg[res.data['code']] ?? res.data['message']);
     }
@@ -482,7 +483,7 @@ abstract final class DynamicsHttp {
     }
   }
 
-  static Future<LoadingState<TopicCardList?>> topicFold({
+  static Future<LoadingState<TopicCardList?>> topicFoldLegacy({
     required Object topicId,
     required int sortBy,
   }) async {

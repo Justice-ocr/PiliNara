@@ -14,7 +14,7 @@ import 'package:PiliPlus/windows_ui/components/windows_neo_media_meta.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Canonical vertical video card for Windows Neo grids (recommend/search-like).
 class WindowsNeoVideoCardV extends StatefulWidget {

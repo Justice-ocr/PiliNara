@@ -1,5 +1,6 @@
-import 'dart:async' show Timer, StreamSubscription;
-import 'dart:convert' show jsonDecode;
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:math' as math;
 
 import 'package:PiliPlus/common/widgets/dialog/report.dart';
@@ -45,9 +46,9 @@ import 'package:PiliPlus/utils/video_utils.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
 
 class LiveRoomController extends GetxController {
   LiveRoomController(this.heroTag, {this.fromPip = false});
@@ -173,27 +174,6 @@ class LiveRoomController extends GetxController {
     return const SizedBox.shrink();
   });
 
-  StreamSubscription? _sizeSub;
-
-  void _onSizeChanged((int, int) value) {
-    final isVertical = value.$2 > value.$1;
-    isPortrait.value = isVertical;
-    plPlayerController.isVertical = isVertical;
-  }
-
-  void _startSizeSub() {
-    if (isPortrait.value) return;
-    _stopSizeSub();
-    _sizeSub = plPlayerController.videoPlayerController?.stream.size.listen(
-      _onSizeChanged,
-    );
-  }
-
-  void _stopSizeSub() {
-    _sizeSub?.cancel();
-    _sizeSub = null;
-  }
-
   @override
   void onInit() {
     super.onInit();
@@ -230,8 +210,8 @@ class LiveRoomController extends GetxController {
     if (isReturningFromPip) {
       isPortrait.value = plPlayerController.isVertical;
       isLoaded.value = true;
-      // 播放器无需重建，但 stream/ruid/liveTime 等元数据随旧 controller 丢失，
-      // 必须重新拉取；playerInit 会因 isReturningFromPip 跳过数据源初始化
+      // Reuse the retained player surface, but refresh metadata that belonged
+      // to the retired page controller (streams, ruid, and live time).
       queryLiveUrl();
     } else {
       queryLiveUrl(autoFullScreenFlag: true);
@@ -338,15 +318,17 @@ class LiveRoomController extends GetxController {
       }
       isPortrait.value = response.isPortrait ?? false;
       stream = playurl.stream;
-      _initStreamIndex();
+      if (Platform.isWindows) {
+        _initStreamIndex();
+      }
       await initLiveUrl(
         streamIndex: streamIndex,
         formatIndex: formatIndex,
         codecIndex: codecIndex,
         liveUrlIndex: liveUrlIndex,
       );
-      // 置于 initLiveUrl 之后：恢复场景的首次拉取靠该标志让 playerInit 跳过
-      // 数据源重建，完成后清零，切换路线/画质才会真正重建数据源
+      // playerInit deliberately skips rebuilding the retained source while
+      // restoring PiP. Clear the flag only after this metadata refresh.
       isReturningFromPip = false;
       isLoaded.value = true;
     } else {
@@ -354,7 +336,6 @@ class LiveRoomController extends GetxController {
     }
   }
 
-  // 拉取成功前为 null（含小窗恢复后的重拉窗口期），使用处需判空
   List<Stream>? stream;
   int streamIndex = 0;
   int formatIndex = 0;
@@ -365,19 +346,18 @@ class LiveRoomController extends GetxController {
     final pref = Pref.liveStream;
     if (pref != null) {
       try {
-        final String protocolName = pref[0];
-        final String formatName = pref[1];
-        final String codecName = pref[2];
-        for (var (i, s) in stream!.indexed) {
-          if (s.protocolName == protocolName) {
-            streamIndex = i;
-            for (var (j, f) in s.format.indexed) {
-              if (f.formatName == formatName) {
-                formatIndex = j;
-                for (var (k, c) in f.codec.indexed) {
-                  if (c.codecName == codecName) {
-                    codecIndex = k;
-                    return;
+        final protocolName = pref[0];
+        final formatName = pref[1];
+        final codecName = pref[2];
+        for (var i in stream!.indexed) {
+          if (i.$2.protocolName == protocolName) {
+            streamIndex = i.$1;
+            for (var j in i.$2.format.indexed) {
+              if (j.$2.formatName == formatName) {
+                formatIndex = j.$1;
+                for (var k in j.$2.codec.indexed) {
+                  if (k.$2.codecName == codecName) {
+                    codecIndex = k.$1;
                   }
                 }
               }
@@ -419,80 +399,23 @@ class LiveRoomController extends GetxController {
     return playerInit()?.whenComplete(_startSizeSub);
   }
 
-  // 直播投屏时，优先选择 HLS 协议的播放地址，且不使用 AV1 编码
-  // 实测发现http_stream协议在投屏时会报版权问题，导致无法播放，HLS协议则没有这个问题
-  String? _preferredCastUrl() {
-    final stream = this.stream;
-    if (stream == null) {
-      return null;
-    }
-    final currentCastUrl = _currentCastUrl();
-    if (currentCastUrl != null) {
-      return currentCastUrl;
-    }
-
-    final candidates = <({String url, int score})>[];
-    for (final streamItem in stream) {
-      final protocolName = streamItem.protocolName?.toLowerCase() ?? '';
-      for (final formatItem in streamItem.format) {
-        final formatName = formatItem.formatName?.toLowerCase() ?? '';
-        for (final codecItem in formatItem.codec) {
-          final codecName = codecItem.codecName?.toLowerCase() ?? '';
-          for (final urlInfo in codecItem.urlInfo.indexed) {
-            final url = VideoUtils.getLiveCdnUrl(codecItem, index: urlInfo.$1);
-            final lowerUrl = url.toLowerCase();
-            final isHls =
-                protocolName.contains('hls') || lowerUrl.contains('.m3u8');
-            if (!isHls) {
-              continue;
-            }
-            var score = 0;
-            if (formatName.contains('ts')) {
-              score += 40;
-            }
-            if (formatName.contains('fmp4')) {
-              score += 20;
-            }
-            if (codecName.contains('avc') || codecName.contains('h264')) {
-              score += 30;
-            }
-            if (codecName.contains('hevc') || codecName.contains('h265')) {
-              score -= 20;
-            }
-            if (codecName.contains('av1')) {
-              score -= 30;
-            }
-            if (codecItem.currentQn == currentQn) {
-              score += 10;
-            }
-            if (urlInfo.$1 == liveUrlIndex) {
-              score += 5;
-            }
-            candidates.add((url: url, score: score));
-          }
-        }
-      }
-    }
-    if (candidates.isEmpty) {
-      return null;
-    }
-    candidates.sort((a, b) => b.score.compareTo(a.score));
-    return candidates.first.url;
+  void _onSizeChanged((int, int) value) {
+    final vertical = value.$2 > value.$1;
+    isPortrait.value = vertical;
+    plPlayerController.isVertical = vertical;
   }
 
-  String? _currentCastUrl() {
-    final streamItem = stream!.getOrFirst(streamIndex);
-    final formatItem = streamItem.format.getOrFirst(formatIndex);
-    final codecItem = formatItem.codec.getOrFirst(codecIndex);
-    final url = VideoUtils.getLiveCdnUrl(codecItem, index: liveUrlIndex);
-    final protocolName = streamItem.protocolName?.toLowerCase() ?? '';
-    final codecName = codecItem.codecName?.toLowerCase() ?? '';
-    final lowerUrl = url.toLowerCase();
-    final isHls = protocolName.contains('hls') || lowerUrl.contains('.m3u8');
-    if (!isHls || codecName.contains('av1')) {
-      return null;
-    }
-    return url;
+  void _startSizeSub() {
+    if (isPortrait.value) return;
+    _stopSizeSub();
+    _sizeSub = plPlayerController.videoPlayerController?.stream.size.listen(
+      _onSizeChanged,
+    );
+  }
+
+  void _stopSizeSub() {
+    _sizeSub?.cancel();
+    _sizeSub = null;
   }
 
   String? _preferredCastUrl() {
@@ -602,23 +525,6 @@ class LiveRoomController extends GetxController {
     } else {
       res.toast();
     }
-  }
-
-  Future<void> onCast() async {
-    final currentUrl = videoUrl;
-    final url = _preferredCastUrl() ?? currentUrl;
-    if (url == null || url.isEmpty) {
-      SmartDialog.showToast('播放地址未就绪');
-      return;
-    }
-    final castTitle = title.value.isNotEmpty ? title.value : null;
-    await Get.toNamed(
-      '/dlna',
-      parameters: {
-        'url': url,
-        'title': ?castTitle,
-      },
-    );
   }
 
   void _showDialog(String title) {
@@ -763,6 +669,14 @@ class LiveRoomController extends GetxController {
   @override
   void onClose() {
     _stopSizeSub();
+    if (identical(
+      plPlayerController.onLivePlaybackInterrupted,
+      _livePlaybackRecoveryCallback,
+    )) {
+      plPlayerController
+        ..cancelLivePlaybackRecovery()
+        ..onLivePlaybackInterrupted = null;
+    }
     // 心跳定时器是静态的，无论是否小窗都要取消
     LiveHttp.cancelLiveHeartbeat();
     // 如果在小窗模式，不清理资源
@@ -816,7 +730,7 @@ class LiveRoomController extends GetxController {
 
   void addDm(dynamic msg, [DanmakuContentItem<DanmakuExtra>? item]) {
     if (plPlayerController.showDanmaku) {
-      if (item != null && plPlayerController.enableShowLiveDanmaku.value) {
+      if (item != null) {
         danmakuController?.addDanmaku(item);
       }
       if (autoScroll && !disableAutoScroll.value) {
@@ -1010,8 +924,6 @@ class LiveRoomController extends GetxController {
         },
         transitionDuration: fromEmote
             ? const Duration(milliseconds: 400)
-            : PlatformUtils.isDesktop
-            ? const Duration(milliseconds: 350)
             : const Duration(milliseconds: 500),
       ),
     );
@@ -1026,8 +938,6 @@ class LiveRoomController extends GetxController {
       Get.context!,
       ban: false,
       ReportOptions.liveDanmakuReport,
-      withContent: ReportOptions.liveDanmakuReportCheck,
-      contentRequired: ReportOptions.liveDanmakuReportCheck,
       (reasonType, reasonDesc, banUid) {
         return LiveHttp.superChatReport(
           id: item.id,
@@ -1061,9 +971,7 @@ class LiveRoomController extends GetxController {
     }
   }
 
-  Future<void> _doLoadFansMedal({
-    required Object targetId,
-  }) async {
+  Future<void> _doLoadFansMedal({required Object targetId}) async {
     final res = await LiveHttp.fansMedalPanel(
       roomId: roomId,
       targetId: targetId,
@@ -1082,7 +990,8 @@ class LiveRoomController extends GetxController {
   }
 
   void _updateFansMedalHasMore(FansMedalPanelData data) {
-    final itemCount = (data.specialList?.length ?? 0) + (data.list?.length ?? 0);
+    final itemCount =
+        (data.specialList?.length ?? 0) + (data.list?.length ?? 0);
     fansMedalHasMore.value = _calcHasMore(data, itemCount);
   }
 
@@ -1097,10 +1006,7 @@ class LiveRoomController extends GetxController {
   }
 
   void _updateWearingMedal(FansMedalPanelData data) {
-    final allItems = [
-      ...?data.specialList,
-      ...?data.list,
-    ];
+    final allItems = [...?data.specialList, ...?data.list];
     final wearing = allItems.cast<FansMedalItem?>().firstWhere(
       (item) => item?.medal?.wearingStatus == 1,
       orElse: () => null,
@@ -1113,8 +1019,7 @@ class LiveRoomController extends GetxController {
   }
 
   Future<void> loadMoreFansMedal() async {
-    if (_fansMedalLoadingMore) return;
-    if (_fansMedalReq != null) return;
+    if (_fansMedalLoadingMore || _fansMedalReq != null) return;
     if (!fansMedalHasMore.value) return;
     final targetId = medalTargetId;
     if (targetId == null) return;
@@ -1136,10 +1041,7 @@ class LiveRoomController extends GetxController {
         final newList = <FansMedalItem>[];
         for (final item in (response.list ?? <FansMedalItem>[])) {
           if (item.medal?.medalId case final id?) {
-            if (!existingIds.contains(id)) {
-              newList.add(item);
-              existingIds.add(id);
-            }
+            if (existingIds.add(id)) newList.add(item);
           } else {
             newList.add(item);
           }
@@ -1154,9 +1056,7 @@ class LiveRoomController extends GetxController {
           ..hasMore = response.hasMore
           ..nextPage = response.nextPage;
         _fansMedalPage = nextPage;
-        final itemCount = (data.specialList?.length ?? 0) +
-            (data.list?.length ?? 0);
-        fansMedalHasMore.value = _calcHasMore(data, itemCount);
+        _updateFansMedalHasMore(data);
         fansMedalData.refresh();
       }
     } else {
@@ -1167,10 +1067,8 @@ class LiveRoomController extends GetxController {
 
   Future<bool> wearFansMedal(FansMedalItem item) async {
     final targetId = medalTargetId;
-    if (targetId == null) return false;
     final medalId = item.medal?.medalId;
-    if (medalId == null) return false;
-
+    if (targetId == null || medalId == null) return false;
     final res = await LiveHttp.fansMedalWear(
       medalId: medalId,
       targetId: targetId,
@@ -1181,18 +1079,15 @@ class LiveRoomController extends GetxController {
       _fansMedalStale = true;
       SmartDialog.showToast('已佩戴 ${item.medal?.medalName ?? ''}');
       return true;
-    } else {
-      res.toast();
-      return false;
     }
+    res.toast();
+    return false;
   }
 
   Future<bool> takeOffFansMedal(FansMedalItem item) async {
     final targetId = medalTargetId;
-    if (targetId == null) return false;
     final medalId = item.medal?.medalId;
-    if (medalId == null) return false;
-
+    if (targetId == null || medalId == null) return false;
     final res = await LiveHttp.fansMedalTakeOff(
       medalId: medalId,
       targetId: targetId,
@@ -1203,21 +1098,16 @@ class LiveRoomController extends GetxController {
       _fansMedalStale = true;
       SmartDialog.showToast('已取消佩戴');
       return true;
-    } else {
-      res.toast();
-      return false;
     }
+    res.toast();
+    return false;
   }
 
   void _applyWearStatus(int medalId, int status) {
     final data = fansMedalData.value;
     if (data == null) return;
     for (final item in [...?data.specialList, ...?data.list]) {
-      if (item.medal?.medalId == medalId) {
-        item.medal?.wearingStatus = status;
-      } else {
-        item.medal?.wearingStatus = 0;
-      }
+      item.medal?.wearingStatus = item.medal?.medalId == medalId ? status : 0;
     }
     fansMedalData.refresh();
   }

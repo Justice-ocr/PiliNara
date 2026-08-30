@@ -5,7 +5,7 @@
 // ignore_for_file: prefer_initializing_formals, uri_does_not_exist_in_doc_import
 
 /// @docImport 'package:flutter/gestures.dart';
-/// @docImport 'package:flutter/material.dart';
+/// @docImport 'package:material_ui/material_ui.dart';
 ///
 /// @docImport 'editable_text.dart';
 /// @docImport 'gesture_detector.dart';

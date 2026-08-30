@@ -1,9 +1,7 @@
 import 'package:PiliPlus/common/skeleton/whisper_item.dart';
-import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/widgets/flutter/popup_menu.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/grpc/bilibili/app/im/v1.pb.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/pages/whisper/controller.dart';
@@ -13,9 +11,10 @@ import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/extension/three_dot_ext.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
 
 class WhisperPage extends StatefulWidget {
   const WhisperPage({super.key});
@@ -31,7 +30,10 @@ class _WhisperPageState extends State<WhisperPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final padding = MediaQuery.viewPaddingOf(context);
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('消息'),
         actions: [
@@ -132,49 +134,46 @@ class _WhisperPageState extends State<WhisperPage> {
   }
 
   Widget _buildBody(LoadingState<List<Session>?> loadingState) {
-    switch (loadingState) {
-      case Loading():
-        return const SliverPrototypeExtentList(
-          prototypeItem: WhisperItemSkeleton(),
-          delegate: SliverSingleChildDelegate(
-            count: 12,
-            child: WhisperItemSkeleton(),
-          ),
-        );
-      case Success(:final response):
-        if (response != null && response.isNotEmpty) {
-          final divider = Divider(
-            indent: 72,
-            endIndent: 20,
-            height: 0,
-            color: Colors.grey.withValues(alpha: 0.1),
-          );
-          return SliverList.separated(
-            itemCount: response.length,
-            itemBuilder: (context, index) {
-              if (index == response.length - 1) {
-                _controller.onLoadMore();
-              }
-              final item = response[index];
-              return WhisperSessionItem(
-                item: item,
-                onSetTop: (isTop, id) =>
-                    _controller.onSetTop(item, index, isTop, id),
-                onSetMute: (isMuted, talkerUid) =>
-                    _controller.onSetMute(item, isMuted, talkerUid),
-                onRemove: (talkerId) => _controller.onRemove(index, talkerId),
-              );
-            },
-            separatorBuilder: (context, index) => divider,
-          );
-        }
-        return HttpError(onReload: _controller.onReload);
-      case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _controller.onReload,
-        );
-    }
+    late final divider = Divider(
+      indent: 72,
+      endIndent: 20,
+      height: 1,
+      color: WindowsVideoTabService.enabled
+          ? context.windowsNeo.border
+          : Colors.grey.withValues(alpha: 0.1),
+    );
+    return switch (loadingState) {
+      Loading() => SliverList.builder(
+        itemCount: 12,
+        itemBuilder: (context, index) => const WhisperItemSkeleton(),
+      ),
+      Success(:final response) =>
+        response != null && response.isNotEmpty
+            ? SliverList.separated(
+                itemCount: response.length,
+                itemBuilder: (context, index) {
+                  if (index == response.length - 1) {
+                    _controller.onLoadMore();
+                  }
+                  final item = response[index];
+                  return WhisperSessionItem(
+                    item: item,
+                    onSetTop: (isTop, id) =>
+                        _controller.onSetTop(item, index, isTop, id),
+                    onSetMute: (isMuted, talkerUid) =>
+                        _controller.onSetMute(item, isMuted, talkerUid),
+                    onRemove: (talkerId) =>
+                        _controller.onRemove(index, talkerId),
+                  );
+                },
+                separatorBuilder: (context, index) => divider,
+              )
+            : HttpError(onReload: _controller.onReload),
+      Error(:final errMsg) => HttpError(
+        errMsg: errMsg,
+        onReload: _controller.onReload,
+      ),
+    };
   }
 
   Widget _buildTopItems(
@@ -191,51 +190,24 @@ class _WhisperPageState extends State<WhisperPage> {
         bottom: isWindowsNeo ? 14 : 0,
       ),
       sliver: SliverToBoxAdapter(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: List.generate(_controller.msgFeedTopItems.length, (index) {
-            final item = _controller.msgFeedTopItems[index];
-            return GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Obx(
-                      () {
-                        final count = _controller.unreadCounts[index];
-                        return Badge(
-                          isLabelVisible: count > 0,
-                          label: Text(" $count "),
-                          alignment: Alignment.topRight,
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              shape: .circle,
-                              color: theme.colorScheme.onInverseSurface,
-                            ),
-                            child: Icon(
-                              item.icon,
-                              size: 20,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      item.name,
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-              onTap: () {
+        child: Material(
+          type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
+          color: isWindowsNeo ? context.windowsNeo.surface : null,
+          elevation: 0,
+          shape: isWindowsNeo
+              ? RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  side: BorderSide(color: context.windowsNeo.border),
+                )
+              : null,
+          clipBehavior: isWindowsNeo ? Clip.antiAlias : Clip.none,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: List.generate(_controller.msgFeedTopItems.length, (
+              index,
+            ) {
+              final item = _controller.msgFeedTopItems[index];
+              void onTap() {
                 if (!item.enabled) {
                   SmartDialog.showToast('已禁用');
                   return;

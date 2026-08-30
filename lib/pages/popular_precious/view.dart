@@ -1,7 +1,6 @@
 import 'package:PiliPlus/common/skeleton/video_card_h.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
@@ -11,8 +10,9 @@ import 'package:PiliPlus/pages/popular_precious/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class PopularPreciousPage extends StatefulWidget {
   const PopularPreciousPage({super.key});
@@ -37,7 +37,10 @@ class _PopularPreciousPageState extends State<PopularPreciousPage>
 
   @override
   Widget build(BuildContext context) {
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('入站必刷')),
       body: refreshIndicator(
         onRefresh: _controller.onRefresh,

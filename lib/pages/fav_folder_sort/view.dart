@@ -1,13 +1,14 @@
 import 'package:PiliPlus/common/widgets/reorder_mixin.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/http/fav.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/fav/fav_folder/list.dart';
 import 'package:PiliPlus/pages/fav/video/controller.dart';
 import 'package:PiliPlus/pages/fav/video/widgets/item.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
 
 class FavFolderSortPage extends StatefulWidget {
   const FavFolderSortPage({super.key, required this.favController});
@@ -28,7 +29,10 @@ class _FavFolderSortPageState extends State<FavFolderSortPage>
 
   @override
   Widget build(BuildContext context) {
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('收藏夹排序'),
         actions: [
@@ -88,7 +92,7 @@ class _FavFolderSortPageState extends State<FavFolderSortPage>
         final key = item.id.toString();
         return SizedBox(
           key: Key(key),
-          height: 110,
+          height: WindowsVideoTabService.enabled ? 112 : 98,
           child: FavVideoItem(
             heroTag: key,
             item: item,

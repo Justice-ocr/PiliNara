@@ -1,6 +1,5 @@
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/grpc/bilibili/main/community/reply/v1.pb.dart'
     show ReplyInfo;
@@ -9,6 +8,8 @@ import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models_new/match/match_info/contest.dart';
 import 'package:PiliPlus/models_new/match/match_info/team.dart';
 import 'package:PiliPlus/pages/common/dyn/common_dyn_page.dart';
+import 'package:PiliPlus/pages/common/fab_mixin.dart'
+    show NoBottomPaddingFabLocation;
 import 'package:PiliPlus/pages/match_info/controller.dart';
 import 'package:PiliPlus/pages/video/reply_reply/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
@@ -18,9 +19,9 @@ import 'package:PiliPlus/utils/extension/widget_ext.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:easy_debounce/easy_throttle.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:material_ui/material_ui.dart';
 
 class MatchInfoPage extends StatefulWidget {
   const MatchInfoPage({super.key});
@@ -41,31 +42,41 @@ class _MatchInfoPageState extends CommonDynPageState<MatchInfoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return fabAnimWrapper(
-      child: SimpleScaffold(
-        appBar: AppBar(title: const Text('比赛详情')),
-        body: ViewSafeArea(
-          child: refreshIndicator(
-            onRefresh: controller.onRefresh,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                Obx(() => _buildInfo(controller.infoState.value)),
-                buildReplyHeader(),
-                Obx(() => replyList(controller.loadingState.value)),
-              ],
+    final theme = Theme.of(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(title: const Text('比赛详情')),
+      body:
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: isWindowsNeo ? 18 : 0),
+            child: ViewSafeArea(
+              child: refreshIndicator(
+                onRefresh: controller.onRefresh,
+                child: CustomScrollView(
+                  controller: scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    Obx(() => _buildInfo(theme, controller.infoState.value)),
+                    buildReplyHeader(theme),
+                    Obx(() => replyList(theme, controller.loadingState.value)),
+                  ],
+                ),
+              ),
             ),
+          ).constraintWidth(
+            constraints: BoxConstraints(maxWidth: isWindowsNeo ? 856 : 625),
           ),
-        ).constraintWidth(),
-        fab: SlideTransition(
-          position: fabAnimation,
-          child: fabButton,
-        ),
+      floatingActionButtonLocation: const NoBottomPaddingFabLocation(),
+      floatingActionButton: SlideTransition(
+        position: fabAnimation,
+        child: fabButton,
       ),
     );
   }
 
-  Widget _buildInfo(LoadingState<MatchContest?> infoState) {
+  Widget _buildInfo(ThemeData theme, LoadingState<MatchContest?> infoState) {
     if (infoState case Success(:final response?)) {
       try {
         Widget teamInfo(MatchTeam team) {
@@ -187,12 +198,18 @@ class _MatchInfoPageState extends CommonDynPageState<MatchInfoPage> {
   }
 
   @override
-  void replyReply(ReplyInfo replyItem, int? id) {
+  void replyReply(
+    BuildContext context,
+    ReplyInfo replyItem,
+    int? id,
+    ThemeData theme,
+  ) {
     EasyThrottle.throttle('replyReply', const Duration(milliseconds: 500), () {
       int oid = replyItem.oid.toInt();
       int rpid = replyItem.id.toInt();
       Get.to(
-        SimpleScaffold(
+        Scaffold(
+          resizeToAvoidBottomInset: false,
           appBar: AppBar(
             title: const Text('评论详情'),
             shape: Border(

@@ -39,6 +39,7 @@ import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/subtitle_utils.dart';
+import 'package:PiliPlus/utils/video_tag_filter.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/parse_int.dart';
 import 'package:PiliPlus/utils/wbi_sign.dart';
@@ -53,6 +54,29 @@ abstract final class VideoHttp {
     caseSensitive: false,
   );
   static bool enableFilter = zoneRegExp.pattern.isNotEmpty;
+
+  static String processList(List list) => SubtitleUtils.bccToVtt(list);
+
+  static Future<String?> vttSubtitles(
+    String subtitleUrl, {
+    SubtitleFormat format = SubtitleFormat.vtt,
+  }) async {
+    final res = await Request().get('https:$subtitleUrl');
+    if (res.data?['body'] case List list) {
+      return switch (format) {
+        SubtitleFormat.json => null,
+        SubtitleFormat.vtt => compute<List, String>(
+          SubtitleUtils.bccToVtt,
+          list,
+        ),
+        SubtitleFormat.srt => compute<List, String>(
+          SubtitleUtils.bccToSrt,
+          list,
+        ),
+      };
+    }
+    return null;
+  }
 
   static Future<List<T>> _applyVideoTagFilter<T extends BaseVideoItemModel>(
     List<T> list,
@@ -153,7 +177,7 @@ abstract final class VideoHttp {
     );
 
     if (res.data['code'] == 0) {
-      final list = <RcmdVideoItemAppModel>[];
+      var list = <RcmdVideoItemAppModel>[];
       final bool removeBlockedRcmd = Pref.removeBlockedRcmd;
       for (final i in res.data['data']['items']) {
         final upMid = safeToInt(i['args']?['up_id']);

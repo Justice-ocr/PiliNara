@@ -12,8 +12,10 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/features/dynamics/windows_neo_dynamics_layout.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 import 'package:waterfall_flow/waterfall_flow.dart'
     hide SliverWaterfallFlowDelegateWithMaxCrossAxisExtent;
 
@@ -28,7 +30,9 @@ class DynamicsTabPage extends StatefulWidget {
 
 class _DynamicsTabPageState extends State<DynamicsTabPage>
     with AutomaticKeepAliveClientMixin, DynMixin {
-  final dynamicsController = Get.putOrFind(DynamicsController.new);
+  StreamSubscription? _listener;
+
+  DynamicsController dynamicsController = Get.putOrFind(DynamicsController.new);
   late final DynamicsTabController controller;
 
   @override
@@ -37,15 +41,28 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
   @override
   void initState() {
     controller = Get.putOrFind(
-      () => DynamicsTabController(dynamicsType: widget.dynamicsType),
+      () =>
+          DynamicsTabController(dynamicsType: widget.dynamicsType)
+            ..mid = dynamicsController.mid.value,
       tag: widget.dynamicsType.name,
     );
     super.initState();
+    if (widget.dynamicsType == DynamicsTabType.up) {
+      _listener = dynamicsController.mid.listen((mid) {
+        if (mid != -1) {
+          controller
+            ..mid = mid
+            ..onReload();
+        }
+      });
+    }
   }
 
-  Future<void> onRefresh() {
-    dynamicsController.singleRefresh();
-    return controller.onRefresh();
+  @override
+  void dispose() {
+    _listener?.cancel();
+    dynamicsController.mid.close();
+    super.dispose();
   }
 
   @override
@@ -53,7 +70,10 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
     super.build(context);
     return refreshIndicator(
       key: controller.refreshKey,
-      onRefresh: onRefresh,
+      onRefresh: () {
+        dynamicsController.queryFollowUp();
+        return controller.onRefresh();
+      },
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         controller: controller.scrollController,
@@ -102,19 +122,7 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
       Loading() => dynSkeleton,
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? GlobalData().dynamicsWaterfallFlow
-                  ? SliverWaterfallFlow(
-                      gridDelegate: dynGridDelegate,
-                      delegate: SliverChildBuilderDelegate(
-                        (_, index) => _itemBuilder(response, index),
-                        childCount: response.length,
-                      ),
-                    )
-                  : SliverList.builder(
-                      itemBuilder: (context, index) =>
-                          _itemBuilder(response, index),
-                      itemCount: response.length,
-                    )
+            ? _buildLoaded(response)
             : HttpError(onReload: controller.onReload),
       Error(:final errMsg) => HttpError(
         errMsg: errMsg,
@@ -123,18 +131,56 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
     };
   }
 
-  Widget _itemBuilder(List<DynamicItemModel> list, int index) {
-    if (index == list.length - 1) {
+  Widget _buildLoaded(List<DynamicItemModel> response) {
+    if (WindowsVideoTabService.enabled) {
+      return SliverLayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.crossAxisExtent;
+          final crossAxisCount = WindowsNeoDynamicsLayout.crossAxisCount(
+            width,
+          );
+          return SliverWaterfallFlow(
+            gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: WindowsNeoDynamicsLayout.gridSpacing,
+              mainAxisSpacing: WindowsNeoDynamicsLayout.gridSpacing,
+            ),
+            delegate: _buildDelegate(response),
+          );
+        },
+      );
+    }
+    if (GlobalData().dynamicsWaterfallFlow) {
+      return SliverWaterfallFlow(
+        gridDelegate: dynGridDelegate,
+        delegate: _buildDelegate(response),
+      );
+    }
+    return SliverList.builder(
+      itemBuilder: (_, index) => _buildItem(response, index),
+      itemCount: response.length,
+    );
+  }
+
+  SliverChildBuilderDelegate _buildDelegate(
+    List<DynamicItemModel> response,
+  ) => SliverChildBuilderDelegate(
+    (_, index) => _buildItem(response, index),
+    childCount: response.length,
+  );
+
+  Widget _buildItem(List<DynamicItemModel> response, int index) {
+    if (index == response.length - 1) {
       controller.onLoadMore();
     }
-    final item = list[index];
-    return DynamicPanel(
+    final item = response[index];
+    final panel = DynamicPanel(
       item: item,
       onRemove: (idStr) => controller.onRemove(index, idStr),
       onBlock: () => controller.onBlock(index),
       onUnfold: () => controller.onUnfold(item, index),
       onUpdate: (newItem) {
-        list[index] = newItem;
+        response[index] = newItem;
         controller.loadingState.refresh();
       },
     );

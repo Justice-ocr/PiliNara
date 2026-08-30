@@ -4,7 +4,7 @@
 
 // ignore_for_file: prefer_initializing_formals
 
-/// @docImport 'package:flutter/material.dart';
+/// @docImport 'package:material_ui/material_ui.dart';
 library;
 
 import 'package:PiliPlus/common/widgets/flutter/text_field/editable_text.dart';

@@ -1,9 +1,7 @@
 import 'package:PiliPlus/common/skeleton/video_reply.dart';
-import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/sliver/sliver_floating_header.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/grpc/bilibili/main/community/reply/v1.pb.dart'
@@ -20,8 +18,8 @@ import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:easy_debounce/easy_throttle.dart';
-import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class MainReplyPage extends StatefulWidget {
   const MainReplyPage({super.key});
@@ -63,22 +61,29 @@ class _MainReplyPageState extends State<MainReplyPage>
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme.of(context);
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('查看评论')),
-      body: fabAnimWrapper(
-        child: refreshIndicator(
-          onRefresh: _controller.onRefresh,
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: padding.left,
-              right: padding.right,
-            ),
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                buildReplyHeader(colorScheme),
-                Obx(
-                  () => _buildBody(colorScheme, _controller.loadingState.value),
+      body: NotificationListener<UserScrollNotification>(
+        onNotification: (notification) {
+          final direction = notification.direction;
+          if (direction == .forward) {
+            showFab();
+          } else if (direction == .reverse) {
+            hideFab();
+          }
+          return false;
+        },
+        child:
+            refreshIndicator(
+              onRefresh: _controller.onRefresh,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: isWindowsNeo ? 18 : padding.left,
+                  top: isWindowsNeo ? 16 : 0,
+                  right: isWindowsNeo ? 18 : padding.right,
                 ),
                 child: CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -97,13 +102,11 @@ class _MainReplyPageState extends State<MainReplyPage>
               constraints: BoxConstraints(maxWidth: isWindowsNeo ? 856 : 625),
             ),
       ),
-      fab: SlideTransition(
+      floatingActionButtonLocation: const NoBottomPaddingFabLocation(),
+      floatingActionButton: SlideTransition(
         position: fabAnimation,
         child: Padding(
-          padding: .only(
-            right: kFloatingActionButtonMargin + padding.right,
-            bottom: kFloatingActionButtonMargin + padding.bottom,
-          ),
+          padding: .only(bottom: padding.bottom + kFloatingActionButtonMargin),
           child: FloatingActionButton(
             heroTag: null,
             onPressed: () {
@@ -129,12 +132,10 @@ class _MainReplyPageState extends State<MainReplyPage>
     LoadingState<List<ReplyInfo>?> loadingState,
   ) {
     return switch (loadingState) {
-      Loading() => const SliverPrototypeExtentList(
-        prototypeItem: VideoReplySkeleton(),
-        delegate: SliverSingleChildDelegate(
-          count: 10,
-          child: VideoReplySkeleton(),
-        ),
+      Loading() => SliverPrototypeExtentList.builder(
+        itemCount: 10,
+        itemBuilder: (_, _) => const VideoReplySkeleton(),
+        prototypeItem: const VideoReplySkeleton(),
       ),
       Success(:final response) =>
         response != null && response.isNotEmpty
@@ -165,7 +166,8 @@ class _MainReplyPageState extends State<MainReplyPage>
                       onDelete: (item, subIndex) =>
                           _controller.onRemove(index, item, subIndex),
                       upMid: _controller.upMid,
-                      onCheckReply: _controller.onCheckReply,
+                      onCheckReply: (item) =>
+                          _controller.onCheckReply(item, isManual: true),
                       onToggleTop: (item) => _controller.onToggleTop(
                         item,
                         index,
@@ -212,7 +214,7 @@ class _MainReplyPageState extends State<MainReplyPage>
               icon: Icon(Icons.sort, size: 16, color: secondary),
               label: Obx(
                 () => Text(
-                  _controller.sortType.value.descShort,
+                  _controller.sortType.value.label,
                   style: TextStyle(fontSize: 13, color: secondary),
                 ),
               ),
@@ -233,7 +235,8 @@ class _MainReplyPageState extends State<MainReplyPage>
       int oid = replyItem.oid.toInt();
       int rpid = replyItem.id.toInt();
       Get.to(
-        SimpleScaffold(
+        Scaffold(
+          resizeToAvoidBottomInset: false,
           appBar: AppBar(
             title: const Text('评论详情'),
             shape: Border(

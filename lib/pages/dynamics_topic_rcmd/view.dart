@@ -3,14 +3,16 @@ import 'dart:math' show max;
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/dynamic/dyn_topic_top/topic_item.dart';
 import 'package:PiliPlus/pages/dynamics_select_topic/widgets/item.dart';
 import 'package:PiliPlus/pages/dynamics_topic_rcmd/controller.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class DynTopicRcmdPage extends StatefulWidget {
   const DynTopicRcmdPage({super.key});
@@ -24,7 +26,14 @@ class _DynTopicRcmdPageState extends State<DynTopicRcmdPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final horizontalPadding = max(
+      18.0,
+      (MediaQuery.sizeOf(context).width - 820) / 2,
+    );
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('话题')),
       body: refreshIndicator(
         onRefresh: _controller.onRefresh,

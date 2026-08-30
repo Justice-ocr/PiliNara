@@ -2,9 +2,10 @@ import 'package:PiliPlus/common/widgets/flutter/vertical_tabs.dart';
 import 'package:PiliPlus/models/common/rank_type.dart';
 import 'package:PiliPlus/pages/rank/controller.dart';
 import 'package:PiliPlus/pages/rank/zone/view.dart';
-import 'package:PiliPlus/utils/storage_pref.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class RankPage extends StatefulWidget {
   const RankPage({super.key});
@@ -104,19 +105,7 @@ class _RankPageState extends State<RankPage>
       controller: _rankController.tabController,
       padding: .only(bottom: MediaQuery.paddingOf(context).bottom + 105),
       tabs: RankType.values.map((e) => VerticalTab(text: e.label)).toList(),
-      onTap: (index) {
-        if (!_rankController.tabController.indexIsChanging) {
-          if (Pref.enableCurrentPageRefresh) {
-            _rankController.toTopAndRefresh();
-          } else {
-            _rankController.animateToTop();
-          }
-        } else {
-          _rankController
-            ..tabIndex.value = index
-            ..tabController.animateTo(index);
-        }
-      },
+      onTap: _onTap,
     );
   }
 }

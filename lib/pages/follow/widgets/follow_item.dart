@@ -5,7 +5,9 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_hover_halo.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
 
 class FollowItem extends StatelessWidget {
@@ -84,7 +86,7 @@ class FollowItem extends StatelessWidget {
                   crossAxisAlignment: .start,
                   children: [
                     Text(
-                      remarkedName(item.mid, item.uname!),
+                      item.uname!,
                       maxLines: 1,
                       overflow: .ellipsis,
                       style: const TextStyle(fontSize: 14),
@@ -99,10 +101,10 @@ class FollowItem extends StatelessWidget {
                           color: colorScheme.outline,
                         ),
                       ),
-                    if (!GlobalData().remarkReplaceName &&
-                        remarkOf(item.mid) != null)
+                    if (GlobalData().remarkMids[item.mid]
+                        case final String remark when remark.isNotEmpty)
                       Text(
-                        '备注：${remarkOf(item.mid)}',
+                        '备注：$remark',
                         maxLines: 1,
                         overflow: .ellipsis,
                         style: TextStyle(

@@ -9,8 +9,9 @@ import 'package:PiliPlus/pages/member_audio/controller.dart';
 import 'package:PiliPlus/pages/member_audio/widgets/item.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class MemberAudio extends StatefulWidget {
   const MemberAudio({
@@ -27,7 +28,7 @@ class MemberAudio extends StatefulWidget {
 }
 
 class _MemberAudioState extends State<MemberAudio>
-    with AutomaticKeepAliveClientMixin, GridMixin {
+    with AutomaticKeepAliveClientMixin {
   late final MemberAudioController _controller;
 
   @override
@@ -66,6 +67,20 @@ class _MemberAudioState extends State<MemberAudio>
 
   @override
   bool get wantKeepAlive => true;
+
+  late final gridDelegate = SliverGridDelegateWithExtentAndRatio(
+    mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : 2,
+    crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : 0,
+    maxCrossAxisExtent: WindowsVideoTabService.enabled
+        ? 520
+        : Grid.smallCardWidth * 2,
+    childAspectRatio: WindowsVideoTabService.enabled
+        ? 4.2
+        : Style.aspectRatio * 2.6,
+    minHeight: MediaQuery.textScalerOf(
+      context,
+    ).scale(WindowsVideoTabService.enabled ? 112 : 90),
+  );
 
   Widget _buildBody(
     ColorScheme colorScheme,

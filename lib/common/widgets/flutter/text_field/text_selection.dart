@@ -5,7 +5,7 @@
 // ignore_for_file: prefer_initializing_formals
 
 /// @docImport 'package:flutter/cupertino.dart';
-/// @docImport 'package:flutter/material.dart';
+/// @docImport 'package:material_ui/material_ui.dart';
 library;
 
 import 'dart:math' as math;

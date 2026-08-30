@@ -1,15 +1,15 @@
 import 'package:PiliPlus/common/widgets/flutter/popup_menu.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/time_picker.dart';
 import 'package:PiliPlus/pages/dynamics_create_reserve/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:material_ui/material_ui.dart' hide showTimePicker;
 import 'package:flutter/services.dart'
     show TextInputFormatter, LengthLimitingTextInputFormatter;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart' hide showTimePicker;
 
 class CreateReservePage extends StatefulWidget {
   const CreateReservePage({super.key, this.sid});
@@ -50,42 +50,45 @@ class _CreateReservePageState extends State<CreateReservePage> {
       ),
       const SizedBox(height: 10),
     ];
-    return SimpleScaffold(
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
       appBar: AppBar(title: const Text('添加直播预约')),
-      body: ListView(
-        padding: EdgeInsets.only(
-          top: 16,
-          left: padding.left + 16,
-          right: padding.right + 16,
-          bottom: padding.bottom + 100,
-        ),
-        children: [
-          Row(
-            spacing: 12,
-            children: [
-              SizedBox(
-                width: 65,
-                child: Text('类型', style: _leadingStyle),
-              ),
-              Obx(
-                () => StaticPopupMenuButton(
-                  requestFocus: false,
-                  initialValue: _controller.subType.value,
-                  onSelected: _controller.subType.call,
-                  itemBuilder: (context) {
-                    return const [
-                      PopupMenuItem(
-                        value: 0,
-                        child: Text('公开直播'),
-                      ),
-                      PopupMenuItem(
-                        value: 1,
-                        child: Text('大航海直播'),
-                      ),
-                    ];
-                  },
-                  child: Text(
-                    _controller.subType.value == 0 ? '公开直播' : '大航海直播',
+      body: _windowsBody(
+        ListView(
+          padding: EdgeInsets.only(
+            top: isWindowsNeo ? 20 : 16,
+            left: isWindowsNeo ? 20 : padding.left + 16,
+            right: isWindowsNeo ? 20 : padding.right + 16,
+            bottom: padding.bottom + 100,
+          ),
+          children: [
+            Row(
+              spacing: 12,
+              children: [
+                SizedBox(
+                  width: 65,
+                  child: Text('类型', style: _leadingStyle),
+                ),
+                Obx(
+                  () => StaticPopupMenuButton(
+                    requestFocus: false,
+                    initialValue: _controller.subType.value,
+                    onSelected: (value) => _controller.subType.value = value,
+                    itemBuilder: (context) {
+                      return const [
+                        PopupMenuItem(
+                          value: 0,
+                          child: Text('公开直播'),
+                        ),
+                        PopupMenuItem(
+                          value: 1,
+                          child: Text('大航海直播'),
+                        ),
+                      ];
+                    },
+                    child: Text(
+                      _controller.subType.value == 0 ? '公开直播' : '大航海直播',
+                    ),
                   ),
                 ),
               ],

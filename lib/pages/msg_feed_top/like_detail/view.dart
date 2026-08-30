@@ -1,11 +1,9 @@
 import 'dart:math' show max;
 
 import 'package:PiliPlus/common/skeleton/msg_feed_top.dart';
-import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models_new/msg/msg_like_detail/card.dart';
@@ -15,8 +13,10 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class LikeDetailPage extends StatefulWidget {
   const LikeDetailPage({super.key, this.arguments});
@@ -42,7 +42,14 @@ class _LikeDetailPageState extends State<LikeDetailPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final horizontalPadding = max(
+      18.0,
+      (MediaQuery.sizeOf(context).width - 960) / 2,
+    );
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('点赞详情')),
       body: refreshIndicator(
         onRefresh: _controller.onRefresh,
@@ -70,51 +77,47 @@ class _LikeDetailPageState extends State<LikeDetailPage> {
     ThemeData theme,
     LoadingState<List<MsgLikeDetailItem>?> loadingState,
   ) {
-    switch (loadingState) {
-      case Loading():
-        return const SliverPrototypeExtentList(
-          prototypeItem: MsgFeedTopSkeleton(),
-          delegate: SliverSingleChildDelegate(
-            count: 12,
-            child: MsgFeedTopSkeleton(),
-          ),
-        );
-      case Success(:final response):
-        final divider = Divider(
-          indent: 72,
-          endIndent: 20,
-          height: 6,
-          color: Colors.grey.withValues(alpha: 0.1),
-        );
-        return SliverMainAxisGroup(
-          slivers: [
-            if (_controller.card != null) ...[
-              _buildCard(_controller.card!),
-              SliverToBoxAdapter(
-                child: Divider(
-                  height: 1,
-                  color: Colors.grey.withValues(alpha: 0.1),
-                ),
+    late final divider = Divider(
+      indent: WindowsVideoTabService.enabled ? 0 : 72,
+      endIndent: WindowsVideoTabService.enabled ? 0 : 20,
+      height: WindowsVideoTabService.enabled ? 1 : 6,
+      color: WindowsVideoTabService.enabled
+          ? context.windowsNeo.border
+          : Colors.grey.withValues(alpha: 0.1),
+    );
+    return switch (loadingState) {
+      Loading() => SliverList.builder(
+        itemCount: 12,
+        itemBuilder: (context, index) => const MsgFeedTopSkeleton(),
+      ),
+      Success(:final response) => SliverMainAxisGroup(
+        slivers: [
+          if (_controller.card != null) ...[
+            _buildCard(_controller.card!),
+            SliverToBoxAdapter(
+              child: Divider(
+                height: 1,
+                color: Colors.grey.withValues(alpha: 0.1),
               ),
-            ],
-            SliverList.separated(
-              itemCount: response!.length,
-              itemBuilder: (context, index) {
-                if (index == response.length - 1) {
-                  _controller.onLoadMore();
-                }
-                return _buildItem(theme, response[index]);
-              },
-              separatorBuilder: (context, index) => divider,
             ),
           ],
-        );
-      case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _controller.onReload,
-        );
-    }
+          SliverList.separated(
+            itemCount: response!.length,
+            itemBuilder: (context, index) {
+              if (index == response.length - 1) {
+                _controller.onLoadMore();
+              }
+              return _buildItem(theme, response[index]);
+            },
+            separatorBuilder: (context, index) => divider,
+          ),
+        ],
+      ),
+      Error(:final errMsg) => HttpError(
+        errMsg: errMsg,
+        onReload: _controller.onReload,
+      ),
+    };
   }
 
   Widget _buildCard(MsgLikeDetailCard card) {

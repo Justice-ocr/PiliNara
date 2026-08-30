@@ -4,15 +4,11 @@ import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/flutter/popup_menu.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
-import 'package:PiliPlus/common/widgets/gesture/horizontal_drag_gesture_recognizer.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
-import 'package:PiliPlus/common/widgets/scaffold/mini_scaffold.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/scroll_physics.dart'
-    show tabBarScrollPhysics;
-import 'package:PiliPlus/common/widgets/sliver/sliver_to_box_adapter.dart';
+import 'package:PiliPlus/common/widgets/scroll_physics.dart';
+import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models/common/image_preview_type.dart';
-import 'package:PiliPlus/models/dynamics/article_content_model.dart' show Pic;
+import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models/dynamics/result.dart' show DynamicStat;
 import 'package:PiliPlus/pages/article/controller.dart';
 import 'package:PiliPlus/pages/article/widgets/article_ops.dart';
@@ -32,11 +28,11 @@ import 'package:PiliPlus/utils/share_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:html/parser.dart' as parser;
-import 'package:material_ui/material_ui.dart';
 
 class ArticlePage extends StatefulWidget {
   const ArticlePage({
@@ -72,48 +68,65 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
   };
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (scrollController.hasClients) {
+        controller.showTitle.value =
+            scrollController.positions.last.pixels >= 45;
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return fabAnimWrapper(
-      child: SimpleScaffold(
-        appBar: _buildAppBar(),
-        body: Padding(
-          padding: .only(left: padding.left, right: padding.right),
-          child: _buildPage(),
+    final theme = Theme.of(context);
+    return Scaffold(
+      backgroundColor: WindowsVideoTabService.enabled
+          ? context.windowsNeo.background
+          : null,
+      resizeToAvoidBottomInset: false,
+      appBar: _buildAppBar(),
+      body: Padding(
+        padding: EdgeInsets.only(
+          left: WindowsVideoTabService.enabled ? 0 : padding.left,
+          right: WindowsVideoTabService.enabled ? 0 : padding.right,
         ),
-        fab: SlideTransition(
-          position: fabAnimation,
-          child: _buildBottom(),
-        ),
+        child: _buildPage(theme),
+      ),
+      floatingActionButtonLocation: floatingActionButtonLocation,
+      floatingActionButton: SlideTransition(
+        position: fabAnimation,
+        child: _buildBottom(theme),
       ),
     );
   }
 
-  Widget _buildPage() {
-    double padding = max(maxWidth / 2 - Grid.smallCardWidth, 0);
+  Widget _buildPage(ThemeData theme) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    double padding = isWindowsNeo
+        ? max((maxWidth - 820) / 2, 0)
+        : max(maxWidth / 2 - Grid.smallCardWidth, 0);
     if (isPortrait) {
       return Padding(
-        padding: .symmetric(horizontal: padding),
-        child: SelectionArea(
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              _buildContent(
-                maxWidth - this.padding.horizontal - 2 * padding - 24,
+        padding: EdgeInsets.symmetric(horizontal: padding),
+        child: CustomScrollView(
+          controller: scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            _buildContent(
+              theme,
+              maxWidth - this.padding.horizontal - 2 * padding - 24,
+            ),
+            SliverToBoxAdapter(
+              child: Divider(
+                thickness: 8,
+                color: theme.dividerColor.withValues(alpha: 0.05),
               ),
-              SelectionContainer.disabled(
-                child: SliverToBoxAdapter(
-                  child: Divider(
-                    thickness: 8,
-                    color: theme.dividerColor.withValues(alpha: 0.05),
-                  ),
-                ),
-              ),
-              SelectionContainer.disabled(child: buildReplyHeader()),
-              SelectionContainer.disabled(
-                child: Obx(() => replyList(controller.loadingState.value)),
-              ),
-            ],
-          ),
+            ),
+            buildReplyHeader(theme),
+            Obx(() => replyList(theme, controller.loadingState.value)),
+          ],
         ),
       );
     }
@@ -123,29 +136,28 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
     final leftWidth = maxWidth * flex / (flex + flex1);
     padding = isWindowsNeo ? max((leftWidth - 820) / 2, 20) : padding / 4;
     return Row(
-      crossAxisAlignment: .start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           flex: flex,
-          child: SelectionArea(
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverPadding(
-                  padding: .only(
-                    left: padding,
-                    bottom: this.padding.bottom + 100,
-                  ),
-                  sliver: _buildContent(
-                    (maxWidth - this.padding.horizontal) *
-                            flex /
-                            (flex + flex1) -
-                        padding -
-                        32,
-                  ),
+          child: CustomScrollView(
+            controller: scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.only(
+                  left: padding,
+                  right: isWindowsNeo ? padding : 0,
+                  bottom: this.padding.bottom + 100,
                 ),
-              ],
-            ),
+                sliver: _buildContent(
+                  theme,
+                  (maxWidth - this.padding.horizontal) * flex / (flex + flex1) -
+                      padding -
+                      32,
+                ),
+              ),
+            ],
           ),
         ),
         VerticalDivider(
@@ -157,17 +169,27 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
         ),
         Expanded(
           flex: flex1,
-          child: Padding(
-            padding: .only(right: padding),
-            child: MiniScaffold(
-              body: refreshIndicator(
-                onRefresh: controller.onRefresh,
-                child: CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    buildReplyHeader(),
-                    Obx(() => replyList(controller.loadingState.value)),
-                  ],
+          child: ColoredBox(
+            color: isWindowsNeo
+                ? context.windowsNeo.surface
+                : Colors.transparent,
+            child: Padding(
+              padding: EdgeInsets.only(right: isWindowsNeo ? 0 : padding),
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                resizeToAvoidBottomInset: false,
+                body: refreshIndicator(
+                  onRefresh: controller.onRefresh,
+                  child: CustomScrollView(
+                    controller: scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      buildReplyHeader(theme),
+                      Obx(
+                        () => replyList(theme, controller.loadingState.value),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -177,12 +199,12 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
     );
   }
 
-  Widget _buildContent(double maxWidth) => SliverPadding(
-    padding: const .symmetric(horizontal: 12, vertical: 8),
+  Widget _buildContent(ThemeData theme, double maxWidth) => SliverPadding(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     sliver: Obx(
       () {
         if (controller.isLoaded.value) {
-          final Widget content;
+          late Widget content;
           if (controller.opus != null) {
             // if (kDebugMode) debugPrint('json page');
             content = OpusContent(
@@ -191,9 +213,9 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
               maxWidth: maxWidth,
               opusId: controller.id,
             );
-          } else if (controller.opusData?.modules.moduleBlocked
-              case final moduleBlocked?) {
+          } else if (controller.opusData?.modules.moduleBlocked != null) {
             // if (kDebugMode) debugPrint('moduleBlocked');
+            final moduleBlocked = controller.opusData!.modules.moduleBlocked!;
             content = SliverToBoxAdapter(
               child: moduleBlockedItem(context, theme, moduleBlocked),
             );
@@ -225,36 +247,196 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
                     maxWidth: maxWidth,
                   );
                 },
-                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 10),
               );
             }
           } else {
             content = const SliverToBoxAdapter(child: Text('NULL'));
           }
 
+          int? pubTime =
+              controller.opusData?.modules.moduleAuthor?.pubTs ??
+              controller.articleData?.publishTime;
           return SliverMainAxisGroup(
             slivers: [
-              if (controller.type != 'read')
-                if (controller.opusData?.modules.moduleTop?.display?.album?.pics
-                    case final pics? when pics.isNotEmpty)
-                  SliverToBoxAdapter(child: _buildImageGallery(pics)),
-              if (controller.summary.title != null)
-                SliverToBoxWithVisibilityAdapter(
-                  onVisibilityChanged: controller.showTitle.call,
-                  child: Text(
-                    controller.summary.title!,
-                    style: const TextStyle(fontSize: 17, fontWeight: .bold),
+              if (controller.type != 'read' &&
+                  controller
+                          .opusData
+                          ?.modules
+                          .moduleTop
+                          ?.display
+                          ?.album
+                          ?.pics
+                          ?.isNotEmpty ==
+                      true)
+                SliverToBoxAdapter(
+                  child: Builder(
+                    builder: (context) {
+                      final pics = controller
+                          .opusData!
+                          .modules
+                          .moduleTop!
+                          .display!
+                          .album!
+                          .pics!;
+                      final length = pics.length;
+                      final first = pics.first;
+                      double height;
+                      if (first.height != null && first.width != null) {
+                        final ratio = first.height! / first.width!;
+                        height = min(maxWidth * ratio, maxHeight * 0.55);
+                      } else {
+                        height = maxHeight * 0.55;
+                      }
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            height: height,
+                            width: maxWidth,
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: PageView.builder(
+                              physics: clampingScrollPhysics,
+                              onPageChanged: (value) =>
+                                  controller.topIndex.value = value,
+                              itemCount: length,
+                              itemBuilder: (context, index) {
+                                final pic = pics[index];
+                                int? memCacheWidth, memCacheHeight;
+                                if (pic.isLongPic ?? false) {
+                                  memCacheWidth = maxWidth.cacheSize(context);
+                                } else if (pic.width != null &&
+                                    pic.height != null) {
+                                  if (pic.width! > pic.height!) {
+                                    memCacheWidth = maxWidth.cacheSize(context);
+                                  } else {
+                                    memCacheHeight = height.cacheSize(context);
+                                  }
+                                }
+                                return GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => PageUtils.imageView(
+                                    quality: 60,
+                                    imgList: pics
+                                        .map((e) => SourceModel(url: e.url!))
+                                        .toList(),
+                                    initialPage: index,
+                                  ),
+                                  child: Hero(
+                                    tag: pic.url!,
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      alignment: Alignment.center,
+                                      children: [
+                                        CachedNetworkImage(
+                                          height: height,
+                                          width: maxWidth,
+                                          memCacheWidth: memCacheWidth,
+                                          memCacheHeight: memCacheHeight,
+                                          fit: pic.isLongPic == true
+                                              ? BoxFit.cover
+                                              : null,
+                                          imageUrl: ImageUtils.thumbnailUrl(
+                                            pic.url,
+                                            60,
+                                          ),
+                                          fadeInDuration: const Duration(
+                                            milliseconds: 120,
+                                          ),
+                                          fadeOutDuration: const Duration(
+                                            milliseconds: 120,
+                                          ),
+                                          placeholder: (_, _) =>
+                                              const SizedBox.shrink(),
+                                        ),
+                                        if (pic.isLongPic == true)
+                                          const PBadge(
+                                            right: 12,
+                                            bottom: 12,
+                                            text: '长图',
+                                            type: .primary,
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          Obx(
+                            () => PBadge(
+                              top: 12,
+                              right: 12,
+                              type: PBadgeType.gray,
+                              text: '${controller.topIndex.value + 1}/$length',
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
-              SliverToBoxAdapter(child: _buildAuthor()),
+              if (controller.summary.title != null)
+                SliverToBoxAdapter(
+                  child: Text(
+                    controller.summary.title!,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: GestureDetector(
+                    onTap: () => PageUtils.toDupNamed(
+                      '/member?mid=${controller.summary.author?.mid}',
+                    ),
+                    child: Row(
+                      children: [
+                        NetworkImgLayer(
+                          width: 40,
+                          height: 40,
+                          type: ImageType.avatar,
+                          src: controller.summary.author?.face,
+                        ),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                controller.summary.author?.name ?? '',
+                                style: TextStyle(
+                                  fontSize:
+                                      theme.textTheme.titleSmall!.fontSize,
+                                ),
+                              ),
+                              if (pubTime != null)
+                                Text(
+                                  DateFormatUtils.format(pubTime),
+                                  style: TextStyle(
+                                    color: theme.colorScheme.outline,
+                                    fontSize:
+                                        theme.textTheme.labelSmall!.fontSize,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               if (controller.type != 'read' &&
                   controller.opusData?.modules.moduleCollection != null)
                 SliverToBoxAdapter(
-                  child: SelectionContainer.disabled(
-                    child: opusCollection(
-                      theme,
-                      controller.opusData!.modules.moduleCollection!,
-                    ),
+                  child: opusCollection(
+                    theme,
+                    controller.opusData!.modules.moduleCollection!,
                   ),
                 ),
               content,
@@ -270,7 +452,7 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
   PreferredSizeWidget _buildAppBar() => AppBar(
     title: Obx(() {
       if (controller.isLoaded.value && controller.showTitle.value) {
-        return Text(controller.summary.title!);
+        return Text(controller.summary.title ?? '');
       }
       return const SizedBox.shrink();
     }),
@@ -305,10 +487,10 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
           PopupMenuItem(
             onTap: () => ShareUtils.shareText(controller.url),
             child: const Row(
-              spacing: 10,
-              mainAxisSize: .min,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.share_outlined, size: 19),
+                SizedBox(width: 10),
                 Text('分享'),
               ],
             ),
@@ -316,10 +498,10 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
           PopupMenuItem(
             onTap: () => Utils.copyText(controller.url),
             child: const Row(
-              spacing: 10,
-              mainAxisSize: .min,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.copy_rounded, size: 19),
+                SizedBox(width: 10),
                 Text('复制链接'),
               ],
             ),
@@ -355,10 +537,10 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
                 }
               },
               child: const Row(
-                spacing: 10,
-                mainAxisSize: .min,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.forward_to_inbox, size: 19),
+                  SizedBox(width: 10),
                   Text('分享至消息'),
                 ],
               ),
@@ -369,7 +551,7 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
     ],
   );
 
-  Widget _buildBottom() {
+  Widget _buildBottom(ThemeData theme) {
     if (!controller.showDynActionBar) {
       return fabButton;
     }
@@ -378,7 +560,7 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
     late final outline = theme.colorScheme.outline;
     late final btnStyle = TextButton.styleFrom(
       tapTargetSize: .padded,
-      padding: const .symmetric(horizontal: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 15),
       foregroundColor: outline,
     );
 
@@ -412,7 +594,7 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
         final stats = controller.stats.value;
 
         Widget btn = Padding(
-          padding: .only(
+          padding: EdgeInsets.only(
             right: kFloatingActionButtonMargin,
             bottom:
                 kFloatingActionButtonMargin +
@@ -422,12 +604,15 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
         );
 
         if (stats == null) {
-          return Align(alignment: .bottomRight, child: btn);
+          return Align(
+            alignment: Alignment.bottomRight,
+            child: btn,
+          );
         }
 
         return Column(
-          mainAxisSize: .min,
-          crossAxisAlignment: .end,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             btn,
             Container(
@@ -437,11 +622,13 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
                     : theme.colorScheme.surface,
                 border: Border(
                   top: BorderSide(
-                    color: theme.colorScheme.outline.withValues(alpha: 0.08),
+                    color: WindowsVideoTabService.enabled
+                        ? context.windowsNeo.border
+                        : theme.colorScheme.outline.withValues(alpha: 0.08),
                   ),
                 ),
               ),
-              padding: .only(bottom: padding.bottom),
+              padding: EdgeInsets.only(bottom: padding.bottom),
               child: Row(
                 children: [
                   Expanded(
@@ -520,143 +707,6 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage> {
           ],
         );
       }),
-    );
-  }
-
-  Widget? _buildImageGallery(List<Pic> pics) {
-    final length = pics.length;
-    final first = pics.first;
-    double height;
-    if (first.height != null && first.width != null) {
-      final ratio = first.height! / first.width!;
-      height = min(maxWidth * ratio, maxHeight * 0.55);
-    } else {
-      height = maxHeight * 0.55;
-    }
-    return Stack(
-      clipBehavior: .none,
-      children: [
-        Container(
-          height: height,
-          width: maxWidth,
-          margin: const .only(bottom: 10),
-          child: PageView.builder(
-            physics: tabBarScrollPhysics,
-            horizontalDragGestureRecognizer:
-                CustomHorizontalDragGestureRecognizer.new,
-            onPageChanged: controller.topIndex.call,
-            itemCount: length,
-            itemBuilder: (context, index) {
-              final pic = pics[index];
-              int? memCacheWidth, memCacheHeight;
-              if (pic.isLongPic ?? false) {
-                memCacheWidth = maxWidth.cacheSize(context);
-              } else if (pic.width != null && pic.height != null) {
-                if (pic.width! > pic.height!) {
-                  memCacheWidth = maxWidth.cacheSize(
-                    context,
-                  );
-                } else {
-                  memCacheHeight = height.cacheSize(
-                    context,
-                  );
-                }
-              }
-              return GestureDetector(
-                behavior: .opaque,
-                onTap: () => PageUtils.imageView(
-                  quality: 60,
-                  imgList: pics.map((e) => SourceModel(url: e.url!)).toList(),
-                  initialPage: index,
-                ),
-                child: Hero(
-                  tag: pic.url!,
-                  child: Stack(
-                    clipBehavior: .none,
-                    alignment: Alignment.center,
-                    children: [
-                      CachedNetworkImage(
-                        height: height,
-                        width: maxWidth,
-                        memCacheWidth: memCacheWidth,
-                        memCacheHeight: memCacheHeight,
-                        fit: pic.isLongPic == true ? BoxFit.cover : null,
-                        imageUrl: ImageUtils.thumbnailUrl(pic.url, 60),
-                        fadeInDuration: const Duration(milliseconds: 120),
-                        fadeOutDuration: const Duration(milliseconds: 120),
-                        placeholder: (_, _) => const SizedBox.shrink(),
-                      ),
-                      if (pic.isLongPic == true)
-                        const PBadge(
-                          right: 12,
-                          bottom: 12,
-                          text: '长图',
-                          type: .primary,
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        Obx(
-          () => PBadge(
-            top: 12,
-            right: 12,
-            type: .gray,
-            text: '${controller.topIndex.value + 1}/$length',
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget? _buildAuthor() {
-    final pubTime =
-        controller.opusData?.modules.moduleAuthor?.pubTs ??
-        controller.articleData?.publishTime;
-    return Padding(
-      padding: const .symmetric(vertical: 10),
-      child: GestureDetector(
-        onTap: () => Get.toNamed(
-          '/member?mid=${controller.summary.author?.mid}',
-        ),
-        child: SelectionContainer.disabled(
-          child: Row(
-            spacing: 10,
-            children: [
-              NetworkImgLayer(
-                width: 40,
-                height: 40,
-                type: .avatar,
-                src: controller.summary.author?.face,
-              ),
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: .start,
-                  children: [
-                    Text(
-                      controller.summary.author?.name ?? '',
-                      style: TextStyle(
-                        fontSize: theme.textTheme.titleSmall!.fontSize,
-                      ),
-                    ),
-                    if (pubTime != null)
-                      Text(
-                        DateFormatUtils.format(pubTime),
-                        style: TextStyle(
-                          color: theme.colorScheme.outline,
-                          fontSize: theme.textTheme.labelSmall!.fontSize,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

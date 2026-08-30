@@ -1,12 +1,13 @@
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
+import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
+import 'package:PiliPlus/models/common/member/search_type.dart';
 import 'package:PiliPlus/pages/member_search/child/view.dart';
 import 'package:PiliPlus/pages/member_search/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class MemberSearchPage extends StatefulWidget {
   const MemberSearchPage({super.key, this.parameters});
@@ -42,7 +43,10 @@ class _MemberSearchPageState extends State<MemberSearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         actions: [
           IconButton(
@@ -116,11 +120,11 @@ class _MemberSearchPageState extends State<MemberSearchPage> {
                         children: [
                           MemberSearchChildPage(
                             controller: _controller.arcCtr,
-                            searchType: .archive,
+                            searchType: MemberSearchType.archive,
                           ),
                           MemberSearchChildPage(
                             controller: _controller.dynCtr,
-                            searchType: .dynamic,
+                            searchType: MemberSearchType.dynamic,
                           ),
                         ],
                       ),

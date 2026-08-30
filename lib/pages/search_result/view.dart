@@ -1,5 +1,4 @@
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
+import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/models/common/search/search_type.dart';
 import 'package:PiliPlus/pages/search/controller.dart';
@@ -9,8 +8,14 @@ import 'package:PiliPlus/pages/search_panel/pgc/view.dart';
 import 'package:PiliPlus/pages/search_panel/user/view.dart';
 import 'package:PiliPlus/pages/search_panel/video/view.dart';
 import 'package:PiliPlus/pages/search_result/controller.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_section_tabs.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class SearchResultPage extends StatefulWidget {
   const SearchResultPage({super.key, this.arguments});
@@ -73,7 +78,31 @@ class _SearchResultPageState extends State<SearchResultPage>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SimpleScaffold(
+    if (WindowsVideoTabService.enabled) {
+      return WindowsNeoPage(
+        title: '搜索结果',
+        subtitle: _searchResultController.keyword,
+        leading: Icon(
+          Icons.manage_search,
+          color: context.windowsNeo.accent,
+        ),
+        actions: [
+          IconButton(
+            tooltip: '修改搜索',
+            onPressed: _openSearch,
+            icon: const Icon(Icons.edit_outlined),
+          ),
+        ],
+        stageMode: WindowsNeoStageMode.browse,
+        stageScene: WindowsNeoStageScene.discover,
+        stageState: _labelForType(SearchType.values[_tabController.index]),
+        stageIndex: _tabController.index,
+        commandBar: _buildTabBar(theme, desktop: true),
+        child: _buildTabView(),
+      );
+    }
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         shape: Border(
           bottom: BorderSide(

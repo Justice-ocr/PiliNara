@@ -8,8 +8,8 @@ import 'package:PiliPlus/plugin/pl_player/view/view.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
-import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class BottomControl extends StatelessWidget {
   const BottomControl({
@@ -33,22 +33,26 @@ class BottomControl extends StatelessWidget {
     feedBack();
     controller
       ..onDesktopProgressDragStart(duration.timeStamp)
-      ..position.value = duration.seconds
-      ..isSeeking.value = true;
+      ..onChangedSliderStart(duration.timeStamp);
   }
 
   void onDragUpdate(ThumbDragDetails duration) {
-    controller.updateDesktopProgressPreviewFromDrag(duration.timeStamp);
-    if (!controller.isFileSource && controller.showSeekPreview) {
-      controller.updatePreviewIndex(duration.seconds);
+    if (Platform.isWindows) {
+      controller.updateDesktopProgressPreviewFromDrag(duration.timeStamp);
+    } else if (!controller.isFileSource && controller.showSeekPreview) {
+      controller.updatePreviewIndex(duration.timeStamp.inSeconds);
     }
-    controller.position.value = duration.seconds;
+    controller.onUpdatedSliderProgress(duration.timeStamp);
   }
 
-  void onSeek(int milliseconds) {
+  void onSeek(Duration duration) {
+    if (!Platform.isWindows && controller.showSeekPreview) {
+      controller.showPreview.value = false;
+    }
     controller
-      ..onSeekEnd()
-      ..seekTo(Duration(milliseconds: milliseconds), isSeek: false);
+      ..onChangedSliderEnd()
+      ..onChangedSlider(duration.inSeconds)
+      ..seekTo(Duration(seconds: duration.inSeconds), isSeek: false);
   }
 
   void onHoverStart(ThumbDragDetails duration) {
@@ -62,10 +66,8 @@ class BottomControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme.of(context);
-    final isDesktop = PlatformUtils.isDesktop;
-    final primary = colorScheme.isLight
-        ? colorScheme.inversePrimary
-        : colorScheme.primary;
+    final primary =
+        colorScheme.isLight ? colorScheme.inversePrimary : colorScheme.primary;
     final thumbGlowColor = primary.withAlpha(80);
     final bufferedBarColor = primary.withValues(alpha: 0.4);
 
@@ -83,48 +85,40 @@ class BottomControl extends StatelessWidget {
                   clipBehavior: Clip.none,
                   alignment: Alignment.bottomCenter,
                   children: [
-                    Obx(
-                      () => ProgressBar(
-                        progress: controller.position.value,
-                        buffered: controller.buffered.value,
-                        total: controller.duration.value,
+                    Obx(() {
+                      final int value = controller.sliderPositionSeconds.value;
+                      final duration = controller.duration.value;
+                      return ProgressBar(
+                        progress: Duration(seconds: value),
+                        buffered: Duration(
+                          seconds: controller.bufferedSeconds.value,
+                        ),
+                        total: duration,
                         progressBarColor: primary,
                         baseBarColor: const Color(0x33FFFFFF),
                         bufferedBarColor: bufferedBarColor,
                         thumbColor: primary,
                         thumbGlowColor: thumbGlowColor,
-                        barHeight: desktopProgressBarHeight,
-                        thumbRadius: desktopProgressThumbRadius,
+                        barHeight: 3.5,
+                        thumbRadius: 7,
                         thumbGlowRadius: 25,
-                        minHeight: isDesktop
-                            ? desktopProgressInteractiveHeight
-                            : null,
                         onDragStart: onDragStart,
                         onDragUpdate: onDragUpdate,
                         onSeek: onSeek,
-                        onHoverStart: isDesktop
-                            ? (details) =>
-                                  controller.onDesktopProgressHoverStart(
-                                    details.timeStamp,
-                                  )
-                            : null,
-                        onHoverUpdate: isDesktop
-                            ? (details) =>
-                                  controller.onDesktopProgressHoverUpdate(
-                                    details.timeStamp,
-                                  )
-                            : null,
-                        onHoverEnd: isDesktop
+                        onHoverStart: Platform.isWindows ? onHoverStart : null,
+                        onHoverUpdate:
+                            Platform.isWindows ? onHoverUpdate : null,
+                        onHoverEnd: Platform.isWindows
                             ? controller.onDesktopProgressHoverEnd
                             : null,
-                      ),
-                    ),
+                      );
+                    }),
                     if (controller.enableBlock &&
                         videoDetailController.segmentProgressList.isNotEmpty)
                       Positioned(
                         left: 0,
                         right: 0,
-                        bottom: isDesktop ? desktopProgressHoverPadding : 5.25,
+                        bottom: 5.25,
                         child: SegmentProgressBar(
                           segments: videoDetailController.segmentProgressList,
                         ),
@@ -136,64 +130,55 @@ class BottomControl extends StatelessWidget {
                       Positioned(
                         left: 0,
                         right: 0,
-                        bottom: isDesktop ? desktopProgressHoverPadding : 5.25,
+                        bottom: 5.25,
                         child: ViewPointDividerBar(
                           segments: videoDetailController.viewPointList,
-                          progress: controller.duration.value > 0
-                              ? controller.position.value /
-                                    controller.duration.value
+                          progress: controller.duration.value.inSeconds > 0
+                              ? controller.sliderPositionSeconds.value /
+                                  controller.duration.value.inSeconds
                               : 0.0,
                         ),
                       ),
-                      if (!isPipMode &&
+                    if (!isPipMode &&
                         controller.showViewPoints &&
                         videoDetailController.viewPointList.isNotEmpty &&
                         videoDetailController.showVP.value)
-                      if (isDesktop)
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: desktopProgressBarTopInset,
-                          child: ViewPointSegmentProgressBar(
-                            segments: videoDetailController.viewPointList,
-                            onSeek: (position) =>
-                                controller.seekTo(position, isSeek: false),
-                          ),
-                        )
-                      else
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8.75),
-                          child: ViewPointSegmentProgressBar(
-                            segments: videoDetailController.viewPointList,
-                            onSeek: null,
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.75),
+                        child: ViewPointSegmentProgressBar(
+                          segments: videoDetailController.viewPointList,
+                          onSeek: PlatformUtils.isDesktop
+                              ? (position) =>
+                                  controller.seekTo(position, isSeek: false)
+                              : null,
                         ),
+                      ),
                     if (!isPipMode &&
                         videoDetailController.showDmTrendChart.value)
                       if (videoDetailController.dmTrend.value?.dataOrNull
                           case final list?)
-                        buildDmChart(
-                          primary,
-                          list,
-                          videoDetailController,
-                          isDesktop ? desktopProgressDmChartOffset : 4.5,
-                          isDesktop,
-                        ),
-                    if (isDesktop)
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: Obx(() {
-                            final hoverValue =
-                                controller.showDesktopProgressFeedback.value
-                                ? controller.desktopProgressHoverValue.value
-                                : null;
-                            return CustomPaint(
-                              painter: _DesktopProgressHoverPainter(
-                                hoverValue: hoverValue,
-                                color: primary,
-                              ),
-                            );
-                          }),
+                        buildDmChart(primary, list, videoDetailController, 4.5),
+                    if (Platform.isWindows)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: SizedBox(
+                          height: 14,
+                          child: IgnorePointer(
+                            child: Obx(() {
+                              final hoverValue = controller
+                                      .showDesktopProgressFeedback.value
+                                  ? controller.desktopProgressHoverValue.value
+                                  : null;
+                              return CustomPaint(
+                                painter: _DesktopProgressHoverPainter(
+                                  hoverValue: hoverValue,
+                                  color: primary,
+                                ),
+                              );
+                            }),
+                          ),
                         ),
                       ),
                   ],
@@ -214,28 +199,27 @@ class _DesktopProgressHoverPainter extends CustomPainter {
     required this.color,
   });
 
+  static const double _barHeight = 3.5;
+
   final double? hoverValue;
   final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
     final value = hoverValue;
-    if (value == null) {
-      return;
-    }
+    if (value == null) return;
 
-    const capRadius = desktopProgressBarHeight / 2;
-    final availableWidth = size.width - desktopProgressBarHeight;
+    const capRadius = _barHeight / 2;
+    final availableWidth = size.width - _barHeight;
     final centerY = size.height / 2;
     final hoverDx = value * availableWidth + capRadius;
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
 
-    const triangleHalfWidth = 4.5;
-    const triangleHeight = 5.0;
+    const triangleHalfWidth = 6.0;
+    const triangleHeight = 8.0;
     const gap = 4.0;
-
     canvas
       ..drawPath(
         Path()
@@ -269,7 +253,6 @@ class _DesktopProgressHoverPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DesktopProgressHoverPainter oldDelegate) {
-    return oldDelegate.hoverValue != hoverValue ||
-        oldDelegate.color != color;
+    return oldDelegate.hoverValue != hoverValue || oldDelegate.color != color;
   }
 }

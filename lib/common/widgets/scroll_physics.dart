@@ -27,6 +27,7 @@ SpringDescription _customSpringDescription() {
 }
 
 const tabBarScrollPhysics = _TabBarViewScrollPhysics();
+const clampingScrollPhysics = tabBarScrollPhysics;
 
 class _TabBarViewScrollPhysics extends ClampingScrollPhysics {
   const _TabBarViewScrollPhysics({super.parent});

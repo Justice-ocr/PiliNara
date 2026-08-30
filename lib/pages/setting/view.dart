@@ -1,11 +1,17 @@
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/http/login.dart';
 import 'package:PiliPlus/models/common/setting_type.dart';
 import 'package:PiliPlus/pages/about/view.dart';
 import 'package:PiliPlus/pages/login/controller.dart';
-import 'package:PiliPlus/pages/setting/common_setting.dart';
+import 'package:PiliPlus/pages/setting/block_setting.dart';
+import 'package:PiliPlus/pages/setting/dynamics_setting.dart';
+import 'package:PiliPlus/pages/setting/extra_setting.dart';
+import 'package:PiliPlus/pages/setting/play_setting.dart';
+import 'package:PiliPlus/pages/setting/privacy_setting.dart';
+import 'package:PiliPlus/pages/setting/recommend_setting.dart';
+import 'package:PiliPlus/pages/setting/style_setting.dart';
+import 'package:PiliPlus/pages/setting/video_setting.dart';
 import 'package:PiliPlus/pages/setting/widgets/multi_select_dialog.dart';
 import 'package:PiliPlus/pages/settings_search/view.dart';
 import 'package:PiliPlus/pages/webdav/view.dart';
@@ -13,11 +19,12 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
-import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:material_ui/material_ui.dart' hide ListTile;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart' hide ListTile;
 
 class _SettingsModel {
   final SettingType type;
@@ -47,7 +54,6 @@ class _SettingPageState extends State<SettingPage> {
   late SettingType _type = SettingType.privacySetting;
   final RxBool _noAccount = Accounts.account.isEmpty.obs;
   late bool _isPortrait;
-  late ThemeData theme;
 
   static const List<_SettingsModel> _items = [
     _SettingsModel(
@@ -101,16 +107,17 @@ class _SettingPageState extends State<SettingPage> {
   ];
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    theme = Theme.of(context);
-    _isPortrait = MediaQuery.sizeOf(context).isPortrait;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return SimpleScaffold(
+    final theme = Theme.of(context);
+    final size = MediaQuery.sizeOf(context);
+    _isPortrait = WindowsVideoTabService.enabled
+        ? size.width < 960
+        : size.isPortrait;
+    if (WindowsVideoTabService.enabled && !_isPortrait) {
+      return _buildWindowsNeo(theme);
+    }
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: _isPortrait ? const Text('设置') : Text(_type.title),
       ),
@@ -130,22 +137,7 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                   Expanded(
                     flex: 6,
-                    child: switch (_type) {
-                      .privacySetting ||
-                      .recommendSetting ||
-                      .dynamicsSetting ||
-                      .videoSetting ||
-                      .playSetting ||
-                      .styleSetting ||
-                      .extraSetting => CommonSetting(
-                        settingType: _type,
-                        showAppBar: false,
-                      ),
-                      .webdavSetting => const WebDavSettingPage(
-                        showAppBar: false,
-                      ),
-                      .about => const AboutPage(showAppBar: false),
-                    },
+                    child: _buildSettingPage(_type, showAppBar: false),
                   ),
                 ],
               ),
@@ -433,18 +425,8 @@ class _SettingPageState extends State<SettingPage> {
 
   void _toPage(SettingType type) {
     if (_isPortrait) {
-      Get.to(
-        () => switch (type) {
-          .privacySetting ||
-          .recommendSetting ||
-          .dynamicsSetting ||
-          .videoSetting ||
-          .playSetting ||
-          .styleSetting ||
-          .extraSetting => CommonSetting(settingType: type),
-          .webdavSetting => const WebDavSettingPage(),
-          .about => const AboutPage(),
-        },
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => _buildSettingPage(type)),
       );
     } else {
       _type = type;
@@ -523,21 +505,6 @@ class _SettingPageState extends State<SettingPage> {
     );
   }
 
-  Future<void> _removeAccounts(Set<LoginAccount> accounts) async {
-    await Accounts.deleteAll(accounts);
-    if (mounted) _noAccount.value = Accounts.account.isEmpty;
-  }
-
-  static Future<LoginAccount?> _logoutWrapper(LoginAccount account) async {
-    try {
-      final res = await LoginHttp.logout(account);
-      return res.isSuccess ? account : null;
-    } catch (e, s) {
-      Utils.reportError(e, s);
-      return null;
-    }
-  }
-
   Future<void> _logoutDialog(BuildContext context) async {
     final result = await showDialog<Set<LoginAccount>>(
       context: context,
@@ -550,27 +517,34 @@ class _SettingPageState extends State<SettingPage> {
       ),
     );
     if (!context.mounted || result == null || result.isEmpty) return;
+    Future<void> logout() {
+      _noAccount.value = result.length == Accounts.account.length;
+      return Accounts.deleteAll(result);
+    }
 
     showDialog(
       context: context,
       builder: (context) {
+        final theme = Theme.of(context);
         return AlertDialog(
           title: const Text('提示'),
           content: Text(
-            "确认要退出以下账号登录吗\n\n${result.map((i) => i.mid).join('\n')}",
+            "确认要退出以下账号登录吗\n\n${result.map((i) => i.mid.toString()).join('\n')}",
           ),
           actions: [
             TextButton(
               onPressed: Get.back,
               child: Text(
                 '点错了',
-                style: TextStyle(color: theme.colorScheme.outline),
+                style: TextStyle(
+                  color: theme.colorScheme.outline,
+                ),
               ),
             ),
             TextButton(
               onPressed: () {
-                _removeAccounts(result);
                 Get.back();
+                logout();
               },
               child: Text(
                 '仅登出',
@@ -579,21 +553,17 @@ class _SettingPageState extends State<SettingPage> {
             ),
             TextButton(
               onPressed: () async {
+                final account = Accounts.main;
+                if (account is! LoginAccount) return;
                 SmartDialog.showLoading();
-                final res = await Future.wait(result.map(_logoutWrapper));
-                SmartDialog.dismiss();
-                final logoutAccounts = res.nonNulls.toSet();
-                if (logoutAccounts.isEmpty) {
-                  SmartDialog.showToast('所选账号均退出登录失败');
-                } else {
-                  _removeAccounts(logoutAccounts);
+                final res = await LoginHttp.logout(account);
+                if (res.isSuccess) {
+                  SmartDialog.dismiss();
+                  logout();
                   Get.back();
-                  if (logoutAccounts.length != result.length) {
-                    result.removeWhere(logoutAccounts.contains);
-                    SmartDialog.showToast(
-                      '账号 ${result.map((i) => i.mid).join(",")} 退出登录失败',
-                    );
-                  }
+                } else {
+                  SmartDialog.dismiss();
+                  res.toast();
                 }
               },
               child: const Text('确认'),
@@ -611,8 +581,7 @@ class _SettingPageState extends State<SettingPage> {
       bottom: 8,
     ),
     child: Material(
-      color: theme.colorScheme.onInverseSurface,
-      borderRadius: const BorderRadius.all(Radius.circular(50)),
+      type: MaterialType.transparency,
       child: InkWell(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
@@ -620,9 +589,13 @@ class _SettingPageState extends State<SettingPage> {
           ),
         ),
         borderRadius: const BorderRadius.all(Radius.circular(50)),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          child: Center(
+        child: Ink(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.all(Radius.circular(50)),
+            color: theme.colorScheme.onInverseSurface,
+          ),
+          child: const Center(
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [

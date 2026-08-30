@@ -10,10 +10,6 @@ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/image_viewer/hero.dart';
 import 'package:PiliPlus/common/widgets/progress_bar/audio_video_progress_bar.dart';
 import 'package:PiliPlus/common/widgets/progress_bar/segment_progress_bar.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/scroll_physics.dart'
-    show platformClampingPhysics;
-import 'package:PiliPlus/common/widgets/selection_text.dart';
 import 'package:PiliPlus/grpc/bilibili/app/listener/v1.pb.dart';
 import 'package:PiliPlus/models/common/image_preview_type.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
@@ -36,7 +32,6 @@ import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
-import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -45,10 +40,10 @@ import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:material_ui/material_ui.dart' hide DraggableScrollableSheet;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart' hide DraggableScrollableSheet;
 
 class AudioPage extends StatefulWidget {
   const AudioPage({super.key});
@@ -104,12 +99,11 @@ class _AudioPageState extends State<AudioPage> {
         callOnClose: false,
         immediate: true,
         releaseSavedOwner: true,
-        // 小窗 owner 的视频页仍在栈内时只暂停不 dispose，避免破坏其计数
+        // The originating video page may still be in the route stack.
         disposeSavedOwnerPlayer: VideoStackManager.getCount() == 0,
       );
     }
     if (LivePipOverlayService.isInPipMode) {
-      // 旧直播 controller 就此退休，关闭其弹幕流/计时器/通知条目防泄漏
       LivePipOverlayService.cleanupSavedController();
       LivePipOverlayService.stopLivePip(callOnClose: false);
     }
@@ -128,7 +122,47 @@ class _AudioPageState extends State<AudioPage> {
     final isWindowsNeo = WindowsVideoTabService.enabled;
     final isPortrait = isWindowsNeo ? size.width < 760 : size.isPortrait;
     final padding = MediaQuery.viewPaddingOf(context);
-    return SimpleScaffold(
+    final content = isPortrait
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _buildInfo(colorScheme, isPortrait)),
+              const SizedBox(height: 25),
+              _buildProgressBar(colorScheme),
+              _buildDuration(colorScheme),
+              _buildControls(),
+            ],
+          )
+        : Row(
+            spacing: 12,
+            children: [
+              Expanded(
+                child: _buildInfo(colorScheme, isPortrait),
+              ),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Obx(() {
+                      final audioItem = _controller.audioItem.value;
+                      if (audioItem != null) {
+                        return _buildActions(audioItem);
+                      }
+                      return const SizedBox.shrink();
+                    }),
+                    const SizedBox(height: 25),
+                    _buildProgressBar(colorScheme),
+                    _buildDuration(colorScheme),
+                    _buildControls(),
+                  ],
+                ),
+              ),
+            ],
+          );
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         actions: [
           if (_controller.isUgc && _controller.enableSponsorBlock)
@@ -213,7 +247,8 @@ class _AudioPageState extends State<AudioPage> {
           maxWidth: min(640, context.mediaQueryShortestSide),
         ),
         builder: (context) {
-          final colorScheme = ColorScheme.of(context);
+          final theme = Theme.of(context);
+          final colorScheme = theme.colorScheme;
           Widget child = CustomScrollView(
             controller: scrollController,
             physics: _controller.reachStart
@@ -240,6 +275,7 @@ class _AudioPageState extends State<AudioPage> {
                         initiallyExpanded: isCurr,
                         collapsedIconColor: isCurr ? colorScheme.primary : null,
                         iconColor: isCurr ? null : colorScheme.onSurfaceVariant,
+                        controlAffinity: ListTileControlAffinity.leading,
                         title: Text(
                           item.arc.title,
                           maxLines: 1,
@@ -420,8 +456,11 @@ class _AudioPageState extends State<AudioPage> {
                 ),
                 Expanded(
                   child: Material(
-                    type: .transparency,
-                    child: child,
+                    type: MaterialType.transparency,
+                    child: Theme(
+                      data: theme.copyWith(dividerColor: Colors.transparent),
+                      child: child,
+                    ),
                   ),
                 ),
                 Divider(
@@ -757,19 +796,19 @@ class _AudioPageState extends State<AudioPage> {
   }
 
   void _onDragStart(ThumbDragDetails details) {
-    _controller
-      ..isDragging = true
-      ..position.value = details.seconds;
+    // do nothing
   }
 
   void _onDragUpdate(ThumbDragDetails details) {
-    _controller.position.value = details.seconds;
+    _controller
+      ..isDragging = true
+      ..position.value = details.timeStamp;
   }
 
-  void _onSeek(int milliseconds) {
+  void _onSeek(Duration value) {
     _controller
-      ..isDragging = false
-      ..player?.seek(Duration(milliseconds: milliseconds));
+      ..player?.seek(value)
+      ..isDragging = false;
   }
 
   Widget _buildProgressBar(ColorScheme colorScheme) {
@@ -841,7 +880,7 @@ class _AudioPageState extends State<AudioPage> {
               final position = _controller.position.value;
               if (_controller.player != null) {
                 return Text(
-                  DurationUtils.formatDuration(position),
+                  DurationUtils.formatDuration(position.inSeconds),
                 );
               }
               return const SizedBox.shrink();
@@ -850,7 +889,7 @@ class _AudioPageState extends State<AudioPage> {
               final duration = _controller.duration.value;
               if (_controller.player != null) {
                 return Text(
-                  DurationUtils.formatDuration(duration),
+                  DurationUtils.formatDuration(duration.inSeconds),
                 );
               }
               return const SizedBox.shrink();
@@ -917,10 +956,9 @@ class _AudioPageState extends State<AudioPage> {
             Expanded(
               child: Center(
                 child: ListView(
-                  padding: .zero,
-                  shrinkWrap: true,
-                  physics: platformClampingPhysics,
                   key: const PageStorageKey(_AudioPageState),
+                  shrinkWrap: true,
+                  physics: const ClampingScrollPhysics(),
                   children: [
                     Center(
                       child: GestureDetector(
@@ -939,9 +977,10 @@ class _AudioPageState extends State<AudioPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    SelectionText(
+                    SelectableText(
                       audioItem.arc.title,
                       style: const TextStyle(height: 1.7, fontSize: 16),
+                      scrollPhysics: const NeverScrollableScrollPhysics(),
                     ),
                     const SizedBox(height: 12),
                     if (audioItem.owner.hasName()) ...[
@@ -963,10 +1002,7 @@ class _AudioPageState extends State<AudioPage> {
                                 type: ImageType.avatar,
                               ),
                             Text(
-                              remarkedName(
-                                audioItem.owner.mid.toInt(),
-                                audioItem.owner.name,
-                              ),
+                              audioItem.owner.name,
                             ),
                           ],
                         ),
@@ -1007,7 +1043,10 @@ class _AudioPageState extends State<AudioPage> {
                     ),
                     if (audioItem.arc.hasDesc()) ...[
                       const SizedBox(height: 10),
-                      SelectionText(audioItem.arc.desc),
+                      SelectableText(
+                        audioItem.arc.desc,
+                        scrollPhysics: const NeverScrollableScrollPhysics(),
+                      ),
                     ],
                   ],
                 ),

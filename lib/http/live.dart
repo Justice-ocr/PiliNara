@@ -871,6 +871,81 @@ abstract final class LiveHttp {
     return d;
   }
 
+  static Future<LoadingState<FansMedalPanelData>> fansMedalPanel({
+    required Object roomId,
+    required Object targetId,
+    int page = 1,
+  }) async {
+    final params = <String, dynamic>{
+      'access_key': ?Accounts.main.accessKey,
+      'actionKey': 'appkey',
+      'platform': 'android',
+      'statistics': Constants.statisticsApp,
+      'room_id': roomId,
+      'target_id': targetId,
+      'page': page,
+      'page_size': 50,
+    };
+    AppSign.appSign(params);
+    final res = await Request().get(
+      Api.liveFansMedalPanel,
+      queryParameters: params,
+    );
+    if (res.data['code'] == 0) {
+      try {
+        return Success(FansMedalPanelData.fromJson(res.data['data']));
+      } catch (e) {
+        return Error(e.toString());
+      }
+    }
+    return Error(res.data['message']);
+  }
+
+  static Future<LoadingState<void>> _fansMedalAction(
+    String url, {
+    required Object medalId,
+    required Object targetId,
+  }) async {
+    final params = <String, dynamic>{
+      'access_key': ?Accounts.main.accessKey,
+      'actionKey': 'appkey',
+      'platform': 'android',
+      'statistics': Constants.statisticsApp,
+      'medal_id': medalId,
+      'medal_type': 1,
+      'source': 1,
+      'target_id': targetId,
+    };
+    AppSign.appSign(params);
+    final res = await Request().post(
+      url,
+      data: params,
+      options: Options(contentType: Headers.formUrlEncodedContentType),
+    );
+    if (res.data['code'] == 0) {
+      return const Success(null);
+    }
+    return Error(res.data['message']);
+  }
+
+  static Future<LoadingState<void>> fansMedalWear({
+    required Object medalId,
+    required Object targetId,
+  }) => _fansMedalAction(
+    Api.liveFansMedalWear,
+    medalId: medalId,
+    targetId: targetId,
+  );
+
+  static Future<LoadingState<void>> fansMedalTakeOff({
+    required Object medalId,
+    required Object targetId,
+  }) => _fansMedalAction(
+    Api.liveFansMedalTakeOff,
+    medalId: medalId,
+    targetId: targetId,
+  );
+
   static Future<LoadingState<void>> _mobileHeartBeat({
     required int roomId,
     required int upId,
@@ -942,120 +1017,4 @@ abstract final class LiveHttp {
       return Error(e.toString());
     }
   }
-
-  static Future<LoadingState<void>> liveFeedback(
-    Object roomId,
-    Object id,
-    String type, {
-    int page = 1,
-  }) async {
-    final params = {
-      'access_key': ?recommend.accessKey,
-      'actionKey': 'appkey',
-      'build': 8430300,
-      'channel': 'master',
-      'c_locale': 'zh_CN',
-      'device': 'android',
-      'disable_rcmd': 0,
-      'mobi_app': 'android',
-      'platform': 'android',
-      's_locale': 'zh_CN',
-      'statistics': Constants.statisticsApp,
-      'version': '8.43.0',
-      'id': id,
-      'id_type': type,
-      'room_id': roomId,
-      'type': 'dislike',
-      'page': page,
-    };
-    AppSign.appSign(params);
-    final res = await Request().get(
-      Api.liveFeedback,
-      queryParameters: params,
-    );
-    if (res.data['code'] == 0) {
-      return const Success(null);
-    } else {
-      return Error(res.data['message']);
-    }
-  }
-
-  static Future<LoadingState<FansMedalPanelData>> fansMedalPanel({
-    required Object roomId,
-    required Object targetId,
-    int page = 1,
-  }) async {
-    final params = <String, dynamic>{
-      'access_key': ?Accounts.main.accessKey,
-      'actionKey': 'appkey',
-      'platform': 'android',
-      'statistics': Constants.statisticsApp,
-      'room_id': roomId,
-      'target_id': targetId,
-      'page': page,
-      'page_size': 50,
-    };
-    AppSign.appSign(params);
-    final res = await Request().get(
-      Api.liveFansMedalPanel,
-      queryParameters: params,
-    );
-    if (res.data['code'] == 0) {
-      try {
-        return Success(FansMedalPanelData.fromJson(res.data['data']));
-      } catch (e) {
-        return Error(e.toString());
-      }
-    } else {
-      return Error(res.data['message']);
-    }
-  }
-
-  static Future<LoadingState<void>> _fansMedalAction(
-    String url, {
-    required Object medalId,
-    required Object targetId,
-  }) async {
-    final params = <String, dynamic>{
-      'access_key': ?Accounts.main.accessKey,
-      'actionKey': 'appkey',
-      'platform': 'android',
-      'statistics': Constants.statisticsApp,
-      'medal_id': medalId,
-      'medal_type': 1,
-      'source': 1,
-      'target_id': targetId,
-    };
-    AppSign.appSign(params);
-    final res = await Request().post(
-      url,
-      data: params,
-      options: Options(contentType: Headers.formUrlEncodedContentType),
-    );
-    if (res.data['code'] == 0) {
-      return const Success(null);
-    } else {
-      return Error(res.data['message']);
-    }
-  }
-
-  static Future<LoadingState<void>> fansMedalWear({
-    required Object medalId,
-    required Object targetId,
-  }) =>
-      _fansMedalAction(
-        Api.liveFansMedalWear,
-        medalId: medalId,
-        targetId: targetId,
-      );
-
-  static Future<LoadingState<void>> fansMedalTakeOff({
-    required Object medalId,
-    required Object targetId,
-  }) =>
-      _fansMedalAction(
-        Api.liveFansMedalTakeOff,
-        medalId: medalId,
-        targetId: targetId,
-      );
 }

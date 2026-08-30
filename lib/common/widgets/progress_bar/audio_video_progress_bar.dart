@@ -2,13 +2,13 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart'
     show
         MouseTrackerAnnotation,
         PointerEnterEventListener,
         PointerExitEventListener;
-import 'package:material_ui/material_ui.dart';
 
 /// https://github.com/suragch/audio_video_progress_bar
 
@@ -29,7 +29,7 @@ class ProgressBar extends LeafRenderObjectWidget {
     super.key,
     required this.progress,
     required this.total,
-    this.buffered = 0,
+    this.buffered = .zero,
     this.onSeek,
     this.onDragStart,
     this.onDragUpdate,
@@ -42,7 +42,6 @@ class ProgressBar extends LeafRenderObjectWidget {
     required this.progressBarColor,
     required this.bufferedBarColor,
     this.thumbRadius = 10.0,
-    this.minHeight,
     required this.thumbColor,
     required this.thumbGlowColor,
     this.thumbGlowRadius = 30.0,
@@ -52,19 +51,16 @@ class ProgressBar extends LeafRenderObjectWidget {
   /// The elapsed playing time of the media.
   ///
   /// This should not be greater than the [total] time.
-  /// seconds
-  final int progress;
+  final Duration progress;
 
   /// The total duration of the media.
-  /// seconds
-  final int total;
+  final Duration total;
 
   /// The currently buffered content of the media.
   ///
   /// This is useful for streamed content. If you are playing a local file
   /// then you can leave this out.
-  /// seconds
-  final int buffered;
+  final Duration buffered;
 
   /// A callback when user moves the thumb.
   ///
@@ -77,7 +73,7 @@ class ProgressBar extends LeafRenderObjectWidget {
   /// If you want continuous duration updates as the user moves the thumb,
   /// see [onDragUpdate], where the provided [ThumbDragDetails] has a
   /// `timeStamp` with the seek duration on it.
-  final OnSeek? onSeek;
+  final ValueChanged<Duration>? onSeek;
 
   /// A callback when the user starts to move the thumb.
   ///
@@ -120,13 +116,8 @@ class ProgressBar extends LeafRenderObjectWidget {
   /// This method is called directly before [onSeek].
   final VoidCallback? onDragEnd;
 
-  /// A callback when a mouse pointer enters the progress bar.
   final ThumbHoverCallback? onHoverStart;
-
-  /// A callback when a mouse pointer moves on the progress bar.
   final ThumbHoverCallback? onHoverUpdate;
-
-  /// A callback when a mouse pointer leaves the progress bar.
   final VoidCallback? onHoverEnd;
 
   /// The vertical thickness of the progress bar.
@@ -152,9 +143,6 @@ class ProgressBar extends LeafRenderObjectWidget {
 
   /// The radius of the circle for the moveable progress bar thumb.
   final double thumbRadius;
-
-  /// The minimum layout height used for pointer hit testing.
-  final double? minHeight;
 
   /// The color of the circle for the moveable progress bar thumb.
   ///
@@ -207,7 +195,6 @@ class ProgressBar extends LeafRenderObjectWidget {
       progressBarColor: progressBarColor,
       bufferedBarColor: bufferedBarColor,
       thumbRadius: thumbRadius,
-      minHeight: minHeight,
       thumbColor: thumbColor,
       thumbGlowColor: thumbGlowColor,
       thumbGlowRadius: thumbGlowRadius,
@@ -236,7 +223,6 @@ class ProgressBar extends LeafRenderObjectWidget {
       ..progressBarColor = progressBarColor
       ..bufferedBarColor = bufferedBarColor
       ..thumbRadius = thumbRadius
-      ..minHeight = minHeight
       ..thumbColor = thumbColor
       ..thumbGlowColor = thumbGlowColor
       ..thumbGlowRadius = thumbGlowRadius
@@ -251,7 +237,7 @@ class ProgressBar extends LeafRenderObjectWidget {
       ..add(StringProperty('total', total.toString()))
       ..add(StringProperty('buffered', buffered.toString()))
       ..add(
-        ObjectFlagProperty<OnSeek>(
+        ObjectFlagProperty<ValueChanged<Duration>>(
           'onSeek',
           onSeek,
           ifNull: 'unimplemented',
@@ -278,33 +264,11 @@ class ProgressBar extends LeafRenderObjectWidget {
           ifNull: 'unimplemented',
         ),
       )
-      ..add(
-        ObjectFlagProperty<ThumbHoverCallback>(
-          'onHoverStart',
-          onHoverStart,
-          ifNull: 'unimplemented',
-        ),
-      )
-      ..add(
-        ObjectFlagProperty<ThumbHoverCallback>(
-          'onHoverUpdate',
-          onHoverUpdate,
-          ifNull: 'unimplemented',
-        ),
-      )
-      ..add(
-        ObjectFlagProperty<VoidCallback>(
-          'onHoverEnd',
-          onHoverEnd,
-          ifNull: 'unimplemented',
-        ),
-      )
       ..add(DoubleProperty('barHeight', barHeight))
       ..add(ColorProperty('baseBarColor', baseBarColor))
       ..add(ColorProperty('progressBarColor', progressBarColor))
       ..add(ColorProperty('bufferedBarColor', bufferedBarColor))
       ..add(DoubleProperty('thumbRadius', thumbRadius))
-      ..add(DoubleProperty('minHeight', minHeight))
       ..add(ColorProperty('thumbColor', thumbColor))
       ..add(ColorProperty('thumbGlowColor', thumbGlowColor))
       ..add(DoubleProperty('thumbGlowRadius', thumbGlowRadius))
@@ -320,8 +284,6 @@ class ProgressBar extends LeafRenderObjectWidget {
   }
 }
 
-typedef OnSeek = void Function(int milliseconds);
-
 /// The callback signature for when the thumb begins a horizontal drag.
 typedef ThumbDragStartCallback = void Function(ThumbDragDetails details);
 
@@ -329,21 +291,18 @@ typedef ThumbDragStartCallback = void Function(ThumbDragDetails details);
 /// new data.
 typedef ThumbDragUpdateCallback = void Function(ThumbDragDetails details);
 
-/// The callback signature for mouse hover on the progress bar.
 typedef ThumbHoverCallback = void Function(ThumbDragDetails details);
 
 /// Data to pass back on drag callback events
 class ThumbDragDetails {
   const ThumbDragDetails({
-    this.seconds = 0,
+    this.timeStamp = Duration.zero,
     this.globalPosition = Offset.zero,
     this.localPosition = Offset.zero,
   });
 
   /// The duration position of the thumb on the progress bar
-  final int seconds;
-
-  Duration get timeStamp => Duration(seconds: seconds);
+  final Duration timeStamp;
 
   /// The global position of the drag event moving the thumb on the progress bar.
   final Offset globalPosition;
@@ -354,7 +313,7 @@ class ThumbDragDetails {
   @override
   String toString() =>
       '${objectRuntimeType(this, 'ThumbDragDetails')}('
-      'time: $seconds, '
+      'time: $timeStamp, '
       'global: $globalPosition, '
       'local: $localPosition)';
 }
@@ -376,7 +335,7 @@ class _EagerHorizontalDragGestureRecognizer
 
 class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
   RenderProgressBar({
-    required this._progress,
+    required Duration progress,
     required this._total,
     required this._buffered,
     this._onSeek,
@@ -391,7 +350,6 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
     required this._progressBarColor,
     required this._bufferedBarColor,
     double thumbRadius = 20.0,
-    double? minHeight,
     required this._thumbColor,
     required this._thumbGlowColor,
     double thumbGlowRadius = 30.0,
@@ -403,8 +361,6 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
        _onHoverUpdateUserCallback = onHoverUpdate,
        _onHoverEndUserCallback = onHoverEnd,
        _thumbRadius = thumbRadius,
-       // ignore: prefer_initializing_formals
-       _minHeight = minHeight,
        _thumbGlowRadius = thumbGlowRadius,
        _paintThumbGlow = thumbGlowRadius > thumbRadius,
        _hitTestSelf =
@@ -420,6 +376,7 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
         ..onCancel = _finishDrag;
     }
     if (!_userIsDraggingThumb) {
+      _progress = progress;
       _thumbValue = _proportionOfTotal(_progress);
     }
   }
@@ -445,11 +402,14 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
   bool _userIsDraggingThumb = false;
 
   void _onDragStart(DragStartDetails details) {
+    if (onDragStart == null) {
+      return;
+    }
     _userIsDraggingThumb = true;
     _updateThumbPosition(details.localPosition);
     onDragStart?.call(
       ThumbDragDetails(
-        seconds: _currentThumbDuration(),
+        timeStamp: _currentThumbDuration(),
         globalPosition: details.globalPosition,
         localPosition: details.localPosition,
       ),
@@ -457,10 +417,13 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
   }
 
   void _onDragUpdate(DragUpdateDetails details) {
+    if (onDragUpdate == null) {
+      return;
+    }
     _updateThumbPosition(details.localPosition);
     onDragUpdate?.call(
       ThumbDragDetails(
-        seconds: _currentThumbDuration(),
+        timeStamp: _currentThumbDuration(),
         globalPosition: details.globalPosition,
         localPosition: details.localPosition,
       ),
@@ -468,36 +431,12 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
   }
 
   void _onDragEnd(DragEndDetails details) {
+    if (onSeek == null) {
+      return;
+    }
     onDragEnd?.call();
-    onSeek?.call(_currentThumbDurationInMilliseconds());
+    onSeek?.call(_currentThumbDuration());
     _finishDrag();
-  }
-
-  void _onHoverStart(PointerEnterEvent event) {
-    if (onHoverStart == null) {
-      return;
-    }
-    onHoverStart?.call(_detailsFromLocalPosition(event.localPosition));
-  }
-
-  void _onHoverUpdate(PointerHoverEvent event) {
-    if (onHoverUpdate == null) {
-      return;
-    }
-    onHoverUpdate?.call(_detailsFromLocalPosition(event.localPosition));
-  }
-
-  void _onHoverEnd(PointerExitEvent event) {
-    onHoverEnd?.call();
-  }
-
-  ThumbDragDetails _detailsFromLocalPosition(Offset localPosition) {
-    final value = _thumbValueFromLocalPosition(localPosition);
-    return ThumbDragDetails(
-      seconds: _durationFromValue(value),
-      globalPosition: localToGlobal(localPosition),
-      localPosition: localPosition,
-    );
   }
 
   void _onHoverStart(PointerEnterEvent event) {
@@ -528,16 +467,11 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
     markNeedsPaint();
   }
 
-  int _currentThumbDuration() {
-    return _durationFromValue(_thumbValue);
-  }
+  Duration _currentThumbDuration() => _durationFromValue(_thumbValue);
 
-  int _durationFromValue(double value) {
-    return (value * total).round();
-  }
-
-  int _currentThumbDurationInMilliseconds() {
-    return (_thumbValue * total * 1000).round();
+  Duration _durationFromValue(double value) {
+    final thumbMilliseconds = value * total.inMilliseconds;
+    return Duration(milliseconds: thumbMilliseconds.round());
   }
 
   // This needs to stay in sync with the layout. This could be a potential
@@ -567,9 +501,9 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
   /// The play location of the media.
   ///
   /// This is used to update the thumb value and the left time label.
-  int get progress => _progress;
-  int _progress;
-  set progress(int value) {
+  Duration get progress => _progress;
+  Duration _progress = Duration.zero;
+  set progress(Duration value) {
     final clamp = _clampDuration(value);
     if (_progress == clamp) {
       return;
@@ -582,10 +516,10 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
   }
 
   /// The total time length of the media.
-  int get total => _total;
-  int _total;
-  set total(int value) {
-    final clamp = (value.isNegative) ? 0 : value;
+  Duration get total => _total;
+  Duration _total;
+  set total(Duration value) {
+    final clamp = (value.isNegative) ? Duration.zero : value;
     if (_total == clamp) {
       return;
     }
@@ -597,9 +531,9 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
   }
 
   /// The buffered length of the media when streaming.
-  int get buffered => _buffered;
-  int _buffered;
-  set buffered(int value) {
+  Duration get buffered => _buffered;
+  Duration _buffered;
+  set buffered(Duration value) {
     final clamp = _clampDuration(value);
     if (_buffered == clamp) {
       return;
@@ -608,16 +542,16 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
     markNeedsPaint();
   }
 
-  int _clampDuration(int value) {
-    if (value.isNegative) return 0;
+  Duration _clampDuration(Duration value) {
+    if (value.isNegative) return Duration.zero;
     if (value.compareTo(_total) > 0) return _total;
     return value;
   }
 
   /// A callback for the audio duration position to where the thumb was moved.
-  OnSeek? get onSeek => _onSeek;
-  OnSeek? _onSeek;
-  set onSeek(OnSeek? value) {
+  ValueChanged<Duration>? get onSeek => _onSeek;
+  ValueChanged<Duration>? _onSeek;
+  set onSeek(ValueChanged<Duration>? value) {
     if (value == _onSeek) {
       return;
     }
@@ -654,33 +588,24 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
     _onDragEndUserCallback = value;
   }
 
-  /// A callback when the mouse starts hovering on the progress bar.
   ThumbHoverCallback? get onHoverStart => _onHoverStartUserCallback;
   ThumbHoverCallback? _onHoverStartUserCallback;
   set onHoverStart(ThumbHoverCallback? value) {
-    if (value == _onHoverStartUserCallback) {
-      return;
-    }
+    if (value == _onHoverStartUserCallback) return;
     _onHoverStartUserCallback = value;
   }
 
-  /// A callback when the mouse is hovering on the progress bar.
   ThumbHoverCallback? get onHoverUpdate => _onHoverUpdateUserCallback;
   ThumbHoverCallback? _onHoverUpdateUserCallback;
   set onHoverUpdate(ThumbHoverCallback? value) {
-    if (value == _onHoverUpdateUserCallback) {
-      return;
-    }
+    if (value == _onHoverUpdateUserCallback) return;
     _onHoverUpdateUserCallback = value;
   }
 
-  /// A callback when the mouse leaves the progress bar.
   VoidCallback? get onHoverEnd => _onHoverEndUserCallback;
   VoidCallback? _onHoverEndUserCallback;
   set onHoverEnd(VoidCallback? value) {
-    if (value == _onHoverEndUserCallback) {
-      return;
-    }
+    if (value == _onHoverEndUserCallback) return;
     _onHoverEndUserCallback = value;
   }
 
@@ -735,14 +660,6 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
   set thumbRadius(double value) {
     if (_thumbRadius == value) return;
     _thumbRadius = value;
-    markNeedsLayout();
-  }
-
-  double? get minHeight => _minHeight;
-  double? _minHeight;
-  set minHeight(double? value) {
-    if (_minHeight == value) return;
-    _minHeight = value;
     markNeedsLayout();
   }
 
@@ -817,7 +734,7 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
   }
 
   double _heightWhenNoLabels() {
-    return max(_minHeight ?? 0, max(2 * _thumbRadius, _barHeight));
+    return max(2 * _thumbRadius, _barHeight);
   }
 
   @override
@@ -877,7 +794,7 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
     _drawBar(
       canvas: canvas,
       availableSize: localSize,
-      widthProportion: _thumbValue,
+      widthProportion: _proportionOfTotal(_progress),
       color: progressBarColor,
     );
   }
@@ -917,11 +834,11 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
     canvas.drawCircle(center, thumbRadius, thumbPaint);
   }
 
-  double _proportionOfTotal(int duration) {
-    if (total == 0) {
+  double _proportionOfTotal(Duration duration) {
+    if (total.inMilliseconds == 0) {
       return 0.0;
     }
-    return (duration / total).clamp(0.0, 1.0);
+    return (duration.inMilliseconds / total.inMilliseconds).clamp(0.0, 1.0);
   }
 
   @override
@@ -973,8 +890,7 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
       onHoverStart == null ? null : _onHoverStart;
 
   @override
-  PointerExitEventListener? get onExit =>
-      onHoverEnd == null ? null : _onHoverEnd;
+  PointerExitEventListener? get onExit => onHoverEnd == null ? null : _onHoverEnd;
 
   @override
   bool get validForMouseTracker =>

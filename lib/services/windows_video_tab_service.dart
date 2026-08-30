@@ -2,7 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:PiliPlus/services/windows_back_navigation_policy.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
 enum WindowsMediaTabType {

@@ -3,16 +3,17 @@ import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/member_guard/guard_top_list.dart';
 import 'package:PiliPlus/pages/member_guard/controller.dart';
-import 'package:PiliPlus/utils/bili_utils.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
+import 'package:get/get.dart';
 
 class MemberGuard extends StatefulWidget {
   const MemberGuard({super.key});
@@ -55,7 +56,10 @@ class _MemberGuardState extends State<MemberGuard> {
 
   @override
   Widget build(BuildContext context) {
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text('$_userName的舰队${_count == null ? '' : '($_count)'}'),
       ),
@@ -209,6 +213,16 @@ class _MemberGuardState extends State<MemberGuard> {
     );
   }
 
+  static String? _pendantUrl(int guardLevel) => switch (guardLevel) {
+    1 =>
+      'https://i0.hdslb.com/bfs/live/a454275dea465ac15a03f121f0d7edaf96e30bcf.png',
+    2 =>
+      'https://i0.hdslb.com/bfs/live/3b46129e796df42ec7356fcba77c8a79d47db682.png',
+    3 =>
+      'https://i0.hdslb.com/bfs/live/80f732943cc3367029df65e267960d56736a82ee.png',
+    _ => null,
+  };
+
   static Widget _avatar(String url, double size, int guardLevel) {
     final pendentSize = 1.35 * size;
     return Stack(
@@ -225,7 +239,7 @@ class _MemberGuardState extends State<MemberGuard> {
           type: .emote,
           width: pendentSize,
           height: pendentSize,
-          src: BiliUtils.liveGuardPendant(guardLevel),
+          src: _pendantUrl(guardLevel),
           getPlaceHolder: () => const SizedBox.shrink(),
         ),
       ],

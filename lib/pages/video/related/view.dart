@@ -6,8 +6,9 @@ import 'package:PiliPlus/pages/video/related/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_horizontal_video_tile.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class RelatedVideoPanel extends StatefulWidget {
   const RelatedVideoPanel({super.key, required this.heroTag});

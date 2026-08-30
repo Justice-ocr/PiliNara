@@ -8,10 +8,11 @@ import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart'
     show KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, HardwareKeyboard;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class PlayerFocus extends StatefulWidget {
   const PlayerFocus({
@@ -23,7 +24,7 @@ class PlayerFocus extends StatefulWidget {
     this.canPlay,
     this.onSkipSegment,
     this.onRefresh,
-    this.focusNode,
+    this.shouldIgnoreShortcuts,
   });
 
   final Widget child;
@@ -35,8 +36,8 @@ class PlayerFocus extends StatefulWidget {
   final VoidCallback? onRefresh;
   final ValueGetter<bool>? shouldIgnoreShortcuts;
 
-  /// 外部持有的焦点节点：供页面在点击/悬停视频区时抢回焦点（恢复方向键音量控制）
-  final FocusNode? focusNode;
+  @override
+  State<PlayerFocus> createState() => _PlayerFocusState();
 
   static bool _shouldHandle(LogicalKeyboardKey logicalKey) {
     return logicalKey == LogicalKeyboardKey.tab ||
@@ -77,11 +78,17 @@ class _PlayerFocusState extends State<PlayerFocus> {
   @override
   Widget build(BuildContext context) {
     return Focus(
-      focusNode: focusNode,
-      autofocus: true,
+      focusNode: _focusNode,
       onKeyEvent: (node, event) {
-        final handled = _handleKey(context, event);
-        if (handled || _shouldHandle(event.logicalKey)) {
+        // A page can explicitly identify its text editor. This is more reliable
+        // than inspecting the focus tree, whose node context may be the Focus
+        // wrapper rather than the EditableText widget on desktop.
+        if ((shouldIgnoreShortcuts?.call() ?? false) ||
+            _isEditableTextFocused) {
+          return KeyEventResult.ignored;
+        }
+        final handled = _handleKey(event);
+        if (handled || PlayerFocus._shouldHandle(event.logicalKey)) {
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
@@ -130,7 +137,7 @@ class _PlayerFocusState extends State<PlayerFocus> {
     }
   }
 
-  bool _handleKey(BuildContext context, KeyEvent event) {
+  bool _handleKey(KeyEvent event) {
     final key = event.logicalKey;
 
     final isKeyQ = key == LogicalKeyboardKey.keyQ;
@@ -151,7 +158,7 @@ class _PlayerFocusState extends State<PlayerFocus> {
         introController!.onCancelTriple(isKeyQ);
       }
       return true;
-    } else if (event is KeyDownEvent) {
+    } else if (event is KeyDownEvent && Platform.isWindows) {
       if (introController?.isTripling ?? false) {
         introController!.onCancelTriple();
       }
@@ -227,8 +234,8 @@ class _PlayerFocusState extends State<PlayerFocus> {
           return true;
 
         case LogicalKeyboardKey.keyD:
-          final newVal = !plPlayerController.enableShowDanmakuAdaptive.value;
-          plPlayerController.enableShowDanmakuAdaptive.value = newVal;
+          final newVal = !plPlayerController.enableShowDanmaku.value;
+          plPlayerController.enableShowDanmaku.value = newVal;
           if (!plPlayerController.tempPlayerConf) {
             GStorage.setting.put(
               plPlayerController.isLive
@@ -305,7 +312,7 @@ class _PlayerFocusState extends State<PlayerFocus> {
 
           case LogicalKeyboardKey.keyG:
             if (introController case final UgcIntroController ugcCtr) {
-              ugcCtr.actionRelationMod(context);
+              ugcCtr.actionRelationMod(Get.context!);
             }
             return true;
 

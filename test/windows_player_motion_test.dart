@@ -1,7 +1,7 @@
 import 'dart:io' show Platform;
 
 import 'package:PiliPlus/plugin/pl_player/widgets/app_bar_ani.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/widgets/reorder_mixin.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/http/fav.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/fav/fav_detail/media.dart';
@@ -7,9 +6,10 @@ import 'package:PiliPlus/pages/fav_detail/controller.dart';
 import 'package:PiliPlus/pages/fav_detail/widget/fav_video_card.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
 
 class FavSortPage extends StatefulWidget {
   const FavSortPage({super.key, required this.favDetailController});
@@ -48,7 +48,10 @@ class _FavSortPageState extends State<FavSortPage> with ReorderMixin {
 
   @override
   Widget build(BuildContext context) {
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text('排序: ${_favDetailController.folderInfo.value.title}'),
         actions: [
@@ -116,7 +119,7 @@ class _FavSortPageState extends State<FavSortPage> with ReorderMixin {
         final item = sortList[index];
         return SizedBox(
           key: ValueKey(item.id),
-          height: 110,
+          height: WindowsVideoTabService.enabled ? 112 : 98,
           child: FavVideoCardH(item: item),
         );
       },

@@ -1,8 +1,6 @@
 import 'package:PiliPlus/common/widgets/flutter/popup_menu.dart';
 import 'package:PiliPlus/common/widgets/gesture/tap_gesture_recognizer.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
-import 'package:PiliPlus/common/widgets/scroll_physics.dart'
-    show platformClampingPhysics;
 import 'package:PiliPlus/http/live.dart';
 import 'package:PiliPlus/models_new/live/live_danmaku/danmaku_msg.dart';
 import 'package:PiliPlus/models_new/live/live_superchat/item.dart';
@@ -16,9 +14,9 @@ import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
 
 class LiveRoomChatPanel extends StatelessWidget {
   const LiveRoomChatPanel({
@@ -56,78 +54,33 @@ class LiveRoomChatPanel extends StatelessWidget {
     return Stack(
       children: [
         Obx(
-          () => ListView.separated(
-            key: const PageStorageKey(LiveRoomChatPanel),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            controller: liveRoomController.scrollController,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemCount: liveRoomController.builtLength =
-                liveRoomController.messages.length,
-            physics: platformClampingPhysics,
-            itemBuilder: (_, index) {
-              final item = liveRoomController.messages[index];
-              if (item is DanmakuMsg) {
-                WidgetSpan? medal;
-                if (item.medalInfo case final medalInfo?) {
-                  try {
-                    medal = WidgetSpan(
-                      child: Padding(
-                        padding: const .only(right: 4),
-                        child: MedalWidget.fromMedalInfo(
-                          medal: medalInfo,
-                          padding: MedalWidget.mediumPadding,
-                        ),
-                      ),
-                    );
-                  } catch (e, s) {
-                    if (kDebugMode) {
-                      Utils.reportError(e, s);
-                    }
-                  }
-                }
-                return Align(
-                  alignment: Alignment.centerLeft,
-                  child: Builder(
-                    builder: (itemContext) {
-                      return Container(
-                        padding: const .symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: bg,
-                          borderRadius: const .all(.circular(14)),
-                        ),
-                        child: Text.rich(
-                          TextSpan(
-                            children: [
-                              ?medal,
-                              TextSpan(
-                                text: '${item.name}: ',
-                                style: TextStyle(
-                                  color: nameColor,
-                                  fontSize: 14,
-                                ),
-                                recognizer: item.extra.mid == 0
-                                    ? null
-                                    : (NoDeadlineTapGestureRecognizer()
-                                        ..onTapUp = (e) => _showMsgMenu(
-                                          context,
-                                          itemContext,
-                                          e,
-                                          item,
-                                        )),
-                              ),
-                              if (item.reply case final reply?)
-                                TextSpan(
-                                  text: '@${reply.name} ',
-                                  style: TextStyle(
-                                    color: primary,
-                                    fontSize: 14,
-                                  ),
-                                  recognizer: NoDeadlineTapGestureRecognizer()
-                                    ..onTap = () =>
-                                        PageUtils.toMember(reply.mid),
-                                ),
-                              _buildMsg(devicePixelRatio, item),
-                            ],
+          () {
+            final allMessages = liveRoomController.messages;
+            liveRoomController.builtLength = allMessages.length;
+            final visibleMessages = hideSuperChat
+                ? allMessages
+                      .where((item) => item is! SuperChatItem)
+                      .toList(growable: false)
+                : allMessages;
+            return ListView.separated(
+              key: const PageStorageKey(LiveRoomChatPanel),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              controller: liveRoomController.scrollController,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemCount: visibleMessages.length,
+              physics: const ClampingScrollPhysics(),
+              itemBuilder: (_, index) {
+                final item = visibleMessages[index];
+                if (item is DanmakuMsg) {
+                  WidgetSpan? medal;
+                  if (item.medalInfo case final medalInfo?) {
+                    try {
+                      medal = WidgetSpan(
+                        child: Padding(
+                          padding: const .only(right: 4),
+                          child: MedalWidget.fromMedalInfo(
+                            medal: medalInfo,
+                            padding: MedalWidget.mediumPadding,
                           ),
                         ),
                       );

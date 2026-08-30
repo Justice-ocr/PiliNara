@@ -2,7 +2,7 @@ import 'package:PiliPlus/windows_ui/components/windows_neo_backdrop.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class WindowsNeoPage extends StatelessWidget {
   const WindowsNeoPage({

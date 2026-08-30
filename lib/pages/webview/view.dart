@@ -26,6 +26,8 @@ class WebviewPage extends StatefulWidget {
     this.url,
     this.oid,
     this.title,
+    this.parameters,
+    this.arguments,
   });
 
   final String? url;
@@ -33,6 +35,8 @@ class WebviewPage extends StatefulWidget {
   // note
   final int? oid;
   final String? title;
+  final Map<String, String?>? parameters;
+  final Map? arguments;
 
   @override
   State<WebviewPage> createState() => _WebviewPageState();
@@ -56,7 +60,7 @@ class _WebviewPageState extends State<WebviewPage> with RouteAware {
   @override
   void initState() {
     super.initState();
-    final parameters = Get.parameters;
+    final parameters = widget.parameters ?? Get.parameters;
     _url = (widget.url ?? parameters['url']!).http2https;
     _title = _url.obs;
     userAgent = switch (parameters['uaType']) {
@@ -64,7 +68,7 @@ class _WebviewPageState extends State<WebviewPage> with RouteAware {
       'mob' => BrowserUa.mob,
       _ => BrowserUa.platform,
     };
-    if (Get.arguments case final Map map) {
+    if ((widget.arguments ?? Get.arguments) case final Map map) {
       _inApp = map['inApp'] ?? false;
       _off = map['off'] ?? false;
     }

@@ -5,15 +5,16 @@ import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/models/common/list_order.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
+import 'package:PiliPlus/common/widgets/flutter/page/tabs.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/keep_alive_wrapper.dart';
-import 'package:PiliPlus/common/widgets/scroll_physics.dart'
-    show tabBarScrollPhysics;
+import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/common/widgets/stat/stat.dart';
 import 'package:PiliPlus/http/fav.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/video.dart';
+import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models/common/episode_panel_type.dart';
 import 'package:PiliPlus/models/common/stat_type.dart';
 import 'package:PiliPlus/models_new/pgc/pgc_info_model/episode.dart' as pgc;
@@ -23,6 +24,7 @@ import 'package:PiliPlus/pages/common/slide/common_slide_page.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/page.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
@@ -32,11 +34,12 @@ import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:flutter/foundation.dart';
+import 'package:material_ui/material_ui.dart' hide TabBarView;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart';
 
 class EpisodePanel extends CommonSlidePage {
   const EpisodePanel({
@@ -83,10 +86,10 @@ class EpisodePanel extends CommonSlidePage {
   final VoidCallback? onClose;
 
   @override
-  State<EpisodePanel> createState() => EpisodePanelState();
+  State<EpisodePanel> createState() => _EpisodePanelState();
 }
 
-class EpisodePanelState extends State<EpisodePanel>
+class _EpisodePanelState extends State<EpisodePanel>
     with TickerProviderStateMixin, CommonSlideMixin {
   // tab
   late final TabController _tabController;
@@ -108,10 +111,6 @@ class EpisodePanelState extends State<EpisodePanel>
 
   late final List<bool> _isReversed;
   late final List<ScrollController> _itemScrollController;
-
-  /// 当前激活子列表的滚动控制器（供视频页键盘滚动播放列表使用）
-  ScrollController get activeScrollController =>
-      _itemScrollController[_currentTabIndex.value];
 
   // fav
   Rx<LoadingState<bool>>? _favState;
@@ -261,10 +260,11 @@ class EpisodePanelState extends State<EpisodePanel>
   @override
   Widget buildList(ThemeData theme) {
     if (_isMulti) {
-      return TabBarView(
+      return TabBarView<TabBarDragGestureRecognizer>(
         controller: _tabController,
-        physics: tabBarScrollPhysics,
-        horizontalDragGestureRecognizer: horizontalDragGestureRecognizer,
+        physics: clampingScrollPhysics,
+        horizontalDragGestureRecognizer: () =>
+            TabBarDragGestureRecognizer(isDxAllowed: isDxAllowed),
         children: List.generate(
           widget.list.length,
           (index) => _buildBody(
@@ -287,15 +287,15 @@ class EpisodePanelState extends State<EpisodePanel>
       }
       return offset + 7;
     } else {
-      return index * 112 + 7;
+      return index * 100 + 7;
     }
   }
 
   double _calcItemHeight(ugc.BaseEpisodeItem episode) {
     if (episode is ugc.EpisodeItem && episode.pages!.length > 1) {
-      return 167; // 110 + 2 + 10 + 45
+      return 145; // 98 + 2 + 10 + 35
     }
-    return 112;
+    return 100;
   }
 
   Widget _buildBody(
@@ -336,14 +336,14 @@ class EpisodePanelState extends State<EpisodePanel>
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            episodeItem, // 110
+                            episodeItem, // 98
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 5,
                               ), // 10
                               child: PagesPanel(
-                                // 45
+                                // 35
                                 list: isCurrTab && isCurrItem
                                     ? null
                                     : episode.pages,
@@ -377,7 +377,7 @@ class EpisodePanelState extends State<EpisodePanel>
                         isCurrentIndex: isCurrItem,
                       );
                     },
-                    itemExtent: 112,
+                    itemExtent: 100,
                   ),
           ),
         ],
@@ -453,12 +453,14 @@ class EpisodePanelState extends State<EpisodePanel>
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
       child: SizedBox(
-        height: 110,
+        height: 98,
         child: Material(
-          type: .transparency,
+          color:
+              WindowsVideoTabService.enabled && isCurrentIndex
+              ? context.windowsNeo.accentSurface
+              : Colors.transparent,
           child: InkWell(
             onTap: () {
-              if (isCurrentIndex) return;
               if (episode.badge == "会员" &&
                   Accounts.mainEqVideo &&
                   vipStatus != 1) {
@@ -488,7 +490,7 @@ class EpisodePanelState extends State<EpisodePanel>
             onLongPress: onLongPress,
             onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
             child: Padding(
-              padding: const .symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: Style.safeSpace,
                 vertical: 5,
               ),
@@ -501,8 +503,8 @@ class EpisodePanelState extends State<EpisodePanel>
                       children: [
                         NetworkImgLayer(
                           src: cover,
-                          width: 160,
-                          height: 100,
+                          width: 140.8,
+                          height: 88,
                           cacheWidth: cacheWidth,
                         ),
                         if (duration != null && duration > 0)
@@ -510,36 +512,14 @@ class EpisodePanelState extends State<EpisodePanel>
                             text: DurationUtils.formatDuration(duration),
                             right: 6.0,
                             bottom: 6.0,
-                            type: .gray,
+                            type: PBadgeType.gray,
                           ),
-                        if (widget.type == .part)
-                          Positioned(
-                            top: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const .symmetric(horizontal: 4),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.secondaryContainer,
-                                borderRadius: const .only(
-                                  bottomLeft: .circular(4),
-                                  topRight: Style.imgRadius,
-                                ),
-                              ),
-                              child: Text(
-                                (index + 1).toString(),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.colorScheme.onSecondaryContainer,
-                                ),
-                              ),
-                            ),
-                          )
-                        else if (isCharging == true)
+                        if (isCharging == true)
                           const PBadge(
                             text: '充电专属',
                             top: 6,
                             right: 6,
-                            type: .error,
+                            type: PBadgeType.error,
                           )
                         else if (episode.badge != null)
                           PBadge(
@@ -547,9 +527,9 @@ class EpisodePanelState extends State<EpisodePanel>
                             top: 6,
                             right: 6,
                             type: switch (episode.badge) {
-                              '预告' => .gray,
-                              '限免' => .free,
-                              _ => .primary,
+                              '预告' => PBadgeType.gray,
+                              '限免' => PBadgeType.free,
+                              _ => PBadgeType.primary,
                             },
                           ),
                       ],

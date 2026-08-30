@@ -1,13 +1,13 @@
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
+import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/pages/fan/view.dart';
 import 'package:PiliPlus/pages/follow/child/child_view.dart';
 import 'package:PiliPlus/pages/follow_search/view.dart';
 import 'package:PiliPlus/pages/share/view.dart' show UserModel;
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class ContactPage extends StatefulWidget {
   const ContactPage({super.key, this.isFromSelect = true});
@@ -41,9 +41,22 @@ class _ContactPageState extends State<ContactPage>
 
   @override
   Widget build(BuildContext context) {
-    return SimpleScaffold(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('通讯录'),
+        bottom: TabBar(
+          isScrollable: isWindowsNeo,
+          tabAlignment: isWindowsNeo ? TabAlignment.start : null,
+          dividerColor: isWindowsNeo ? context.windowsNeo.border : null,
+          controller: _controller,
+          tabs: const [
+            Tab(text: '我的关注'),
+            Tab(text: '我的粉丝'),
+          ],
+        ),
         actions: [
           IconButton(
             onPressed: () async {
@@ -64,29 +77,16 @@ class _ContactPageState extends State<ContactPage>
           const SizedBox(width: 16),
         ],
       ),
-      body: Column(
+      body: tabBarView(
+        controller: _controller,
         children: [
-          TabBar(
-            controller: _controller,
-            tabs: const [
-              Tab(text: '我的关注'),
-              Tab(text: '我的粉丝'),
-            ],
+          FollowChildPage(
+            mid: mid,
+            onSelect: widget.isFromSelect ? onSelect : null,
           ),
-          Expanded(
-            child: tabBarView(
-              controller: _controller,
-              children: [
-                FollowChildPage(
-                  mid: mid,
-                  onSelect: widget.isFromSelect ? onSelect : null,
-                ),
-                FansPage(
-                  showName: false,
-                  onSelect: widget.isFromSelect ? onSelect : null,
-                ),
-              ],
-            ),
+          FansPage(
+            showName: false,
+            onSelect: widget.isFromSelect ? onSelect : null,
           ),
         ],
       ),

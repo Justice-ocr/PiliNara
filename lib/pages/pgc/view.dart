@@ -5,8 +5,7 @@ import 'package:PiliPlus/common/widgets/button/more_btn.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
+import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/fav_type.dart';
@@ -23,8 +22,9 @@ import 'package:PiliPlus/pages/pgc_index/widgets/pgc_card_v_pgc_index.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class PgcPage extends StatefulWidget {
   const PgcPage({
@@ -275,7 +275,8 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
                 ];
                 List<int> types = const [102, 2, 5, 3, 7];
                 Get.to(
-                  SimpleScaffold(
+                  Scaffold(
+                    resizeToAvoidBottomInset: false,
                     appBar: AppBar(title: const Text('索引')),
                     body: DefaultTabController(
                       length: types.length,

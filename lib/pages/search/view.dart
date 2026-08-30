@@ -3,9 +3,7 @@ import 'dart:convert';
 import 'package:PiliPlus/common/widgets/dialog/export_import.dart';
 import 'package:PiliPlus/common/widgets/disabled_icon.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/sliver_wrap.dart';
-import 'package:PiliPlus/common/widgets/view_insets_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/search/search_rcmd/data.dart';
 import 'package:PiliPlus/pages/search/controller.dart';
@@ -18,8 +16,10 @@ import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key, this.parameters});
@@ -40,7 +40,10 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
-    _searchController = Get.put(SSearchController(_tag), tag: _tag);
+    _searchController = Get.put(
+      SSearchController(_tag, parameters: widget.parameters),
+      tag: _tag,
+    );
   }
 
   @override
@@ -63,32 +66,41 @@ class _SearchPageState extends State<SearchPage> {
         ? _buildHotSearch(isTrending: false)
         : null;
 
-    return SimpleScaffold(
-      appBar: _buildAppBar,
-      body: Padding(
-        padding: .only(left: padding.left, right: padding.right),
-        child: ViewInsetsSafeArea(
-          child: CustomScrollView(
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final content = CustomScrollView(
+      slivers: [
+        if (_searchController.searchSuggestion) _buildSearchSuggest(),
+        if (isPortrait) ...[
+          ?trending,
+          _buildHistory,
+          ?rcmd,
+        ] else if (_searchController.enableTrending ||
+            _searchController.enableSearchRcmd)
+          SliverCrossAxisGroup(
             slivers: [
-              if (_searchController.searchSuggestion) _buildSearchSuggest(),
-              if (isPortrait) ...[
-                ?trending,
-                _buildHistory,
-                ?rcmd,
-              ] else if (trending != null || rcmd != null)
-                SliverCrossAxisGroup(
-                  slivers: [
-                    SliverMainAxisGroup(slivers: [?trending, ?rcmd]),
-                    _buildHistory,
-                  ],
-                )
-              else
-                _buildHistory,
-              SliverPadding(padding: .only(bottom: padding.bottom)),
+              SliverMainAxisGroup(slivers: [?trending, ?rcmd]),
+              _buildHistory,
             ],
-          ),
-        ),
-      ),
+          )
+        else
+          _buildHistory,
+        SliverPadding(padding: .only(bottom: padding.bottom)),
+      ],
+    );
+    return Scaffold(
+      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
+      appBar: _buildAppBar,
+      body: isWindowsNeo
+          ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Center(
+                child: SizedBox(width: 1100, child: content),
+              ),
+            )
+          : Padding(
+              padding: .only(left: padding.left, right: padding.right),
+              child: content,
+            ),
     );
   }
 
@@ -160,7 +172,9 @@ class _SearchPageState extends State<SearchPage> {
                                     style: e.isEm
                                         ? TextStyle(
                                             fontWeight: .bold,
-                                            color: theme.colorScheme.primary,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
                                           )
                                         : null,
                                   ),
