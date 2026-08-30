@@ -121,6 +121,13 @@ if ($platform.ToLower() -eq "ios") {
     }
 }
 
+# Patch files are checked out with CRLF in this fork. Normalize them before
+# applying the Flutter source patches on Linux/macOS runners.
+Get-ChildItem -Path "$env:GITHUB_WORKSPACE/lib/scripts" -Filter *.patch | ForEach-Object {
+    (Get-Content $_.FullName -Raw) -replace "`r`n", "`n" |
+        Set-Content -NoNewline $_.FullName
+}
+
 Set-Location $env:FLUTTER_ROOT
 
 $picks   = @()
@@ -245,13 +252,6 @@ switch ($platform.ToLower()) {
         $PubCacheDir = "$env:LOCALAPPDATA/Pub/Cache"
     }
     default {}
-}
-
-# Patch files are checked out with CRLF in this fork. Normalize the Flutter
-# source patches before applying them on Linux/macOS runners.
-Get-ChildItem -Path "$env:GITHUB_WORKSPACE/lib/scripts" -Filter *.patch | ForEach-Object {
-    (Get-Content $_.FullName -Raw) -replace "`r`n", "`n" |
-        Set-Content -NoNewline $_.FullName
 }
 
 try {
