@@ -62,6 +62,12 @@ abstract final class RecommendFilter {
     return (enableFilter && rcmdRegExp.hasMatch(title));
   }
 
+  static bool filterUpName(String? name) {
+    return enableUpNameFilter &&
+        name != null &&
+        rcmdUpNameRegExp.hasMatch(name);
+  }
+
   static bool filterVideoTags(Iterable<String>? tags) {
     return enableVideoTagFilter &&
         tags != null &&
