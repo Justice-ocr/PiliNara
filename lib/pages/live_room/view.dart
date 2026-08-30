@@ -28,6 +28,7 @@ import 'package:PiliPlus/pages/danmaku/danmaku_model.dart';
 import 'package:PiliPlus/pages/live_room/contribution_rank/controller.dart';
 import 'package:PiliPlus/pages/live_room/contribution_rank/view.dart';
 import 'package:PiliPlus/pages/live_room/controller.dart';
+import 'package:PiliPlus/pages/live_room/fans_medal/view.dart';
 import 'package:PiliPlus/pages/live_emote/controller.dart';
 import 'package:PiliPlus/pages/live_emote/view.dart';
 import 'package:PiliPlus/pages/live_room/superchat/superchat_card.dart';
@@ -35,6 +36,7 @@ import 'package:PiliPlus/pages/live_room/superchat/superchat_panel.dart';
 import 'package:PiliPlus/pages/live_room/widgets/bottom_control.dart';
 import 'package:PiliPlus/pages/live_room/widgets/chat_panel.dart';
 import 'package:PiliPlus/pages/live_room/widgets/header_control.dart';
+import 'package:PiliPlus/pages/member/widget/medal_widget.dart';
 import 'package:PiliPlus/pages/video/widgets/player_focus.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
@@ -250,6 +252,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       ..addStatusLister(playerListener);
     if (WindowsVideoTabService.enabled) {
       plPlayerController.activateAsGlobal();
+      unawaited(_liveRoomController.loadFansMedal());
       WindowsVideoTabService.registerRoute(
         _liveTabArgs,
         activate: _activateWindowsLiveTab,
@@ -1628,7 +1631,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     setState(() => _windowsEmotePanelVisible = !_windowsEmotePanelVisible);
   }
 
-  void _insertWindowsEmote(Emoticon emote, double? _, double? __) {
+  void _insertWindowsEmote(Emoticon emote, double? _, double? _) {
     final emoji = emote.emoji;
     if (emoji == null || emoji.isEmpty) return;
     final value = _windowsDanmakuTextController.value;
@@ -1664,7 +1667,11 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       emoticonOptions: '[object Object]',
     );
     if (!mounted) return;
-    if (!res.isSuccess) res.toast();
+    if (res.isSuccess) {
+      _liveRoomController.markFansMedalStale();
+    } else {
+      res.toast();
+    }
     setState(() => _windowsDanmakuSending = false);
   }
 
@@ -1712,10 +1719,67 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     if (res.isSuccess) {
       _windowsDanmakuTextController.clear();
       _windowsDanmakuFocusNode.requestFocus();
+      _liveRoomController.markFansMedalStale();
     } else {
       res.toast();
     }
     setState(() => _windowsDanmakuSending = false);
+  }
+
+  void _showWindowsFansMedalPanel() {
+    if (!_liveRoomController.isLogin) {
+      SmartDialog.showToast('账号未登录');
+      return;
+    }
+    unawaited(_liveRoomController.loadFansMedal());
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      useSafeArea: true,
+      clipBehavior: Clip.hardEdge,
+      isScrollControlled: true,
+      showDragHandle: true,
+      constraints: const BoxConstraints(maxWidth: 460),
+      builder: (context) => FractionallySizedBox(
+        widthFactor: 1,
+        heightFactor: 0.65,
+        child: FansMedalPanel(liveRoomController: _liveRoomController),
+      ),
+    );
+  }
+
+  Widget _buildWindowsFansMedalButton() {
+    if (!_liveRoomController.isLogin) return const SizedBox.shrink();
+    return Obx(() {
+      final medal = _liveRoomController.wearingMedal.value;
+      if (medal == null) {
+        return IconButton(
+          tooltip: '粉丝勋章',
+          onPressed: _showWindowsFansMedalPanel,
+          color: _windowsTokens.muted,
+          icon: const Icon(Icons.workspace_premium_outlined, size: 20),
+        );
+      }
+      return Tooltip(
+        message: '粉丝勋章',
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: _windowsTokens.actionRadius,
+            onTap: _showWindowsFansMedalPanel,
+            child: SizedBox(
+              height: 40,
+              child: Center(
+                child: MedalWidget.fromMedalInfo(
+                  medal: medal,
+                  padding: MedalWidget.mediumPadding,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildWindowsInlineInput() {
@@ -1830,6 +1894,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
               size: 20,
             ),
           ),
+          _buildWindowsFansMedalButton(),
           Builder(
             builder: (context) => Material(
               type: MaterialType.transparency,
