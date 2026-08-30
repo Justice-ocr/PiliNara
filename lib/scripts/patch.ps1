@@ -142,6 +142,7 @@ switch ($platform.ToLower()) {
 
         # Flutter is cached between CI runs; discard previously applied source patches.
         git reset --hard HEAD
+        git clean -fd
     }
     "ios" {
         $patches += $ScrollViewPatch
@@ -182,10 +183,17 @@ foreach ($revert in $reverts) {
     git stash pop
 }
 
+function Test-PatchAlreadyApplied([string]$PatchPath) {
+    git apply --reverse --check "$env:GITHUB_WORKSPACE/$PatchPath" 2>$null
+    return $LASTEXITCODE -eq 0
+}
+
 foreach ($patch in $patches) {
     git apply "$env:GITHUB_WORKSPACE/$patch"
     if ($LASTEXITCODE -eq 0) {
         Write-Host "$patch applied"
+    } elseif (Test-PatchAlreadyApplied $patch) {
+        Write-Host "$patch already applied"
     } elseif ($patch -eq $PopupMenuPatch -or $patch -eq $ModalBarrierPatch) {
         Write-Warning "$patch is not applicable to this Flutter stable revision; continuing without optional menu/barrier patch"
     } else {
@@ -295,6 +303,8 @@ foreach ($patch in $patches_material) {
     git apply "$env:GITHUB_WORKSPACE/$patch"
     if ($LASTEXITCODE -eq 0) {
         Write-Host "$patch applied"
+    } elseif (Test-PatchAlreadyApplied $patch) {
+        Write-Host "$patch already applied"
     } else {
         throw "$LASTEXITCODE"
     }
