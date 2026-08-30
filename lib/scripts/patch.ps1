@@ -127,8 +127,8 @@ $picks   = @()
 $reverts = @()
 $patches = @($PopupMenuPatch, $ModalBarrierPatch, $TextSelectionPatch, $MouseCursorPatch,
             $ImageAnimPatch, $LayoutBuilderPatch, $NavigationDrawerPatch,
-            $FABPatch, $NullSafetySelectableRegionPatch,
-            $SelectableRegionPatch, $EditableTextPatch, $TextFieldPatch,
+            $FABPatch, $SelectableRegionPatch,
+            $NullSafetySelectableRegionPatch, $EditableTextPatch, $TextFieldPatch,
             $ScrollPositionPatch, $ScrollablePatch, $ScrollableGesturePatch,
             $DraggableScrollableSheetPatch, $ScaffoldPatch, $TextPatch,
             $TextPainterPatch, $SliverPatch, $RefreshIndicatorPatch)
@@ -194,8 +194,8 @@ foreach ($patch in $patches) {
         Write-Host "$patch applied"
     } elseif (Test-PatchAlreadyApplied $patch) {
         Write-Host "$patch already applied"
-    } elseif ($patch -eq $PopupMenuPatch -or $patch -eq $ModalBarrierPatch) {
-        Write-Warning "$patch is not applicable to this Flutter stable revision; continuing without optional menu/barrier patch"
+    } elseif ($patch -eq $PopupMenuPatch -or $patch -eq $ModalBarrierPatch -or $patch -eq $FABPatch -or $patch -eq $NullSafetySelectableRegionPatch) {
+        Write-Warning "$patch is not applicable to this Flutter stable revision; continuing without optional patch"
     } else {
         throw "$LASTEXITCODE"
     }
