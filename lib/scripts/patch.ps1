@@ -139,6 +139,9 @@ switch ($platform.ToLower()) {
         $patches += $ScrollViewPatch
         $patches += $NavigatorPatch
         $patches += $PredictiveBackPatch
+
+        # Flutter is cached between CI runs; discard previously applied source patches.
+        git reset --hard HEAD
     }
     "ios" {
         $patches += $ScrollViewPatch
