@@ -183,8 +183,8 @@ foreach ($patch in $patches) {
     git apply "$env:GITHUB_WORKSPACE/$patch"
     if ($LASTEXITCODE -eq 0) {
         Write-Host "$patch applied"
-    } elseif ($patch -eq $PopupMenuPatch) {
-        Write-Warning "$patch is not applicable to this Flutter stable revision; continuing without optional popup icon color patch"
+    } elseif ($patch -eq $PopupMenuPatch -or $patch -eq $ModalBarrierPatch) {
+        Write-Warning "$patch is not applicable to this Flutter stable revision; continuing without optional menu/barrier patch"
     } else {
         throw "$LASTEXITCODE"
     }
