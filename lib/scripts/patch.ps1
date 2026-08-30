@@ -125,9 +125,10 @@ Set-Location $env:FLUTTER_ROOT
 
 $picks   = @()
 $reverts = @()
-$patches = @($PopupMenuPatch, $ModalBarrierPatch, $TextSelectionPatch, $MouseCursorPatch,
-            $ImageAnimPatch, $LayoutBuilderPatch, $NavigationDrawerPatch,
-            $FABPatch, $SelectableRegionPatch,
+$patches = @($PopupMenuPatch, $ModalBarrierPatch, $SelectableRegionPatch,
+            $TextSelectionPatch, $MouseCursorPatch, $ImageAnimPatch,
+            $LayoutBuilderPatch, $NavigationDrawerPatch,
+            $FABPatch,
             $NullSafetySelectableRegionPatch, $EditableTextPatch, $TextFieldPatch,
             $ScrollPositionPatch, $ScrollablePatch, $ScrollableGesturePatch,
             $DraggableScrollableSheetPatch, $ScaffoldPatch, $TextPatch,
