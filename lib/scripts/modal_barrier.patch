@@ -1,17 +1,3 @@
-diff --git a/packages/flutter/lib/src/material/popup_menu.dart b/packages/flutter/lib/src/material/popup_menu.dart
-index 03a0ee2b8de..984e6ced68e 100644
---- a/packages/flutter/lib/src/material/popup_menu.dart
-+++ b/packages/flutter/lib/src/material/popup_menu.dart
-@@ -1014,6 +1014,9 @@ class _PopupMenuRoute<T> extends PopupRoute<T> {
-   @override
-   final String barrierLabel;
- 
-+  @override
-+  bool get isMenu => true;
-+
-   @override
-   Widget buildPage(
-     BuildContext context,
 diff --git a/packages/flutter/lib/src/widgets/modal_barrier.dart b/packages/flutter/lib/src/widgets/modal_barrier.dart
 index 7b83d9c42cb..3946aa4950a 100644
 --- a/packages/flutter/lib/src/widgets/modal_barrier.dart
