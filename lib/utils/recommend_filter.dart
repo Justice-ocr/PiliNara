@@ -22,6 +22,11 @@ abstract final class RecommendFilter {
     caseSensitive: false,
   );
   static bool enableFilter = rcmdRegExp.pattern.isNotEmpty;
+  static RegExp rcmdUpNameRegExp = RegExp(
+    Pref.parseBanWordToRegex(Pref.banWordForRecommendUpName),
+    caseSensitive: false,
+  );
+  static bool enableUpNameFilter = rcmdUpNameRegExp.pattern.isNotEmpty;
   static Map<int, String> recommendBlockedMids = Pref.recommendBlockedMids;
 
   static bool isWhitelisted(int? mid) {
@@ -81,7 +86,7 @@ abstract final class RecommendFilter {
             videoItem.duration < minDurationForRcmd) ||
         filterLikeRatio(videoItem.stat.like, videoItem.stat.view) ||
         filterTitle(videoItem.title) ||
-        filterUser(videoItem.owner.mid);
+        filterUpName(videoItem.owner.name);
   }
 
   static bool searchShouldRemove(int? mid, String title) {

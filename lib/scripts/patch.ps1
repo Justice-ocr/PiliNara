@@ -233,6 +233,17 @@ switch ($platform.ToLower()) {
     default {}
 }
 
+try {
+    $MaterialUiDir = Get-ChildItem "$PubCacheDir/hosted/pub.dev" -Directory |
+        Where-Object { $_.Name -like "material_ui-*" } |
+        Select-Object -Last 1
+
+    if ($MaterialUiDir) {
+        Remove-Item -Path $MaterialUiDir.FullName -Recurse -Force
+    }
+} catch {
+}
+
 flutter pub get
 
 # material_ui replaces Flutter's material library in the application. The
@@ -253,11 +264,13 @@ if ($GetPackageDir) {
 
 $MaterialUiDir = Get-ChildItem "$PubCacheDir/hosted/pub.dev" -Directory |
     Where-Object { $_.Name -like "material_ui-*" } |
-    Select-Object -First 1
+    Select-Object -Last 1
 
 if (-not $MaterialUiDir) {
     throw "material_ui package not found in pub cache"
 }
+
+Write-Host "material_ui dir: $($MaterialUiDir.FullName)"
 
 Get-ChildItem -Path "$env:GITHUB_WORKSPACE/lib/scripts/material" -Filter *.patch | ForEach-Object {
     (Get-Content $_.FullName -Raw) -replace "`r`n", "`n" | 

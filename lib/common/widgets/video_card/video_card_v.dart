@@ -19,6 +19,7 @@ import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:intl/intl.dart';
+import 'package:material_ui/material_ui.dart';
 
 // 视频卡片 - 垂直布局
 class VideoCardV extends StatelessWidget {
@@ -214,10 +215,16 @@ class VideoCardV extends StatelessWidget {
                 Expanded(
                   flex: 1,
                   child: Text(
-                    videoItem.owner.name.toString(),
+                    remarkedName(
+                      videoItem.owner.mid,
+                      videoItem.owner.name.toString(),
+                    ),
                     maxLines: 1,
                     overflow: .clip,
-                    semanticsLabel: 'UP：${videoItem.owner.name}',
+                    semanticsLabel: 'UP：${remarkedName(
+                      videoItem.owner.mid,
+                      videoItem.owner.name.toString(),
+                    )}',
                     style: TextStyle(
                       height: 1.5,
                       fontSize: theme.textTheme.labelMedium!.fontSize,
