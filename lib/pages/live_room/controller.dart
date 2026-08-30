@@ -136,6 +136,7 @@ class LiveRoomController extends GetxController {
   final RxBool fansMedalLoading = false.obs;
   final Rxn<String> fansMedalError = Rxn();
   bool _fansMedalStale = false;
+  bool _fansMedalLoadRequested = false;
   Future<void>? _fansMedalReq;
   int _fansMedalPage = 1;
   bool _fansMedalLoadingMore = false;
@@ -311,6 +312,7 @@ class LiveRoomController extends GetxController {
       if (response.roomId case final roomId?) {
         this.roomId = roomId;
       }
+      _retryFansMedalLoadIfRequested();
       liveTime.value = response.liveTime;
       startLiveTimer();
       if (Accounts.heartbeat.isLogin) {
@@ -510,6 +512,7 @@ class LiveRoomController extends GetxController {
     final res = await LiveHttp.liveRoomInfoH5(roomId: roomId);
     if (res case Success(:final response)) {
       roomInfoH5.value = response;
+      _retryFansMedalLoadIfRequested();
       title.value = response.roomInfo?.title ?? '';
       WindowsVideoTabService.upsert(
         {
@@ -956,6 +959,7 @@ class LiveRoomController extends GetxController {
 
   Future<void> loadFansMedal({bool force = false}) async {
     if (!isLogin) return;
+    _fansMedalLoadRequested = true;
     if (_fansMedalReq != null) return _fansMedalReq;
     if (!force && !_fansMedalStale && fansMedalData.value != null) return;
     final targetId = medalTargetId;
@@ -968,6 +972,12 @@ class LiveRoomController extends GetxController {
     } finally {
       fansMedalLoading.value = false;
       _fansMedalReq = null;
+    }
+  }
+
+  void _retryFansMedalLoadIfRequested() {
+    if (_fansMedalLoadRequested && fansMedalData.value == null) {
+      unawaited(loadFansMedal());
     }
   }
 
@@ -1025,44 +1035,46 @@ class LiveRoomController extends GetxController {
     if (targetId == null) return;
 
     _fansMedalLoadingMore = true;
-    final nextPage = _fansMedalPage + 1;
-    final res = await LiveHttp.fansMedalPanel(
-      roomId: roomId,
-      targetId: targetId,
-      page: nextPage,
-    );
-    if (res case Success(:final response)) {
-      final data = fansMedalData.value;
-      if (data != null) {
-        final existingIds = <int>{};
-        for (final item in [...?data.specialList, ...?data.list]) {
-          if (item.medal?.medalId case final id?) existingIds.add(id);
-        }
-        final newList = <FansMedalItem>[];
-        for (final item in (response.list ?? <FansMedalItem>[])) {
-          if (item.medal?.medalId case final id?) {
-            if (existingIds.add(id)) newList.add(item);
-          } else {
-            newList.add(item);
+    try {
+      final nextPage = _fansMedalPage + 1;
+      final res = await LiveHttp.fansMedalPanel(
+        roomId: roomId,
+        targetId: targetId,
+        page: nextPage,
+      );
+      if (res case Success(:final response)) {
+        final data = fansMedalData.value;
+        if (data != null) {
+          final existingIds = <int>{};
+          for (final item in [...?data.specialList, ...?data.list]) {
+            if (item.medal?.medalId case final id?) existingIds.add(id);
           }
+          final newList = <FansMedalItem>[];
+          for (final item in (response.list ?? <FansMedalItem>[])) {
+            if (item.medal?.medalId case final id?) {
+              if (existingIds.add(id)) newList.add(item);
+            } else {
+              newList.add(item);
+            }
+          }
+          if (newList.isEmpty) {
+            fansMedalHasMore.value = false;
+            return;
+          }
+          data
+            ..list = [...?data.list, ...newList]
+            ..hasMore = response.hasMore
+            ..nextPage = response.nextPage;
+          _fansMedalPage = nextPage;
+          _updateFansMedalHasMore(data);
+          fansMedalData.refresh();
         }
-        if (newList.isEmpty) {
-          fansMedalHasMore.value = false;
-          _fansMedalLoadingMore = false;
-          return;
-        }
-        data
-          ..list = [...?data.list, ...newList]
-          ..hasMore = response.hasMore
-          ..nextPage = response.nextPage;
-        _fansMedalPage = nextPage;
-        _updateFansMedalHasMore(data);
-        fansMedalData.refresh();
+      } else {
+        res.toast();
       }
-    } else {
-      res.toast();
+    } finally {
+      _fansMedalLoadingMore = false;
     }
-    _fansMedalLoadingMore = false;
   }
 
   Future<bool> wearFansMedal(FansMedalItem item) async {
