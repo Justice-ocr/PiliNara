@@ -213,7 +213,7 @@ class _HorizontalMemberPageState extends State<HorizontalMemberPage> {
                             if (widget.onClose case final onClose?) {
                               onClose();
                             } else {
-                              Get.back();
+                              Navigator.of(context).maybePop();
                             }
                             widget.ugcIntroController.onChangeEpisode(
                               BaseEpisodeItem(

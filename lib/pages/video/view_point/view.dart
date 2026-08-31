@@ -79,7 +79,7 @@ class _ViewPointsPageState extends State<ViewPointsPage>
             size: 30,
             icon: const Icon(Icons.clear),
             tooltip: '关闭',
-            onPressed: Get.back,
+            onPressed: () => Navigator.of(context).maybePop(),
           ),
           const SizedBox(width: 16),
         ],
@@ -152,7 +152,7 @@ class _ViewPointsPageState extends State<ViewPointsPage>
       child: InkWell(
         onTap: segment.from != null
             ? () {
-                Get.back();
+                Navigator.of(context).maybePop();
                 plPlayerController?.seekTo(
                   Duration(seconds: segment.from!),
                   isSeek: false,

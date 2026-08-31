@@ -63,6 +63,7 @@ class EpisodePanel extends CommonSlidePage {
     this.onReverse,
     required this.onChangeEpisode,
     this.onClose,
+    this.showClose = false,
   }) : assert(type == EpisodeType.pgc || ugcIntroController != null);
 
   final UgcIntroController? ugcIntroController;
@@ -84,6 +85,7 @@ class EpisodePanel extends CommonSlidePage {
   onChangeEpisode;
   final VoidCallback? onReverse;
   final VoidCallback? onClose;
+  final bool showClose;
 
   @override
   State<EpisodePanel> createState() => _EpisodePanelState();
@@ -91,6 +93,17 @@ class EpisodePanel extends CommonSlidePage {
 
 class _EpisodePanelState extends State<EpisodePanel>
     with TickerProviderStateMixin, CommonSlideMixin {
+  bool get _canClose => widget.showClose || widget.onClose != null;
+
+  void _closePanel() {
+    final onClose = widget.onClose;
+    if (onClose != null) {
+      onClose();
+    } else {
+      Navigator.of(context).maybePop();
+    }
+  }
+
   // tab
   late final TabController _tabController;
   late final RxInt _currentTabIndex = _tabController.index.obs;
@@ -468,7 +481,9 @@ class _EpisodePanelState extends State<EpisodePanel>
                 // return;
               }
               SmartDialog.showToast('切换到：$title');
-              widget.onClose?.call();
+              if (_canClose) {
+                _closePanel();
+              }
 
               widget.onChangeEpisode(episode, manual: true).then((res) {
                 if (res) {
@@ -641,7 +656,12 @@ class _EpisodePanelState extends State<EpisodePanel>
         ListOrder.shuffle => const Icon(Icons.shuffle),
         _ => const Icon(MdiIcons.sortAscending),
       },
-      onPressed: () => widget.onReverse?.call(),
+      onPressed: () {
+        if (_canClose) {
+          _closePanel();
+        }
+        widget.onReverse?.call();
+      },
     );
   }
 
@@ -730,12 +750,12 @@ class _EpisodePanelState extends State<EpisodePanel>
             );
           },
         ),
-        if (widget.onClose != null)
+        if (_canClose)
           iconButton(
             iconSize: 22,
             tooltip: '关闭',
             icon: const Icon(Icons.close),
-            onPressed: widget.onClose,
+            onPressed: _closePanel,
           ),
       ],
     ),

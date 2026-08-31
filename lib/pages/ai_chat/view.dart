@@ -145,7 +145,7 @@ class _AiChatPageState extends State<AiChatPage>
           children: [
           // Drag handle
           GestureDetector(
-            onTap: Get.back,
+            onTap: () => Navigator.of(context).maybePop(),
             child: SizedBox(
               height: 35,
               child: Center(

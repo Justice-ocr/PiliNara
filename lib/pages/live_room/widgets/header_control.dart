@@ -343,7 +343,7 @@ class _LiveHeaderControlState extends State<LiveHeaderControl>
       constraints: BoxConstraints(
         maxWidth: math.min(640, context.mediaQueryShortestSide),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         final maxChildSize =
             PlatformUtils.isMobile && !context.mediaQuerySize.isPortrait
             ? 1.0
@@ -363,7 +363,7 @@ class _LiveHeaderControlState extends State<LiveHeaderControl>
             return Column(
               children: [
                 InkWell(
-                  onTap: Get.back,
+                  onTap: () => Navigator.of(sheetContext).pop(),
                   borderRadius: Style.bottomSheetRadius,
                   child: SizedBox(
                     height: 35,
@@ -451,7 +451,7 @@ class _LiveHeaderControlState extends State<LiveHeaderControl>
                                     onTap: isCurrUrl
                                         ? null
                                         : () {
-                                            Get.back();
+                                            Navigator.of(sheetContext).pop();
                                             controller.initLiveUrl(
                                               streamIndex: si,
                                               formatIndex: fi,

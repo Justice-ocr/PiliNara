@@ -80,7 +80,7 @@ class _IntroDetailState extends State<PgcIntroPanel>
               IconButton(
                 tooltip: '关闭',
                 icon: const Icon(Icons.close, size: 20),
-                onPressed: Get.back,
+                onPressed: () => Navigator.of(context).maybePop(),
               ),
               const SizedBox(width: 2),
             ],

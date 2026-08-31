@@ -288,6 +288,7 @@ class AuthorPanel extends StatelessWidget {
       builder: (context1) {
         final theme = Theme.of(context);
         final moduleAuthor = item.modules.moduleAuthor!;
+        void closeSheet() => Navigator.of(context1).pop();
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.viewPaddingOf(context1).bottom,
@@ -296,7 +297,7 @@ class AuthorPanel extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               InkWell(
-                onTap: Get.back,
+                onTap: closeSheet,
                 borderRadius: Style.bottomSheetRadius,
                 child: SizedBox(
                   height: 35,
@@ -315,7 +316,7 @@ class AuthorPanel extends StatelessWidget {
               if (bvid != null)
                 ListTile(
                   onTap: () {
-                    Get.back();
+                    closeSheet();
                     UserHttp.toViewLater(bvid: bvid);
                   },
                   minLeadingWidth: 0,
@@ -327,7 +328,7 @@ class AuthorPanel extends StatelessWidget {
                 ),
               ListTile(
                 onTap: () {
-                  Get.back();
+                  closeSheet();
                   SavePanel.toSavePanel(item: item);
                 },
                 minLeadingWidth: 0,
@@ -341,7 +342,7 @@ class AuthorPanel extends StatelessWidget {
                 ),
                 leading: const Icon(Icons.share_outlined, size: 19),
                 onTap: () {
-                  Get.back();
+                  closeSheet();
                   ShareUtils.shareText(
                     '${HttpString.opusBaseUrl}/${item.idStr}',
                   );
@@ -358,7 +359,7 @@ class AuthorPanel extends StatelessWidget {
                   ),
                   leading: const Icon(Icons.forward_to_inbox, size: 19),
                   onTap: () {
-                    Get.back();
+                    closeSheet();
                     try {
                       bool isDyn = item.basic!.commentType == 17;
                       String id = isDyn ? item.idStr : item.basic!.ridStr!;
@@ -395,7 +396,7 @@ class AuthorPanel extends StatelessWidget {
                 ),
                 leading: const Icon(Icons.visibility_off_outlined, size: 19),
                 onTap: () {
-                  Get.back();
+                  closeSheet();
                   onBlock?.call();
                   try {
                     Get.find<DynamicsController>().tempBannedList.add(
@@ -415,7 +416,7 @@ class AuthorPanel extends StatelessWidget {
                 ),
                 leading: const Icon(Icons.block_outlined, size: 19),
                 onTap: () {
-                  Get.back();
+                  closeSheet();
                   onBlock?.call();
                   try {
                     final mid = moduleAuthor.mid!;
@@ -438,7 +439,7 @@ class AuthorPanel extends StatelessWidget {
                 ),
                 leading: const Icon(Icons.filter_alt_outlined, size: 19),
                 onTap: () {
-                  Get.back();
+                  closeSheet();
                   Get.to(
                     () => const DynamicsSetting(autoOpenKeywordFilter: true),
                   );
@@ -452,7 +453,7 @@ class AuthorPanel extends StatelessWidget {
                 ),
                 leading: const Icon(Icons.person_add_alt_1_outlined, size: 19),
                 onTap: () {
-                  Get.back();
+                  closeSheet();
                   try {
                     final mid = moduleAuthor.mid!;
                     UserWhitelist.add(mid: mid, name: moduleAuthor.name ?? '');
@@ -470,7 +471,7 @@ class AuthorPanel extends StatelessWidget {
               if (kDebugMode || moduleAuthor.mid == Accounts.main.mid) ...[
                 ListTile(
                   onTap: () {
-                    Get.back();
+                    closeSheet();
                     RequestUtils.checkCreatedDyn(
                       id: item.idStr,
                       isManual: true,
@@ -483,7 +484,7 @@ class AuthorPanel extends StatelessWidget {
                 if (onSetTop != null)
                   ListTile(
                     onTap: () {
-                      Get.back();
+                      closeSheet();
                       onSetTop!(moduleAuthor.isTop ?? false, item.idStr);
                     },
                     minLeadingWidth: 0,
@@ -496,7 +497,7 @@ class AuthorPanel extends StatelessWidget {
                 if (onSetReplySubject != null)
                   ListTile(
                     onTap: () async {
-                      Get.back();
+                      closeSheet();
                       final res = await ReplyHttp.replyInteraction(
                         oid: item.basic!.commentIdStr!,
                         type: item.basic!.commentType!,
@@ -505,7 +506,7 @@ class AuthorPanel extends StatelessWidget {
                         if (context.mounted) {
                           showDialog(
                             context: context,
-                            builder: (context) {
+                            builder: (dialogContext) {
                               final selection = response.upReplySelection;
                               final enableSelection = selection.status == 1;
 
@@ -524,7 +525,7 @@ class AuthorPanel extends StatelessWidget {
                                       style: const TextStyle(fontSize: 14),
                                     ),
                                     onTap: () {
-                                      Get.back();
+                                      Navigator.of(dialogContext).pop();
                                       onSetReplySubject!(
                                         enableSelection ? 2 : 1,
                                       );
@@ -538,7 +539,7 @@ class AuthorPanel extends StatelessWidget {
                                       style: const TextStyle(fontSize: 14),
                                     ),
                                     onTap: () {
-                                      Get.back();
+                                      Navigator.of(dialogContext).pop();
                                       onSetReplySubject!(enableReply ? 3 : 4);
                                     },
                                   ),
@@ -564,47 +565,49 @@ class AuthorPanel extends StatelessWidget {
                 if (onSetPubSetting != null)
                   ListTile(
                     onTap: () {
-                      Get.back();
+                      closeSheet();
 
                       final isPrivate = moduleAuthor.badgeText != null;
-                      Future<void> onTap() async {
-                        Get.back();
-                        if ((await onSetPubSetting!(
-                          isPrivate,
-                          item.idStr,
-                        )).isSuccess) {
-                          if (context.mounted) {
-                            (context as Element).markNeedsBuild();
-                          }
-                        }
-                      }
-
                       showDialog(
                         context: context,
-                        builder: (context) => SimpleDialog(
-                          clipBehavior: Clip.hardEdge,
-                          contentPadding: const .symmetric(vertical: 12),
-                          children: [
-                            ListTile(
-                              dense: true,
-                              enabled: isPrivate,
-                              title: const Text(
-                                '所有用户可见',
-                                style: TextStyle(fontSize: 14),
+                        builder: (dialogContext) {
+                          Future<void> onTap() async {
+                            Navigator.of(dialogContext).pop();
+                            if ((await onSetPubSetting!(
+                              isPrivate,
+                              item.idStr,
+                            )).isSuccess) {
+                              if (context.mounted) {
+                                (context as Element).markNeedsBuild();
+                              }
+                            }
+                          }
+
+                          return SimpleDialog(
+                            clipBehavior: Clip.hardEdge,
+                            contentPadding: const .symmetric(vertical: 12),
+                            children: [
+                              ListTile(
+                                dense: true,
+                                enabled: isPrivate,
+                                title: const Text(
+                                  '所有用户可见',
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                                onTap: onTap,
                               ),
-                              onTap: onTap,
-                            ),
-                            ListTile(
-                              dense: true,
-                              enabled: !isPrivate,
-                              title: const Text(
-                                '仅自己可见',
-                                style: TextStyle(fontSize: 14),
+                              ListTile(
+                                dense: true,
+                                enabled: !isPrivate,
+                                title: const Text(
+                                  '仅自己可见',
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                                onTap: onTap,
                               ),
-                              onTap: onTap,
-                            ),
-                          ],
-                        ),
+                            ],
+                          );
+                        },
                       );
                     },
                     minLeadingWidth: 0,
@@ -614,7 +617,7 @@ class AuthorPanel extends StatelessWidget {
                 if (onEdit != null)
                   ListTile(
                     onTap: () {
-                      Get.back();
+                      closeSheet();
                       onEdit!();
                     },
                     minLeadingWidth: 0,
@@ -624,14 +627,14 @@ class AuthorPanel extends StatelessWidget {
                 if (onRemove != null)
                   ListTile(
                     onTap: () {
-                      Get.back();
+                      closeSheet();
                       showDialog(
                         context: context,
-                        builder: (context) => AlertDialog(
+                        builder: (dialogContext) => AlertDialog(
                           title: const Text('确定删除该动态?'),
                           actions: [
                             TextButton(
-                              onPressed: Get.back,
+                              onPressed: () => Navigator.of(dialogContext).pop(),
                               child: Text(
                                 '取消',
                                 style: TextStyle(
@@ -641,7 +644,7 @@ class AuthorPanel extends StatelessWidget {
                             ),
                             TextButton(
                               onPressed: () {
-                                Get.back();
+                                Navigator.of(dialogContext).pop();
                                 onRemove!(item.idStr);
                               },
                               child: const Text('确定'),
@@ -678,7 +681,7 @@ class AuthorPanel extends StatelessWidget {
                     color: theme.colorScheme.error,
                   ),
                   onTap: () {
-                    Get.back();
+                    closeSheet();
                     autoWrapReportDialog(
                       context,
                       ReportOptions.dynamicReport,
@@ -703,7 +706,7 @@ class AuthorPanel extends StatelessWidget {
                 ),
               const Divider(thickness: 0.1, height: 1),
               ListTile(
-                onTap: Get.back,
+                onTap: closeSheet,
                 minLeadingWidth: 0,
                 dense: true,
                 title: Text(

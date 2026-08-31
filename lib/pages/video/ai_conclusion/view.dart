@@ -143,7 +143,7 @@ class _AiDetailState extends State<AiConclusionPanel>
       child: Column(
         children: [
           GestureDetector(
-            onTap: Get.back,
+            onTap: () => Navigator.of(context).maybePop(),
             child: SizedBox(
               height: 35,
               child: Center(

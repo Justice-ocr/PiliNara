@@ -278,7 +278,7 @@ class _GalleryViewerState extends State<GalleryViewer>
 
     if (!_animateController.isDismissed) {
       if (_animateController.value > 0.2) {
-        Get.back();
+        _dismiss();
       } else {
         _animateController.reverse();
       }
@@ -530,9 +530,11 @@ class _GalleryViewerState extends State<GalleryViewer>
     EasyThrottle.throttle(
       'VIEWER_TAP',
       const Duration(milliseconds: 555),
-      Get.back,
+      _dismiss,
     );
   }
+
+  void _dismiss() => Navigator.of(context).maybePop();
 
   void _onLongPress() {
     final item = widget.sources[_currIndex.value];
@@ -540,28 +542,28 @@ class _GalleryViewerState extends State<GalleryViewer>
     HapticFeedback.mediumImpact();
     showDialog(
       context: context,
-      builder: (context) => SimpleDialog(
+      builder: (dialogContext) => SimpleDialog(
         clipBehavior: Clip.hardEdge,
         contentPadding: const EdgeInsets.symmetric(vertical: 12),
         children: [
           if (PlatformUtils.isMobile)
             DialogOption(
               onPressed: () {
-                Get.back();
+                Navigator.of(dialogContext).pop();
                 ImageUtils.onShareImg(item.url);
               },
               child: const Text('分享', style: TextStyle(fontSize: 14)),
             ),
           DialogOption(
             onPressed: () {
-              Get.back();
+              Navigator.of(dialogContext).pop();
               Utils.copyText(item.url);
             },
             child: const Text('复制链接', style: TextStyle(fontSize: 14)),
           ),
           DialogOption(
             onPressed: () {
-              Get.back();
+              Navigator.of(dialogContext).pop();
               ImageUtils.downloadImg([item.url]);
             },
             child: const Text('保存图片', style: TextStyle(fontSize: 14)),
@@ -569,14 +571,14 @@ class _GalleryViewerState extends State<GalleryViewer>
           if (PlatformUtils.isDesktop) ...[
             DialogOption(
               onPressed: () {
-                Get.back();
+                Navigator.of(dialogContext).pop();
                 ImageUtils.copyImg(item.url);
               },
               child: const Text('复制图片', style: TextStyle(fontSize: 14)),
             ),
             DialogOption(
               onPressed: () {
-                Get.back();
+                Navigator.of(dialogContext).pop();
                 PageUtils.launchURL(item.url);
               },
               child: const Text('网页打开', style: TextStyle(fontSize: 14)),
@@ -585,7 +587,7 @@ class _GalleryViewerState extends State<GalleryViewer>
           else if (widget.sources.length > 1)
             DialogOption(
               onPressed: () {
-                Get.back();
+                Navigator.of(dialogContext).pop();
                 ImageUtils.downloadImg(
                   widget.sources.map((item) => item.url).toList(),
                 );
@@ -595,7 +597,7 @@ class _GalleryViewerState extends State<GalleryViewer>
           if (item.sourceType == SourceType.livePhoto)
             DialogOption(
               onPressed: () {
-                Get.back();
+                Navigator.of(dialogContext).pop();
                 ImageUtils.downloadLivePhoto(
                   url: item.url,
                   liveUrl: item.liveUrl!,

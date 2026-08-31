@@ -3342,11 +3342,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       onChangeEpisode: videoDetailController.isUgc
           ? ugcIntroController.onChangeEpisode
           : pgcIntroController.onChangeEpisode,
-      onClose: Get.back,
-      onReverse: () {
-        Get.back();
-        onReversePlay(isSeason: season != null);
-      },
+      showClose: true,
+      onReverse: () => onReversePlay(isSeason: season != null),
     );
     if (isFullScreen || videoDetailController.showVideoSheet) {
       final child = listSheetContent(enableSlide: false);

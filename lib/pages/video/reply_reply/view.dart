@@ -185,7 +185,9 @@ class _VideoReplyReplyPanelState extends State<VideoReplyReplyPanel>
                         IconButton(
                           tooltip: '关闭',
                           icon: const Icon(Icons.close, size: 20),
-                          onPressed: Get.back,
+                          onPressed:
+                              widget.onClose ??
+                              () => Navigator.of(context).maybePop(),
                         ),
                       ],
                     ),

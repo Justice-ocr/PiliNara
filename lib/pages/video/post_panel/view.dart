@@ -111,7 +111,7 @@ class PostPanel extends CommonSlidePage {
                 String initV = value;
                 final res = await showDialog<String>(
                   context: context,
-                  builder: (context) => AlertDialog(
+                  builder: (dialogContext) => AlertDialog(
                     content: TextFormField(
                       initialValue: value,
                       autofocus: true,
@@ -122,7 +122,7 @@ class PostPanel extends CommonSlidePage {
                     ),
                     actions: [
                       TextButton(
-                        onPressed: Get.back,
+                        onPressed: () => Navigator.of(dialogContext).pop(),
                         child: Text(
                           '取消',
                           style: TextStyle(
@@ -131,7 +131,8 @@ class PostPanel extends CommonSlidePage {
                         ),
                       ),
                       TextButton(
-                        onPressed: () => Get.back(result: initV),
+                        onPressed: () =>
+                            Navigator.of(dialogContext).pop(initV),
                         child: const Text('确定'),
                       ),
                     ],
@@ -230,7 +231,7 @@ class _PostPanelState extends State<PostPanel>
             size: 32,
             context: context,
             tooltip: '关闭',
-            onPressed: Get.back,
+            onPressed: () => Navigator.of(context).maybePop(),
             icon: const Icon(Icons.close),
           ),
           const SizedBox(width: 16),
@@ -283,18 +284,21 @@ class _PostPanelState extends State<PostPanel>
             tooltip: '提交',
             onPressed: () => showDialog(
               context: context,
-              builder: (context) => AlertDialog(
+              builder: (dialogContext) => AlertDialog(
                 title: const Text('确定无误再提交'),
                 actions: [
                   TextButton(
-                    onPressed: Get.back,
+                    onPressed: () => Navigator.of(dialogContext).pop(),
                     child: Text(
                       '取消',
                       style: TextStyle(color: theme.colorScheme.outline),
                     ),
                   ),
                   TextButton(
-                    onPressed: _onPost,
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop();
+                      _onPost();
+                    },
                     child: const Text('确定提交'),
                   ),
                 ],
@@ -308,7 +312,6 @@ class _PostPanelState extends State<PostPanel>
   }
 
   Future<void> _onPost() async {
-    Get.back();
     final res = await SponsorBlock.postSkipSegments(
       bvid: videoDetailController.bvid,
       cid: videoDetailController.cid.value,
@@ -317,7 +320,7 @@ class _PostPanelState extends State<PostPanel>
     );
 
     if (res case Success(:final response)) {
-      Get.back();
+      Navigator.of(context).maybePop();
       SmartDialog.showToast('提交成功');
       list.clear();
       videoDetailController.handleSBData(response);

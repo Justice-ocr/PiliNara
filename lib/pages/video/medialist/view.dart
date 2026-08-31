@@ -96,7 +96,7 @@ class _MediaListPanelState extends State<MediaListPanel>
                     _ => const Icon(MdiIcons.sortAscending),
                   },
                   onPressed: () {
-                    Get.back();
+                    Navigator.of(context).maybePop();
                     widget.onReverse();
                   },
                 ),
@@ -104,7 +104,7 @@ class _MediaListPanelState extends State<MediaListPanel>
                   iconSize: 20,
                   tooltip: '关闭',
                   icon: const Icon(Icons.close),
-                  onPressed: Get.back,
+                  onPressed: () => Navigator.of(context).maybePop(),
                 ),
                 const SizedBox(width: 14),
               ],
@@ -183,7 +183,7 @@ class _MediaListPanelState extends State<MediaListPanel>
                 SmartDialog.showToast('不支持播放该类型视频');
                 return;
               }
-              Get.back();
+              Navigator.of(context).maybePop();
               widget.onChangeEpisode(item, manual: true);
             },
             onLongPress: onLongPress,

@@ -1037,7 +1037,7 @@ class ReplyItemGrpc extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           InkWell(
-            onTap: Get.back,
+            onTap: () => Navigator.of(context).pop(),
             borderRadius: Style.bottomSheetRadius,
             child: SizedBox(
               height: 35,
@@ -1056,7 +1056,7 @@ class ReplyItemGrpc extends StatelessWidget {
           if (kDebugMode && GStorage.reply != null) ...[
             ListTile(
               onTap: () {
-                Get.back();
+                Navigator.of(context).pop();
                 GStorage.reply!.put(
                   item.id.toString(),
                   (item.deepCopy()
@@ -1073,7 +1073,7 @@ class ReplyItemGrpc extends StatelessWidget {
             ),
             ListTile(
               onTap: () {
-                Get.back();
+                Navigator.of(context).pop();
                 onDelete();
                 GStorage.reply!.delete(item.id.toString());
               },
@@ -1084,7 +1084,7 @@ class ReplyItemGrpc extends StatelessWidget {
             ),
             ListTile(
               onTap: () {
-                Get.back();
+                Navigator.of(context).pop();
                 final oid = item.oid.toInt();
                 final data =
                     (item.deepCopy()
@@ -1105,7 +1105,7 @@ class ReplyItemGrpc extends StatelessWidget {
           if (ownerMid == upMid || ownerMid == item.member.mid)
             ListTile(
               onTap: () async {
-                Get.back();
+                Navigator.of(context).pop();
                 bool? isDelete = await showDialog<bool>(
                   context: context,
                   builder: (context) {
@@ -1131,7 +1131,8 @@ class ReplyItemGrpc extends StatelessWidget {
                       ),
                       actions: [
                         TextButton(
-                          onPressed: () => Get.back(result: false),
+                          onPressed: () =>
+                              Navigator.of(context).pop(false),
                           child: Text(
                             '取消',
                             style: TextStyle(
@@ -1140,7 +1141,7 @@ class ReplyItemGrpc extends StatelessWidget {
                           ),
                         ),
                         TextButton(
-                          onPressed: () => Get.back(result: true),
+                          onPressed: () => Navigator.of(context).pop(true),
                           child: const Text('确定'),
                         ),
                       ],
@@ -1171,7 +1172,7 @@ class ReplyItemGrpc extends StatelessWidget {
           if (ownerMid != Int64.ZERO)
             ListTile(
               onTap: () {
-                Get.back();
+                Navigator.of(context).pop();
 
                 final oid = item.oid;
                 final rpid = item.id;
@@ -1212,7 +1213,7 @@ class ReplyItemGrpc extends StatelessWidget {
                 mids[mid] = name;
                 Pref.replyBlockedMids = mids;
                 ReplyGrpc.replyBlockedMids = mids;
-                Get.back();
+                Navigator.of(context).pop();
                 SmartDialog.showToast('已屏蔽 $name');
               },
               minLeadingWidth: 0,
@@ -1222,7 +1223,7 @@ class ReplyItemGrpc extends StatelessWidget {
           if (replyLevel == 1 && !isSubReply && ownerMid == upMid)
             ListTile(
               onTap: () {
-                Get.back();
+                Navigator.of(context).pop();
                 onToggleTop?.call(item);
               },
               minLeadingWidth: 0,
@@ -1234,7 +1235,7 @@ class ReplyItemGrpc extends StatelessWidget {
             ),
           ListTile(
             onTap: () {
-              Get.back();
+              Navigator.of(context).pop();
               Utils.copyText(message);
             },
             minLeadingWidth: 0,
@@ -1243,7 +1244,7 @@ class ReplyItemGrpc extends StatelessWidget {
           ),
           ListTile(
             onTap: () {
-              Get.back();
+              Navigator.of(context).pop();
               showReplyCopyDialog(context, message, item.content.emotes);
             },
             minLeadingWidth: 0,
@@ -1252,7 +1253,7 @@ class ReplyItemGrpc extends StatelessWidget {
           ),
           ListTile(
             onTap: () {
-              Get.back();
+              Navigator.of(context).pop();
               SavePanel.toSavePanel(upMid: upMid, item: item);
             },
             minLeadingWidth: 0,
@@ -1262,7 +1263,7 @@ class ReplyItemGrpc extends StatelessWidget {
           if (kDebugMode || item.mid == ownerMid)
             ListTile(
               onTap: () {
-                Get.back();
+                Navigator.of(context).pop();
                 onCheckReply?.call(item);
               },
               minLeadingWidth: 0,
