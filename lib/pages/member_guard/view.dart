@@ -9,8 +9,8 @@ import 'package:PiliPlus/models_new/member_guard/guard_top_list.dart';
 import 'package:PiliPlus/pages/member_guard/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
-import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
 import 'package:get/get.dart';
@@ -26,7 +26,7 @@ class MemberGuard extends StatefulWidget {
     required String name,
     required Object? count,
   }) {
-    return Get.toNamed(
+    return PageUtils.toDupNamed(
       '/memberGuard',
       arguments: {
         'ruid': mid,

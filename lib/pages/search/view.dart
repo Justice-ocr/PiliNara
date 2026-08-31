@@ -117,8 +117,9 @@ class _SearchPageState extends State<SearchPage> {
             ? IconButton(
                 tooltip: 'UID搜索用户',
                 icon: const Icon(Icons.person_outline, size: 22),
-                onPressed: () =>
-                    PageUtils.toMember(_searchController.controller.text),
+                onPressed: () => PageUtils.toMember(
+                  _searchController.controller.text,
+                ),
               )
             : const SizedBox.shrink(),
       ),

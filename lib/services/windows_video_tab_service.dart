@@ -1,160 +1,78 @@
 import 'dart:io' show Platform;
 
+export 'package:PiliPlus/windows_workspace/models/windows_workspace_tab.dart';
+
 import 'package:PiliPlus/services/windows_back_navigation_policy.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:PiliPlus/windows_workspace/models/windows_workspace_tab.dart';
+import 'package:PiliPlus/windows_workspace/navigation/windows_workspace_tab_navigator.dart';
+import 'package:PiliPlus/windows_workspace/routing/windows_workspace_route_registry.dart';
+import 'package:PiliPlus/windows_workspace/split/windows_workspace_split_controller.dart';
+import 'package:PiliPlus/windows_workspace/state/windows_workspace_tab_runtime.dart';
+import 'package:PiliPlus/windows_workspace/state/windows_workspace_tab_state.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
-enum WindowsMediaTabType {
-  home,
-  search,
-  video,
-  live,
-  member,
-  dynamic,
-  tool,
-}
-
-class WindowsTabRouteData {
-  const WindowsTabRouteData({
-    this.arguments,
-    this.parameters = const {},
-  });
-
-  final Object? arguments;
-  final Map<String, String> parameters;
-}
-
-class WindowsVideoTabItem {
-  WindowsVideoTabItem({
-    required this.id,
-    required this.type,
-    required this.arguments,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  final String id;
-  final WindowsMediaTabType type;
-  final Map<String, dynamic> arguments;
-  final DateTime createdAt;
-  DateTime updatedAt;
-
-  bool get isHome => type == WindowsMediaTabType.home;
-  bool get isHeavyMedia =>
-      type == WindowsMediaTabType.video || type == WindowsMediaTabType.live;
-
-  String get title {
-    if (isHome) {
-      return '主页';
-    }
-    final value = arguments['title'];
-    if (value is String && value.trim().isNotEmpty) {
-      return value.trim();
-    }
-    if (type == WindowsMediaTabType.search) {
-      final keyword = arguments['keyword'];
-      if (keyword != null && keyword.toString().trim().isNotEmpty) {
-        return '\u641c\u7d22: ${keyword.toString().trim()}';
-      }
-      return '\u641c\u7d22';
-    }
-    if (type == WindowsMediaTabType.member) {
-      final mid = arguments['mid'];
-      return mid == null ? '用户空间' : '用户 $mid';
-    }
-    if (type == WindowsMediaTabType.dynamic) {
-      return '动态详情';
-    }
-    if (type == WindowsMediaTabType.tool) {
-      return arguments['title']?.toString() ?? '工具';
-    }
-    final bvid = arguments['bvid'];
-    if (bvid is String && bvid.isNotEmpty) {
-      return bvid;
-    }
-    final aid = arguments['aid'];
-    if (aid != null) {
-      return 'av$aid';
-    }
-    final roomId = arguments['roomId'] ?? arguments['id'];
-    if (roomId != null) {
-      return '直播间 $roomId';
-    }
-    return type == WindowsMediaTabType.live ? '直播间' : '视频';
-  }
-
-  String get subtitle {
-    if (isHome) {
-      return '';
-    }
-    final parts = <String>[];
-    if (type == WindowsMediaTabType.search) {
-      final index = arguments['initIndex'];
-      if (index != null) {
-        parts.add('tab $index');
-      }
-      return parts.join(' 路 ');
-    }
-    if (type == WindowsMediaTabType.live) {
-      final roomId = arguments['roomId'] ?? arguments['id'];
-      if (roomId != null) {
-        parts.add('room $roomId');
-      }
-      return parts.join(' · ');
-    }
-    if (type == WindowsMediaTabType.member && arguments['mid'] != null) {
-      return 'UID ${arguments['mid']}';
-    }
-    if (type == WindowsMediaTabType.dynamic && arguments['dynamicId'] != null) {
-      return 'ID ${arguments['dynamicId']}';
-    }
-    if (arguments['bvid'] case final String bvid when bvid.isNotEmpty) {
-      parts.add(bvid);
-    }
-    if (arguments['cid'] case final int cid) {
-      parts.add('cid $cid');
-    }
-    if (arguments['progress'] case final int progress when progress > 0) {
-      parts.add(_formatProgress(Duration(milliseconds: progress)));
-    }
-    return parts.join(' · ');
-  }
-
-  static String _formatProgress(Duration duration) {
-    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    if (duration.inHours > 0) {
-      return '${duration.inHours}:$minutes:$seconds';
-    }
-    return '$minutes:$seconds';
-  }
-}
-
 abstract final class WindowsVideoTabService {
-  static final RxList<WindowsVideoTabItem> tabs = <WindowsVideoTabItem>[].obs;
-  static final RxnString activeId = RxnString();
-  static final RxSet<String> splitTabIds = <String>{}.obs;
-  static final RxSet<String> audibleTabIds = <String>{}.obs;
-  static final RxSet<String> splitDraftTabIds = <String>{}.obs;
-  static final RxBool splitSelectionMode = false.obs;
-  static final RxnString maximizedSplitTabId = RxnString();
-  static final RxDouble splitHorizontalRatio = 0.5.obs;
-  static final RxDouble splitVerticalRatio = 0.5.obs;
-  static final Map<String, void Function()> _activators = {};
-  static final Map<String, void Function()> _deactivators = {};
+  static const hostRoute = '/windowsMediaTabs';
+  static const rootRoute = '/';
+  static const homeTabId = 'home';
+  static const maxMediaTabs = 8;
+  static const maxSplitTabs = 4;
+  static const maxClosedTabs = 12;
+
+  static final WindowsWorkspaceTabState _state = WindowsWorkspaceTabState();
+  static final WindowsWorkspaceTabRuntime _runtime =
+      WindowsWorkspaceTabRuntime();
+  static final WindowsWorkspaceTabNavigator _navigator =
+      WindowsWorkspaceTabNavigator(_runtime);
+  static final WindowsWorkspaceSplitController _splitController =
+      WindowsWorkspaceSplitController(
+    state: _state,
+    maxSplitTabs: maxSplitTabs,
+    onSyncPresentation: _syncPresentation,
+    onRememberActive: _rememberActive,
+    onEnsureTabAudible: _ensureTabAudible,
+    setMuted: (id, muted) async {
+      final setter = _muteSetters[id];
+      if (setter != null) {
+        await setter(muted);
+      }
+    },
+  );
+
+  static final RxList<WindowsWorkspaceTab> tabs = _state.tabs;
+  static final RxnString activeId = _state.activeId;
+  static final RxSet<String> splitTabIds = _state.splitTabIds;
+  static final RxSet<String> audibleTabIds = _state.audibleTabIds;
+  static final RxSet<String> splitDraftTabIds = _state.splitDraftTabIds;
+  static final RxBool splitSelectionMode = _state.splitSelectionMode;
+  static final RxnString maximizedSplitTabId = _state.maximizedSplitTabId;
+  static final RxDouble splitHorizontalRatio = _state.splitHorizontalRatio;
+  static final RxDouble splitVerticalRatio = _state.splitVerticalRatio;
+  static final Map<String, void Function()> _activators = _runtime.activators;
+  static final Map<String, void Function()> _deactivators =
+      _runtime.deactivators;
   static final Map<String, void Function(bool visible, bool focused)>
-      _presenters = {};
-  static final Map<String, RxBool> _muteStates = {};
-  static final Map<String, Future<void> Function(bool muted)> _muteSetters = {};
-  static final Map<String, void Function()> _closers = {};
-  static final Map<String, List<bool Function()>> _contextPoppers = {};
-  static final Map<String, _WindowsVideoTabPlayer> _players = {};
-  static final Map<String, GlobalKey<NavigatorState>> _navigatorKeys = {};
-  static final List<String> _activationHistory = [];
-  static final List<WindowsVideoTabItem> _closedTabs = [];
-  static bool _hostMounted = false;
-  static Map? currentArguments;
+      _presenters = _runtime.presenters;
+  static final Map<String, RxBool> _muteStates = _runtime.muteStates;
+  static final Map<String, Future<void> Function(bool muted)> _muteSetters =
+      _runtime.muteSetters;
+  static final Map<String, void Function()> _closers = _runtime.closers;
+  static final Map<String, List<bool Function()>> _contextPoppers =
+      _runtime.contextPoppers;
+  static final Map<String, WindowsWorkspaceCachedPlayer> _players =
+      _runtime.players;
+  static final Map<String, GlobalKey<NavigatorState>> _navigatorKeys =
+      _runtime.navigatorKeys;
+  static final List<String> _activationHistory = _state.activationHistory;
+  static final List<WindowsWorkspaceTab> _closedTabs = _state.closedTabs;
+
+  static bool get _hostMounted => _runtime.hostMounted;
+  static set _hostMounted(bool value) => _runtime.hostMounted = value;
+
+  static Map? get currentArguments => _state.currentArguments;
+  static set currentArguments(Map? value) => _state.currentArguments = value;
 
   @visibleForTesting
   static bool? enabledOverride;
@@ -164,69 +82,16 @@ abstract final class WindowsVideoTabService {
 
   static bool get isNotEmpty => tabs.isNotEmpty;
 
-  static const hostRoute = '/windowsMediaTabs';
-  static const rootRoute = '/';
-  static const homeTabId = 'home';
-  static const maxMediaTabs = 8;
-  static const maxSplitTabs = 4;
-  static const maxClosedTabs = 12;
-  static const workspaceRoutes = {
-    '/download',
-    '/fav',
-    '/history',
-    '/later',
-    '/myReply',
-    '/setting',
-    '/subscription',
-    '/whisper',
-  };
-  static const nestedRoutes = {
-    '/search',
-    '/searchTrending',
-    '/member',
-    '/memberSearch',
-    '/editProfile',
-    '/spaceSetting',
-    '/dynamicDetail',
-    '/articlePage',
-    '/articleList',
-    '/dynTopic',
-    '/blockSetting',
-    '/blackListPage',
-    '/sponsorBlock',
-    '/aiSetting',
-    '/playSpeedSet',
-    '/colorSetting',
-    '/fontSizeSetting',
-    '/barSetting',
-    '/historySearch',
-    '/laterSearch',
-    '/favDetail',
-    '/favSearch',
-    '/popularSeries',
-    '/popularPrecious',
-    '/rank',
-    '/whisperDetail',
-    '/replyMe',
-    '/atMe',
-    '/likeMe',
-    '/sysMsg',
-    '/webview',
-    '/subDetail',
-    '/msgLikeDetail',
-    '/memberDynamics',
-    '/follow',
-    '/fan',
-    '/followSearch',
-    '/followed',
-    '/sameFollowing',
-  };
+  static final Set<String> workspaceRoutes =
+      WindowsWorkspaceRouteRegistry.toolTabPaths;
+  static final Set<String> nestedRoutes =
+      WindowsWorkspaceRouteRegistry.nestedPaths;
 
-  static WindowsVideoTabItem _homeTab() {
+  static WindowsWorkspaceTab _homeTab() {
     final now = DateTime.now();
-    return WindowsVideoTabItem(
+    return WindowsWorkspaceTab(
       id: homeTabId,
-      type: WindowsMediaTabType.home,
+      type: WindowsWorkspaceTabType.home,
       arguments: const {'mediaTabType': 'home'},
       createdAt: now,
       updatedAt: now,
@@ -246,258 +111,100 @@ abstract final class WindowsVideoTabService {
     _rememberActive(activeId.value!);
   }
 
-  static int get tabCount =>
-      tabs.where((item) => item.type != WindowsMediaTabType.home).length;
+  static int get tabCount => tabs.where((item) => !item.isHome).length;
 
-  static int get mediaTabCount =>
-      tabs.where((item) => item.isHeavyMedia).length;
+  static int get mediaTabCount => tabs.where((item) => item.canSplit).length;
 
-  static List<WindowsVideoTabItem> get recentlyClosedTabs =>
-      List<WindowsVideoTabItem>.unmodifiable(_closedTabs);
+  static List<WindowsWorkspaceTab> get recentlyClosedTabs =>
+      List<WindowsWorkspaceTab>.unmodifiable(_closedTabs);
 
   static bool get hasMediaTabs => mediaTabCount > 0;
 
-  static bool get isSplitActive => splitTabs.length >= 2;
+  static bool get isSplitActive => _splitController.isActive;
 
-  static String? get maximizedSplitTab => maximizedSplitTabId.value;
+  static String? get maximizedSplitTab => _splitController.maximizedTabId;
 
-  static bool get isSplitMaximized =>
-      isSplitActive &&
-      maximizedSplitTabId.value != null &&
-      splitTabIds.contains(maximizedSplitTabId.value);
+  static bool get isSplitMaximized => _splitController.isMaximized;
 
-  static bool get canApplySplitSelection =>
-      splitDraftTabIds.length >= 2 && splitDraftTabIds.length <= maxSplitTabs;
+  static bool get canApplySplitSelection => _splitController.canApplySelection;
 
-  static List<WindowsVideoTabItem> get splitTabs => tabs
-      .where((item) => splitTabIds.contains(item.id))
-      .toList(growable: false);
+  static List<WindowsWorkspaceTab> get splitTabs => _splitController.splitTabs;
 
-  static bool isSplitTab(String id) => splitTabIds.contains(id);
+  static bool isSplitTab(String id) => _splitController.isSplitTab(id);
 
-  static bool isSplitAudioEnabled(String id) => audibleTabIds.contains(id);
+  static bool isSplitAudioEnabled(String id) =>
+      _splitController.isAudioEnabled(id);
 
-  static bool isTabAudioEnabled(String id) => audibleTabIds.contains(id);
+  static bool isTabAudioEnabled(String id) =>
+      _splitController.isAudioEnabled(id);
 
-  static bool shouldSuppressTabAudio(String id, bool focused) {
-    // Focus controls keyboard/media commands; it must not decide whether a
-    // background tab is audible. In split mode, tabs outside the split are
-    // always suppressed even when they remain in the shared audio set.
-    if (isSplitActive && !splitTabIds.contains(id)) return true;
-    if (audibleTabIds.isEmpty && focused && !isSplitActive) return false;
-    return !audibleTabIds.contains(id);
-  }
+  static bool shouldSuppressTabAudio(String id, bool focused) =>
+      _splitController.shouldSuppressAudio(id, focused);
 
   static RxBool? muteStateFor(String id) => _muteStates[id];
 
-  static bool isVisibleTab(String id) =>
-      isSplitActive ? splitTabIds.contains(id) : activeId.value == id;
+  static bool isVisibleTab(String id) => _splitController.isVisible(id);
 
-  static bool isSplitCandidate(WindowsVideoTabItem item) => item.isHeavyMedia;
+  static bool isSplitCandidate(WindowsWorkspaceTab item) => item.canSplit;
 
   static void beginSplitSelection() {
-    if (!enabled) return;
-    ensureHomeTab();
-    splitDraftTabIds
-      ..clear()
-      ..addAll(
-        isSplitActive
-            ? splitTabIds
-            : activeId.value != null &&
-                    tabs.any(
-                      (item) => item.id == activeId.value && item.isHeavyMedia,
-                    )
-                ? <String>{activeId.value!}
-                : <String>{},
-      );
-    splitDraftTabIds.refresh();
-    splitSelectionMode.value = true;
+    _splitController.beginSelection(
+      enabled: enabled,
+      ensureHomeTab: ensureHomeTab,
+    );
   }
 
-  static void toggleSplitDraft(String id) {
-    if (!splitSelectionMode.value) return;
-    WindowsVideoTabItem? item;
-    for (final candidate in tabs) {
-      if (candidate.id == id) {
-        item = candidate;
-        break;
-      }
-    }
-    if (item == null || !item.isHeavyMedia) return;
-    if (splitDraftTabIds.contains(id)) {
-      splitDraftTabIds.remove(id);
-    } else if (splitDraftTabIds.length < maxSplitTabs) {
-      splitDraftTabIds.add(id);
-    }
-    splitDraftTabIds.refresh();
-  }
+  static void toggleSplitDraft(String id) => _splitController.toggleDraft(id);
 
-  static void cancelSplitSelection() {
-    splitSelectionMode.value = false;
-    splitDraftTabIds.clear();
-    splitDraftTabIds.refresh();
-  }
+  static void cancelSplitSelection() => _splitController.cancelSelection();
 
-  static bool applySplitSelection() {
-    if (!canApplySplitSelection) return false;
-    final previousAudible = Set<String>.from(audibleTabIds);
-    splitTabIds
-      ..clear()
-      ..addAll(splitDraftTabIds);
-    splitTabIds.refresh();
-    maximizedSplitTabId.value = null;
-    splitSelectionMode.value = false;
-    splitDraftTabIds.clear();
-    splitDraftTabIds.refresh();
-    if (!splitTabIds.contains(activeId.value)) {
-      activeId.value = splitTabIds.first;
-      currentArguments =
-          tabs.firstWhere((item) => item.id == activeId.value).arguments;
-      _rememberActive(activeId.value!);
-    }
-    // Keep the shared audio set when entering split mode. Tabs outside the
-    // split are ignored by shouldSuppressTabAudio and become audible again
-    // when split mode is exited.
-    audibleTabIds
-      ..clear()
-      ..addAll(previousAudible);
-    if (audibleTabIds.intersection(splitTabIds).isEmpty) {
-      final activeIdValue = activeId.value;
-      if (activeIdValue != null && splitTabIds.contains(activeIdValue)) {
-        audibleTabIds.add(activeIdValue);
-      }
-    }
-    audibleTabIds.refresh();
-    _syncPresentation();
-    return true;
-  }
+  static bool applySplitSelection() => _splitController.applySelection();
 
-  static void exitSplit() {
-    splitTabIds.clear();
-    splitTabIds.refresh();
-    audibleTabIds.refresh();
-    maximizedSplitTabId.value = null;
-    splitSelectionMode.value = false;
-    splitDraftTabIds.clear();
-    splitDraftTabIds.refresh();
-    final activeIdValue = activeId.value;
-    if (audibleTabIds.isEmpty && activeIdValue != null) {
-      _ensureTabAudible(activeIdValue);
-    }
-    _syncPresentation();
-  }
+  static void exitSplit() => _splitController.exit();
 
-  static void focusSplitTab(String id) {
-    if (!isSplitActive || !splitTabIds.contains(id)) {
-      select(id);
-      return;
-    }
-    if (activeId.value == id) return;
-    activeId.value = id;
-    currentArguments = tabs.firstWhere((item) => item.id == id).arguments;
-    _rememberActive(id);
-    _syncPresentation();
-  }
+  static void focusSplitTab(String id) =>
+      _splitController.focusTab(id, selectTab: select);
 
-  static Future<void> setSplitTabMuted(String id, bool muted) async {
-    final setter = _muteSetters[id];
-    if (setter == null) return;
-    await setter(muted);
-  }
+  static Future<void> setSplitTabMuted(String id, bool muted) =>
+      _splitController.setMuted(id, muted);
 
   static Future<void> setSplitTabAudioEnabled(
     String id,
     bool enabled,
-  ) async {
-    if (!isSplitActive || !splitTabIds.contains(id)) return;
-    await setTabAudioEnabled(id, enabled);
-  }
+  ) =>
+      _splitController.setSplitTabAudioEnabled(id, enabled);
 
   static Future<void> setTabAudioEnabled(
     String id,
     bool enabled,
-  ) async {
-    if (!_isHeavyMediaTab(id)) return;
-    if (enabled) {
-      audibleTabIds.add(id);
-    } else {
-      audibleTabIds.remove(id);
-    }
-    final hasAudibleSplitTab =
-        isSplitActive && audibleTabIds.any((id) => splitTabIds.contains(id));
-    if ((!isSplitActive && audibleTabIds.isEmpty) ||
-        (isSplitActive && !hasAudibleSplitTab)) {
-      final activeIdValue = activeId.value;
-      if (activeIdValue != null &&
-          (!isSplitActive || splitTabIds.contains(activeIdValue))) {
-        audibleTabIds.add(activeIdValue);
-      }
-    }
-    audibleTabIds.refresh();
-    _syncPresentation();
-  }
+  ) =>
+      _splitController.setTabAudioEnabled(id, enabled);
 
-  static Future<void> setSplitPrimaryAudio(String id) async {
-    if (!isSplitActive || !splitTabIds.contains(id)) return;
-    focusSplitTab(id);
-    audibleTabIds.add(id);
-    audibleTabIds.refresh();
-    await setSplitTabMuted(id, false);
-    _syncPresentation();
-  }
+  static Future<void> setSplitPrimaryAudio(String id) =>
+      _splitController.setPrimaryAudio(id, selectTab: select);
 
-  static void toggleSplitMaximized(String id) {
-    if (!isSplitActive || !splitTabIds.contains(id)) return;
-    focusSplitTab(id);
-    maximizedSplitTabId.value = maximizedSplitTabId.value == id ? null : id;
-  }
+  static void toggleSplitMaximized(String id) =>
+      _splitController.toggleMaximized(id, selectTab: select);
 
-  static void setSplitHorizontalRatio(double ratio) {
-    splitHorizontalRatio.value = ratio.clamp(0.15, 0.85);
-  }
+  static void setSplitHorizontalRatio(double ratio) =>
+      _splitController.setHorizontalRatio(ratio);
 
-  static void setSplitVerticalRatio(double ratio) {
-    splitVerticalRatio.value = ratio.clamp(0.15, 0.85);
-  }
+  static void setSplitVerticalRatio(double ratio) =>
+      _splitController.setVerticalRatio(ratio);
 
-  static void resetSplitBounds() {
-    splitHorizontalRatio.value = 0.5;
-    splitVerticalRatio.value = 0.5;
-  }
+  static void resetSplitBounds() => _splitController.resetBounds();
 
-  static void removeFromSplit(String id) {
-    if (!isSplitActive || !splitTabIds.contains(id)) return;
-    final wasFocused = activeId.value == id;
-    splitTabIds.remove(id);
-    splitTabIds.refresh();
-    if (maximizedSplitTabId.value == id) {
-      maximizedSplitTabId.value = null;
-    }
-    if (!isSplitActive) {
-      exitSplit();
-      return;
-    }
-    if (wasFocused) {
-      final next = splitTabs.first;
-      activeId.value = next.id;
-      currentArguments = next.arguments;
-      _rememberActive(next.id);
-    }
-    _syncPresentation();
-  }
+  static void removeFromSplit(String id) => _splitController.removeTab(id);
 
   static void setHostMounted(bool value) {
-    _hostMounted = value;
-    if (!value) {
-      _navigatorKeys.clear();
-    }
+    _navigator.setHostMounted(value);
   }
 
   static GlobalKey<NavigatorState> navigatorKeyFor(String id) =>
-      _navigatorKeys.putIfAbsent(id, GlobalKey<NavigatorState>.new);
+      _navigator.navigatorKeyFor(id);
 
   static void retainNavigatorKeys(Set<String> ids) {
-    _navigatorKeys.removeWhere((id, _) => !ids.contains(id));
+    _navigator.retainNavigatorKeys(ids);
   }
 
   static Future<T?>? pushNamedInActiveTab<T extends Object?>(
@@ -506,26 +213,16 @@ abstract final class WindowsVideoTabService {
     Map<String, String>? parameters,
     bool replace = false,
   }) {
-    if (!enabled || !_hostMounted || !_isHostCurrent) return null;
-    final uri = Uri.tryParse(page);
-    if (uri == null || !nestedRoutes.contains(uri.path)) return null;
-    final id = activeId.value;
-    final navigator = id == null ? null : _navigatorKeys[id]?.currentState;
-    if (navigator == null) return null;
-    final routeData = WindowsTabRouteData(
+    return _navigator.pushNamedInActiveTab<T>(
+      page,
+      enabled: enabled,
+      isHostCurrent: _isHostCurrent,
+      activeTabId: activeId.value,
+      nestedRoutes: nestedRoutes,
       arguments: arguments,
-      parameters: {
-        ...uri.queryParameters,
-        ...?parameters,
-      },
+      parameters: parameters,
+      replace: replace,
     );
-    if (replace) {
-      return navigator.pushReplacementNamed<T, Object?>(
-        uri.path,
-        arguments: routeData,
-      );
-    }
-    return navigator.pushNamed<T>(uri.path, arguments: routeData);
   }
 
   static bool navigateInActiveTab(
@@ -543,15 +240,12 @@ abstract final class WindowsVideoTabService {
       null;
 
   static void popActiveTabToRoot() {
-    final id = activeId.value;
-    final navigator = id == null ? null : _navigatorKeys[id]?.currentState;
-    navigator?.popUntil((route) => route.isFirst);
+    _navigator.popToRoot(activeId.value);
   }
 
   static bool popActiveTab() {
     final id = activeId.value;
     final contextPoppers = id == null ? null : _contextPoppers[id];
-    final navigator = id == null ? null : _navigatorKeys[id]?.currentState;
     return WindowsBackNavigationPolicy.dispatch(
       popContext: () {
         if (contextPoppers == null) return false;
@@ -560,11 +254,7 @@ abstract final class WindowsVideoTabService {
         }
         return false;
       },
-      popPage: () {
-        if (navigator?.canPop() != true) return false;
-        navigator!.pop();
-        return true;
-      },
+      popPage: () => _navigator.popPage(id),
     );
   }
 
@@ -584,7 +274,7 @@ abstract final class WindowsVideoTabService {
 
   static void togglePinned(String id) {
     final index = tabs.indexWhere((item) => item.id == id);
-    if (index == -1 || tabs[index].isHome) return;
+    if (index == -1 || !tabs[index].canPin) return;
     final tab = tabs[index];
     tab.arguments['pinned'] = tab.arguments['pinned'] != true;
     tab.updatedAt = DateTime.now();
@@ -602,28 +292,20 @@ abstract final class WindowsVideoTabService {
     return _restoreClosedTab(_closedTabs.removeAt(index));
   }
 
-  static bool _restoreClosedTab(WindowsVideoTabItem tab) {
+  static bool _restoreClosedTab(WindowsWorkspaceTab tab) {
     if (has(tab.id)) {
       select(tab.id);
       return true;
     }
     final now = DateTime.now();
-    tabs.add(
-      WindowsVideoTabItem(
-        id: tab.id,
-        type: tab.type,
-        arguments: Map<String, dynamic>.from(tab.arguments),
-        createdAt: tab.createdAt,
-        updatedAt: now,
-      ),
-    );
+    tabs.add(tab.copyForRestore(restoredAt: now));
     select(tab.id);
     return true;
   }
 
   static void closeOthers(String id) {
     final ids = tabs
-        .where((tab) => !tab.isHome && tab.id != id && !isPinned(tab.id))
+        .where((tab) => tab.canClose && tab.id != id && !isPinned(tab.id))
         .map((tab) => tab.id)
         .toList(growable: false);
     for (final tabId in ids) {
@@ -645,7 +327,7 @@ abstract final class WindowsVideoTabService {
         .entries
         .where(
           (entry) =>
-              !entry.value.isHome &&
+              entry.value.canClose &&
               !isPinned(entry.value.id) &&
               (left ? entry.key < target : entry.key > target),
         )
@@ -661,7 +343,7 @@ abstract final class WindowsVideoTabService {
     if (tabs.length < 2) return;
     final current = tabs.indexWhere((item) => item.id == activeId.value);
     final start = current == -1 ? 0 : current;
-    final next = (start + offset) % tabs.length;
+    final next = ((start + offset) % tabs.length + tabs.length) % tabs.length;
     select(tabs[next].id);
   }
 
@@ -673,77 +355,20 @@ abstract final class WindowsVideoTabService {
     return route.isFirst || name == hostRoute || name == rootRoute;
   }
 
-  static String keyFromArgs(Map arguments) {
-    final type = _typeFromArgs(arguments);
-    if (type == WindowsMediaTabType.home) {
-      return homeTabId;
-    }
-    if (type == WindowsMediaTabType.live) {
-      final roomId =
-          arguments['roomId']?.toString() ?? arguments['id']?.toString();
-      return roomId == null || roomId.isEmpty ? '' : 'live:$roomId';
-    }
-    if (type == WindowsMediaTabType.search) {
-      final keyword = arguments['keyword']?.toString();
-      return keyword == null || keyword.isEmpty ? '' : 'search:$keyword';
-    }
-    if (type == WindowsMediaTabType.member) {
-      final mid = arguments['mid']?.toString();
-      return mid == null || mid.isEmpty ? '' : 'member:$mid';
-    }
-    if (type == WindowsMediaTabType.dynamic) {
-      final dynamicId = arguments['dynamicId']?.toString();
-      return dynamicId == null || dynamicId.isEmpty ? '' : 'dynamic:$dynamicId';
-    }
-    if (type == WindowsMediaTabType.tool) {
-      final route = arguments['tabRoute']?.toString();
-      return route == null || route.isEmpty ? '' : 'tool:$route';
-    }
-    final bvid = arguments['bvid']?.toString();
-    final cid = arguments['cid']?.toString();
-    final epId = arguments['epId']?.toString();
-    final seasonId = arguments['seasonId']?.toString();
-    final key = [
-      bvid,
-      cid,
-      epId,
-      seasonId,
-    ].where((item) => item != null && item.isNotEmpty).join(':');
-    return key.isEmpty ? '' : 'video:$key';
-  }
-
-  static WindowsMediaTabType _typeFromArgs(Map arguments) {
-    final type = arguments['mediaTabType'];
-    if (type == WindowsMediaTabType.home || type == 'home') {
-      return WindowsMediaTabType.home;
-    }
-    if (type == WindowsMediaTabType.live || type == 'live') {
-      return WindowsMediaTabType.live;
-    }
-    if (type == WindowsMediaTabType.search || type == 'search') {
-      return WindowsMediaTabType.search;
-    }
-    if (type == WindowsMediaTabType.member || type == 'member') {
-      return WindowsMediaTabType.member;
-    }
-    if (type == WindowsMediaTabType.dynamic || type == 'dynamic') {
-      return WindowsMediaTabType.dynamic;
-    }
-    if (type == WindowsMediaTabType.tool || type == 'tool') {
-      return WindowsMediaTabType.tool;
-    }
-    return WindowsMediaTabType.video;
-  }
+  static String keyFromArgs(Map arguments) =>
+      WindowsWorkspaceTabIdentity.keyFromArguments(arguments);
 
   static void upsert(
     Map arguments, {
-    WindowsMediaTabType type = WindowsMediaTabType.video,
+    WindowsWorkspaceTabType type = WindowsWorkspaceTabType.video,
     bool activate = true,
   }) {
     if (!enabled) return;
     ensureHomeTab();
-    final normalized = Map<String, dynamic>.from(arguments)
-      ..['mediaTabType'] = type.name;
+    final normalized = WindowsWorkspaceTabIdentity.normalizeArguments(
+      arguments,
+      type,
+    );
     final id = keyFromArgs(normalized);
     if (id.isEmpty) return;
 
@@ -751,7 +376,7 @@ abstract final class WindowsVideoTabService {
     if (index == -1) {
       final now = DateTime.now();
       tabs.add(
-        WindowsVideoTabItem(
+        WindowsWorkspaceTab(
           id: id,
           type: type,
           arguments: normalized,
@@ -760,17 +385,7 @@ abstract final class WindowsVideoTabService {
         ),
       );
     } else {
-      final tab = tabs[index];
-      final previousTitle = tab.arguments['title'];
-      final wasPinned = tab.arguments['pinned'] == true;
-      tab.arguments
-        ..clear()
-        ..addAll(normalized);
-      if (!tab.arguments.containsKey('title') && previousTitle != null) {
-        tab.arguments['title'] = previousTitle;
-      }
-      if (wasPinned) tab.arguments['pinned'] = true;
-      tab.updatedAt = DateTime.now();
+      tabs[index].replaceArguments(normalized);
       tabs.refresh();
     }
     if (activate) {
@@ -783,7 +398,7 @@ abstract final class WindowsVideoTabService {
       _rememberActive(id);
       _syncPresentation();
     }
-    if (type == WindowsMediaTabType.video || type == WindowsMediaTabType.live) {
+    if (tabs.any((item) => item.id == id && item.canSplit)) {
       _trimMediaTabs(keepId: id);
     }
   }
@@ -819,7 +434,7 @@ abstract final class WindowsVideoTabService {
 
   static Future<void>? openTab(
     Map arguments, {
-    required WindowsMediaTabType type,
+    required WindowsWorkspaceTabType type,
     bool off = false,
   }) {
     upsert(arguments, type: type);
@@ -846,12 +461,11 @@ abstract final class WindowsVideoTabService {
       final active = activeId.value;
       final candidates = tabs
           .where(
-            (item) =>
-                item.isHeavyMedia && item.id != keepId && item.id != active,
+            (item) => item.canSplit && item.id != keepId && item.id != active,
           )
           .toList(growable: false);
       final fallback = tabs
-          .where((item) => item.isHeavyMedia && item.id != keepId)
+          .where((item) => item.canSplit && item.id != keepId)
           .toList(growable: false);
       final removable = candidates.isNotEmpty ? candidates : fallback;
       if (removable.isEmpty) return;
@@ -870,15 +484,7 @@ abstract final class WindowsVideoTabService {
     if (remember) {
       _closedTabs
         ..removeWhere((item) => item.id == id)
-        ..add(
-          WindowsVideoTabItem(
-            id: closingTab.id,
-            type: closingTab.type,
-            arguments: Map<String, dynamic>.from(closingTab.arguments),
-            createdAt: closingTab.createdAt,
-            updatedAt: closingTab.updatedAt,
-          ),
-        );
+        ..add(closingTab.copyForRestore());
       if (_closedTabs.length > maxClosedTabs) {
         _closedTabs.removeAt(0);
       }
@@ -993,7 +599,7 @@ abstract final class WindowsVideoTabService {
     if (!enabled) return;
     final id = keyFromArgs(arguments);
     if (id.isEmpty || !has(id)) return;
-    _players[id] = _WindowsVideoTabPlayer(
+    _players[id] = WindowsWorkspaceCachedPlayer(
       player,
       (player) => dispose(player as T),
     );
@@ -1074,7 +680,7 @@ abstract final class WindowsVideoTabService {
     if (poppers?.isEmpty == true) _contextPoppers.remove(id);
   }
 
-  static Future<void>? open(WindowsVideoTabItem item) {
+  static Future<void>? open(WindowsWorkspaceTab item) {
     if (!enabled) return null;
     select(item.id);
     if (_hostMounted) {
@@ -1131,11 +737,11 @@ abstract final class WindowsVideoTabService {
     }
   }
 
-  static bool _isHeavyMediaTab(String id) =>
-      tabs.any((item) => item.id == id && item.isHeavyMedia);
+  static bool _supportsTabAudio(String id) =>
+      tabs.any((item) => item.id == id && item.supportsAudio);
 
   static void _ensureTabAudible(String id) {
-    if (!_isHeavyMediaTab(id)) return;
+    if (!_supportsTabAudio(id)) return;
     if (audibleTabIds.add(id)) audibleTabIds.refresh();
   }
 
@@ -1158,13 +764,4 @@ abstract final class WindowsVideoTabService {
     }
     return Get.toNamed(hostRoute, preventDuplicates: true);
   }
-}
-
-class _WindowsVideoTabPlayer {
-  const _WindowsVideoTabPlayer(this.player, this._dispose);
-
-  final Object player;
-  final void Function(Object player) _dispose;
-
-  void dispose() => _dispose(player);
 }

@@ -35,8 +35,8 @@ class WindowsNeoShell extends StatefulWidget {
   });
 
   final MainController mainController;
-  final List<WindowsVideoTabItem> tabs;
-  final WindowsVideoTabItem activeTab;
+  final List<WindowsWorkspaceTab> tabs;
+  final WindowsWorkspaceTab activeTab;
   final Widget child;
   final VoidCallback onSplit;
 
@@ -420,7 +420,7 @@ class _WindowsNeoSidebar extends StatelessWidget {
 
   final WindowsNeoLayoutMode mode;
   final MainController mainController;
-  final WindowsVideoTabItem activeTab;
+  final WindowsWorkspaceTab activeTab;
   final VoidCallback onNavigate;
   final VoidCallback onSearch;
 
@@ -530,7 +530,7 @@ class _WindowsNeoSidebar extends StatelessWidget {
       _WindowsNeoNavItem(
         label: label,
         icon: icon,
-        selected: activeTab.type == WindowsMediaTabType.tool &&
+        selected: activeTab.type == WindowsWorkspaceTabType.tool &&
             activeTab.arguments['tabRoute'] == route,
         showLabel: mode.showLabels,
         onTap: () {
@@ -1414,7 +1414,7 @@ class _WindowsNeoTabStrip extends StatelessWidget {
     required this.onSplit,
   });
 
-  final List<WindowsVideoTabItem> tabs;
+  final List<WindowsWorkspaceTab> tabs;
   final String activeId;
   final VoidCallback onSearch;
   final VoidCallback onSplit;
@@ -1505,7 +1505,7 @@ class _WindowsNeoTabPresence extends StatefulWidget {
     required this.active,
   });
 
-  final WindowsVideoTabItem item;
+  final WindowsWorkspaceTab item;
   final bool active;
 
   @override
@@ -1546,7 +1546,7 @@ class _WindowsNeoTabPresenceState extends State<_WindowsNeoTabPresence>
   }
 
   Future<void> _close() async {
-    if (widget.item.isHome || _closing) return;
+    if (!widget.item.canClose || _closing) return;
     _closing = true;
     if (!context.windowsNeoReduceMotion) {
       await _controller.reverse();
@@ -1626,7 +1626,7 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
 
   static const double height = 32;
 
-  final WindowsVideoTabItem item;
+  final WindowsWorkspaceTab item;
   final bool active;
   final Future<void> Function() onClose;
 
@@ -1636,7 +1636,7 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
     final foreground = active ? tokens.ink : tokens.muted;
     return Listener(
       onPointerDown: (event) {
-        if (event.buttons == kMiddleMouseButton && !item.isHome) {
+        if (event.buttons == kMiddleMouseButton && item.canClose) {
           onClose();
         }
       },
@@ -1717,7 +1717,7 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                                       ),
                                 ),
                               ),
-                              if (item.isHeavyMedia)
+                              if (item.supportsAudio)
                                 Obx(
                                   () {
                                     final audible = WindowsVideoTabService
@@ -1752,7 +1752,7 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                                     );
                                   },
                                 ),
-                              if (!item.isHome)
+                              if (item.canClose)
                                 SizedBox(
                                   width: 28,
                                   height: 28,
@@ -1797,14 +1797,14 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
         size.height - position.dy,
       ),
       items: [
-        if (!item.isHome)
+        if (item.canPin)
           PopupMenuItem(
             value: 'pin',
             child: Text(
               WindowsVideoTabService.isPinned(item.id) ? '取消固定' : '固定标签',
             ),
           ),
-        if (item.isHeavyMedia)
+        if (item.supportsAudio)
           PopupMenuItem(
             value: 'audio',
             child: Text(
@@ -1813,7 +1813,7 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                   : '加入混音',
             ),
           ),
-        if (!item.isHome)
+        if (item.canClose)
           const PopupMenuItem(value: 'close', child: Text('关闭标签页')),
         if (WindowsVideoTabService.tabs.indexOf(item) > 1)
           const PopupMenuItem(value: 'left', child: Text('关闭左侧标签页')),
@@ -1841,14 +1841,14 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
     }
   }
 
-  static IconData _iconForItem(WindowsVideoTabItem item) => switch (item.type) {
-        WindowsMediaTabType.home => Icons.home_outlined,
-        WindowsMediaTabType.search => Icons.search,
-        WindowsMediaTabType.live => Icons.sensors,
-        WindowsMediaTabType.video => Icons.play_circle_outline,
-        WindowsMediaTabType.member => Icons.person_outline,
-        WindowsMediaTabType.dynamic => Icons.motion_photos_on_outlined,
-        WindowsMediaTabType.tool => switch (item.arguments['tabRoute']) {
+  static IconData _iconForItem(WindowsWorkspaceTab item) => switch (item.type) {
+        WindowsWorkspaceTabType.home => Icons.home_outlined,
+        WindowsWorkspaceTabType.search => Icons.search,
+        WindowsWorkspaceTabType.live => Icons.sensors,
+        WindowsWorkspaceTabType.video => Icons.play_circle_outline,
+        WindowsWorkspaceTabType.member => Icons.person_outline,
+        WindowsWorkspaceTabType.dynamic => Icons.motion_photos_on_outlined,
+        WindowsWorkspaceTabType.tool => switch (item.arguments['tabRoute']) {
             '/setting' => Icons.settings_outlined,
             '/download' => Icons.download_outlined,
             '/whisper' => Icons.chat_bubble_outline,

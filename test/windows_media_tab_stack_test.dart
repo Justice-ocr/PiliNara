@@ -9,22 +9,22 @@ void main() {
     tester,
   ) async {
     final now = DateTime(2026);
-    final home = WindowsVideoTabItem(
+    final home = WindowsWorkspaceTab(
       id: WindowsVideoTabService.homeTabId,
-      type: WindowsMediaTabType.home,
+      type: WindowsWorkspaceTabType.home,
       arguments: const {'mediaTabType': 'home'},
       createdAt: now,
       updatedAt: now,
     );
-    final search = WindowsVideoTabItem(
+    final search = WindowsWorkspaceTab(
       id: 'search:miku',
-      type: WindowsMediaTabType.search,
+      type: WindowsWorkspaceTabType.search,
       arguments: const {'mediaTabType': 'search', 'keyword': 'miku'},
       createdAt: now,
       updatedAt: now,
     );
 
-    Widget build(List<WindowsVideoTabItem> tabs, int activeIndex) {
+    Widget build(List<WindowsWorkspaceTab> tabs, int activeIndex) {
       return MaterialApp(
         theme: WindowsNeoTheme.apply(ThemeData.light()),
         home: Scaffold(

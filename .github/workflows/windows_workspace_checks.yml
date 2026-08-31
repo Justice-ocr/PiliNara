@@ -1,0 +1,81 @@
+name: Windows Workspace Checks
+
+on:
+  pull_request:
+    paths:
+      - 'lib/windows_workspace/**'
+      - 'lib/services/windows_video_tab_service.dart'
+      - 'lib/utils/page_utils.dart'
+      - 'lib/router/app_pages.dart'
+      - 'lib/pages/windows_media_tabs/**'
+      - 'lib/pages/live_room/controller.dart'
+      - 'lib/windows_ui/**'
+      - 'test/windows_video_tab_service_test.dart'
+      - 'test/windows_workspace_split_controller_test.dart'
+      - 'test/windows_media_tab_stack_test.dart'
+      - 'test/windows_neo_shell_test.dart'
+      - '.github/workflows/windows_workspace_checks.yml'
+      - '.github/workflows/win_x64.yml'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  workspace-checks:
+    name: Windows workspace analysis and tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+          cache: true
+
+      - name: Configure Git dependencies
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config --global url."https://x-access-token:$env:GH_TOKEN@github.com/bggRGjQaUbCoE/".insteadOf "https://github.com/bggRGjQaUbCoE/"
+
+      - name: Enable native assets
+        shell: pwsh
+        run: flutter config --enable-native-assets
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze workspace modules
+        shell: pwsh
+        run: |
+          flutter analyze --fatal-infos `
+            lib/windows_workspace `
+            lib/services/windows_video_tab_service.dart `
+            lib/utils/page_utils.dart `
+            lib/router/app_pages.dart `
+            lib/pages/windows_media_tabs `
+            lib/pages/live_room/controller.dart `
+            lib/windows_ui `
+            test/windows_video_tab_service_test.dart `
+            test/windows_workspace_split_controller_test.dart `
+            test/windows_media_tab_stack_test.dart `
+            test/windows_neo_shell_test.dart
+
+      - name: Test workspace behavior
+        shell: pwsh
+        run: |
+          flutter test --no-pub `
+            test/windows_video_tab_service_test.dart `
+            test/windows_workspace_split_controller_test.dart `
+            test/windows_media_tab_stack_test.dart `
+            test/windows_neo_shell_test.dart

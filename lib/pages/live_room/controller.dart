@@ -186,10 +186,10 @@ class LiveRoomController extends GetxController {
     } else {
       roomId = args as int;
     }
-    final tabArgs = {
-      'roomId': roomId,
-      'mediaTabType': WindowsMediaTabType.live.name,
-    };
+    final tabArgs = WindowsWorkspaceTabIdentity.normalizeArguments(
+      {'roomId': roomId},
+      WindowsWorkspaceTabType.live,
+    );
     if (WindowsVideoTabService.enabled) {
       plPlayerController =
           WindowsVideoTabService.takePlayer<PlPlayerController>(tabArgs) ??
@@ -518,9 +518,8 @@ class LiveRoomController extends GetxController {
         {
           'roomId': roomId,
           'title': response.roomInfo?.title,
-          'mediaTabType': WindowsMediaTabType.live.name,
         },
-        type: WindowsMediaTabType.live,
+        type: WindowsWorkspaceTabType.live,
         activate: false,
       );
       watchedShow.value = response.watchedShow?.textLarge;

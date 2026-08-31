@@ -14,6 +14,7 @@ import 'package:PiliPlus/windows_ui/components/windows_neo_media_meta.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 class WindowsNeoVideoSearchTile extends StatefulWidget {
   const WindowsNeoVideoSearchTile({
@@ -115,7 +116,7 @@ class _WindowsNeoVideoSearchTileState extends State<WindowsNeoVideoSearchTile> {
                 text: progress == -1
                     ? '已看完'
                     : '${DurationUtils.formatDuration(progress)}/'
-                          '${DurationUtils.formatDuration(videoItem.duration)}',
+                        '${DurationUtils.formatDuration(videoItem.duration)}',
               ),
             ),
             Positioned(
@@ -218,9 +219,9 @@ class _WindowsNeoVideoSearchTileState extends State<WindowsNeoVideoSearchTile> {
     var dimension = videoItem.dimension;
     if (cid == null) {
       if (await SearchHttp.ab2cWithDimension(
-            aid: videoItem.aid,
-            bvid: videoItem.bvid,
-          )
+        aid: videoItem.aid,
+        bvid: videoItem.bvid,
+      )
           case final response?) {
         cid = response.cid;
         dimension = response.dimension;
@@ -234,6 +235,8 @@ class _WindowsNeoVideoSearchTileState extends State<WindowsNeoVideoSearchTile> {
         title: videoItem.title,
         dimension: dimension,
       );
+    } else {
+      SmartDialog.showToast('无法获取视频播放信息，请稍后重试');
     }
   }
 }

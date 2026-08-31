@@ -31,6 +31,7 @@ import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/url_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_workspace/routing/windows_workspace_route_registry.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:material_ui/material_ui.dart';
@@ -69,7 +70,7 @@ abstract final class PageUtils {
           if (initIndex != null) 'initIndex': initIndex,
           'fromSearch': fromSearch,
         },
-        type: WindowsMediaTabType.search,
+        type: WindowsWorkspaceTabType.search,
       );
       await WindowsVideoTabService.showHost();
       return;
@@ -110,11 +111,8 @@ abstract final class PageUtils {
         newTab || HardwareKeyboard.instance.isControlPressed;
     if (shouldOpenNewTab && WindowsVideoTabService.enabled) {
       WindowsVideoTabService.openTab(
-        {
-          ...parameters,
-          'mediaTabType': WindowsMediaTabType.member.name,
-        },
-        type: WindowsMediaTabType.member,
+        parameters,
+        type: WindowsWorkspaceTabType.member,
         off: off,
       );
       return;
@@ -131,20 +129,20 @@ abstract final class PageUtils {
 
   static void openWorkspaceTab({
     required String route,
-    required String title,
+    String? title,
     bool off = false,
     Object? arguments,
   }) {
+    final workspaceRoute = WindowsWorkspaceRouteRegistry.routeFor(route);
     if (WindowsVideoTabService.enabled &&
-        WindowsVideoTabService.workspaceRoutes.contains(route)) {
+        workspaceRoute?.opensAsToolTab == true) {
       WindowsVideoTabService.openTab(
         {
           'tabRoute': route,
-          'title': title,
+          'title': title ?? workspaceRoute?.defaultTitle ?? '工具',
           if (arguments != null) 'workspaceArguments': arguments,
-          'mediaTabType': WindowsMediaTabType.tool.name,
         },
-        type: WindowsMediaTabType.tool,
+        type: WindowsWorkspaceTabType.tool,
         off: off,
       );
       return;
@@ -154,7 +152,7 @@ abstract final class PageUtils {
 
   static void openToolTab({
     required String route,
-    required String title,
+    String? title,
     bool off = false,
   }) => openWorkspaceTab(route: route, title: title, off: off);
 
@@ -692,11 +690,10 @@ abstract final class PageUtils {
     if (roomId == null) {
       return;
     }
+    final arguments = {'roomId': roomId};
     WindowsVideoTabService.upsert(
-      {
-        'roomId': roomId,
-      },
-      type: WindowsMediaTabType.live,
+      arguments,
+      type: WindowsWorkspaceTabType.live,
     );
     if (WindowsVideoTabService.enabled) {
       WindowsVideoTabService.showHost(off: off);

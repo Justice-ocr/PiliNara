@@ -9,16 +9,16 @@ void main() {
     tester,
   ) async {
     final now = DateTime(2026);
-    final home = WindowsVideoTabItem(
+    final home = WindowsWorkspaceTab(
       id: WindowsVideoTabService.homeTabId,
-      type: WindowsMediaTabType.home,
+      type: WindowsWorkspaceTabType.home,
       arguments: const {'mediaTabType': 'home'},
       createdAt: now,
       updatedAt: now,
     );
-    final download = WindowsVideoTabItem(
+    final download = WindowsWorkspaceTab(
       id: 'tool:/download',
-      type: WindowsMediaTabType.tool,
+      type: WindowsWorkspaceTabType.tool,
       arguments: const {
         'mediaTabType': 'tool',
         'tabRoute': '/download',

@@ -54,48 +54,33 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
     (
       icon: CustomIcons.folderDownloadOutline,
       title: '离线缓存',
-      onTap: () => PageUtils.openWorkspaceTab(
-        route: '/download',
-        title: '\u79bb\u7ebf\u7f13\u5b58',
-      ),
+      onTap: () => PageUtils.openToolTab(route: '/download', title: '下载'),
     ),
     (
       icon: CustomIcons.history,
       title: '观看记录',
-      onTap: () {
-        if (isLogin) {
-          PageUtils.openWorkspaceTab(
-            route: '/history',
-            title: '\u89c2\u770b\u8bb0\u5f55',
-          );
-        }
-      },
+      onTap: () => _openLoginRequiredTool(route: '/history', title: '观看记录'),
     ),
     (
       icon: CustomIcons.subscriptions_outlined,
       title: '我的订阅',
-      onTap: () {
-        if (isLogin) {
-          PageUtils.openWorkspaceTab(
-            route: '/subscription',
-            title: '\u6211\u7684\u8ba2\u9605',
-          );
-        }
-      },
+      onTap: () =>
+          _openLoginRequiredTool(route: '/subscription', title: '我的订阅'),
     ),
     (
       icon: CustomIcons.watch_later_outlined,
       title: '稍后再看',
-      onTap: () {
-        if (isLogin) {
-          PageUtils.openWorkspaceTab(
-            route: '/later',
-            title: '\u7a0d\u540e\u518d\u770b',
-          );
-        }
-      },
+      onTap: () => _openLoginRequiredTool(route: '/later', title: '稍后再看'),
     ),
   ];
+
+  void _openLoginRequiredTool({required String route, required String title}) {
+    if (!isLogin) {
+      SmartDialog.showToast('请先登录');
+      return;
+    }
+    PageUtils.openToolTab(route: route, title: title);
+  }
 
   @override
   void onInit() {
@@ -125,8 +110,7 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
       account: Accounts.history,
     );
     if (res case Success(:final response)) {
-      historyLoadingState.value =
-          Success(response.list?.take(20).toList());
+      historyLoadingState.value = Success(response.list?.take(20).toList());
     } else if (res case Error(:final errMsg, :final code)) {
       historyLoadingState.value = Error(errMsg, code: code);
     }
@@ -271,7 +255,7 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
         res == true
             ? Accounts.set(AccountType.heartbeat, AnonymousAccount())
             : Accounts.accountMode[AccountType.heartbeat.index] =
-                  AnonymousAccount();
+                AnonymousAccount();
       });
     } else {
       Accounts.set(AccountType.heartbeat, Accounts.main);

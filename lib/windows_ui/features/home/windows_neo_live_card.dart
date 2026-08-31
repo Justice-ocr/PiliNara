@@ -124,12 +124,18 @@ class _WindowsNeoLiveCardState extends State<WindowsNeoLiveCard> {
                         ActionChip(
                           label: Text(reason.name ?? ''),
                           onPressed: () async {
+                            final reasonId = reason.id;
+                            final reasonIdType = reason.idType;
+                            if (reasonId == null || reasonIdType == null) {
+                              SmartDialog.showToast('该反馈选项暂不可用');
+                              return;
+                            }
                             Navigator.of(dialogContext).pop();
                             SmartDialog.showLoading(msg: '正在提交');
                             final res = await LiveHttp.liveFeedback(
                               roomId,
-                              reason.id!,
-                              reason.idType!,
+                              reasonId,
+                              reasonIdType,
                             );
                             SmartDialog.dismiss();
                             if (res.isSuccess) {
@@ -198,15 +204,18 @@ class _WindowsNeoLiveCardState extends State<WindowsNeoLiveCard> {
                       Positioned(
                         top: 8,
                         right: 8,
-                        child: AnimatedOpacity(
-                          opacity: _hovered ? 1 : 0,
-                          duration: context.windowsNeoDuration(
-                            tokens.motionFast,
-                          ),
-                          child: IconButton.filledTonal(
-                            tooltip: '反馈直播间',
-                            onPressed: () => _showFeedbackDialog(context),
-                            icon: const Icon(Icons.flag_outlined, size: 17),
+                        child: IgnorePointer(
+                          ignoring: !_hovered,
+                          child: AnimatedOpacity(
+                            opacity: _hovered ? 1 : 0,
+                            duration: context.windowsNeoDuration(
+                              tokens.motionFast,
+                            ),
+                            child: IconButton.filledTonal(
+                              tooltip: '反馈直播间',
+                              onPressed: () => _showFeedbackDialog(context),
+                              icon: const Icon(Icons.flag_outlined, size: 17),
+                            ),
                           ),
                         ),
                       ),

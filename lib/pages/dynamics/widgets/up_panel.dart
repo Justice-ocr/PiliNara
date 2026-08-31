@@ -4,7 +4,6 @@ import 'package:PiliPlus/models/common/dynamic/up_panel_position.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models/dynamics/up.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
-import 'package:PiliPlus/pages/live_follow/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
@@ -36,7 +35,7 @@ class _UpPanelState extends State<UpPanel> {
   bool get isTop =>
       widget.horizontal ?? controller.upPanelPosition == UpPanelPosition.top;
 
-  void toFollowPage() => Get.to(const LiveFollowPage());
+  void toFollowPage() => PageUtils.toDupNamed('/liveFollow');
 
   @override
   Widget build(BuildContext context) {

@@ -93,6 +93,9 @@ test.dart
 docs/*
 !docs/danmaku_font_scaling.md
 !docs/inapp_pip_implementation.md
+!docs/upstream_sync.md
+!docs/windows_product_boundary.md
+!docs/windows_workspace.md
 test*.dart
 
 AGENTS.md

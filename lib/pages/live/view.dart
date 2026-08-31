@@ -12,8 +12,6 @@ import 'package:PiliPlus/models_new/live/live_feed_index/card_data_list_item.dar
 import 'package:PiliPlus/models_new/live/live_feed_index/card_list.dart';
 import 'package:PiliPlus/pages/live/controller.dart';
 import 'package:PiliPlus/pages/live/widgets/live_item_app.dart';
-import 'package:PiliPlus/pages/live_area/view.dart';
-import 'package:PiliPlus/pages/live_follow/view.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
@@ -175,10 +173,7 @@ class _LivePageState extends State<LivePage>
                       context: context,
                       tooltip: '全部标签',
                       icon: const Icon(Icons.widgets),
-                      onPressed: () => PageUtils.toPage(
-                        context,
-                        () => const LiveAreaPage(),
-                      ),
+                      onPressed: () => PageUtils.toDupNamed('/liveArea'),
                     ),
                   ],
                 ),
@@ -312,10 +307,7 @@ class _LivePageState extends State<LivePage>
                 ),
               ),
               moreTextButton(
-                onTap: () => PageUtils.toPage(
-                  context,
-                  () => const LiveFollowPage(),
-                ),
+                onTap: () => PageUtils.toDupNamed('/liveFollow'),
                 color: theme.colorScheme.outline,
               ),
             ],
@@ -350,10 +342,7 @@ class _LivePageState extends State<LivePage>
                   return Align(
                     alignment: const Alignment(0, -0.3),
                     child: GestureDetector(
-                      onTap: () => PageUtils.toPage(
-                        context,
-                        () => const LiveFollowPage(),
-                      ),
+                      onTap: () => PageUtils.toDupNamed('/liveFollow'),
                       child: Container(
                         width: 40,
                         height: 40,
