@@ -55,6 +55,10 @@ jobs:
       - name: Resolve dependencies
         run: flutter pub get
 
+      - name: Apply framework and material patches
+        shell: pwsh
+        run: lib/scripts/patch.ps1 windows
+
       - name: Analyze workspace modules
         shell: pwsh
         run: |

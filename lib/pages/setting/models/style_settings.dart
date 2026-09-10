@@ -96,18 +96,11 @@ List<SettingsModel> get styleSettings => [
     defaultVal: false,
     onTap: _showSideBarThresholdDialog,
   ),
-  SplitModel(
-    normalModel: const NormalModel.split(
-      title: 'App字体字重',
-      subtitle: '点击设置',
-      leading: Icon(Icons.text_fields),
-    ),
-    switchModel: SwitchModel.split(
-      defaultVal: false,
-      setKey: SettingBoxKey.appFontWeight,
-      onChanged: (_) => Get.updateMyAppTheme(),
-      onTap: _showFontWeightDialog,
-    ),
+  NormalModel(
+    title: 'App字体字重',
+    subtitle: '点击设置',
+    leading: const Icon(Icons.text_fields),
+    onTap: (context, _) => _showFontWeightDialog(context),
   ),
   NormalModel(
     title: '应用字体',
@@ -863,14 +856,14 @@ Future<void> _showFontWeightDialog(BuildContext context) async {
     context: context,
     builder: (context) => SliderDialog(
       title: const Text('App字体字重'),
-      value: Pref.appFontWeight.toDouble() + 1,
+      value: Pref.appFontWeight.index.toDouble() + 1,
       min: 1,
       max: FontWeight.values.length.toDouble(),
       divisions: FontWeight.values.length - 1,
     ),
   );
   if (res != null) {
-    await GStorage.setting.put(SettingBoxKey.appFontWeight, res.toInt() - 1);
+    await GStorage.setting.put(SettingBoxKey.appFontWeightV2, res.toInt() - 1);
     Get.updateMyAppTheme();
   }
 }
@@ -1033,7 +1026,7 @@ Future<void> _showMsgBadgeDialog(
     if (mainController.msgBadgeMode != DynamicBadgeMode.hidden) {
       mainController.queryUnreadMsg(true);
     } else {
-      mainController.msgUnReadCount.value = '';
+      mainController.clearUnreadMsg();
     }
     await GStorage.setting.put(SettingBoxKey.msgBadgeMode, res.index);
     SmartDialog.showToast('设置成功');

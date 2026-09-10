@@ -377,7 +377,11 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           player?.play();
         }
       }
+      // 后台播放关了，本功能不运行，转发生命周期以取消定时器
+      plPlayerController.handleAutoAudioOnlyLifecycle(state);
+      return;
     }
+    plPlayerController.handleAutoAudioOnlyLifecycle(state);
   }
 
   bool get _reduceMotion =>
@@ -763,37 +767,28 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
               tooltip: '翻译',
               requestFocus: false,
               initialValue: videoDetailController.currLang.value,
+              onSelected: videoDetailController.setLanguage,
               color: Colors.black.withValues(alpha: 0.8),
-              itemBuilder: (context) {
-                return [
-                  PopupMenuItem<String>(
+              itemBuilder: (context) => [
+                const PopupMenuItem<String>(
+                  height: 35,
+                  value: '',
+                  child: Text(
+                    '关闭翻译',
+                    style: TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                ),
+                ...list.map(
+                  (e) => PopupMenuItem<String>(
                     height: 35,
-                    value: '',
-                    onTap: () => videoDetailController.setLanguage(''),
-                    child: const Text(
-                      "关闭翻译",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                      ),
+                    value: e.lang,
+                    child: Text(
+                      e.title!,
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
                     ),
                   ),
-                  ...list.map((e) {
-                    return PopupMenuItem<String>(
-                      height: 35,
-                      value: e.lang,
-                      onTap: () => videoDetailController.setLanguage(e.lang!),
-                      child: Text(
-                        e.title!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                        ),
-                      ),
-                    );
-                  }),
-                ];
-              },
+                ),
+              ],
               child: SizedBox(
                 width: widgetWidth,
                 height: 30,
@@ -933,11 +928,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
             return const SizedBox.shrink();
           }
           final videoFormat = videoInfo.supportFormats!;
-          final totalQaSam = videoFormat.length;
-          final usefulQaSam = videoInfo.dash!.video!
-              .map((i) => i.id)
-              .toSet()
-              .length;
+          final availableQa = videoInfo.dash!.video!.availableVideoQualities;
           return StaticPopupMenuButton<int>(
             tooltip: '画质',
             requestFocus: false,
@@ -945,10 +936,10 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
             color: Colors.black.withValues(alpha: 0.8),
             itemBuilder: (context) {
               return List.generate(
-                totalQaSam,
+                videoFormat.length,
                 (index) {
                   final item = videoFormat[index];
-                  final enabled = index >= totalQaSam - usefulQaSam;
+                  final enabled = availableQa.contains(item.quality);
                   return PopupMenuItem<int>(
                     enabled: enabled,
                     height: 35,
@@ -1158,11 +1149,12 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           plPlayerController.hasToast = true;
           SmartDialog.showAttach(
             targetContext: context,
-            alignment: Alignment.center,
-            animationTime: const Duration(milliseconds: 200),
-            animationType: SmartAnimationType.fade,
-            displayTime: const Duration(milliseconds: 1500),
+            alignment: .center,
+            usePenetrate: true,
+            animationType: .fade,
             maskColor: Colors.transparent,
+            displayTime: const Duration(milliseconds: 1500),
+            animationTime: const Duration(milliseconds: 200),
             builder: (context) => Container(
               padding: const .symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -2188,9 +2180,11 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         ],
 
         Obx(() {
-          if (plPlayerController.dataStatus.loading ||
+          if ((!plPlayerController.suppressBufferingIndicator.value &&
+                  plPlayerController.dataStatus.loading) ||
               (plPlayerController.isBuffering.value &&
-                  plPlayerController.playerStatus.isPlaying)) {
+                  plPlayerController.playerStatus.isPlaying &&
+                  !plPlayerController.suppressBufferingIndicator.value)) {
             return Center(
               child: GestureDetector(
                 onTap: plPlayerController.refreshPlayer,
@@ -2407,7 +2401,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
 
   Future<void> screenshotWebp() async {
     final videoInfo = videoDetailController.data;
-    final ids = videoInfo.dash!.video!.map((i) => i.id!).toSet();
+    final ids = videoInfo.dash!.video!.availableVideoQualities;
     final video = videoDetailController.findVideoByQa(ids.min);
 
     VideoQuality qa = video.quality;

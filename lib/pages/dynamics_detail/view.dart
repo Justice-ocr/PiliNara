@@ -1,17 +1,29 @@
 import 'dart:math';
 
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
+import 'package:PiliPlus/common/widgets/flutter/dyn_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/flutter/text_field/controller.dart';
 import 'package:PiliPlus/common/widgets/pair.dart';
+import 'package:PiliPlus/common/widgets/scaffold/mini_scaffold.dart';
+import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
+import 'package:PiliPlus/common/widgets/scroll_behavior.dart'
+    show NoOverscrollIndicator;
+import 'package:PiliPlus/common/widgets/scroll_physics.dart'
+    show ReloadScrollPhysics, platformAlwaysClampingPhysics;
+import 'package:PiliPlus/common/widgets/sliver/sliver_floating_header.dart';
+import 'package:PiliPlus/common/widgets/sliver/sliver_to_box_adapter.dart';
+import 'package:PiliPlus/common/widgets/tap_region_surface.dart';
 import 'package:PiliPlus/http/constants.dart';
 import 'package:PiliPlus/http/dynamics.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/reply/reply_option_type.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/pages/common/dyn/common_dyn_page.dart';
-import 'package:PiliPlus/pages/common/dyn/reaction/controller.dart';
-import 'package:PiliPlus/pages/common/dyn/reaction/view.dart';
+import 'package:PiliPlus/pages/common/dyn/like_list/controller.dart';
+import 'package:PiliPlus/pages/common/dyn/like_list/view.dart';
+import 'package:PiliPlus/pages/common/dyn/repost_list/controller.dart';
+import 'package:PiliPlus/pages/common/dyn/repost_list/view.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/author_panel.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/dynamic_panel.dart';
 import 'package:PiliPlus/pages/dynamics_create/view.dart';
@@ -47,7 +59,8 @@ class DynamicDetailPage extends StatefulWidget {
 class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
   @override
   late final DynamicDetailController controller;
-  late final DynReactController _reactionController;
+  late final DynLikeController _likeController;
+  late final DynRepostController _repostController;
   bool _windowsReactionOpen = false;
   late final bool Function() _windowsReactionPopper =
       _popWindowsReactionContext;
@@ -74,16 +87,24 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
       () => DynamicDetailController(
         item: item,
         onUpdate: args['onUpdate'],
+        count: item.modules.moduleStat?.comment?.count ?? -1,
       ),
       tag: widget.controllerTag ?? item.idStr.toString(),
     );
     final stat = item.modules.moduleStat;
-    _reactionController = Get.putOrFind(
-      () => DynReactController(
+    _likeController = Get.putOrFind(
+      () => DynLikeController(
         item.idStr.toString(),
-        count: (stat?.like?.count ?? -1) + (stat?.forward?.count ?? -1),
+        count: stat?.like?.count ?? -1,
       ),
-      tag: item.idStr.toString(),
+      tag: widget.controllerTag ?? item.idStr.toString(),
+    );
+    _repostController = Get.putOrFind(
+      () => DynRepostController(
+        item.idStr.toString(),
+        count: stat?.forward?.count ?? -1,
+      ),
+      tag: widget.controllerTag ?? item.idStr.toString(),
     );
     if (WindowsVideoTabService.enabled) {
       _registeredWindowsTabArguments = _windowsTabArguments;
@@ -135,7 +156,7 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
                   Expanded(
                     child: Obx(
                       () => Text(
-                        '赞与转发 ${_reactionController.count.value < 0 ? '' : NumUtils.numFormat(_reactionController.count.value)}',
+                        '赞 ${NumUtils.numFormat(max(0, _likeController.count.value))} · 转发 ${NumUtils.numFormat(max(0, _repostController.count.value))}',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
@@ -150,10 +171,7 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
             ),
             const Divider(height: 1),
             Expanded(
-              child: DynReactPage(
-                id: controller.dynItem.idStr,
-                controller: _reactionController,
-              ),
+              child: _buildReactions(),
             ),
           ],
         ),
@@ -239,17 +257,43 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
             child: WindowsNeoContextPanel(
               title: '赞与转发',
               onBack: () => setState(() => _windowsReactionOpen = false),
-              child: DynReactPage(
-                id: controller.dynItem.idStr,
-                controller: _reactionController,
-                isPortrait: false,
-              ),
+              child: _buildReactions(),
             ),
           ),
         ),
       ],
     );
   }
+
+  Widget _buildReactions() => DefaultTabController(
+    length: 2,
+    child: Column(
+      children: [
+        const TabBar(
+          tabs: [
+            Tab(text: '赞'),
+            Tab(text: '转发'),
+          ],
+        ),
+        Expanded(
+          child: TabBarView(
+            children: [
+              DynLikePage(
+                id: controller.dynItem.idStr,
+                controller: _likeController,
+                isPortrait: false,
+              ),
+              DynRepostPage(
+                id: controller.dynItem.idStr,
+                controller: _repostController,
+                isPortrait: false,
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 
   void _onEdit() {
     final item = controller.dynItem;
@@ -439,7 +483,7 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
               ),
             ),
             buildReplyHeader(theme),
-            Obx(() => replyList(theme, controller.loadingState.value)),
+            Obx(() => replyList(controller.loadingState.value)),
           ],
         ),
       );
@@ -497,7 +541,7 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
                       slivers: [
                         buildReplyHeader(theme),
                         Obx(
-                          () => replyList(theme, controller.loadingState.value),
+                          () => replyList(controller.loadingState.value),
                         ),
                       ],
                     ),
@@ -532,21 +576,22 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
       required ValueChanged<Color> onPressed,
       IconData? activatedIcon,
     }) {
-      final status = stat?.status == true;
+      final bool status;
+      final String count;
+      if (stat != null) {
+        status = stat.status ?? false;
+        count = stat.count != null ? NumUtils.numFormat(stat.count) : text;
+      } else {
+        status = false;
+        count = text;
+      }
       final color = status ? primary : outline;
-      final iconWidget = Icon(
-        status ? activatedIcon : icon,
-        size: 16,
-        color: color,
-      );
+      final child = Icon(status ? activatedIcon : icon, size: 16, color: color);
       return TextButton.icon(
-        onPressed: () => onPressed(iconWidget.color!),
-        icon: iconWidget,
+        icon: child,
         style: btnStyle,
-        label: Text(
-          stat?.count != null ? NumUtils.numFormat(stat!.count) : text,
-          style: TextStyle(color: color),
-        ),
+        onPressed: () => onPressed(child.color!),
+        label: Text(count, style: TextStyle(color: color)),
       );
     }
 

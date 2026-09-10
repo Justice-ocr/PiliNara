@@ -40,6 +40,7 @@ import 'package:PiliPlus/pages/setting/pages/color_select.dart';
 import 'package:PiliPlus/pages/setting/pages/font_setting.dart';
 import 'package:PiliPlus/pages/setting/pages/play_speed_set.dart';
 import 'package:PiliPlus/pages/setting/view.dart';
+import 'package:PiliPlus/pages/setting/block_setting.dart';
 import 'package:PiliPlus/pages/space_setting/view.dart';
 import 'package:PiliPlus/pages/sponsor_block/view.dart';
 import 'package:PiliPlus/pages/subscription/view.dart';
@@ -71,270 +72,270 @@ class WindowsWorkspaceRouteDefinition {
 abstract final class WindowsWorkspaceRouteRegistry {
   static final List<WindowsWorkspaceRouteDefinition> definitions =
       List.unmodifiable([
-    const WindowsWorkspaceRouteDefinition(
-      path: '/download',
-      kind: WindowsWorkspaceRouteKind.toolTab,
-      defaultTitle: '下载',
-      pageBuilder: DownloadPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/fav',
-      kind: WindowsWorkspaceRouteKind.toolTab,
-      defaultTitle: '收藏',
-      pageBuilder: FavPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/history',
-      kind: WindowsWorkspaceRouteKind.toolTab,
-      defaultTitle: '观看记录',
-      pageBuilder: HistoryPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/later',
-      kind: WindowsWorkspaceRouteKind.toolTab,
-      defaultTitle: '稍后再看',
-      pageBuilder: LaterPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/myReply',
-      kind: WindowsWorkspaceRouteKind.toolTab,
-      defaultTitle: '我的回复',
-      pageBuilder: MyReply.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/setting',
-      kind: WindowsWorkspaceRouteKind.toolTab,
-      defaultTitle: '设置',
-      pageBuilder: SettingPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/subscription',
-      kind: WindowsWorkspaceRouteKind.toolTab,
-      defaultTitle: '我的订阅',
-      pageBuilder: SubPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/whisper',
-      kind: WindowsWorkspaceRouteKind.toolTab,
-      defaultTitle: '私信',
-      pageBuilder: WhisperPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/search',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: SearchPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/searchTrending',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: SearchTrendingPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/member',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: MemberPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/memberSearch',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: MemberSearchPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/editProfile',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: EditProfilePage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/spaceSetting',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: SpaceSettingPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/dynamicDetail',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: DynamicDetailPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/articlePage',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: ArticlePage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/articleList',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: ArticleListPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/dynTopic',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: DynTopicPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/blockSetting',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: SettingPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/blackListPage',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: BlackListPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/sponsorBlock',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: SponsorBlockPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/aiSetting',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: AiSettingPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/playSpeedSet',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: PlaySpeedPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/colorSetting',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: ColorSelectPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/fontSizeSetting',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: FontSettingPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/fontSetting',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: FontSettingPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/barSetting',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: BarSetPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/historySearch',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: HistorySearchPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/laterSearch',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: LaterSearchPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/favDetail',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: FavDetailPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/favSearch',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: FavSearchPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/popularSeries',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: PopularSeriesPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/popularPrecious',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: PopularPreciousPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/rank',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: WindowsWorkspaceRankPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/whisperDetail',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: WhisperDetailPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/replyMe',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: ReplyMePage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/atMe',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: AtMePage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/likeMe',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: LikeMePage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/sysMsg',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: SysMsgPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/webview',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: WebviewPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/liveArea',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: LiveAreaPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/liveFollow',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: LiveFollowPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/memberGuard',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: MemberGuard.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/subDetail',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: SubDetailPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/msgLikeDetail',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: LikeDetailPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/memberDynamics',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: MemberDynamicsPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/follow',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: FollowPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/fan',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: FansPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/followSearch',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: FollowSearchPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/followed',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: FollowedPage.new,
-    ),
-    const WindowsWorkspaceRouteDefinition(
-      path: '/sameFollowing',
-      kind: WindowsWorkspaceRouteKind.nested,
-      pageBuilder: FollowSamePage.new,
-    ),
-  ]);
+        const WindowsWorkspaceRouteDefinition(
+          path: '/download',
+          kind: WindowsWorkspaceRouteKind.toolTab,
+          defaultTitle: '下载',
+          pageBuilder: DownloadPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/fav',
+          kind: WindowsWorkspaceRouteKind.toolTab,
+          defaultTitle: '收藏',
+          pageBuilder: FavPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/history',
+          kind: WindowsWorkspaceRouteKind.toolTab,
+          defaultTitle: '观看记录',
+          pageBuilder: HistoryPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/later',
+          kind: WindowsWorkspaceRouteKind.toolTab,
+          defaultTitle: '稍后再看',
+          pageBuilder: LaterPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/myReply',
+          kind: WindowsWorkspaceRouteKind.toolTab,
+          defaultTitle: '我的回复',
+          pageBuilder: MyReply.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/setting',
+          kind: WindowsWorkspaceRouteKind.toolTab,
+          defaultTitle: '设置',
+          pageBuilder: SettingPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/subscription',
+          kind: WindowsWorkspaceRouteKind.toolTab,
+          defaultTitle: '我的订阅',
+          pageBuilder: SubPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/whisper',
+          kind: WindowsWorkspaceRouteKind.toolTab,
+          defaultTitle: '私信',
+          pageBuilder: WhisperPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/search',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: SearchPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/searchTrending',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: SearchTrendingPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/member',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: MemberPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/memberSearch',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: MemberSearchPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/editProfile',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: EditProfilePage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/spaceSetting',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: SpaceSettingPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/dynamicDetail',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: DynamicDetailPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/articlePage',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: ArticlePage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/articleList',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: ArticleListPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/dynTopic',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: DynTopicPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/blockSetting',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: BlockSetting.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/blackListPage',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: BlackListPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/sponsorBlock',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: SponsorBlockPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/aiSetting',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: AiSettingPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/playSpeedSet',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: PlaySpeedPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/colorSetting',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: ColorSelectPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/fontSizeSetting',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: FontSettingPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/fontSetting',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: FontSettingPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/barSetting',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: BarSetPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/historySearch',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: HistorySearchPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/laterSearch',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: LaterSearchPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/favDetail',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: FavDetailPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/favSearch',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: FavSearchPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/popularSeries',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: PopularSeriesPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/popularPrecious',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: PopularPreciousPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/rank',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: WindowsWorkspaceRankPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/whisperDetail',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: WhisperDetailPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/replyMe',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: ReplyMePage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/atMe',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: AtMePage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/likeMe',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: LikeMePage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/sysMsg',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: SysMsgPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/webview',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: WebviewPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/liveArea',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: LiveAreaPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/liveFollow',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: LiveFollowPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/memberGuard',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: MemberGuard.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/subDetail',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: SubDetailPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/msgLikeDetail',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: LikeDetailPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/memberDynamics',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: MemberDynamicsPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/follow',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: FollowPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/fan',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: FansPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/followSearch',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: FollowSearchPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/followed',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: FollowedPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/sameFollowing',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: FollowSamePage.new,
+        ),
+      ]);
 
   static final Map<String, WindowsWorkspaceRouteDefinition> _routesByPath =
       _indexDefinitions();
@@ -386,7 +387,7 @@ class WindowsWorkspaceRankPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('排行榜')),
-        body: const RankPage(),
-      );
+    appBar: AppBar(title: const Text('排行榜')),
+    body: const RankPage(),
+  );
 }

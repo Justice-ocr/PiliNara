@@ -5,8 +5,8 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
-import 'package:material_ui/material_ui.dart' hide ListTile;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:material_ui/material_ui.dart' hide ListTile;
 
 class SetSwitchItem extends StatefulWidget {
   final String title;
@@ -43,29 +43,22 @@ class SetSwitchItem extends StatefulWidget {
 class _SetSwitchItemState extends State<SetSwitchItem> {
   late bool val;
 
-  void setVal() {
-    if (widget.setKey == SettingBoxKey.appFontWeight) {
-      val = Pref.appFontWeight != -1;
-    } else {
-      val = GStorage.setting.get(
-        widget.setKey,
-        defaultValue: widget.defaultVal,
-      );
-    }
+  void _setVal() {
+    val = GStorage.setting.get(widget.setKey, defaultValue: widget.defaultVal);
   }
 
   @override
   void didUpdateWidget(SetSwitchItem oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.setKey != widget.setKey) {
-      setVal();
+      _setVal();
     }
   }
 
   @override
   void initState() {
     super.initState();
-    setVal();
+    _setVal();
   }
 
   Future<void> switchChange([bool? value]) async {
@@ -79,11 +72,7 @@ class _SetSwitchItemState extends State<SetSwitchItem> {
       );
     }
 
-    if (widget.setKey == SettingBoxKey.appFontWeight) {
-      await GStorage.setting.put(SettingBoxKey.appFontWeight, val ? 4 : -1);
-    } else {
-      await GStorage.setting.put(widget.setKey, val);
-    }
+    await GStorage.setting.put(widget.setKey, val);
 
     widget.onChanged?.call(val);
     if (widget.needReboot) {

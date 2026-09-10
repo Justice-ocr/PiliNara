@@ -25,7 +25,7 @@ mixin BlockConfigMixin {
   late final enableSponsorBlock = Pref.enableSponsorBlock;
   late final enableBlock = enableSponsorBlock || enablePgcSkip;
   late final blockColor = Pref.blockColor;
-  late final blockLimit = Pref.blockLimit;
+  late final blockLimit = Pref.blockLimit * 1000;
   late final blockSettings = Pref.blockSettings;
   late final blockSkipWhenSeekIntoSegment = Pref.blockSkipWhenSeekIntoSegment;
   late final enableList = blockSettings
@@ -94,8 +94,7 @@ mixin BlockMixin on GetxController {
             //   debugPrint(
             //       '${position.inSeconds},,${item.segment.first},,${item.segment.second},,${item.skipType.name},,${item.hasSkipped}');
             // }
-            if ((msPos <= item.segment.$1 &&
-                    item.segment.$1 <= msPos + 1000) ||
+            if ((msPos <= item.segment.$1 && item.segment.$1 <= msPos + 1000) ||
                 (skipWhenSeekIntoSegment && item.segment.contains(msPos))) {
               switch (item.skipType) {
                 case SkipType.alwaysSkip:

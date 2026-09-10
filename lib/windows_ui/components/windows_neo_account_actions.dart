@@ -17,13 +17,13 @@ class WindowsNeoMessageButton extends StatelessWidget {
       if (!mainController.accountService.isLogin.value) {
         return const SizedBox.shrink();
       }
-      final count = mainController.msgUnReadCount.value;
+      final count = mainController.msgUnReadCount.value ?? '';
       final isNumberBadge = mainController.msgBadgeMode == .number;
       return IconButton(
         tooltip: '\u6d88\u606f',
         onPressed: () {
           mainController
-            ..msgUnReadCount.value = ''
+            ..clearUnreadMsg()
             ..lastCheckUnreadAt = DateTime.now().millisecondsSinceEpoch;
           PageUtils.openToolTab(route: '/whisper', title: '\u6d88\u606f');
         },

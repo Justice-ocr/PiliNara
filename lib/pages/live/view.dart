@@ -11,6 +11,7 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/live/live_feed_index/card_data_list_item.dart';
 import 'package:PiliPlus/models_new/live/live_feed_index/card_list.dart';
 import 'package:PiliPlus/pages/live/controller.dart';
+import 'package:PiliPlus/pages/home/home_preview_scope.dart';
 import 'package:PiliPlus/pages/live/widgets/live_item_app.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
@@ -59,7 +60,7 @@ class _LivePageState extends State<LivePage>
         borderRadius: isWindowsNeo ? BorderRadius.zero : Style.mdRadius,
       ),
       child: refreshIndicator(
-        key: controller.refreshKey,
+        key: HomePreviewScope.of(context) ? null : controller.refreshKey,
         onRefresh: controller.onRefresh,
         child: CustomScrollView(
           controller: controller.scrollController,

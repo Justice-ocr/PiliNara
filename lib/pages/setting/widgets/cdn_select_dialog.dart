@@ -2,6 +2,7 @@ import 'package:PiliPlus/http/browser_ua.dart';
 import 'package:PiliPlus/http/constants.dart';
 import 'package:PiliPlus/http/video.dart';
 import 'package:PiliPlus/models/common/video/cdn_type.dart';
+import 'package:PiliPlus/models/common/video/video_quality.dart';
 import 'package:PiliPlus/models/common/video/video_type.dart';
 import 'package:PiliPlus/models/video/play/url.dart';
 import 'package:PiliPlus/pages/setting/widgets/cdn_node_dialog.dart';
@@ -84,6 +85,7 @@ class CdnSpeedTester {
     final result = await VideoHttp.videoUrl(
       cid: 196018899,
       bvid: 'BV1fK4y1t7hj',
+      qn: VideoQuality.high1080.code,
       tryLook: false,
       videoType: VideoType.ugc,
     );
@@ -202,7 +204,8 @@ class M3eOptionItem extends StatelessWidget {
     final secondary = selected
         ? colorScheme.onSecondaryContainer
         : colorScheme.onSurfaceVariant;
-    final effectiveLeading = leading ??
+    final effectiveLeading =
+        leading ??
         (selectionControl
             ? Icon(
                 selected
@@ -406,8 +409,7 @@ class _CdnSelectDialogState extends State<CdnSelectDialog> {
                         ),
                       )
                     : null,
-                onTap: () =>
-                    Navigator.pop(context, CdnBuiltinResult(service)),
+                onTap: () => Navigator.pop(context, CdnBuiltinResult(service)),
               ),
             const SizedBox(height: 8),
             const Divider(height: 1, indent: 8, endIndent: 8),

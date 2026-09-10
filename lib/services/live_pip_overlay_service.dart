@@ -594,77 +594,82 @@ class _LivePipWidgetState extends State<LivePipWidget>
                     if (_showControls) _startHideTimer();
                   }
                 },
-                child: GestureDetector(
-                  onTap: _onTap,
-                  onDoubleTap: _onDoubleTap,
-                  // 单指拖动 + 双指捏合缩放统一走 onScale(两者互斥于 onPan)
-                  onScaleStart: (_) {
-                    _hideTimer?.cancel();
-                    _scaleStart = _scale;
-                    _instantResize = true;
-                  },
-                  onScaleUpdate: (details) {
-                    setState(() {
-                      // 平移:单指拖动 / 双指整体移动(focalPointDelta)
-                      _left = _left! + details.focalPointDelta.dx;
-                      _top = _top! + details.focalPointDelta.dy;
-                      // 缩放:双指时 scale≠1;单指恒为 1,仅钳位置
-                      if (details.scale != 1.0) {
-                        _applyScaleAroundCenter(
-                          _scaleStart * details.scale,
-                          screenSize,
-                        );
-                      } else {
-                        _clampPositionInScreen(screenSize);
-                      }
-                    });
-                    PipWindowMemory.position = Offset(_left!, _top!);
-                    PipWindowMemory.scale = _scale;
-                  },
-                  onScaleEnd: (_) {
-                    setState(() => _instantResize = false);
-                    if (_showControls) {
-                      _startHideTimer();
-                    }
-                  },
-                  child: MouseRegion(
-                    onEnter: _onHoverEnter,
-                    onExit: _onHoverExit,
-                    child: FadeTransition(
-                      opacity: _closeCtr.drive(Tween(begin: 1.0, end: 0.0)),
-                      child: ScaleTransition(
-                        scale: _closeCtr.drive(
-                          Tween(
-                            begin: 1.0,
-                            end: 0.85,
-                          ).chain(CurveTween(curve: Curves.easeOut)),
+                child: MouseRegion(
+                  onEnter: _onHoverEnter,
+                  onExit: _onHoverExit,
+                  child: FadeTransition(
+                    opacity: _closeCtr.drive(Tween(begin: 1.0, end: 0.0)),
+                    child: ScaleTransition(
+                      scale: _closeCtr.drive(
+                        Tween(
+                          begin: 1.0,
+                          end: 0.85,
+                        ).chain(CurveTween(curve: Curves.easeOut)),
+                      ),
+                      child: AnimatedContainer(
+                        // 过渡中矩形逐帧由协调器插值给出;捏合/滚轮中尺寸须与
+                        // 位置同帧生效(见 _instantResize)。两者时长归零,
+                        // 仅双击档位切换保留 250ms 尺寸过渡
+                        duration: inTransition || _instantResize
+                            ? Duration.zero
+                            : const Duration(milliseconds: 250),
+                        curve: Curves.easeOutCubic,
+                        width: rect.width,
+                        height: rect.height,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(radius),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.6),
+                              blurRadius: 12,
+                              spreadRadius: 2,
+                            ),
+                          ],
                         ),
-                        child: AnimatedContainer(
-                          // 过渡中矩形逐帧由协调器插值给出;捏合/滚轮中尺寸须与
-                          // 位置同帧生效(见 _instantResize)。两者时长归零,
-                          // 仅双击档位切换保留 250ms 尺寸过渡
-                          duration: inTransition || _instantResize
-                              ? Duration.zero
-                              : const Duration(milliseconds: 250),
-                          curve: Curves.easeOutCubic,
-                          width: rect.width,
-                          height: rect.height,
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(radius),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.6),
-                                blurRadius: 12,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(radius),
-                            child: Stack(
-                              children: [
-                                Positioned.fill(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(radius),
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: _onTap,
+                                  onDoubleTap: _onDoubleTap,
+                                  // 仅视频区域处理小窗移动/缩放，避免与控制按钮竞争手势。
+                                  onScaleStart: (_) {
+                                    _hideTimer?.cancel();
+                                    _scaleStart = _scale;
+                                    _instantResize = true;
+                                  },
+                                  onScaleUpdate: (details) {
+                                    setState(() {
+                                      // 平移:单指拖动 / 双指整体移动(focalPointDelta)
+                                      _left =
+                                          _left! + details.focalPointDelta.dx;
+                                      _top = _top! + details.focalPointDelta.dy;
+                                      // 缩放:双指时 scale≠1;单指恒为 1,仅钳位置
+                                      if (details.scale != 1.0) {
+                                        _applyScaleAroundCenter(
+                                          _scaleStart * details.scale,
+                                          screenSize,
+                                        );
+                                      } else {
+                                        _clampPositionInScreen(screenSize);
+                                      }
+                                    });
+                                    PipWindowMemory.position = Offset(
+                                      _left!,
+                                      _top!,
+                                    );
+                                    PipWindowMemory.scale = _scale;
+                                  },
+                                  onScaleEnd: (_) {
+                                    setState(() => _instantResize = false);
+                                    if (_showControls) {
+                                      _startHideTimer();
+                                    }
+                                  },
                                   child: AbsorbPointer(
                                     child: PipMiniVideoContent(
                                       plPlayerController:
@@ -674,106 +679,106 @@ class _LivePipWidgetState extends State<LivePipWidget>
                                     ),
                                   ),
                                 ),
-                                if (interactive && _showControls) ...[
-                                  Positioned.fill(
+                              ),
+                              if (interactive && _showControls) ...[
+                                Positioned.fill(
+                                  child: IgnorePointer(
                                     child: Container(
                                       color: Colors.black.withValues(
                                         alpha: 0.4,
                                       ),
                                     ),
                                   ),
-                                  // 左上角关闭：先播缩小淡出再 stopLivePip
-                                  Positioned(
-                                    top: 3,
-                                    left: 4,
-                                    child: GestureDetector(
-                                      onTap: _beginClose,
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Icon(
-                                          Icons.close,
-                                          color: Colors.white,
-                                          size: 21,
-                                        ),
+                                ),
+                                // 左上角关闭：先播缩小淡出再 stopLivePip
+                                Positioned(
+                                  top: 3,
+                                  left: 4,
+                                  child: GestureDetector(
+                                    onTap: _beginClose,
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                        size: 21,
                                       ),
                                     ),
                                   ),
-                                  // 右上角放大/还原：归位动画启动，窗口保持显示飞向页面
-                                  Positioned(
-                                    top: 3,
-                                    right: 4,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        _hideTimer?.cancel();
-                                        widget.onReturn();
-                                      },
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Icon(
-                                          Icons.open_in_full,
-                                          color: Colors.white,
-                                          size: 18,
-                                        ),
+                                ),
+                                // 右上角放大/还原：归位动画启动，窗口保持显示飞向页面
+                                Positioned(
+                                  top: 3,
+                                  right: 4,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      _hideTimer?.cancel();
+                                      widget.onReturn();
+                                    },
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Icon(
+                                        Icons.open_in_full,
+                                        color: Colors.white,
+                                        size: 18,
                                       ),
                                     ),
                                   ),
-                                  // 底部控制栏:播放/暂停居中(小窗主键居中的
-                                  // 通用心智,与视频小窗键位对齐);左槽与刷新
-                                  // 等宽占位,spaceEvenly 下主键即精确居中
-                                  Positioned(
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 8,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        const SizedBox(width: 22),
-                                        // 播放/暂停
-                                        Obx(() {
-                                          final isPlaying =
-                                              widget
-                                                  .plPlayerController
-                                                  .playerStatus
-                                                  .value ==
-                                              PlayerStatus.playing;
-                                          return GestureDetector(
-                                            onTap: () {
-                                              _resetHideTimer();
-                                              if (isPlaying) {
-                                                widget.plPlayerController
-                                                    .pause();
-                                              } else {
-                                                widget.plPlayerController
-                                                    .play();
-                                              }
-                                            },
-                                            child: Icon(
-                                              isPlaying
-                                                  ? Icons.pause
-                                                  : Icons.play_arrow,
-                                              color: Colors.white,
-                                              size: 30,
-                                            ),
-                                          );
-                                        }),
-                                        // 刷新:直播卡死自救;低频操作降为
-                                        // 70% 白(medium-emphasis),平衡主键
-                                        // 居中后偏右的视觉重量
-                                        GestureDetector(
-                                          onTap: _onRefresh,
-                                          child: const Icon(
-                                            Icons.refresh,
-                                            color: Colors.white70,
-                                            size: 22,
+                                ),
+                                // 底部控制栏:播放/暂停居中(小窗主键居中的
+                                // 通用心智,与视频小窗键位对齐);左槽与刷新
+                                // 等宽占位,spaceEvenly 下主键即精确居中
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 8,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      const SizedBox(width: 22),
+                                      // 播放/暂停
+                                      Obx(() {
+                                        final isPlaying =
+                                            widget
+                                                .plPlayerController
+                                                .playerStatus
+                                                .value ==
+                                            PlayerStatus.playing;
+                                        return GestureDetector(
+                                          onTap: () {
+                                            _resetHideTimer();
+                                            if (isPlaying) {
+                                              widget.plPlayerController.pause();
+                                            } else {
+                                              widget.plPlayerController.play();
+                                            }
+                                          },
+                                          child: Icon(
+                                            isPlaying
+                                                ? Icons.pause
+                                                : Icons.play_arrow,
+                                            color: Colors.white,
+                                            size: 30,
                                           ),
+                                        );
+                                      }),
+                                      // 刷新:直播卡死自救;低频操作降为
+                                      // 70% 白(medium-emphasis),平衡主键
+                                      // 居中后偏右的视觉重量
+                                      GestureDetector(
+                                        onTap: _onRefresh,
+                                        child: const Icon(
+                                          Icons.refresh,
+                                          color: Colors.white70,
+                                          size: 22,
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ],
-                            ),
+                            ],
                           ),
                         ),
                       ),

@@ -2,8 +2,6 @@ import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
-import 'package:PiliPlus/utils/storage_pref.dart';
-import 'package:PiliPlus/utils/user_whitelist.dart';
 import 'package:material_ui/material_ui.dart';
 
 List<SettingsModel> get dynamicsSettings => [

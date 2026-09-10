@@ -31,6 +31,9 @@ import 'package:PiliPlus/pages/later/view.dart';
 import 'package:PiliPlus/pages/later_search/view.dart';
 import 'package:PiliPlus/pages/live_dm_block/view.dart';
 import 'package:PiliPlus/pages/live_room/view.dart';
+import 'package:PiliPlus/pages/live_area/view.dart';
+import 'package:PiliPlus/pages/live_follow/view.dart';
+import 'package:PiliPlus/pages/rank/view.dart';
 import 'package:PiliPlus/pages/login/view.dart';
 import 'package:PiliPlus/pages/main/view.dart';
 import 'package:PiliPlus/pages/main_reply/view.dart';
@@ -123,10 +126,16 @@ class Routes {
     // 鐢ㄦ埛涓績
     GetPage(name: '/member', page: () => const MemberPage()),
     GetPage(name: '/memberSearch', page: () => const MemberSearchPage()),
+    // 屏蔽与豁免
+    GetPage(name: '/blockSetting', page: () => const BlockSetting()),
     //
     GetPage(name: '/blackListPage', page: () => const BlackListPage()),
     GetPage(name: '/colorSetting', page: () => const ColorSelectPage()),
     GetPage(name: '/fontSetting', page: () => const FontSettingPage()),
+    GetPage(name: '/fontSizeSetting', page: () => const FontSettingPage()),
+    GetPage(name: '/rank', page: () => const RankPage()),
+    GetPage(name: '/liveArea', page: () => const LiveAreaPage()),
+    GetPage(name: '/liveFollow', page: () => const LiveFollowPage()),
     // 屏幕帧率
     GetPage(name: '/displayModeSetting', page: () => const SetDisplayMode()),
     // 鍏充簬

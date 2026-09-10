@@ -30,16 +30,15 @@ class _LiveDmBlockPageState extends State<LiveDmBlockPage> {
     LiveDmBlockController(),
     tag: Utils.generateRandomString(8),
   );
-  late bool isPortrait;
   late EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isWindowsNeo = WindowsVideoTabService.enabled;
-    isPortrait = isWindowsNeo ? size.width < 760 : size.isPortrait;
-    padding = MediaQuery.viewPaddingOf(context);
+    final isPortrait = isWindowsNeo ? size.width < 760 : size.isPortrait;
     final theme = Theme.of(context);
+    padding = MediaQuery.viewPaddingOf(context);
     Widget tabBar = TabBar(
       isScrollable: isWindowsNeo,
       tabAlignment: isWindowsNeo ? TabAlignment.start : null,
@@ -81,10 +80,11 @@ class _LiveDmBlockPageState extends State<LiveDmBlockPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            '全局屏蔽',
+            '直播屏蔽规则',
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
           ),
-          ..._buildHeader(theme),
+          const SizedBox(height: 12),
+          const Text('添加关键词或用户后，匹配的消息将不再显示在直播聊天中。'),
           if (isPortrait) title,
         ],
       ),
@@ -219,163 +219,6 @@ class _LiveDmBlockPageState extends State<LiveDmBlockPage> {
             );
           },
         ).toList(),
-      ),
-    );
-  }
-
-  List<Widget> _buildHeader(ThemeData theme) {
-    return [
-      const SizedBox(height: 6),
-      Obx(
-        () {
-          final isEnable = _controller.isEnable.value;
-          return Row(
-            spacing: 10,
-            children: [
-              Text('屏蔽${isEnable ? '已' : '未'}开启'),
-              Transform.scale(
-                scale: .8,
-                child: Switch(
-                  value: isEnable,
-                  onChanged: _controller.setEnable,
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-      const SizedBox(height: 6),
-      Obx(
-        () {
-          final level = _controller.level.value;
-          return Row(
-            children: [
-              const Text('用户等级'),
-              Slider(
-                min: 0,
-                max: 60,
-                // ignore: deprecated_member_use
-                year2023: true,
-                inactiveColor: theme.colorScheme.onInverseSurface,
-                padding: const EdgeInsets.only(left: 20, right: 25),
-                value: level.toDouble(),
-                onChangeStart: (value) => _controller.oldLevel = level,
-                onChanged: (value) =>
-                    _controller.level.value = value.round().clamp(0, 60),
-                onChangeEnd: (value) {
-                  if (_controller.oldLevel != level) {
-                    _controller.setSilent(
-                      LiveDmSilentType.level,
-                      level,
-                      onError: () =>
-                          _controller.level.value = _controller.oldLevel ?? 0,
-                    );
-                  }
-                },
-              ),
-              Text('$level 以下'),
-            ],
-          );
-        },
-      ),
-      const SizedBox(height: 20),
-      Row(
-        spacing: 16,
-        children: [
-          Obx(() {
-            final isEnable = _controller.rank.value == 1;
-            return _headerBtn(
-              theme,
-              isEnable,
-              Icons.live_tv,
-              '非正式会员',
-              () => _controller.setSilent(
-                LiveDmSilentType.rank,
-                isEnable ? 0 : 1,
-              ),
-            );
-          }),
-          Obx(() {
-            final isEnable = _controller.verify.value == 1;
-            return _headerBtn(
-              theme,
-              isEnable,
-              Icons.smartphone,
-              '未绑定手机用户',
-              () => _controller.setSilent(
-                LiveDmSilentType.verify,
-                isEnable ? 0 : 1,
-              ),
-            );
-          }),
-        ],
-      ),
-    ];
-  }
-
-  Widget _headerBtn(
-    ThemeData theme,
-    bool isEnable,
-    IconData icon,
-    String name,
-    VoidCallback onTap,
-  ) {
-    final color = isEnable
-        ? theme.colorScheme.primary
-        : theme.colorScheme.outline;
-
-    Widget top = Container(
-      width: 42,
-      height: 42,
-      alignment: Alignment.center,
-      decoration: isEnable
-          ? BoxDecoration(
-              border: Border.all(color: color),
-              borderRadius: const BorderRadius.all(Radius.circular(4)),
-            )
-          : null,
-      child: Icon(icon, color: color),
-    );
-
-    if (isEnable) {
-      top = Stack(
-        clipBehavior: Clip.none,
-        children: [
-          top,
-          Positioned(
-            right: -6,
-            top: -6,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.error,
-                shape: BoxShape.circle,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(2),
-                child: Icon(
-                  size: 14,
-                  Icons.horizontal_rule,
-                  color: theme.colorScheme.onError,
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        spacing: 5,
-        children: [
-          top,
-          Text(
-            name,
-            style: TextStyle(color: color),
-          ),
-        ],
       ),
     );
   }

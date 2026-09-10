@@ -66,9 +66,7 @@ class _PlDanmakuState extends State<PlDanmaku> {
         _plDanmakuController.initFileDmIfNeeded();
       } else {
         _plDanmakuController.queryDanmaku(
-          PlDanmakuController.calcSegment(
-            playerController.positionInMilliseconds,
-          ),
+          DmUtils.calcSegment(playerController.positionInMilliseconds),
         );
       }
     }
@@ -156,11 +154,12 @@ class _PlDanmakuState extends State<PlDanmaku> {
           final displayCount = e.count > Pref.mergeDanmakuMarkThreshold
               ? e.count
               : null;
-          final preferredCountPosition = switch (Pref.mergeDanmakuMarkPosition) {
-            0 => DanmakuCountPosition.hidden,
-            2 => DanmakuCountPosition.tail,
-            _ => DanmakuCountPosition.head,
-          };
+          final preferredCountPosition =
+              switch (Pref.mergeDanmakuMarkPosition) {
+                0 => DanmakuCountPosition.hidden,
+                2 => DanmakuCountPosition.tail,
+                _ => DanmakuCountPosition.head,
+              };
           final countPosition = displayCount == null
               ? DanmakuCountPosition.hidden
               : preferredCountPosition;
@@ -174,7 +173,7 @@ class _PlDanmakuState extends State<PlDanmaku> {
             itemFontSize = e.fontsize.toDouble() * scale;
           }
           // If itemFontSize is null, canvas_danmaku uses global fontSize from DanmakuOption
-          
+
           _controller!.addDanmaku(
             DanmakuContentItem(
               e.content,
@@ -244,5 +243,4 @@ class _PlDanmakuState extends State<PlDanmaku> {
       ),
     );
   }
-
 }

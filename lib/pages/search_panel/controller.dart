@@ -100,11 +100,13 @@ class SearchPanelController<R extends SearchNumData<T>, T>
               if (hasInc)
                 ...includeKeywords.asMap().entries.map(
                   (e) => InputChip(
-                    avatar: Text('+',
-                        style: TextStyle(
-                          color: primary,
-                          fontWeight: FontWeight.bold,
-                        )),
+                    avatar: Text(
+                      '+',
+                      style: TextStyle(
+                        color: primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     label: Text(e.value),
                     labelStyle: TextStyle(
                       fontSize: 13,
@@ -121,11 +123,13 @@ class SearchPanelController<R extends SearchNumData<T>, T>
               if (hasExc)
                 ...excludeKeywords.asMap().entries.map(
                   (e) => InputChip(
-                    avatar: Text('-',
-                        style: TextStyle(
-                          color: error,
-                          fontWeight: FontWeight.bold,
-                        )),
+                    avatar: Text(
+                      '-',
+                      style: TextStyle(
+                        color: error,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     label: Text(e.value),
                     labelStyle: TextStyle(
                       fontSize: 13,

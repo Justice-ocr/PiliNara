@@ -4,8 +4,7 @@
 
 // ignore_for_file: prefer_initializing_formals
 
-import 'package:material_ui/material_ui.dart' hide PopupMenuItem;
-import 'package:material_ui/material_ui.dart' as material show PopupMenuItem;
+import 'package:material_ui/material_ui.dart';
 
 const _kDefaultPopupMenuPadding = EdgeInsets.all(8);
 const _kMd3eMenuContainerRadius = BorderRadius.all(Radius.circular(16));
@@ -84,7 +83,7 @@ List<PopupMenuEntry<T>> _wrapPopupMenuItems<T>(
   Color? menuItemStateLayerColor,
 ) {
   return items.map((item) {
-    if (item is material.PopupMenuItem<T>) {
+    if (item is PopupMenuItem<T>) {
       return CustomPopupMenuItem<T>(
         value: item.value,
         height: item.height,
@@ -282,12 +281,10 @@ class CustomPopupMenuItem<T> extends PopupMenuEntry<T> {
   bool represents(T? value) => value == this.value;
 
   @override
-  CustomPopupMenuItemState<T, CustomPopupMenuItem<T>> createState() =>
-      CustomPopupMenuItemState<T, CustomPopupMenuItem<T>>();
+  CustomPopupMenuItemState<T> createState() => CustomPopupMenuItemState<T>();
 }
 
-class CustomPopupMenuItemState<T, W extends CustomPopupMenuItem<T>>
-    extends State<W> {
+class CustomPopupMenuItemState<T> extends State<CustomPopupMenuItem<T>> {
   @protected
   @override
   Widget build(BuildContext context) {
@@ -320,13 +317,15 @@ class CustomPopupMenuItemState<T, W extends CustomPopupMenuItem<T>>
         ? selectedForegroundColor
         : customStateLayerColor ?? colors.onSurface;
 
-    final onTap = !widget.enabled || widget.value == null && widget.onTap == null
+    final onTap =
+        !widget.enabled || widget.value == null && widget.onTap == null
         ? null
         : () {
             Navigator.pop<T>(context, widget.value);
             widget.onTap?.call();
           };
-    final borderRadius = widget.borderRadius ??
+    final borderRadius =
+        widget.borderRadius ??
         (widget.selected ? _kMd3eMenuItemSelectedRadius : _kMd3eMenuItemRadius);
 
     return ListTileTheme.merge(
@@ -334,7 +333,8 @@ class CustomPopupMenuItemState<T, W extends CustomPopupMenuItem<T>>
       titleTextStyle: style,
       iconColor: widget.selected ? selectedForegroundColor : colors.outline,
       child: Padding(
-        padding: widget.outerPadding ?? _PopupMenuDefaultsM3.menuItemOuterPadding,
+        padding:
+            widget.outerPadding ?? _PopupMenuDefaultsM3.menuItemOuterPadding,
         child: Material(
           color: widget.selected ? selectedColor : Colors.transparent,
           borderRadius: borderRadius,
@@ -361,7 +361,8 @@ class CustomPopupMenuItemState<T, W extends CustomPopupMenuItem<T>>
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: widget.height),
                   child: Padding(
-                    padding: widget.padding ?? _PopupMenuDefaultsM3.menuItemPadding,
+                    padding:
+                        widget.padding ?? _PopupMenuDefaultsM3.menuItemPadding,
                     child: Align(
                       alignment: AlignmentDirectional.centerStart,
                       child: widget.child,

@@ -14,6 +14,7 @@ import 'package:PiliPlus/models_new/fav/fav_pgc/list.dart';
 import 'package:PiliPlus/models_new/pgc/pgc_index_result/list.dart';
 import 'package:PiliPlus/models_new/pgc/pgc_timeline/result.dart';
 import 'package:PiliPlus/pages/pgc/controller.dart';
+import 'package:PiliPlus/pages/home/home_preview_scope.dart';
 import 'package:PiliPlus/pages/pgc/widgets/pgc_card_v.dart';
 import 'package:PiliPlus/pages/pgc/widgets/pgc_card_v_timeline.dart';
 import 'package:PiliPlus/pages/pgc_index/controller.dart';
@@ -62,7 +63,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
     super.build(context);
     final ThemeData theme = Theme.of(context);
     return refreshIndicator(
-      key: controller.refreshKey,
+      key: HomePreviewScope.of(context) ? null : controller.refreshKey,
       onRefresh: controller.onRefresh,
       child: CustomScrollView(
         controller: controller.scrollController,
@@ -193,9 +194,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
                                 return Container(
                                   width: _posterWidth,
                                   margin: EdgeInsets.only(
-                                    left: _isWindowsNeo
-                                        ? 12
-                                        : Style.safeSpace,
+                                    left: _isWindowsNeo ? 12 : Style.safeSpace,
                                     right: index == item.episodes!.length - 1
                                         ? _isWindowsNeo
                                               ? 18

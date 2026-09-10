@@ -174,6 +174,7 @@ class _CdnSelectDialogState extends State<CdnSelectDialog> {
 
   Future<BaseItem> _getSampleUrl() async {
     final result = await VideoHttp.videoUrl(
+      qn: 127,
       cid: 196018899,
       bvid: 'BV1fK4y1t7hj',
       tryLook: false,

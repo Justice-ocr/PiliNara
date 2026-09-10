@@ -8,6 +8,7 @@ import 'package:PiliPlus/models/common/home_tab_type.dart';
 import 'package:PiliPlus/models/model_hot_video_item.dart';
 import 'package:PiliPlus/pages/home/controller.dart';
 import 'package:PiliPlus/pages/hot/controller.dart';
+import 'package:PiliPlus/pages/home/home_preview_scope.dart';
 import 'package:PiliPlus/pages/rank/view.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
@@ -65,7 +66,7 @@ class _HotPageState extends State<HotPage>
       return WindowsNeoHot(controller: controller);
     }
     return refreshIndicator(
-      key: controller.refreshKey,
+      key: HomePreviewScope.of(context) ? null : controller.refreshKey,
       onRefresh: controller.onRefresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -79,8 +80,7 @@ class _HotPageState extends State<HotPage>
                   mainAxisAlignment: .spaceEvenly,
                   children: [
                     _buildEntranceItem(
-                      iconUrl:
-                          'https://i0.hdslb.com/bfs/archive/a3f11218aaf4521b4967db2ae164ecd3052586b9.png',
+                      iconUrl: 'https://i0.hdslb.com/bfs/archive/a3f11218aaf4521b4967db2ae164ecd3052586b9.png',
                       title: '排行榜',
                       onTap: () {
                         try {
@@ -103,14 +103,12 @@ class _HotPageState extends State<HotPage>
                       },
                     ),
                     _buildEntranceItem(
-                      iconUrl:
-                          'https://i0.hdslb.com/bfs/archive/552ebe8c4794aeef30ebd1568b59ad35f15e21ad.png',
+                      iconUrl: 'https://i0.hdslb.com/bfs/archive/552ebe8c4794aeef30ebd1568b59ad35f15e21ad.png',
                       title: '每周必看',
                       onTap: () => PageUtils.toDupNamed('/popularSeries'),
                     ),
                     _buildEntranceItem(
-                      iconUrl:
-                          'https://i0.hdslb.com/bfs/archive/3693ec9335b78ca57353ac0734f36a46f3d179a9.png',
+                      iconUrl: 'https://i0.hdslb.com/bfs/archive/3693ec9335b78ca57353ac0734f36a46f3d179a9.png',
                       title: '入站必刷',
                       onTap: () => PageUtils.toDupNamed('/popularPrecious'),
                     ),

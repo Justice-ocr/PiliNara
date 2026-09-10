@@ -60,7 +60,7 @@ class _MatchInfoPageState extends CommonDynPageState<MatchInfoPage> {
                   slivers: [
                     Obx(() => _buildInfo(theme, controller.infoState.value)),
                     buildReplyHeader(theme),
-                    Obx(() => replyList(theme, controller.loadingState.value)),
+                    Obx(() => replyList(controller.loadingState.value)),
                   ],
                 ),
               ),
@@ -198,12 +198,7 @@ class _MatchInfoPageState extends CommonDynPageState<MatchInfoPage> {
   }
 
   @override
-  void replyReply(
-    BuildContext context,
-    ReplyInfo replyItem,
-    int? id,
-    ThemeData theme,
-  ) {
+  void replyReply(BuildContext context, ReplyInfo replyItem, int? id) {
     EasyThrottle.throttle('replyReply', const Duration(milliseconds: 500), () {
       int oid = replyItem.oid.toInt();
       int rpid = replyItem.id.toInt();

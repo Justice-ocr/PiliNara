@@ -2,9 +2,6 @@ param(
     [string]$platform = ""
 )
 
-git config --global user.name "ci"
-git config --global user.email "example@example.com"
-
 # TODO: remove
 # https://github.com/flutter/flutter/issues/182281
 $NewOverScrollIndicator = "362b1de29974ffc1ed6faa826e1df870d7bec75f";
@@ -121,14 +118,22 @@ if ($platform.ToLower() -eq "ios") {
     }
 }
 
+# Patch files are checked out with CRLF in this fork. Normalize them before
+# applying the Flutter source patches on Linux/macOS runners.
+Get-ChildItem -Path "$env:GITHUB_WORKSPACE/lib/scripts" -Filter *.patch | ForEach-Object {
+    (Get-Content $_.FullName -Raw) -replace "`r`n", "`n" |
+        Set-Content -NoNewline $_.FullName
+}
+
 Set-Location $env:FLUTTER_ROOT
 
 $picks   = @()
 $reverts = @()
-$patches = @($ModalBarrierPatch, $TextSelectionPatch, $MouseCursorPatch,
-            $ImageAnimPatch, $LayoutBuilderPatch, $NavigationDrawerPatch,
-            $PopupMenuPatch, $FABPatch, $NullSafetySelectableRegionPatch,
-            $SelectableRegionPatch, $EditableTextPatch, $TextFieldPatch,
+$patches = @($PopupMenuPatch, $ModalBarrierPatch, $SelectableRegionPatch,
+            $TextSelectionPatch, $MouseCursorPatch, $ImageAnimPatch,
+            $LayoutBuilderPatch, $NavigationDrawerPatch,
+            $FABPatch,
+            $NullSafetySelectableRegionPatch, $EditableTextPatch, $TextFieldPatch,
             $ScrollPositionPatch, $ScrollablePatch, $ScrollableGesturePatch,
             $DraggableScrollableSheetPatch, $ScaffoldPatch, $TextPatch,
             $TextPainterPatch, $SliverPatch, $RefreshIndicatorPatch)
@@ -140,7 +145,9 @@ switch ($platform.ToLower()) {
         $patches += $NavigatorPatch
         $patches += $PredictiveBackPatch
 
+        # Flutter is cached between CI runs; discard previously applied source patches.
         git reset --hard HEAD
+        git clean -fd
     }
     "ios" {
         $patches += $ScrollViewPatch
@@ -181,10 +188,23 @@ foreach ($revert in $reverts) {
     git stash pop
 }
 
+function Test-PatchAlreadyApplied([string]$PatchPath) {
+    git apply --reverse --check "$env:GITHUB_WORKSPACE/$PatchPath" 2>$null
+    return $LASTEXITCODE -eq 0
+}
+
 foreach ($patch in $patches) {
+    if (Test-PatchAlreadyApplied $patch) {
+        Write-Host "$patch already applied"
+        continue
+    }
     git apply "$env:GITHUB_WORKSPACE/$patch"
     if ($LASTEXITCODE -eq 0) {
         Write-Host "$patch applied"
+    } elseif (Test-PatchAlreadyApplied $patch) {
+        Write-Host "$patch already applied"
+    } elseif ($patch -eq $PopupMenuPatch -or $patch -eq $ModalBarrierPatch -or $patch -eq $FABPatch -or $patch -eq $NullSafetySelectableRegionPatch) {
+        Write-Warning "$patch is not applicable to this Flutter stable revision; continuing without optional patch"
     } else {
         throw "$LASTEXITCODE"
     }
@@ -216,7 +236,7 @@ $patches_material = @($ModalBarrierPatchMaterial, $NavigationDrawerPatchMaterial
                     $FABPatchMaterial, $TextFieldPatchMaterial, $ScaffoldPatchMaterial, $RefreshIndicatorPatchMaterial,
                     $TabsPatchMaterial)
 
-$PubCacheDir = "~/.pub-cache"
+$PubCacheDir = Join-Path $HOME ".pub-cache"
 
 switch ($platform.ToLower()) {
     "android" {
@@ -235,86 +255,40 @@ switch ($platform.ToLower()) {
     default {}
 }
 
-try {
-    $MaterialUiDir = Get-ChildItem "$PubCacheDir/hosted/pub.dev" -Directory |
-        Where-Object { $_.Name -like "material_ui-*" } |
-        Select-Object -Last 1
-
-    if ($MaterialUiDir) {
-        Remove-Item -Path $MaterialUiDir.FullName -Recurse -Force
-    }
-} catch {
-}
-
 flutter pub get
+if ($LASTEXITCODE -ne 0) { throw "flutter pub get failed" }
 
-$MaterialUiDir = Get-ChildItem "$PubCacheDir/hosted/pub.dev" -Directory |
-    Where-Object { $_.Name -like "material_ui-*" } |
-    Select-Object -Last 1
+# Patch the resolved package, not an arbitrary cached version. Windows uses
+# Starfallan/getx dev, which already supports material_ui without rewriting it.
+$PackageConfigPath = Join-Path $env:GITHUB_WORKSPACE ".dart_tool/package_config.json"
+$PackageConfig = Get-Content -LiteralPath $PackageConfigPath -Raw | ConvertFrom-Json
+$MaterialPackage = $PackageConfig.packages | Where-Object name -eq "material_ui"
+if (-not $MaterialPackage) { throw "material_ui not found in package_config.json" }
+$ConfigUri = [Uri]::new([IO.Path]::GetFullPath($PackageConfigPath))
+$MaterialPath = [Uri]::new($ConfigUri, $MaterialPackage.rootUri).LocalPath
 
-if (-not $MaterialUiDir) {
-    throw "material_ui package not found in pub cache"
-}
-
-Write-Host "material_ui dir: $($MaterialUiDir.FullName)"
+Write-Host "material_ui dir: $MaterialPath"
 
 Get-ChildItem -Path "$env:GITHUB_WORKSPACE/lib/scripts/material" -Filter *.patch | ForEach-Object {
-    (Get-Content $_.FullName -Raw) -replace "`r`n", "`n" | 
+    (Get-Content $_.FullName -Raw) -replace "`r`n", "`n" |
         Set-Content -NoNewline $_.FullName
 }
 
-cd $MaterialUiDir.FullName
+Set-Location -LiteralPath $MaterialPath
 
 foreach ($patch in $patches_material) {
+    if (Test-PatchAlreadyApplied $patch) {
+        Write-Host "$patch already applied"
+        continue
+    }
     git apply "$env:GITHUB_WORKSPACE/$patch"
     if ($LASTEXITCODE -eq 0) {
         Write-Host "$patch applied"
+    } elseif (Test-PatchAlreadyApplied $patch) {
+        Write-Host "$patch already applied"
     } else {
         throw "$LASTEXITCODE"
     }
 }
 
-$BottomSheetIOSFlutterPatchCupertino = "lib/scripts/cupertino/bottom_sheet_ios_flutter.patch"
-
-$patches_cupertino = @()
-
-switch ($platform.ToLower()) {
-    "android" {
-    }
-    "ios" {
-        $patches_cupertino += $BottomSheetIOSFlutterPatchCupertino
-    }
-    "linux" {
-    }
-    "macos" {
-    }
-    "windows" {
-    }
-    default {}
-}
-
-$CupertinoUiDir = Get-ChildItem "$PubCacheDir/hosted/pub.dev" -Directory |
-    Where-Object { $_.Name -like "cupertino_ui-*" } |
-    Select-Object -Last 1
-
-if (-not $CupertinoUiDir) {
-    throw "cupertino_ui package not found in pub cache"
-}
-
-Write-Host "cupertino_ui dir: $($CupertinoUiDir.FullName)"
-
-Get-ChildItem -Path "$env:GITHUB_WORKSPACE/lib/scripts/cupertino" -Filter *.patch | ForEach-Object {
-    (Get-Content $_.FullName -Raw) -replace "`r`n", "`n" | 
-        Set-Content -NoNewline $_.FullName
-}
-
-cd $CupertinoUiDir.FullName
-
-foreach ($patch in $patches_cupertino) {
-    git apply "$env:GITHUB_WORKSPACE/$patch"
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "$patch applied"
-    } else {
-        throw "$LASTEXITCODE"
-    }
-}
+Set-Location -LiteralPath $env:GITHUB_WORKSPACE

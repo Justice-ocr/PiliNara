@@ -33,7 +33,12 @@ abstract final class SettingBoxKey {
       audioPlayMode = 'audioPlayMode',
       showBatteryLevel = 'showBatteryLevel',
       playerVolume = 'playerVolume',
-      maxVolume = 'maxVolume';
+      maxVolume = 'maxVolume',
+      videoBrightness = 'videoBrightness',
+      videoContrast = 'videoContrast',
+      videoSaturation = 'videoSaturation',
+      videoGamma = 'videoGamma',
+      videoHue = 'videoHue';
 
   static const String enableVerticalExpand = 'enableVerticalExpand',
       feedBackEnable = 'feedBackEnable',
@@ -56,6 +61,7 @@ abstract final class SettingBoxKey {
       fullScreenGestureReverse = 'fullScreenGestureReverse',
       enableBackgroundPlay = 'enableBackgroundPlay',
       continuePlayInBackground = 'continuePlayInBackground',
+      autoAudioOnlyInBackground = 'autoAudioOnlyInBackground',
       appRcmd = 'appRcmd',
       rcmdMode = 'rcmdMode',
       enableSaveLastData = 'enableSaveLastData',
@@ -281,7 +287,7 @@ abstract final class SettingBoxKey {
 
   static const String themeMode = 'themeMode',
       defaultTextScale = 'textScale',
-      appFontWeight = 'appFontWeight',
+      appFontWeightV2 = 'appFontWeightV2',
       customFontPath = 'customFontPath',
       customFontFamily = 'customFontFamily',
       customFontName = 'customFontName',

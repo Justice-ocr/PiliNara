@@ -8,6 +8,7 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
@@ -24,6 +25,8 @@ class LaterSearchPage extends StatefulWidget {
 class _LaterSearchPageState
     extends CommonSearchPageState<LaterSearchPage, LaterData, LaterItemModel>
     with GridMixin {
+  late final enablePlayAll = Pref.enablePlayAll;
+
   @override
   late final LaterSearchController controller;
 
@@ -96,15 +99,17 @@ class _LaterSearchPageState
               cover: item.pic,
               title: item.title,
               dimension: item.dimension,
-              extraArguments: {
-                'oid': item.aid,
-                'sourceType': SourceType.watchLater,
-                'count': controller.count,
-                'favTitle': '稍后再看',
-                'mediaId': controller.mid,
-                'desc': false,
-                'isContinuePlaying': index != 0,
-              },
+              extraArguments: enablePlayAll
+                  ? {
+                      'oid': item.aid,
+                      'sourceType': SourceType.watchLater,
+                      'count': controller.count,
+                      'favTitle': '稍后再看',
+                      'mediaId': controller.mid,
+                      'desc': false,
+                      'isContinuePlaying': index != 0,
+                    }
+                  : const {'viewLater': true},
             );
           },
         );

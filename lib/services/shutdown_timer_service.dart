@@ -1,4 +1,6 @@
 // 定时关闭服务
+import 'package:get/get.dart';
+
 import 'dart:async';
 import 'dart:io';
 
@@ -6,6 +8,7 @@ import 'package:PiliPlus/models/common/enum_with_label.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/menu_row.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
+import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:collection/collection.dart';
 import 'package:material_ui/material_ui.dart';
@@ -29,6 +32,8 @@ class ShutdownTimerService {
   VoidCallback? onPause;
   ValueGetter<bool>? isPlaying;
 
+  DateTime? _deadline;
+  DateTime? get deadline => _deadline;
   Timer? _shutdownTimer;
   bool get isActive => _shutdownTimer?.isActive ?? false;
   int _durationInMinutes = 0;
@@ -40,6 +45,7 @@ class ShutdownTimerService {
 
   void _stopTimer() {
     if (_shutdownTimer != null) {
+      _deadline = null;
       _shutdownTimer!.cancel();
       _shutdownTimer = null;
     }
@@ -58,6 +64,7 @@ class ShutdownTimerService {
       return;
     }
     SmartDialog.showToast('设置 ${_format(durationInMinutes)} 后定时关闭');
+    _deadline = DateTime.now().add(Duration(minutes: durationInMinutes));
     _shutdownTimer = Timer(
       Duration(minutes: durationInMinutes),
       _handleShutdown,
@@ -270,5 +277,99 @@ class ShutdownTimerService {
         },
       ),
     );
+  }
+}
+
+typedef ShutdownStatefulWidgetBuilder = Widget Function(
+  BuildContext context,
+  Widget countdown,
+  VoidCallback onCountdown,
+  StateSetter setState,
+);
+
+class ShutdownPanel extends StatefulWidget {
+  const ShutdownPanel({
+    super.key,
+    required this.builder,
+    this.buildCountdownText = _kBuildCountdownText,
+  });
+
+  final ShutdownStatefulWidgetBuilder builder;
+  final Widget Function(String? text) buildCountdownText;
+
+  static Widget _kBuildCountdownText(String? text) {
+    if (text == null) {
+      return const SizedBox.shrink();
+    }
+    return Text(text);
+  }
+
+  @override
+  State<ShutdownPanel> createState() => _ShutdownPanelState();
+}
+
+class _ShutdownPanelState extends State<ShutdownPanel> with ShutdownMixin {
+  @override
+  Widget build(BuildContext context) {
+    final countdown = Obx(() => widget.buildCountdownText(countdownText.value));
+    return widget.builder(context, countdown, _startTimer, setState);
+  }
+}
+
+mixin ShutdownMixin<T extends StatefulWidget> on State<T> {
+  Timer? _countdownTimer;
+  final RxnString countdownText = RxnString(null);
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  void _updateCountdownTextEnd([String? value]) {
+    _stopTimer();
+    countdownText.value = value;
+  }
+
+  bool _updateCountdownText([_]) {
+    if (shutdownTimerService.isWaiting) {
+      _updateCountdownTextEnd('当前播放结束后关闭');
+      return false;
+    }
+    final deadline = shutdownTimerService.deadline;
+    if (deadline == null) {
+      _updateCountdownTextEnd();
+      return false;
+    }
+    final remaining = deadline.difference(DateTime.now());
+    if (remaining <= .zero) {
+      _updateCountdownTextEnd();
+      return false;
+    }
+    countdownText.value = DurationUtils.formatDuration(remaining.inSeconds);
+    return true;
+  }
+
+  void _startTimer() {
+    _stopTimer();
+    if (_updateCountdownText()) {
+      _countdownTimer = .periodic(
+        const Duration(seconds: 1),
+        _updateCountdownText,
+      );
+    }
+  }
+
+  void _stopTimer() {
+    if (_countdownTimer != null) {
+      _countdownTimer!.cancel();
+      _countdownTimer = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _stopTimer();
+    super.dispose();
   }
 }

@@ -12,6 +12,7 @@ class DynamicDetailController extends CommonDynController {
   DynamicDetailController({
     required DynamicItemModel item,
     ValueChanged<DynamicItemModel>? onUpdate,
+    super.count,
   }) : dynItem = item,
        _onUpdate = onUpdate;
 

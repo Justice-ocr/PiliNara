@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/common/widgets/pair.dart';
+import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
+import 'package:PiliPlus/common/widgets/view_insets_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/sponsor_block.dart';
 import 'package:PiliPlus/models/common/sponsor_block/action_type.dart';
@@ -18,6 +20,8 @@ import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:PiliPlus/common/widgets/extended_visibility_detector.dart';
+import 'package:PiliPlus/utils/extension/context_ext.dart';
+import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
@@ -131,8 +135,7 @@ class PostPanel extends CommonSlidePage {
                         ),
                       ),
                       TextButton(
-                        onPressed: () =>
-                            Navigator.of(dialogContext).pop(initV),
+                        onPressed: () => Navigator.of(dialogContext).pop(initV),
                         child: const Text('确定'),
                       ),
                     ],

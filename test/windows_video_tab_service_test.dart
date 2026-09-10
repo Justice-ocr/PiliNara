@@ -147,33 +147,35 @@ void main() {
       });
     });
 
-    test('shares lifecycle capabilities without treating a tool tab as media',
-        () {
-      final now = DateTime(2026, 8, 31);
-      final tool = WindowsWorkspaceTab(
-        id: 'tool:/setting',
-        type: WindowsWorkspaceTabType.tool,
-        arguments: {'tabRoute': '/setting', 'title': '设置'},
-        createdAt: now,
-        updatedAt: now,
-      );
-      final live = WindowsWorkspaceTab(
-        id: 'live:42',
-        type: WindowsWorkspaceTabType.live,
-        arguments: {'roomId': 42},
-        createdAt: now,
-        updatedAt: now,
-      );
+    test(
+      'shares lifecycle capabilities without treating a tool tab as media',
+      () {
+        final now = DateTime(2026, 8, 31);
+        final tool = WindowsWorkspaceTab(
+          id: 'tool:/setting',
+          type: WindowsWorkspaceTabType.tool,
+          arguments: {'tabRoute': '/setting', 'title': '设置'},
+          createdAt: now,
+          updatedAt: now,
+        );
+        final live = WindowsWorkspaceTab(
+          id: 'live:42',
+          type: WindowsWorkspaceTabType.live,
+          arguments: {'roomId': 42},
+          createdAt: now,
+          updatedAt: now,
+        );
 
-      expect(tool.canClose, isTrue);
-      expect(tool.canPin, isTrue);
-      expect(tool.canSplit, isFalse);
-      expect(tool.supportsAudio, isFalse);
-      expect(tool.rootRoute, '/setting');
-      expect(live.canSplit, isTrue);
-      expect(live.supportsAudio, isTrue);
-      expect(live.rootRoute, '/liveRoom');
-    });
+        expect(tool.canClose, isTrue);
+        expect(tool.canPin, isTrue);
+        expect(tool.canSplit, isFalse);
+        expect(tool.supportsAudio, isFalse);
+        expect(tool.rootRoute, '/setting');
+        expect(live.canSplit, isTrue);
+        expect(live.supportsAudio, isTrue);
+        expect(live.rootRoute, '/liveRoom');
+      },
+    );
 
     test('keeps user tab state when route payload is refreshed', () {
       final item = WindowsWorkspaceTab(
@@ -233,16 +235,29 @@ void main() {
   });
 
   group('desktop tab management', () {
-    test('wraps previous tab selection from the first tab to the last tab', () {
+    test('wraps previous tab selection from home to the last tab', () {
+      WindowsVideoTabService.tabs.addAll([
+        tab('video:first'),
+        tab('video:last'),
+      ]);
+      WindowsVideoTabService.activeId.value = WindowsVideoTabService.homeTabId;
+
+      WindowsVideoTabService.selectRelative(-1);
+
+      expect(WindowsVideoTabService.activeId.value, 'video:last');
+    });
+
+    test('selects home when moving back from the first media tab', () {
       WindowsVideoTabService.tabs.addAll([
         tab('video:first'),
         tab('video:last'),
       ]);
       WindowsVideoTabService.activeId.value = 'video:first';
-
       WindowsVideoTabService.selectRelative(-1);
-
-      expect(WindowsVideoTabService.activeId.value, 'video:last');
+      expect(
+        WindowsVideoTabService.activeId.value,
+        WindowsVideoTabService.homeTabId,
+      );
     });
 
     test('keeps multiple media tabs audible outside split mode', () async {

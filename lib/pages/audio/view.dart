@@ -796,7 +796,9 @@ class _AudioPageState extends State<AudioPage> {
   }
 
   void _onDragStart(ThumbDragDetails details) {
-    // do nothing
+    _controller
+      ..position.value = details.timeStamp
+      ..isDragging = true;
   }
 
   void _onDragUpdate(ThumbDragDetails details) {

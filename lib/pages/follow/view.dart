@@ -6,6 +6,7 @@ import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/member/tags.dart';
+import 'package:PiliPlus/pages/common/fab_mixin.dart';
 import 'package:PiliPlus/pages/follow/child/child_controller.dart';
 import 'package:PiliPlus/pages/follow/child/child_view.dart';
 import 'package:PiliPlus/pages/follow/controller.dart';
@@ -46,7 +47,8 @@ class FollowPage extends StatefulWidget {
   }
 }
 
-class _FollowPageState extends State<FollowPage> {
+class _FollowPageState extends State<FollowPage>
+    with SingleTickerProviderStateMixin, BaseFabMixin, LazyFabMixin {
   final _tag = Utils.generateRandomString(8);
   late final FollowController _followController;
 
@@ -54,13 +56,14 @@ class _FollowPageState extends State<FollowPage> {
   void initState() {
     super.initState();
     _followController = Get.put(
-      FollowController(arguments: widget.arguments),
+      FollowController(tag: _tag, arguments: widget.arguments),
       tag: widget.controllerTag ?? _tag,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final padding = MediaQuery.viewPaddingOf(context);
     if (WindowsVideoTabService.enabled) {
       return _buildWindowsPage(context);
     }
@@ -68,8 +71,28 @@ class _FollowPageState extends State<FollowPage> {
       resizeToAvoidBottomInset: false,
       appBar: _buildAppBar,
       body: _followController.isOwner
-          ? Obx(() => _buildBody(_followController.followState.value))
+          ? fabAnimWrapper(
+              child: Obx(() => _buildBody(_followController.followState.value)),
+            )
           : _childPage(),
+      floatingActionButton: _followController.isOwner
+          ? SlideTransition(
+              position: fabAnimation,
+              child: Padding(
+                padding: .only(
+                  right: kFloatingActionButtonMargin + padding.right,
+                  bottom: kFloatingActionButtonMargin + padding.bottom,
+                ),
+                child: FloatingActionButton.extended(
+                  onPressed: _followController.toggleOrderType,
+                  icon: const Icon(Icons.format_list_bulleted, size: 20),
+                  label: Obx(
+                    () => Text(_followController.orderType.value.title),
+                  ),
+                ),
+              ),
+            )
+          : null,
     );
   }
 
@@ -111,6 +134,13 @@ class _FollowPageState extends State<FollowPage> {
   );
 
   List<Widget> _windowsHeaderActions(BuildContext context) => [
+    Obx(
+      () => TextButton.icon(
+        onPressed: _followController.toggleOrderType,
+        icon: const Icon(Icons.format_list_bulleted, size: 20),
+        label: Text(_followController.orderType.value.title),
+      ),
+    ),
     IconButton(
       tooltip: '\u65b0\u5efa\u5206\u7ec4',
       onPressed: () => RequestUtils.createFavTag(

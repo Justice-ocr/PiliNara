@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/flutter/live_list_view.dart';
 import 'package:PiliPlus/common/widgets/flutter/popup_menu.dart';
 import 'package:PiliPlus/common/widgets/gesture/tap_gesture_recognizer.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -21,14 +22,12 @@ import 'package:get/get.dart';
 class LiveRoomChatPanel extends StatelessWidget {
   const LiveRoomChatPanel({
     super.key,
-    required this.roomId,
     required this.liveRoomController,
     required this.isPP,
     required this.onAtUser,
     this.hideSuperChat = false,
   });
 
-  final int roomId;
   final LiveRoomController liveRoomController;
   final bool isPP;
   final ValueChanged<DanmakuMsg> onAtUser;
@@ -57,20 +56,27 @@ class LiveRoomChatPanel extends StatelessWidget {
           () {
             final allMessages = liveRoomController.messages;
             liveRoomController.builtLength = allMessages.length;
-            final visibleMessages = hideSuperChat
-                ? allMessages
-                      .where((item) => item is! SuperChatItem)
-                      .toList(growable: false)
-                : allMessages;
-            return ListView.separated(
+            // Keep source indices stable: trimming uses the original message
+            // offsets, including SC messages hidden by the Windows split pane.
+            return LiveListView.separated(
               key: const PageStorageKey(LiveRoomChatPanel),
+              initialIndex: liveRoomController.trimDmIndex * 2,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               controller: liveRoomController.scrollController,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemCount: visibleMessages.length,
+              separatorBuilder: (_, index) =>
+                  allMessages[index] == null ||
+                      (hideSuperChat && allMessages[index] is SuperChatItem)
+                  ? const SizedBox.shrink()
+                  : const SizedBox(height: 8),
+              itemCount: allMessages.length,
               physics: const ClampingScrollPhysics(),
               itemBuilder: (_, index) {
-                final item = visibleMessages[index];
+                liveRoomController.chatSimpleIndex = index;
+                final item = allMessages[index];
+                if (item == null) return null;
+                if (hideSuperChat && item is SuperChatItem) {
+                  return const SizedBox.shrink();
+                }
                 if (item is DanmakuMsg) {
                   WidgetSpan? medal;
                   if (item.medalInfo case final medalInfo?) {
@@ -352,19 +358,13 @@ class LiveRoomChatPanel extends StatelessWidget {
       items: <PopupMenuEntry<Never>>[
         CustomPopupMenuItem(
           height: 38,
-          child: Text(
-            item.name,
-            style: const TextStyle(fontSize: 13),
-          ),
+          child: Text(item.name, style: const TextStyle(fontSize: 13)),
         ),
         const CustomPopupMenuDivider(height: 1),
         CustomPopupMenuItem(
           height: 38,
           onTap: () => Utils.copyText(Utils.jsonEncoder.convert(item.toJson())),
-          child: const Text(
-            '复制弹幕信息',
-            style: TextStyle(fontSize: 13),
-          ),
+          child: const Text('复制弹幕信息', style: TextStyle(fontSize: 13)),
         ),
         CustomPopupMenuItem(
           height: 38,
@@ -374,47 +374,48 @@ class LiveRoomChatPanel extends StatelessWidget {
             style: TextStyle(fontSize: 13),
           ),
         ),
-        CustomPopupMenuItem(
-          height: 38,
-          onTap: () => onAtUser(item),
-          child: const Text(
-            '@TA',
-            style: TextStyle(fontSize: 13),
+        if (liveRoomController.isLogin) ...[
+          CustomPopupMenuItem(
+            height: 38,
+            onTap: () => liveRoomController.onAtUser(item),
+            child: const Text(
+              '@TA',
+              style: TextStyle(fontSize: 13),
+            ),
           ),
-        ),
-        CustomPopupMenuItem(
-          height: 38,
-          onTap: () async {
-            if (!liveRoomController.isLogin) return;
-            final res = await LiveHttp.liveShieldUser(
-              uid: item.extra.mid,
-              roomid: roomId,
-              type: 1,
-            );
-            if (res.isSuccess) {
-              SmartDialog.showToast('屏蔽成功');
-            } else {
-              res.toast();
-            }
-          },
-          child: const Text(
-            '屏蔽发送者',
-            style: TextStyle(fontSize: 13),
+          CustomPopupMenuItem(
+            height: 38,
+            onTap: () async {
+              final res = await LiveHttp.liveShieldUser(
+                uid: item.extra.mid,
+                roomid: liveRoomController.roomId,
+                type: 1,
+              );
+              if (res.isSuccess) {
+                SmartDialog.showToast('屏蔽成功');
+              } else {
+                res.toast();
+              }
+            },
+            child: const Text(
+              '屏蔽发送者',
+              style: TextStyle(fontSize: 13),
+            ),
           ),
-        ),
-        CustomPopupMenuItem(
-          height: 38,
-          onTap: () => HeaderControl.reportLiveDanmaku(
-            context,
-            roomId: roomId,
-            msg: item.text,
-            extra: item.extra,
+          CustomPopupMenuItem(
+            height: 38,
+            onTap: () => HeaderControl.reportLiveDanmaku(
+              context,
+              roomId: liveRoomController.roomId,
+              msg: item.text,
+              extra: item.extra,
+            ),
+            child: const Text(
+              '举报选中弹幕',
+              style: TextStyle(fontSize: 13),
+            ),
           ),
-          child: const Text(
-            '举报选中弹幕',
-            style: TextStyle(fontSize: 13),
-          ),
-        ),
+        ],
       ],
     ).whenComplete(() {
       if (autoScroll && context.mounted) {

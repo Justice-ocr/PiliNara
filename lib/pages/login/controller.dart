@@ -22,7 +22,6 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart' as web;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
 
 class LoginPageController extends GetxController
     with GetSingleTickerProviderStateMixin {
@@ -766,7 +765,7 @@ class LoginPageController extends GetxController
   }
 
   Future<void> _saveAccount(LoginAccount account) async {
-    await Future.wait([account.onChange(), AnonymousAccount().delete()]);
+    await Future.wait([?account.onChange(), AnonymousAccount().delete()]);
     for (int i = 0; i < AccountType.values.length; i++) {
       if (Accounts.accountMode[i].mid == account.mid) {
         Accounts.accountMode[i] = account;

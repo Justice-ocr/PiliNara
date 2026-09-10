@@ -27,6 +27,7 @@ import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class FavDetailPage extends StatefulWidget {
   const FavDetailPage({
@@ -242,6 +243,23 @@ class _FavDetailPageState extends State<FavDetailPage> with GridMixin {
                 icon: const Icon(Icons.share),
               );
       }),
+      Builder(
+        builder: (context) => PopupMenuButton<bool>(
+          icon: _favDetailController.pageDesc
+              ? const Icon(MdiIcons.sortNumericDescending)
+              : const Icon(MdiIcons.sortNumericAscending),
+          initialValue: _favDetailController.pageDesc,
+          tooltip: '页码顺序',
+          onSelected: (value) {
+            _favDetailController.updatePageOrder(value);
+            (context as Element).markNeedsBuild();
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem(value: false, child: Text('正序')),
+            PopupMenuItem(value: true, child: Text('倒序')),
+          ],
+        ),
+      ),
       Obx(
         () {
           return StaticPopupMenuButton<FavOrderType>(
@@ -275,10 +293,11 @@ class _FavDetailPageState extends State<FavDetailPage> with GridMixin {
                   child: const Text('排序'),
                 ),
                 PopupMenuItem(
-                  onTap: () => PageUtils.toPage(
-                    context,
-                    () => CreateFavPage(mediaId: mediaId),
-                  )?.then((res) {
+                  onTap: () =>
+                      PageUtils.toPage(
+                        context,
+                        () => CreateFavPage(mediaId: mediaId),
+                      )?.then((res) {
                         if (res is FavFolderInfo) {
                           _favDetailController.folderInfo.value = res;
                         }

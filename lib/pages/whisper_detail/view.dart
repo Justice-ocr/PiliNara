@@ -12,7 +12,6 @@ import 'package:PiliPlus/grpc/bilibili/im/type.pb.dart' show Msg;
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/msg.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
-import 'package:PiliPlus/models/common/publish_panel_type.dart';
 import 'package:PiliPlus/pages/common/publish/common_rich_text_pub_page.dart';
 import 'package:PiliPlus/pages/emote/view.dart';
 import 'package:PiliPlus/pages/whisper_detail/controller.dart';
@@ -73,7 +72,6 @@ class _WhisperDetailPageState
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     final padding = MediaQuery.viewPaddingOf(context);
     final isWindowsNeo = WindowsVideoTabService.enabled;
     late final containerColor = ElevationOverlay.colorWithOverlay(
@@ -106,7 +104,7 @@ class _WhisperDetailPageState
           ),
           if (_whisperDetailController.mid != null) ...[
             _buildInputView(theme, containerColor),
-            buildPanelContainer(theme, containerColor),
+            buildPanelContainer(containerColor),
           ] else
             SizedBox(height: padding.bottom),
         ],
@@ -257,7 +255,7 @@ class _WhisperDetailPageState
             onTap: () => _whisperDetailController.sendMsg(
               message: '${item.msgKey}',
               onClearText: editController.clear,
-              msgType: 5,
+              msgType: .EN_MSG_TYPE_DRAW_BACK,
               index: index,
             ),
             child: const Text('撤回', style: TextStyle(fontSize: 14)),
@@ -298,7 +296,7 @@ class _WhisperDetailPageState
                   _whisperDetailController.sendMsg(
                     message: '${item.msgKey}',
                     onClearText: editController.clear,
-                    msgType: 5,
+                    msgType: .EN_MSG_TYPE_DRAW_BACK,
                     index: index,
                   );
                 },
@@ -346,11 +344,8 @@ class _WhisperDetailPageState
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           IconButton(
-            onPressed: () => updatePanelType(
-              panelType.value == PanelType.emoji
-                  ? PanelType.keyboard
-                  : PanelType.emoji,
-            ),
+            onPressed: () =>
+                updatePanelType(panelType.value == .emoji ? .keyboard : .emoji),
             icon: const Icon(Icons.emoji_emotions),
             tooltip: '表情',
           ),
@@ -359,7 +354,7 @@ class _WhisperDetailPageState
               onPointerUp: (event) {
                 // Currently it may be emojiPanel.
                 if (readOnly.value) {
-                  updatePanelType(PanelType.keyboard);
+                  updatePanelType(.keyboard);
                 }
               },
               child: Obx(
@@ -388,8 +383,8 @@ class _WhisperDetailPageState
                     ),
                     contentPadding: const EdgeInsets.all(10),
                   ),
-                  // inputFormatters: [LengthLimitingTextInputFormatter(500)],
                 ),
+                // inputFormatters: [LengthLimitingTextInputFormatter(500)],
               ),
             ),
           ),
