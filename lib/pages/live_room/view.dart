@@ -200,7 +200,8 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     // 解析当前请求进入的房间号
     int? currentEntryRoomId;
     if (args is Map) {
-      currentEntryRoomId = (args['roomId'] as int?) ?? (args['id'] as int?);
+      final value = args['roomId'] ?? args['id'];
+      currentEntryRoomId = value is int ? value : int.tryParse('$value');
     } else if (args is int) {
       currentEntryRoomId = args;
     }

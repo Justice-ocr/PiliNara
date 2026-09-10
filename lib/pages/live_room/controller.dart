@@ -205,7 +205,8 @@ class LiveRoomController extends GetxController {
     // 从参数中提取 roomId（支持 int 或 Map 格式）
     final args = WindowsVideoTabService.currentArguments ?? Get.arguments;
     if (args is Map) {
-      roomId = (args['roomId'] as int?) ?? (args['id'] as int? ?? 0);
+      final value = args['roomId'] ?? args['id'];
+      roomId = value is int ? value : int.tryParse('$value') ?? 0;
     } else {
       roomId = args as int;
     }
