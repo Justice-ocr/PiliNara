@@ -5,6 +5,7 @@ import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+import 'package:PiliPlus/common/widgets/player_bar.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/mine_card_type.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
@@ -338,20 +339,19 @@ class _MediaPageState extends CommonPageState<MinePage>
     const iconSize = 22.0;
     const padding = EdgeInsets.all(8);
     const style = ButtonStyle(tapTargetSize: .shrinkWrap);
-    return Row(
-      spacing: 5,
-      mainAxisAlignment: .end,
+    return PlayerBar(
       children: [
         if (widget.showBackBtn)
-          const Expanded(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
+          const Padding(
                 padding: EdgeInsets.only(left: 8),
                 child: BackButton(),
-              ),
-            ),
-          ),
+          )
+        else
+          const SizedBox.shrink(),
+        Row(
+          spacing: 5,
+          mainAxisSize: .min,
+          children: [
         if (!_mainController.hasHome) ...[
           const IconButton(
             iconSize: iconSize,
@@ -399,16 +399,14 @@ class _MediaPageState extends CommonPageState<MinePage>
           icon: const Icon(Icons.switch_account_outlined),
         ),
         Obx(
-          () {
-            return IconButton(
+              () => IconButton(
               iconSize: iconSize,
               padding: padding,
               style: style,
               tooltip: '切换至${controller.nextThemeType.desc}主题',
               onPressed: controller.onChangeTheme,
               icon: controller.themeType.value.icon,
-            );
-          },
+              ),
         ),
         IconButton(
           iconSize: iconSize,
@@ -420,6 +418,8 @@ class _MediaPageState extends CommonPageState<MinePage>
           icon: const Icon(Icons.settings_outlined),
         ),
         const SizedBox(width: 16),
+      ],
+        ),
       ],
     );
   }
@@ -642,7 +642,7 @@ class _MediaPageState extends CommonPageState<MinePage>
     );
   }
 
-  void _autoRefresh() => Future.delayed(
+  void _autoRefresh() => Timer(
     const Duration(milliseconds: 150),
     () => controller.onRefresh(isManual: false),
   );

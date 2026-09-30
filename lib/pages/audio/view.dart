@@ -809,8 +809,8 @@ class _AudioPageState extends State<AudioPage> {
 
   void _onSeek(Duration value) {
     _controller
-      ..player?.seek(value)
-      ..isDragging = false;
+      ..isDragging = false
+      ..onSeek(value);
   }
 
   Widget _buildProgressBar(ColorScheme colorScheme) {

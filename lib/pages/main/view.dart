@@ -12,7 +12,6 @@ import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/pages/home/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
-import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/extension/context_ext.dart';
@@ -80,8 +79,8 @@ class _MainAppState extends PopScopeState<MainApp>
         trayManager.addListener(this);
         _handleTray();
       }
-    } else {
-      // FlutterSmartDialog throws
+    }
+    if (!Platform.isMacOS) {
       PiliScheme.init();
     }
   }
@@ -522,6 +521,7 @@ class _MainAppState extends PopScopeState<MainApp>
 
     child = Scaffold(
       extendBody: true,
+      backgroundColor: Pref.enableGradientBg ? Colors.transparent : null,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(toolbarHeight: 0),
       body: Padding(
@@ -533,6 +533,13 @@ class _MainAppState extends PopScopeState<MainApp>
       ),
       bottomNavigationBar: bottomNav,
     );
+    if (Pref.enableGradientBg) {
+      child = Material(
+        child: Stack(
+          children: [Positioned.fill(child: _gradientBg()), child],
+        ),
+      );
+    }
 
     if (PlatformUtils.isMobile) {
       child = AnnotatedRegion<SystemUiOverlayStyle>(
@@ -545,6 +552,26 @@ class _MainAppState extends PopScopeState<MainApp>
     }
 
     return child;
+  }
+
+  Widget _gradientBg() {
+    return Opacity(
+      opacity: .6,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.primary.withValues(alpha: .6),
+              theme.colorScheme.primaryContainer.withValues(alpha: .6),
+              theme.colorScheme.surface,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            stops: const [.1, .4, .7],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildIcon({required NavigationBarType type, bool selected = false}) {

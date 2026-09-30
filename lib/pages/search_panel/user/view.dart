@@ -49,11 +49,11 @@ class _SearchUserPanelState
   }
 
   @override
-  Widget buildHeader(ThemeData theme) {
+  Widget buildHeader() {
     return SliverFloatingHeaderWidget(
       backgroundColor: WindowsVideoTabService.enabled
           ? context.windowsNeo.surface
-          : theme.colorScheme.surface,
+          : colorScheme.surface,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           WindowsVideoTabService.enabled ? 16 : 25,
@@ -67,7 +67,7 @@ class _SearchUserPanelState
               () => Text(
                 '排序: ${controller.userOrderType!.value.label}',
                 maxLines: 1,
-                style: TextStyle(color: theme.colorScheme.outline),
+                style: TextStyle(color: colorScheme.outline),
               ),
             ),
             const Spacer(),
@@ -75,7 +75,7 @@ class _SearchUserPanelState
               () => Text(
                 '用户类型: ${controller.userType!.value.label}',
                 maxLines: 1,
-                style: TextStyle(color: theme.colorScheme.outline),
+                style: TextStyle(color: colorScheme.outline),
               ),
             ),
             const Spacer(),
@@ -91,7 +91,7 @@ class _SearchUserPanelState
                 icon: Icon(
                   Icons.filter_list_outlined,
                   size: 18,
-                  color: theme.colorScheme.primary,
+                  color: colorScheme.primary,
                 ),
               ),
             ),
@@ -111,7 +111,7 @@ class _SearchUserPanelState
   );
 
   @override
-  Widget buildList(ThemeData theme, List<SearchUserItemModel> list) {
+  Widget buildList(List<SearchUserItemModel> list) {
     final grid = SliverGrid.builder(
       gridDelegate: gridDelegate,
       itemBuilder: (BuildContext context, int index) {

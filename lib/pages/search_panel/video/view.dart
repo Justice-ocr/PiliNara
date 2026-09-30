@@ -15,6 +15,13 @@ import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
+const _windowsSearchVideoGridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
+  maxCrossAxisExtent: 760,
+  mainAxisExtent: 120,
+  mainAxisSpacing: 8,
+  crossAxisSpacing: 8,
+);
+
 class SearchVideoPanel extends CommonSearchPanel {
   const SearchVideoPanel({
     super.key,
@@ -34,14 +41,7 @@ class _SearchVideoPanelState
           SearchVideoData,
           SearchVideoItemModel
         >
-    with GridMixin {
-  static const _windowsGridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
-    maxCrossAxisExtent: 760,
-    mainAxisExtent: 120,
-    mainAxisSpacing: 8,
-    crossAxisSpacing: 8,
-  );
-
+    with GridMixin, SearchVideoPanelMixin<SearchVideoPanel> {
   @override
   late final SearchVideoController controller;
 
@@ -60,13 +60,21 @@ class _SearchVideoPanelState
       tag: widget.searchType.name + widget.tag,
     );
   }
+}
+
+mixin SearchVideoPanelMixin<S extends SearchVideoPanel>
+    on
+        CommonSearchPanelState<S, SearchVideoData, SearchVideoItemModel>,
+        GridMixin {
+  @override
+  SearchVideoController get controller;
 
   @override
-  Widget buildHeader(ThemeData theme) {
+  Widget buildHeader() {
     return SliverFloatingHeaderWidget(
       backgroundColor: WindowsVideoTabService.enabled
           ? context.windowsNeo.surface
-          : theme.colorScheme.surface,
+          : colorScheme.surface,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           WindowsVideoTabService.enabled ? 16 : 12,
@@ -88,10 +96,10 @@ class _SearchVideoPanelState
                           text: e.desc,
                           bgColor: Colors.transparent,
                           textColor: controller.selectedType.value == e
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.outline,
+                              ? colorScheme.primary
+                              : colorScheme.outline,
                           onTap: (_) => controller
-                            ..order = e.name
+                            ..order = e == .totalrank ? '' : e.name
                             ..selectedType.value = e
                             ..onSortSearch(getBack: false),
                         ),
@@ -118,7 +126,7 @@ class _SearchVideoPanelState
                         ? Icons.filter_list
                         : Icons.filter_list_off,
                     size: 18,
-                    color: theme.colorScheme.primary,
+                    color: colorScheme.primary,
                   ),
                 ),
               ),
@@ -130,12 +138,12 @@ class _SearchVideoPanelState
   }
 
   @override
-  Widget buildList(ThemeData theme, List<SearchVideoItemModel> list) {
+  Widget buildList(List<SearchVideoItemModel> list) {
     if (WindowsVideoTabService.enabled) {
       return SliverPadding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         sliver: SliverGrid.builder(
-          gridDelegate: _windowsGridDelegate,
+          gridDelegate: _windowsSearchVideoGridDelegate,
           itemBuilder: (context, index) {
             if (index == list.length - 1) controller.onLoadMore();
             return WindowsNeoStaggeredReveal(
@@ -176,7 +184,7 @@ class _SearchVideoPanelState
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           sliver: WindowsNeoSliverLoadingPulse(
             sliver: SliverGrid.builder(
-              gridDelegate: _windowsGridDelegate,
+              gridDelegate: _windowsSearchVideoGridDelegate,
               itemBuilder: (_, _) => const WindowsNeoSearchHorizontalSkeleton(),
               itemCount: 10,
             ),

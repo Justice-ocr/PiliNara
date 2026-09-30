@@ -105,9 +105,8 @@ class _LogPageState<T> extends State<LogPage<T>> {
                       sliverDivider,
                       SliverList.separated(
                         itemCount: response.length,
-                        itemBuilder: (context, index) {
-                          return _item(response[index], dividerV);
-                        },
+                        itemBuilder: (context, index) =>
+                            _item(response[index], dividerV),
                         separatorBuilder: (context, index) => divider,
                       ),
                       sliverDivider,

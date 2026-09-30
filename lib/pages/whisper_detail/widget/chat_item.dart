@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
+import 'package:PiliPlus/common/widgets/emote_tooltip.dart';
 import 'package:PiliPlus/common/widgets/gesture/tap_gesture_recognizer.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/image_viewer/hero.dart';
@@ -13,7 +14,6 @@ import 'package:PiliPlus/grpc/bilibili/im/interfaces/v1.pb.dart'
 import 'package:PiliPlus/grpc/bilibili/im/type.pb.dart' show Msg, MsgType;
 import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/common/image_preview_type.dart';
-import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
@@ -355,7 +355,7 @@ class ChatItem extends StatelessWidget {
                           cid: cid,
                           cover: i['cover_url'],
                           dimension: res!.dimension,
-                          title: res.title,
+                          // title: res.title,
                         );
                       }
                     } catch (err) {
@@ -449,7 +449,7 @@ class ChatItem extends StatelessWidget {
                       cid: cid,
                       cover: content['cover'],
                       dimension: res!.dimension,
-                      title: res.title,
+                      // title: res.title,
                     );
                   }
                 } catch (err) {
@@ -553,7 +553,7 @@ class ChatItem extends StatelessWidget {
               cid: cid,
               cover: content['thumb'],
               dimension: res!.dimension,
-              title: res.title,
+              // title: res.title,
             );
           }
         };
@@ -703,14 +703,21 @@ class ChatItem extends StatelessWidget {
           final emoji = emojiMap[matchStr];
           if (emoji != null) {
             final size = emoji['size'];
+            final url = emoji['url'];
             children.add(
               WidgetSpan(
                 rawText: matchStr,
+                child: emoteTooltipBuilder(
+                  url: url,
+                  emote: matchStr,
+                  triggerMode: .tap,
+                  colorScheme: theme.colorScheme,
                 child: NetworkImgLayer(
                   width: size,
                   height: size,
-                  src: emoji['url'],
-                  type: ImageType.emote,
+                    src: url,
+                    type: .emote,
+                  ),
                 ),
               ),
             );

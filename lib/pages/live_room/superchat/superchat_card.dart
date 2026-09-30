@@ -13,6 +13,7 @@ import 'package:PiliPlus/utils/extension/selectable_region_ext.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/screenshot.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -66,7 +67,7 @@ class _SuperChatCardState extends State<SuperChatCard> {
 
   void _remove() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(seconds: 1), _onRemove);
+      Timer(const Duration(seconds: 1), _onRemove);
     });
   }
 
@@ -129,6 +130,17 @@ class _SuperChatCardState extends State<SuperChatCard> {
         ),
         CustomPopupMenuItem<void>(
           height: 38,
+          onTap: () {
+            if (!mounted) return;
+            _screenShot(context, item, showTime: _showTime);
+          },
+          child: const Text(
+            '保存为图片',
+            style: TextStyle(fontSize: 13),
+          ),
+        ),
+        CustomPopupMenuItem<void>(
+          height: 38,
           onTap: widget.onReport,
           child: const Text(
             '举报',
@@ -149,6 +161,17 @@ class _SuperChatCardState extends State<SuperChatCard> {
     SuperChatTimeType.always => true,
   };
 
+  @override
+  Widget build(BuildContext context) {
+    return _build(
+      item: widget.item,
+      remains: _remains,
+      showMenu: _showMenu,
+      showTime: _showTime,
+    );
+  }
+}
+
   String _formatTime(int ts) {
     final dt = DateTime.fromMillisecondsSinceEpoch(ts * 1000);
     final h = dt.hour.toString().padLeft(2, '0');
@@ -157,12 +180,15 @@ class _SuperChatCardState extends State<SuperChatCard> {
     return '$h:$m:$s';
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final item = widget.item;
+Widget _build({
+  required SuperChatItem item,
+  Function(Offset, SuperChatItem)? showMenu,
+  RxInt? remains,
+  bool showTime = false,
+}) {
     final bottomColor = ColourUtils.parseColor(item.backgroundBottomColor);
     final border = BorderSide(color: bottomColor);
-    void showMenu(TapUpDetails e) => _showMenu(e.globalPosition, item);
+  final sendTime = showTime ? _formatTime(item.ts) : null;
 
     Widget name = Text(
       item.userInfo.uname,
@@ -192,24 +218,17 @@ class _SuperChatCardState extends State<SuperChatCard> {
     }
 
     Widget price = Text("￥${item.price}", style: TextStyle(color: bottomColor));
-    Widget? remains;
-    if (_remains != null) {
-      remains = Obx(
+  Widget? remains_;
+  if (remains != null) {
+    remains_ = Obx(
         () => Text(
-          _remains.toString(),
+        remains.toString(),
           style: const TextStyle(fontSize: 14, color: Colors.grey),
         ),
       );
     }
 
-    return Column(
-      mainAxisSize: .min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        GestureDetector(
-          onTapUp: showMenu,
-          onSecondaryTapUp: PlatformUtils.isDesktop ? showMenu : null,
-          child: Container(
+  Widget top = Container(
             decoration: BoxDecoration(
               borderRadius: const .vertical(top: .circular(8)),
               color: ColourUtils.parseColor(item.backgroundColor),
@@ -235,14 +254,14 @@ class _SuperChatCardState extends State<SuperChatCard> {
                     children: [name, price],
                   ),
                 ),
-                if (_showTime)
+        if (sendTime != null)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      ?remains,
+              ?remains_,
                       Text(
-                        _formatTime(item.ts),
+                sendTime,
                         style: TextStyle(
                           fontSize: 11,
                           color: ColourUtils.parseColor(
@@ -253,26 +272,14 @@ class _SuperChatCardState extends State<SuperChatCard> {
                     ],
                   )
                 else
-                  ?remains,
+          ?remains_,
               ],
             ),
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: const .vertical(bottom: .circular(8)),
-            color: bottomColor,
-          ),
-          padding: const .all(8),
-          child: TextSelectionTheme(
-            data: TextSelectionThemeData(
-              selectionColor: Color.lerp(bottomColor, Colors.black, .26),
-              selectionHandleColor: Color.lerp(bottomColor, Colors.white, .26),
-            ),
-            child: SelectionText(
-              item.message,
-              contextMenuBuilder: scMenuBuilder,
-              style: TextStyle(
+  );
+
+  final Widget msg;
+
+  final style = TextStyle(
                 color: ColourUtils.parseColor(item.messageFontColor),
                 // decoration: widget.persistentSC && item.deleted
                 //     ? .lineThrough
@@ -280,15 +287,52 @@ class _SuperChatCardState extends State<SuperChatCard> {
                 // decorationThickness: 1.5,
                 // decorationStyle: .double,
                 // decorationColor: Colors.white,
+  );
+
+  if (showMenu != null) {
+    void showMenu_(TapUpDetails e) => showMenu(e.globalPosition, item);
+    top = GestureDetector(
+      onTapUp: showMenu_,
+      onSecondaryTapUp: PlatformUtils.isDesktop ? showMenu_ : null,
+      child: top,
+    );
+    msg = TextSelectionTheme(
+      data: TextSelectionThemeData(
+        selectionColor: Color.lerp(bottomColor, Colors.black, .26),
+        selectionHandleColor: Color.lerp(
+          bottomColor,
+          Colors.white,
+          .26,
               ),
             ),
+      child: SelectionText(
+        item.message,
+        contextMenuBuilder: scMenuBuilder,
+        style: style,
           ),
+    );
+  } else {
+    msg = Text(item.message, style: style);
+  }
+
+  return Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      top,
+      Container(
+        decoration: BoxDecoration(
+          borderRadius: const .vertical(bottom: .circular(8)),
+          color: bottomColor,
+        ),
+        padding: const .all(8),
+        child: msg,
         ),
       ],
     );
   }
 
-  static Widget _avatar(String face, String? faceFrame) {
+Widget _avatar(String face, String? faceFrame) {
     const size = 45.0;
     final avatar = NetworkImgLayer(
       src: face,
@@ -320,4 +364,28 @@ class _SuperChatCardState extends State<SuperChatCard> {
     }
     return avatar;
   }
+
+Future<void> _screenShot(
+  BuildContext context,
+  SuperChatItem item, {
+  required bool showTime,
+}) async {
+  final image = await Screenshot.screenshot(
+    context,
+    Material(
+      type: .transparency,
+      child: _build(item: item, showTime: showTime),
+    ),
+    constraints: const BoxConstraints(maxWidth: 400),
+    pixelRatio: 3,
+    future: Future.pause, // wait for asset async loaded
+  );
+  final bytes = await image.toByteData(format: .png);
+  image.dispose();
+  final picName =
+      'Bili_SuperChat_${item.roomid}_${item.userInfo.uname}_￥${item.price}_${item.id}';
+  ImageUtils.saveByteImg(
+    bytes: bytes!.buffer.asUint8List(),
+    fileName: picName,
+  );
 }

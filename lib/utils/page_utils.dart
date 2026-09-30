@@ -55,7 +55,7 @@ abstract final class PageUtils {
     toDupNamed('/search', parameters: parameters, off: off);
   }
 
-  static Future<void> toSearchResult(
+  static Future<Object?> toSearchResult(
     String keyword, {
     String? tag,
     int? initIndex,
@@ -73,7 +73,7 @@ abstract final class PageUtils {
         type: WindowsWorkspaceTabType.search,
       );
       await WindowsVideoTabService.showHost();
-      return;
+      return null;
     }
     final parameters = {'keyword': keyword, if (tag != null) 'tag': tag};
     final arguments = {
@@ -81,13 +81,13 @@ abstract final class PageUtils {
       'fromSearch': fromSearch,
     };
     if (off) {
-      await Get.offNamed(
+      return Get.offNamed(
         '/searchResult',
         parameters: parameters,
         arguments: arguments,
       );
     } else {
-      await Get.toNamed(
+      return Get.toNamed(
         '/searchResult',
         parameters: parameters,
         arguments: arguments,

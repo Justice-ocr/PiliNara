@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show ValueChanged;
 import 'package:PiliPlus/http/dynamics.dart';
 import 'package:PiliPlus/http/loading_state.dart';
@@ -137,7 +139,7 @@ class DynamicDetailController extends CommonDynController {
       action: action,
     );
     if (res.isSuccess) {
-      Future.delayed(const Duration(milliseconds: 500), () {
+      Timer(const Duration(milliseconds: 500), () {
         if (!isClosed) {
           onReload();
         }

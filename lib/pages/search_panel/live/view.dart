@@ -58,7 +58,7 @@ class _SearchLivePanelState
   );
 
   @override
-  Widget buildList(ThemeData theme, List<SearchLiveItemModel> list) {
+  Widget buildList(List<SearchLiveItemModel> list) {
     return SliverPadding(
       padding: WindowsVideoTabService.enabled
           ? const EdgeInsets.fromLTRB(16, 12, 16, 24)

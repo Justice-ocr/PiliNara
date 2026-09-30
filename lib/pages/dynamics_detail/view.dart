@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
@@ -414,7 +415,7 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
         repostDynId: item.orig?.idStr,
       ),
       onSuccess: () {
-        Future.delayed(
+        Timer(
           const Duration(milliseconds: 500),
           () async {
             if (!mounted) return;

@@ -96,7 +96,7 @@ abstract final class ReplyUtils {
 
     // CommAntifraud
     if (!isManual) {
-      await Future.delayed(const Duration(seconds: 8));
+      await Future.pause(const Duration(seconds: 8));
     }
     void showReplyCheckResult(
       String message, {
@@ -277,7 +277,7 @@ https://api.bilibili.com/x/v2/reply/reply?oid=$oid&pn=1&ps=20&root=$id&type=$typ
           if (data.replies.isNullOrEmpty) {
             break;
           }
-          int index = data.replies?.indexWhere((item) => item.rpid == id) ?? -1;
+          int index = data.replies!.indexWhere((item) => item.rpid == id);
           if (index == -1) {
             // not found
           } else {
@@ -304,7 +304,7 @@ https://api.bilibili.com/x/v2/reply/reply?oid=$oid&pn=1&ps=20&root=$id&type=$typ
           if (data.replies.isNullOrEmpty) {
             break;
           }
-          int index = data.replies?.indexWhere((item) => item.rpid == id) ?? -1;
+          int index = data.replies!.indexWhere((item) => item.rpid == id);
           if (index == -1) {
             // not found
           } else {

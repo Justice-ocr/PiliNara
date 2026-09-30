@@ -52,13 +52,13 @@ class _SearchPgcPanelState
     maxCrossAxisExtent: WindowsVideoTabService.enabled
         ? 620
         : Grid.smallCardWidth * 2,
-    mainAxisExtent: WindowsVideoTabService.enabled ? 170 : 160,
+    mainAxisExtent: WindowsVideoTabService.enabled ? 170 : 158,
     mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : 0,
     crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : 0,
   );
 
   @override
-  Widget buildList(ThemeData theme, List<SearchPgcItemModel> list) {
+  Widget buildList(List<SearchPgcItemModel> list) {
     final grid = SliverGrid.builder(
       gridDelegate: gridDelegate,
       itemBuilder: (BuildContext context, int index) {

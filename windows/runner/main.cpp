@@ -2,6 +2,7 @@
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
 
+#include "app_links/app_links_plugin_c_api.h"
 #include "flutter_window.h"
 #include "utils.h"
 
@@ -11,6 +12,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
       command_line != nullptr &&
       ::wcsstr(command_line, L"--allow-multiple-instances") != nullptr;
   if (!allow_multiple_instances) {
+    // Forward app links (e.g. bilibili://) to the running instance and
+    // bring it to front.
+    if (SendAppLinkToInstance()) {
+      return EXIT_SUCCESS;
+    }
+    // Fallback: another PiliNara window from a different executable path.
     HWND hwnd = ::FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"pilinara");
     if (hwnd != NULL) {
       ::ShowWindow(hwnd, SW_NORMAL);

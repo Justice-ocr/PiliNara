@@ -60,11 +60,11 @@ class _SearchArticlePanelState
   }
 
   @override
-  Widget buildHeader(ThemeData theme) {
+  Widget buildHeader() {
     return SliverFloatingHeaderWidget(
       backgroundColor: WindowsVideoTabService.enabled
           ? context.windowsNeo.surface
-          : theme.colorScheme.surface,
+          : colorScheme.surface,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           WindowsVideoTabService.enabled ? 16 : 25,
@@ -78,7 +78,7 @@ class _SearchArticlePanelState
               () => Text(
                 '排序: ${controller.articleOrderType.value.label}',
                 maxLines: 1,
-                style: TextStyle(color: theme.colorScheme.outline),
+                style: TextStyle(color: colorScheme.outline),
               ),
             ),
             const Spacer(),
@@ -86,7 +86,7 @@ class _SearchArticlePanelState
               () => Text(
                 '分区: ${controller.articleZoneType!.value.label}',
                 maxLines: 1,
-                style: TextStyle(color: theme.colorScheme.outline),
+                style: TextStyle(color: colorScheme.outline),
               ),
             ),
             const Spacer(),
@@ -106,7 +106,7 @@ class _SearchArticlePanelState
                         ? Icons.filter_list
                         : Icons.filter_list_off,
                     size: 18,
-                    color: theme.colorScheme.primary,
+                    color: colorScheme.primary,
                   ),
                 ),
               ),
@@ -118,7 +118,7 @@ class _SearchArticlePanelState
   }
 
   @override
-  Widget buildList(ThemeData theme, List<SearchArticleItemModel> list) {
+  Widget buildList(List<SearchArticleItemModel> list) {
     final grid = SliverGrid.builder(
       gridDelegate: WindowsVideoTabService.enabled
           ? _windowsGridDelegate

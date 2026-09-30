@@ -13,57 +13,15 @@ import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
 
 // 视频卡片 - 水平布局
 class VideoCardH extends StatelessWidget {
   static final RxSet<String> clickedBvids = <String>{}.obs;
 
-  static Future<void> openDetail(HorizontalVideoModel videoItem) async {
-    if (videoItem.isPugv ?? false) {
-      PageUtils.viewPugv(seasonId: videoItem.seasonId);
-      return;
-    }
-
-    if (videoItem.isLive ?? false) {
-      if (videoItem.roomId case final roomId?) {
-        PageUtils.toLiveRoom(roomId);
-      }
-      return;
-    }
-
-    if (videoItem.redirectUrl?.isNotEmpty == true &&
-        PageUtils.viewPgcFromUri(videoItem.redirectUrl!)) {
-      return;
-    }
-
-    int? cid = videoItem.cid;
-    Dimension? dimension = videoItem.dimension;
-    if (cid == null) {
-      if (await SearchHttp.ab2cWithDimension(
-            aid: videoItem.aid,
-            bvid: videoItem.bvid,
-          )
-          case final res?) {
-        cid = res.cid;
-        dimension = res.dimension;
-      }
-    }
-    if (cid != null) {
-      PageUtils.toVideoPage(
-        bvid: videoItem.bvid,
-        cid: cid,
-        cover: videoItem.cover,
-        title: videoItem.title,
-        dimension: dimension,
-      );
-      final key = videoItem.bvid ?? videoItem.aid?.toString();
-      if (key != null && key.isNotEmpty) {
-        clickedBvids.add(key);
-      }
-    }
-  }
+  static Future<void> openDetail(HorizontalVideoModel videoItem) =>
+      pushVideoH(videoItem);
 
   const VideoCardH({
     super.key,
@@ -77,13 +35,14 @@ class VideoCardH extends StatelessWidget {
   final ValueChanged<int>? onViewLater;
   final VoidCallback? onRemove;
 
-  @override
-  Widget build(BuildContext context) {
     void onLongPress() => imageSaveDialog(
       bvid: videoItem.bvid,
       title: videoItem.title,
       cover: videoItem.cover,
     );
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Material(
       type: .transparency,
@@ -93,7 +52,7 @@ class VideoCardH extends StatelessWidget {
           InkWell(
             onLongPress: onLongPress,
             onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
-            onTap: onTap ?? () => openDetail(videoItem),
+            onTap: onTap ?? () => pushVideoH(videoItem),
             child: Padding(
               padding: const .symmetric(
                 horizontal: Style.safeSpace,
@@ -258,6 +217,7 @@ class VideoCardH extends StatelessWidget {
               overflow: .clip,
             ),
           ),
+          if (videoItem.isLive != true) ...[
           const SizedBox(height: 3),
           Row(
             spacing: 8,
@@ -273,7 +233,53 @@ class VideoCardH extends StatelessWidget {
             ],
           ),
         ],
+        ],
       ),
     );
+  }
+}
+
+Future<void> pushVideoH(HorizontalVideoModel videoItem) async {
+  if (videoItem.isPugv ?? false) {
+    PageUtils.viewPugv(seasonId: videoItem.seasonId);
+    return;
+  }
+
+  if (videoItem.isLive ?? false) {
+    if (videoItem.roomId case final roomId?) {
+      PageUtils.toLiveRoom(roomId);
+    }
+    return;
+  }
+
+  if (videoItem.redirectUrl?.isNotEmpty == true &&
+      PageUtils.viewPgcFromUri(videoItem.redirectUrl!)) {
+    return;
+  }
+
+  int? cid = videoItem.cid;
+  Dimension? dimension = videoItem.dimension;
+  if (cid == null) {
+    if (await SearchHttp.ab2cWithDimension(
+          aid: videoItem.aid,
+          bvid: videoItem.bvid,
+        )
+        case final res?) {
+      cid = res.cid;
+      dimension = res.dimension;
+    }
+  }
+  if (cid != null) {
+    PageUtils.toVideoPage(
+      bvid: videoItem.bvid,
+      cid: cid,
+      cover: videoItem.cover,
+      title: videoItem.title,
+      dimension: dimension,
+    );
+    final String? key = videoItem.bvid ?? videoItem.aid?.toString();
+    if (key != null && key.isNotEmpty) {
+      VideoCardH.clickedBvids.add(key);
+    }
   }
 }

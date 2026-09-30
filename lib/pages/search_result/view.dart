@@ -2,6 +2,7 @@ import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/models/common/search/search_type.dart';
 import 'package:PiliPlus/pages/search/controller.dart';
+import 'package:PiliPlus/pages/search_panel/all/view.dart';
 import 'package:PiliPlus/pages/search_panel/article/view.dart';
 import 'package:PiliPlus/pages/search_panel/live/view.dart';
 import 'package:PiliPlus/pages/search_panel/pgc/view.dart';
@@ -137,7 +138,7 @@ class _SearchResultPageState extends State<SearchResultPage>
 
   void _openSearch() {
     if (_isFromSearch) {
-      Get.back();
+      Get.back(result: true);
     } else {
       final parameters = {'text': _searchResultController.keyword};
       if (WindowsVideoTabService.enabled) {
@@ -208,11 +209,11 @@ class _SearchResultPageState extends State<SearchResultPage>
     children: SearchType.values
         .map(
           (item) => switch (item) {
-            // SearchType.all => SearchAllPanel(
-            //   tag: _tag,
-            //   searchType: item,
-            //   keyword: _searchResultController.keyword,
-            // ),
+            SearchType.all => SearchAllPanel(
+              tag: _tag,
+              searchType: item,
+              keyword: _searchResultController.keyword,
+            ),
             SearchType.video => SearchVideoPanel(
               tag: _tag,
               searchType: item,
@@ -244,6 +245,7 @@ class _SearchResultPageState extends State<SearchResultPage>
   );
 
   String _labelForType(SearchType type) => switch (type) {
+    SearchType.all => '综合',
     SearchType.video => '视频',
     SearchType.media_bangumi => '番剧',
     SearchType.media_ft => '影视',
