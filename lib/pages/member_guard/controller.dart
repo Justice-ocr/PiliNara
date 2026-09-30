@@ -8,13 +8,16 @@ import 'package:get/get_navigation/get_navigation.dart';
 
 class MemberGuardController
     extends CommonListController<MemberGuardData, GuardItem> {
+  MemberGuardController({Object? ruid})
+    : ruid = ruid ?? Get.arguments['ruid'];
+
   @override
   void onInit() {
     super.onInit();
     queryData();
   }
 
-  final Object ruid = Get.arguments['ruid'];
+  final Object ruid;
 
   late List<GuardItem> tops;
 

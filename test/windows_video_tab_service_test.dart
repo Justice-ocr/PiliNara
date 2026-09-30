@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:PiliPlus/router/app_pages.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/windows_workspace/routing/windows_workspace_route_registry.dart';
@@ -95,6 +97,19 @@ void main() {
           WindowsWorkspaceRouteRegistry.definitions.map((route) => route.path),
         ),
       );
+    });
+
+    test('builds every nested path inside the tab navigator', () {
+      // WindowsVideoTabService.pushNamedInActiveTab sends nestedPaths into the
+      // tab navigator, whose builder is a switch in the media tabs page.
+      final source = File(
+        'lib/pages/windows_media_tabs/view.dart',
+      ).readAsStringSync();
+      final missing = WindowsWorkspaceRouteRegistry.nestedPaths
+          .where((path) => !source.contains("'$path' =>"))
+          .toList(growable: false);
+
+      expect(missing, isEmpty);
     });
   });
 

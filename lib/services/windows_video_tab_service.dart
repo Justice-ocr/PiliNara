@@ -77,8 +77,14 @@ abstract final class WindowsVideoTabService {
   @visibleForTesting
   static bool? enabledOverride;
 
+  /// The shell, root route and title bar are chosen at startup, so the
+  /// preference only takes effect after a restart.
+  static bool? _enabledAtStartup;
+
   static bool get enabled =>
-      enabledOverride ?? (Platform.isWindows && Pref.enableWindowsVideoTabs);
+      enabledOverride ??
+      (_enabledAtStartup ??=
+          Platform.isWindows && Pref.enableWindowsVideoTabs);
 
   static bool get isNotEmpty => tabs.isNotEmpty;
 

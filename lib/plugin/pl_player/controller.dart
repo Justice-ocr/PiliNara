@@ -273,7 +273,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       (Platform.isAndroid && AndroidHelper.isPipMode) ||
       (PlatformUtils.isDesktop && isDesktopPip);
   late bool isDesktopPip = false;
-  late Rect _lastWindowBounds;
+  Rect? _lastWindowBounds;
 
   late final showWindowTitleBar = Pref.showWindowTitleBar;
   late final RxBool isAlwaysOnTop = false.obs;
@@ -284,11 +284,14 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
 
   Future<void> exitDesktopPip() {
     isDesktopPip = false;
+    final lastWindowBounds = _lastWindowBounds;
     return Future.wait([
       if (showWindowTitleBar)
         windowManager.setTitleBarStyle(TitleBarStyle.normal),
       windowManager.setMinimumSize(const Size(400, 700)),
-      windowManager.setBounds(_lastWindowBounds),
+      // Bounds are captured asynchronously on enter; a fast toggle may exit
+      // before they exist.
+      if (lastWindowBounds != null) windowManager.setBounds(lastWindowBounds),
       setAlwaysOnTop(false),
       windowManager.setAspectRatio(0),
     ]);
@@ -1293,8 +1296,13 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     return null;
   }
 
+  /// Set when the user pauses a live stream, so a later stream error does not
+  /// restart playback behind their back (e.g. in a background Neo tab).
+  bool _livePausedByUser = false;
+
   void _scheduleLivePlaybackRecovery() {
     if (!isLive ||
+        _livePausedByUser ||
         _liveRecoveryTimer != null ||
         _liveRecoveryRunning ||
         _videoPlayerController == null) {
@@ -1307,7 +1315,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   }
 
   Future<void> _recoverLivePlayback() async {
-    if (!isLive || _liveRecoveryRunning) return;
+    if (!isLive || _liveRecoveryRunning || _livePausedByUser) return;
     final player = _videoPlayerController;
     if (player == null || player.state.playing) return;
 
@@ -1370,8 +1378,25 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     _wakeLockTimer = null;
   }
 
+  /// Players currently keeping the screen awake. Windows Neo can play several
+  /// tabs or split cells at once, so the global wakelock is released only
+  /// when the last one stops.
+  static final Set<PlPlayerController> _wakeLockHolders = {};
+
+  void _acquireWakeLock() {
+    if (_wakeLockHolders.add(this) && _wakeLockHolders.length == 1) {
+      WakelockPlus.enable();
+    }
+  }
+
+  void _releaseWakeLock() {
+    if (_wakeLockHolders.remove(this) && _wakeLockHolders.isEmpty) {
+      WakelockPlus.disable();
+    }
+  }
+
   void _stopWakeLock() {
-    WakelockPlus.disable();
+    _releaseWakeLock();
     _updatePlaybackState(debugLabel: 'onVideoPaused');
   }
 
@@ -1402,7 +1427,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
           playerStatus = .playing;
           _stopWakeLockTimer();
           _updatePlaybackState();
-          WakelockPlus.enable();
+          _acquireWakeLock();
 
           if (_isAutoEnterPip &&
               _autoAudioState != AutoAudioOnlyState.autoAudioOnly) {
@@ -1497,7 +1522,8 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
             //tcp: ffurl_read returned 0xffffff99
             event.startsWith('tcp: ffurl_read returned ')) {
           EasyThrottle.throttle(
-            'controllerStream.error.listen',
+            // Per player: Neo tabs and split cells retry independently.
+            'controllerStream.error.listen:${identityHashCode(this)}',
             const Duration(milliseconds: 10000),
             () {
               Timer(const Duration(milliseconds: 3000), () {
@@ -1647,6 +1673,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   Future<void> play({bool repeat = false, bool hideControls = true}) async {
     if (_playerCount == 0) return;
     cancelLivePlaybackRecovery();
+    _livePausedByUser = false;
     // 播放时自动隐藏控制条
     final showControlsOnNextPlay = _consumeShowControlsOnNextPlay();
     controls = !hideControls || showControlsOnNextPlay;
@@ -1661,6 +1688,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   /// 暂停播放
   Future<void> pause({bool notify = true, bool isInterrupt = false}) async {
     cancelLivePlaybackRecovery();
+    if (!isInterrupt) _livePausedByUser = true;
     await _videoPlayerController?.pause();
     playerStatus = .paused;
 
@@ -2716,15 +2744,26 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     // playerStatus.close();
     // dataStatus.close();
 
-    if (PlatformUtils.isDesktop && isAlwaysOnTop.value) {
-      windowManager.setAlwaysOnTop(false);
+    if (PlatformUtils.isDesktop) {
+      // A Windows Neo tab can be closed from the tab strip while this player
+      // owns the window state; restore it so other tabs are not left in PiP
+      // or native fullscreen.
+      if (isDesktopPip) {
+        exitDesktopPip();
+      } else if (isFullScreen.value) {
+        exitDesktopFullScreen();
+        isFullScreen.value = false;
+      }
+      if (isAlwaysOnTop.value) {
+        windowManager.setAlwaysOnTop(false);
+      }
     }
 
     _removeListeners();
     _positionListeners.clear();
     _statusListeners.clear();
     _stopWakeLockTimer();
-      WakelockPlus.disable();
+    _releaseWakeLock();
     if (kDebugMode) {
       debugPrint('dispose player');
     }

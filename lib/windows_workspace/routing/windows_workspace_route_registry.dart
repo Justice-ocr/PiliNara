@@ -38,6 +38,7 @@ import 'package:PiliPlus/pages/setting/ai_setting/view.dart';
 import 'package:PiliPlus/pages/setting/pages/bar_set.dart';
 import 'package:PiliPlus/pages/setting/pages/color_select.dart';
 import 'package:PiliPlus/pages/setting/pages/font_setting.dart';
+import 'package:PiliPlus/pages/setting/pages/font_size_select.dart';
 import 'package:PiliPlus/pages/setting/pages/play_speed_set.dart';
 import 'package:PiliPlus/pages/setting/view.dart';
 import 'package:PiliPlus/pages/setting/block_setting.dart';
@@ -203,7 +204,7 @@ abstract final class WindowsWorkspaceRouteRegistry {
         const WindowsWorkspaceRouteDefinition(
           path: '/fontSizeSetting',
           kind: WindowsWorkspaceRouteKind.nested,
-          pageBuilder: FontSettingPage.new,
+          pageBuilder: FontSizeSelectPage.new,
         ),
         const WindowsWorkspaceRouteDefinition(
           path: '/fontSetting',

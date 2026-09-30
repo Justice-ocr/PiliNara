@@ -296,6 +296,7 @@ List<SettingsModel> get playSettings => [
       leading: Icon(Icons.tab_outlined),
       setKey: SettingBoxKey.enableWindowsVideoTabs,
       defaultVal: true,
+      needReboot: true,
     ),
   if (Platform.isAndroid) ...[
     SwitchModel(

@@ -22,6 +22,7 @@ import 'package:PiliPlus/pages/pgc_index/view.dart';
 import 'package:PiliPlus/pages/pgc_index/widgets/pgc_card_v_pgc_index.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
@@ -407,8 +408,9 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: moreTextButton(
                     text: '查看全部',
-                    onTap: () => Get.toNamed(
-                      '/fav',
+                    onTap: () => PageUtils.openWorkspaceTab(
+                      route: '/fav',
+                      title: '我的收藏',
                       arguments: widget.tabType == HomeTabType.bangumi
                           ? FavTabType.bangumi.index
                           : FavTabType.cinema.index,

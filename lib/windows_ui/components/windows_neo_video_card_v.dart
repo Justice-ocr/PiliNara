@@ -62,7 +62,20 @@ class _WindowsNeoVideoCardVState extends State<WindowsNeoVideoCardV> {
         hovered: _hovered,
         onTap: detailAction,
         onLongPress: saveCover,
-        onSecondaryTap: saveCover,
+        // Non-video cards (live, bangumi) have no overflow menu to mirror.
+        onSecondaryTap: item.goto == 'av' ? null : saveCover,
+        onSecondaryTapUp: item.goto != 'av'
+            ? null
+            : (details) => VideoPopupMenu(
+                iconSize: 17,
+                menuItemHeight: 38,
+                videoItem: item,
+                onRemove: widget.onRemove,
+              ).showContextMenu(
+                context,
+                details.globalPosition,
+                onSaveCover: saveCover,
+              ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

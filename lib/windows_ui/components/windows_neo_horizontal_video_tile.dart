@@ -68,7 +68,16 @@ class _WindowsNeoHorizontalVideoTileState
         hovered: _hovered,
         onTap: () => VideoCardH.openDetail(item),
         onLongPress: saveCover,
-        onSecondaryTap: saveCover,
+        onSecondaryTapUp: (details) => VideoPopupMenu(
+          iconSize: 17,
+          menuItemHeight: 38,
+          videoItem: item,
+          onRemove: widget.onRemove,
+        ).showContextMenu(
+          context,
+          details.globalPosition,
+          onSaveCover: saveCover,
+        ),
         child: Row(
           children: [
             LayoutBuilder(

@@ -377,7 +377,7 @@ class LiveRoomChatPanel extends StatelessWidget {
         if (liveRoomController.isLogin) ...[
           CustomPopupMenuItem(
             height: 38,
-            onTap: () => liveRoomController.onAtUser(item),
+            onTap: () => onAtUser(item),
             child: const Text(
               '@TA',
               style: TextStyle(fontSize: 13),

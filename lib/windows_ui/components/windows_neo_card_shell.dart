@@ -12,6 +12,7 @@ class WindowsNeoCardShell extends StatefulWidget {
     this.onTap,
     this.onLongPress,
     this.onSecondaryTap,
+    this.onSecondaryTapUp,
   });
 
   final bool hovered;
@@ -19,6 +20,9 @@ class WindowsNeoCardShell extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final VoidCallback? onSecondaryTap;
+
+  /// Right-click with the pointer position, for context menus.
+  final GestureTapUpCallback? onSecondaryTapUp;
 
   @override
   State<WindowsNeoCardShell> createState() => _WindowsNeoCardShellState();
@@ -68,6 +72,7 @@ class _WindowsNeoCardShellState extends State<WindowsNeoCardShell> {
                   onTap: widget.onTap,
                   onLongPress: widget.onLongPress,
                   onSecondaryTap: widget.onSecondaryTap,
+                  onSecondaryTapUp: widget.onSecondaryTapUp,
                   onFocusChange: (focused) {
                     if (_focused != focused) setState(() => _focused = focused);
                   },

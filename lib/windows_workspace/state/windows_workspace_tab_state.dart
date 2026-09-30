@@ -12,7 +12,7 @@ class WindowsWorkspaceTabState {
   final RxDouble splitHorizontalRatio = 0.5.obs;
   final RxDouble splitVerticalRatio = 0.5.obs;
   final List<String> activationHistory = [];
-  final List<WindowsWorkspaceTab> closedTabs = [];
+  final RxList<WindowsWorkspaceTab> closedTabs = <WindowsWorkspaceTab>[].obs;
 
   Map? currentArguments;
 }

@@ -2,6 +2,7 @@ import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/radio_widget.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -54,7 +55,7 @@ Future<void> autoWrapReportDialog(
           iconSize: 21,
           tooltip: '网页举报',
           onPressed: () =>
-              Get.toNamed('/webview', parameters: {'url': reportUrl}),
+              PageUtils.toDupNamed('/webview', parameters: {'url': reportUrl}),
           icon: const Icon(MdiIcons.web, size: 22),
         ),
       ],

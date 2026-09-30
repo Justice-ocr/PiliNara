@@ -347,7 +347,7 @@ abstract final class RequestUtils {
                     onPressed: () {
                       Get.back();
                       Utils.copyText('https://www.bilibili.com/opus/$id');
-                      Get.toNamed(
+                      PageUtils.toDupNamed(
                         '/webview',
                         parameters: {
                           'url':

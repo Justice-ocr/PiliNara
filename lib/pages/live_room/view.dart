@@ -62,6 +62,8 @@ import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/features/live/windows_neo_live_mention.dart';
+import 'package:PiliPlus/windows_workspace/models/windows_workspace_tab.dart';
 import 'package:PiliPlus/windows_ui/features/video/windows_neo_video_layout.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
@@ -109,6 +111,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   late final FocusNode _windowsDanmakuFocusNode;
   bool _windowsDanmakuSending = false;
   bool _windowsEmotePanelVisible = false;
+  WindowsNeoLiveMention? _windowsMention;
 
   // 标志位：三点菜单「应用内画中画」发起的 pop，一次性；由 _onPopInvokedWithResult 消费，
   // 让本次收起绕过设置开关
@@ -470,7 +473,8 @@ class _LiveRoomPageState extends State<LiveRoomPage>
         WindowsVideoTabService.shouldSuppressTabAudio(tabId, focused),
       ),
     );
-    if (focused && plPlayerController.playerStatus.isPlaying) {
+    // Visible split cells keep playing, so keep their chat and danmaku live.
+    if (visible && plPlayerController.playerStatus.isPlaying) {
       _liveRoomController
         ..danmakuController?.resume()
         ..startLiveTimer()
@@ -932,7 +936,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                     isPP: false,
                     liveRoomController: _liveRoomController,
                     hideSuperChat: true,
-                    onAtUser: _insertWindowsMention,
+                    onAtUser: _onAtUser,
                   ),
                 ),
                 if (_windowsEmotePanelVisible && emotePanelHeight > 0)
@@ -1172,6 +1176,23 @@ class _LiveRoomPageState extends State<LiveRoomPage>
         return;
       }
     }
+    if (WindowsVideoTabService.enabled) {
+      // The room is a workspace tab: collapse it into the overlay and close
+      // the tab, instead of popping the root navigator that hosts the whole
+      // workspace.
+      _startLivePipIfNeeded(manual: true);
+      if (!_isEnteringPipMode) {
+        SmartDialog.showToast('当前无法进入小窗');
+        return;
+      }
+      WindowsVideoTabService.close(
+        WindowsVideoTabService.keyFromArgs(_liveTabArgs),
+      );
+      // Closing the tab deactivates it, which stops chat; the overlay keeps
+      // showing the room, so resume it.
+      _liveRoomController.startLiveMsg();
+      return;
+    }
     _manualPipRequested = true;
     Get.back();
   }
@@ -1223,6 +1244,26 @@ class _LiveRoomPageState extends State<LiveRoomPage>
         },
         onReturn: () {
           _isEnteringPipMode = false;
+          if (WindowsVideoTabService.enabled) {
+            // Return into the workspace tab instead of a standalone page.
+            final args = {
+              'roomId': _liveRoomController.roomId,
+              'fromPip': true,
+              'mediaTabType': WindowsWorkspaceTabType.live.name,
+            };
+            WindowsVideoTabService.upsert(
+              args,
+              type: WindowsWorkspaceTabType.live,
+            );
+            WindowsVideoTabService.showHost();
+            final tabId = WindowsVideoTabService.keyFromArgs(args);
+            if (tabId.isNotEmpty) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                WindowsVideoTabService.select(tabId);
+              });
+            }
+            return;
+          }
           Get.toNamed(
             '/liveRoom',
             arguments: {
@@ -1638,7 +1679,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     Widget chat() => LiveRoomChatPanel(
       key: chatKey,
       isPP: isPP,
-      onAtUser: _insertWindowsMention,
+      onAtUser: _onAtUser,
       liveRoomController: _liveRoomController,
     );
     return Padding(
@@ -1664,10 +1705,27 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     );
   }
 
+  void _onAtUser(DanmakuMsg item) {
+    // Neo keeps the composer in the side panel; the mobile layouts and
+    // fullscreen still use the upstream send sheet.
+    if (WindowsVideoTabService.enabled && !isFullScreen) {
+      _insertWindowsMention(item);
+    } else {
+      _liveRoomController.onAtUser(item);
+    }
+  }
+
   void _insertWindowsMention(DanmakuMsg item) {
-    final current = _windowsDanmakuTextController.text;
-    final separator = current.isEmpty || current.endsWith(' ') ? '' : ' ';
-    final next = '$current$separator@${item.name} ';
+    final mention = WindowsNeoLiveMention(
+      name: item.name,
+      mid: int.tryParse(item.extra.mid.toString()) ?? 0,
+      dmid: item.extra.id.toString(),
+    );
+    final next = mention.applyTo(
+      _windowsDanmakuTextController.text,
+      previous: _windowsMention,
+    );
+    _windowsMention = mention;
     _windowsDanmakuTextController.value = TextEditingValue(
       text: next,
       selection: TextSelection.collapsed(offset: next.length),
@@ -1757,7 +1815,10 @@ class _LiveRoomPageState extends State<LiveRoomPage>
   }
 
   Future<void> _sendWindowsDanmaku() async {
-    final message = _windowsDanmakuTextController.text.trim();
+    final text = _windowsDanmakuTextController.text;
+    final mention = _windowsMention;
+    final replyBody = mention?.bodyOf(text);
+    final message = (replyBody ?? text).trim();
     if (message.isEmpty || _windowsDanmakuSending) return;
     if (kReleaseMode && !_liveRoomController.isLogin) {
       SmartDialog.showToast('账号未登录');
@@ -1768,9 +1829,12 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     final res = await LiveHttp.sendLiveMsg(
       roomId: _liveRoomController.roomId,
       msg: message,
+      replyMid: replyBody != null ? mention!.mid : 0,
+      replayDmid: replyBody != null ? mention!.dmid : '',
     );
     if (!mounted) return;
     if (res.isSuccess) {
+      _windowsMention = null;
       _windowsDanmakuTextController.clear();
       _windowsDanmakuFocusNode.requestFocus();
       _liveRoomController.markFansMedalStale();

@@ -583,6 +583,13 @@ class LiveRoomController extends GetxController {
               if (plPlayerController.isDesktopPip) {
                 plPlayerController.exitDesktopPip();
               }
+              if (WindowsVideoTabService.enabled) {
+                // The room lives in a workspace tab; popping twice would
+                // remove the workspace host route instead.
+                Get.back();
+                WindowsVideoTabService.close('live:$roomId');
+                return;
+              }
               Get
                 ..back()
                 ..back();
@@ -736,8 +743,8 @@ class LiveRoomController extends GetxController {
         ..cancelLivePlaybackRecovery()
         ..onLivePlaybackInterrupted = null;
     }
-    // 心跳定时器是静态的，无论是否小窗都要取消
-    LiveHttp.cancelLiveHeartbeat();
+    // 心跳按房间区分，无论是否小窗都要取消本房间的心跳
+    LiveHttp.cancelLiveHeartbeat(roomId);
     // 如果在小窗模式，不清理资源
     if (!isInPipMode.value) {
       closeLiveMsg();

@@ -24,10 +24,7 @@ Widget scMenuBuilder(
           label: '搜索',
           onPressed: () {
             state.onMenuPressed(
-              (text) => Get.toNamed(
-                '/searchResult',
-                parameters: {'keyword': text},
-              ),
+              (text) => PageUtils.toSearchResult(text),
             );
           },
         ),

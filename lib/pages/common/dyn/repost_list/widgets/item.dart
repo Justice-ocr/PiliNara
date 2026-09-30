@@ -16,8 +16,6 @@ import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
 import 'package:material_ui/material_ui.dart';
 
 class DynRepostItem extends StatelessWidget {
@@ -58,7 +56,7 @@ class DynRepostItem extends StatelessWidget {
 
     // print(moduleOpusSummary.runtimeType);
 
-    void pushMember() => Get.toNamed('/member?mid=${author.mid}');
+    void pushMember() => PageUtils.toMember(author.mid);
 
     return Material(
       type: .transparency,

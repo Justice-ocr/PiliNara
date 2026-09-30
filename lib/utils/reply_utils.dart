@@ -135,7 +135,7 @@ abstract final class ReplyUtils {
                   if (uri != null) {
                     Utils.copyText(uri);
                   }
-                  Get.toNamed(
+                  PageUtils.toDupNamed(
                     '/webview',
                     parameters: {
                       'url':

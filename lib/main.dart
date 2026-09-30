@@ -9,6 +9,7 @@ import 'package:PiliPlus/common/widgets/scale_app.dart';
 import 'package:PiliPlus/common/widgets/scroll_behavior.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/models/common/theme/theme_color_type.dart';
+import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
 import 'package:PiliPlus/router/app_pages.dart';
 import 'package:PiliPlus/services/account_service.dart';
@@ -263,6 +264,29 @@ void _onBack() {
   final navigator = Get.key.currentState!;
   if (navigator.canPop()) {
     navigator.pop();
+    return;
+  }
+
+  // Windows Neo pages live in per-tab navigators under the root host route.
+  if (WindowsVideoTabService.enabled) {
+    // The tab's player first leaves desktop PiP / fullscreen, as its own
+    // route-level back handling would on a standalone page.
+    final player = PlPlayerController.instance;
+    if (player != null) {
+      if (player.controlsLock.value) {
+        player.onLockControl(false);
+        return;
+      }
+      if (player.isDesktopPip) {
+        player.exitDesktopPip();
+        return;
+      }
+      if (player.isFullScreen.value) {
+        player.triggerFullScreen(status: false);
+        return;
+      }
+    }
+    WindowsVideoTabService.popActiveTab();
   }
 }
 

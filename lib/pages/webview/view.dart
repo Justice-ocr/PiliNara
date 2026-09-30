@@ -52,6 +52,12 @@ class _WebviewPageState extends State<WebviewPage> with RouteAware {
   bool _inApp = false;
   bool _off = false;
 
+  /// Pops this page from the navigator that hosts it (a workspace tab on
+  /// Windows Neo), rather than from the root [Get.key] navigator.
+  void _closePage() {
+    if (mounted) Navigator.of(context).maybePop();
+  }
+
   InAppWebViewController? _webViewController;
   LinuxWebviewController? _linuxController;
 
@@ -221,7 +227,7 @@ class _WebviewPageState extends State<WebviewPage> with RouteAware {
           if (await _webViewController?.canGoBack() == true) {
             _webViewController?.goBack();
           } else {
-            Get.back();
+            _closePage();
           }
         }
         break;
@@ -345,7 +351,7 @@ document.addEventListener('click', function(e) {
         onWebMessageReceived: (msg) {
           final msgStr = msg.toString();
           if (msgStr == 'finishButtonClicked') {
-            if (mounted) Get.back();
+            _closePage();
           } else if (msgStr == 'infoBarClicked') {
             final uri = Uri.tryParse(_currentUrl);
             final targetOid =
@@ -425,7 +431,7 @@ document.addEventListener('click', function(e) {
                     ..addJavaScriptHandler(
                       handlerName: 'finishButtonClicked',
                       callback: (args) {
-                        Get.back();
+                        _closePage();
                       },
                     )
                     ..addJavaScriptHandler(
@@ -447,7 +453,7 @@ document.addEventListener('click', function(e) {
                 onTitleChanged: (controller, title) {
                   _title.value = title ?? '';
                 },
-                onCloseWindow: (controller) => Get.back(),
+                onCloseWindow: (controller) => _closePage(),
                 onLoadStop: (controller, uri) {
                   final url = uri.toString();
                   if (url.startsWith('https://www.bilibili.com/h5/note-app')) {

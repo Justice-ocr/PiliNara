@@ -768,11 +768,8 @@ abstract final class LiveHttp {
 
   // 直播心跳 - 使用 Constants 中的 appKey/appSec
 
-  // 会话级标识，每次进入直播间生成
-  static String? _hbUuid;
-  static String? _hbClickId;
-  static int _hbSeqId = 0;
-  static Timer? _heartbeatTimer;
+  // 会话级标识，每次进入直播间生成；按房间区分，Windows 多直播标签各自上报
+  static final Map<int, _LiveHeartbeatSession> _heartbeats = {};
 
   static Future<LoadingState<void>> liveFeedback(
     Object roomId,
@@ -810,23 +807,29 @@ abstract final class LiveHttp {
   }
 
   static void startLiveHeartbeat(int roomId, int upId) {
-    cancelLiveHeartbeat();
-    _hbUuid = _generateUuidV4();
-    _hbClickId = _generateUuidV4();
-    _hbSeqId = 0;
-    _mobileHeartBeat(roomId: roomId, upId: upId);
-    _heartbeatTimer = Timer.periodic(
+    cancelLiveHeartbeat(roomId);
+    final session = _LiveHeartbeatSession(
+      uuid: _generateUuidV4(),
+      clickId: _generateUuidV4(),
+    );
+    _heartbeats[roomId] = session;
+    _mobileHeartBeat(roomId: roomId, upId: upId, session: session);
+    session.timer = Timer.periodic(
       const Duration(seconds: 60),
-      (_) => _mobileHeartBeat(roomId: roomId, upId: upId),
+      (_) => _mobileHeartBeat(roomId: roomId, upId: upId, session: session),
     );
   }
 
-  static void cancelLiveHeartbeat() {
-    _heartbeatTimer?.cancel();
-    _heartbeatTimer = null;
-    _hbUuid = null;
-    _hbClickId = null;
-    _hbSeqId = 0;
+  /// Cancels the heartbeat of [roomId], or of every room when omitted.
+  static void cancelLiveHeartbeat([int? roomId]) {
+    if (roomId == null) {
+      for (final session in _heartbeats.values) {
+        session.timer?.cancel();
+      }
+      _heartbeats.clear();
+      return;
+    }
+    _heartbeats.remove(roomId)?.timer?.cancel();
   }
 
   static String _generateUuidV4() {
@@ -945,20 +948,22 @@ abstract final class LiveHttp {
   static Future<LoadingState<void>> _mobileHeartBeat({
     required int roomId,
     required int upId,
+    required _LiveHeartbeatSession session,
   }) async {
-    final uuid = _hbUuid;
-    final clickId = _hbClickId;
-    if (uuid == null || clickId == null)
+    if (!identical(_heartbeats[roomId], session)) {
       return const Error('heartbeat not initialized');
+    }
+    final uuid = session.uuid;
+    final clickId = session.clickId;
 
-    _hbSeqId++;
+    final seqId = ++session.seqId;
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
     final data = <String, dynamic>{
       'platform': 'android',
       'uuid': uuid,
       'buvid': _randomString(37).toUpperCase(),
-      'seq_id': '$_hbSeqId',
+      'seq_id': '$seqId',
       'room_id': '$roomId',
       'parent_id': '6',
       'area_id': '283',
@@ -1013,4 +1018,13 @@ abstract final class LiveHttp {
       return Error(e.toString());
     }
   }
+}
+
+class _LiveHeartbeatSession {
+  _LiveHeartbeatSession({required this.uuid, required this.clickId});
+
+  final String uuid;
+  final String clickId;
+  int seqId = 0;
+  Timer? timer;
 }

@@ -157,10 +157,7 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
               final item = response[index];
               return ListTile(
                 dense: true,
-                onTap: () => Get.toNamed(
-                  '/searchResult',
-                  parameters: {'keyword': item.keyword},
-                ),
+                onTap: () => PageUtils.toSearchResult(item.keyword),
                 leading: index < _controller.topCount
                     ? const Icon(
                         size: 17,

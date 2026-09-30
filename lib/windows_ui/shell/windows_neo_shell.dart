@@ -1576,7 +1576,9 @@ class _WindowsNeoRecentTabsMenu extends StatelessWidget {
   const _WindowsNeoRecentTabsMenu();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Obx(() => _buildMenu(context));
+
+  Widget _buildMenu(BuildContext context) {
     final tokens = context.windowsNeo;
     final tabs = WindowsVideoTabService.recentlyClosedTabs.reversed
         .take(8)

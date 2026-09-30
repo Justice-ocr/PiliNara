@@ -518,24 +518,59 @@ class VideoPopupMenu extends StatelessWidget {
     ];
   }
 
+  List<PopupMenuEntry<int>> _menuItems(List<_VideoCustomAction> actions) => [
+    for (int i = 0; i < actions.length; i++)
+      CustomPopupMenuItem<int>(
+        value: i,
+        height: menuItemHeight,
+        child: Row(
+          children: [
+            actions[i].icon,
+            const SizedBox(width: 8),
+            Text(actions[i].title, style: const TextStyle(fontSize: 13)),
+          ],
+        ),
+      ),
+  ];
+
   void _showPopupMenu(BuildContext context) {
     final actions = _buildActions(context);
     showStaticPositionMenu<int>(
       context: context,
-      items: [
-        for (int i = 0; i < actions.length; i++)
-          CustomPopupMenuItem<int>(
-            value: i,
-            height: menuItemHeight,
-            child: Row(
-              children: [
-                actions[i].icon,
-                const SizedBox(width: 8),
-                Text(actions[i].title, style: const TextStyle(fontSize: 13)),
-              ],
-            ),
-          ),
-      ],
+      items: _menuItems(actions),
+    ).then((index) {
+      if (index != null && context.mounted) {
+        actions[index].onTap();
+      }
+    });
+  }
+
+  /// Opens the same actions as the overflow button at [globalPosition], for
+  /// desktop right-click. [onSaveCover] adds a leading "保存封面" entry.
+  void showContextMenu(
+    BuildContext context,
+    Offset globalPosition, {
+    VoidCallback? onSaveCover,
+  }) {
+    final overlay = Overlay.maybeOf(context)?.context.findRenderObject();
+    if (overlay is! RenderBox || !overlay.hasSize) return;
+    final actions = [
+      if (onSaveCover != null)
+        _VideoCustomAction(
+          '保存封面',
+          const Icon(Icons.image_outlined, size: 16),
+          onSaveCover,
+        ),
+      ..._buildActions(context),
+    ];
+    final local = overlay.globalToLocal(globalPosition);
+    showMenu<int>(
+      context: context,
+      position: RelativeRect.fromRect(
+        local & Size.zero,
+        Offset.zero & overlay.size,
+      ),
+      items: _menuItems(actions),
     ).then((index) {
       if (index != null && context.mounted) {
         actions[index].onTap();

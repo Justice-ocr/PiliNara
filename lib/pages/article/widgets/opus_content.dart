@@ -90,7 +90,7 @@ class OpusContent extends StatelessWidget {
                   text: '${rich.origText} ',
                   style: TextStyle(color: colorScheme.primary),
                   recognizer: NoDeadlineTapGestureRecognizer()
-                    ..onTap = () => Get.toNamed(
+                    ..onTap = () => PageUtils.toDupNamed(
                       '/webview',
                       parameters: {
                         'url':

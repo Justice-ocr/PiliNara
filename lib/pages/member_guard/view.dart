@@ -16,7 +16,11 @@ import 'package:material_ui/material_ui.dart' hide ListTile;
 import 'package:get/get.dart';
 
 class MemberGuard extends StatefulWidget {
-  const MemberGuard({super.key});
+  const MemberGuard({super.key, this.arguments, this.controllerTag});
+
+  /// Workspace tab route arguments; falls back to [Get.arguments].
+  final Map? arguments;
+  final String? controllerTag;
 
   @override
   State<MemberGuard> createState() => _MemberGuardState();
@@ -45,12 +49,12 @@ class _MemberGuardState extends State<MemberGuard> {
   @override
   void initState() {
     super.initState();
-    final args = Get.arguments;
+    final Map args = widget.arguments ?? Get.arguments;
     _userName = args['name'];
     _count = args['count'];
     _controller = Get.put(
-      MemberGuardController(),
-      tag: args['ruid'].toString(),
+      MemberGuardController(ruid: args['ruid']),
+      tag: widget.controllerTag ?? args['ruid'].toString(),
     );
   }
 

@@ -102,9 +102,13 @@ class WindowsWorkspaceTab {
   }) {
     final previousTitle = arguments['title'];
     final wasPinned = arguments['pinned'] == true;
+    // The live page and its controllers are keyed by the first heroTag and
+    // share this map, so a re-open must not swap it underneath them.
+    final previousHeroTag = arguments['heroTag'];
     arguments
       ..clear()
       ..addAll(next);
+    if (previousHeroTag != null) arguments['heroTag'] = previousHeroTag;
     if (retainTitle &&
         !arguments.containsKey('title') &&
         previousTitle != null) {
@@ -261,7 +265,13 @@ abstract final class WindowsWorkspaceTabIdentity {
     }
     if (type == WindowsWorkspaceTabType.tool) {
       final route = arguments['tabRoute']?.toString();
-      return route == null || route.isEmpty ? '' : 'tool:$route';
+      if (route == null || route.isEmpty) return '';
+      // Tool pages read their arguments once when built, so different
+      // arguments (e.g. the favourites sub-tab) need their own tab.
+      final workspaceArguments = arguments['workspaceArguments'];
+      return workspaceArguments == null
+          ? 'tool:$route'
+          : 'tool:$route:$workspaceArguments';
     }
     final key = [
       arguments['bvid']?.toString(),

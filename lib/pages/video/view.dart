@@ -870,6 +870,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         if (plPlayerController != null) {
           videoDetailController.makeHeartBeat();
           plPlayerController!.dispose();
+        } else if (WindowsVideoTabService.enabled) {
+          // Each Neo tab owns a detached player; the global instance may belong
+          // to another tab, so never release it through updatePlayCount.
+          videoDetailController.plPlayerController.dispose();
         } else {
           PlPlayerController.updatePlayCount();
         }
@@ -2384,7 +2388,11 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   }
 
   Widget get childWhenWindowsNeo => Obx(() {
-    final isFullScreen = this.isFullScreen;
+    // Desktop PiP shrinks the window to the video, so lay it out like
+    // fullscreen (matches the live room page).
+    final isFullScreen =
+        this.isFullScreen ||
+        videoDetailController.plPlayerController.isDesktopPip;
     return Scaffold(
       key: videoDetailController.childKey,
       backgroundColor: context.windowsNeo.background,
@@ -3661,6 +3669,22 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       if (!mounted) {
         return;
       }
+    }
+    if (WindowsVideoTabService.enabled) {
+      // The page is a workspace tab: collapse it into the overlay and close
+      // the tab (as the Neo back path does), instead of popping the root
+      // navigator that hosts the whole workspace.
+      final id = WindowsVideoTabService.keyFromArgs(videoDetailController.args);
+      _syncWindowsVideoTabProgress();
+      _startInAppPipIfNeeded(fromPop: true, manual: true);
+      if (!_isEnteringPipMode) {
+        SmartDialog.showToast('当前无法进入小窗');
+        return;
+      }
+      if (id.isNotEmpty && WindowsVideoTabService.has(id)) {
+        WindowsVideoTabService.close(id);
+      }
+      return;
     }
     _manualPipRequested = true;
     Get.back();

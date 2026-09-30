@@ -11,11 +11,14 @@ import 'package:PiliPlus/pages/article_list/view.dart';
 import 'package:PiliPlus/pages/blacklist/view.dart';
 import 'package:PiliPlus/pages/dynamics_detail/view.dart';
 import 'package:PiliPlus/pages/dynamics_topic/view.dart';
+import 'package:PiliPlus/pages/live_area/view.dart';
+import 'package:PiliPlus/pages/live_follow/view.dart';
 import 'package:PiliPlus/pages/live_room/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/pages/main/view.dart';
 import 'package:PiliPlus/pages/member/view.dart';
 import 'package:PiliPlus/pages/member_dynamics/view.dart';
+import 'package:PiliPlus/pages/member_guard/view.dart';
 import 'package:PiliPlus/pages/fan/view.dart';
 import 'package:PiliPlus/pages/follow/view.dart';
 import 'package:PiliPlus/pages/follow_search/view.dart';
@@ -39,6 +42,7 @@ import 'package:PiliPlus/pages/setting/ai_setting/view.dart';
 import 'package:PiliPlus/pages/setting/block_setting.dart';
 import 'package:PiliPlus/pages/setting/pages/bar_set.dart';
 import 'package:PiliPlus/pages/setting/pages/color_select.dart';
+import 'package:PiliPlus/pages/setting/pages/font_setting.dart';
 import 'package:PiliPlus/pages/setting/pages/font_size_select.dart';
 import 'package:PiliPlus/pages/setting/pages/play_speed_set.dart';
 import 'package:PiliPlus/pages/setting/view.dart';
@@ -129,12 +133,9 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
           WindowsVideoTabService.select(WindowsVideoTabService.homeTabId);
           PageUtils.toSearch();
         },
-        child: CallbackShortcuts(
-          bindings: {
-            const SingleActivator(LogicalKeyboardKey.escape):
-                WindowsVideoTabService.popActiveTab,
-          },
-          child: Focus(
+        // Escape is handled by the app-wide early key handler (main.dart
+        // _onBack), which pops the active tab.
+        child: Focus(
             // Active media pages own keyboard focus. Keeping a focusable shell
             // here prevents PlayerFocus from receiving video shortcuts.
             canRequestFocus: false,
@@ -154,7 +155,6 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
               ),
             ),
           ),
-        ),
       );
     });
   }
@@ -283,6 +283,14 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
           '/playSpeedSet' => const PlaySpeedPage(),
           '/colorSetting' => const ColorSelectPage(),
           '/fontSizeSetting' => const FontSizeSelectPage(),
+          '/fontSetting' => const FontSettingPage(),
+          '/liveArea' => const LiveAreaPage(),
+          '/liveFollow' => const LiveFollowPage(),
+          '/memberGuard' => MemberGuard(
+            arguments: data?.arguments as Map?,
+            controllerTag:
+                '${item.id}:memberGuard:${(data?.arguments as Map?)?['ruid'] ?? ''}',
+          ),
           '/barSetting' => BarSetPage(arguments: data?.arguments as Map?),
           '/historySearch' => const HistorySearchPage(),
           '/laterSearch' => LaterSearchPage(
