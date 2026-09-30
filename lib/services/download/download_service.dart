@@ -322,46 +322,46 @@ class DownloadService extends GetxService {
       return false;
     }
     return _danmakuLock.synchronized<bool>(() async {
-      final danmakuFile = File(
-        path.join(entry.entryDirPath, PathUtils.danmakuName),
-      );
-      if (isUpdate || !danmakuFile.existsSync()) {
-        try {
-          if (!isUpdate) {
-            _updateCurStatus(DownloadStatus.getDanmaku);
-          }
-          final seg = (entry.totalTimeMilli / DmUtils.segLength).ceil();
-          if (seg <= 0) {
-            throw StateError('Invalid danmaku segment count: $seg');
-          }
-
-          final danmaku = (await DmGrpc.dmSegMobile(
-            cid: cid,
-            segmentIndex: 1,
-          )).data;
-          for (var start = 2; start <= seg; start += _maxDanmakuConcurrency) {
-            final end = start + _maxDanmakuConcurrency - 1;
-            final responses = await Future.wait([
-              for (var index = start; index <= seg && index <= end; index++)
-                DmGrpc.dmSegMobile(cid: cid, segmentIndex: index),
-            ]);
-            for (final response in responses) {
-              danmaku.elems.addAll(response.data.elems);
-            }
-            responses.clear();
-          }
-          await danmakuFile.writeAsBytes(danmaku.writeToBuffer());
-
-          return true;
-        } catch (e) {
-          if (!isUpdate) {
-            _updateCurStatus(DownloadStatus.failDanmaku);
-          }
-          if (kDebugMode) SmartDialog.showToast(e.toString());
-          return false;
+    final danmakuFile = File(
+      path.join(entry.entryDirPath, PathUtils.danmakuName),
+    );
+    if (isUpdate || !danmakuFile.existsSync()) {
+      try {
+        if (!isUpdate) {
+          _updateCurStatus(DownloadStatus.getDanmaku);
         }
+        final seg = (entry.totalTimeMilli / DmUtils.segLength).ceil();
+        if (seg <= 0) {
+          throw StateError('Invalid danmaku segment count: $seg');
+        }
+
+        final danmaku = (await DmGrpc.dmSegMobile(
+          cid: cid,
+          segmentIndex: 1,
+        )).data;
+        for (var start = 2; start <= seg; start += _maxDanmakuConcurrency) {
+          final end = start + _maxDanmakuConcurrency - 1;
+          final responses = await Future.wait([
+            for (var index = start; index <= seg && index <= end; index++)
+              DmGrpc.dmSegMobile(cid: cid, segmentIndex: index),
+          ]);
+          for (final response in responses) {
+            danmaku.elems.addAll(response.data.elems);
+          }
+          responses.clear();
+        }
+        await danmakuFile.writeAsBytes(danmaku.writeToBuffer());
+
+        return true;
+      } catch (e) {
+        if (!isUpdate) {
+          _updateCurStatus(DownloadStatus.failDanmaku);
+        }
+        if (kDebugMode) SmartDialog.showToast(e.toString());
+        return false;
       }
-      return true;
+    }
+    return true;
     });
   }
 
