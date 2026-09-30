@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -266,7 +268,10 @@ class WindowsNeoHorizontalTileSkeleton extends StatelessWidget {
                   constraints.maxHeight.isFinite && constraints.maxHeight > 0
                   ? constraints.maxHeight
                   : tokens.horizontalCardHeight;
-              final width = height * 16 / 9;
+              // Cap the cover so the text column keeps room in tall cells.
+              final width = constraints.maxWidth.isFinite
+                  ? math.min(height * 16 / 9, constraints.maxWidth / 2)
+                  : height * 16 / 9;
               return Row(
                 children: [
                   SizedBox(

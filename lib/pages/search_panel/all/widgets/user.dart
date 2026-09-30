@@ -12,10 +12,9 @@ import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
 import 'package:material_ui/material_ui.dart';
 
 const _kItemWidth = 140.0;
@@ -42,7 +41,7 @@ class SearchAllUserItem extends StatelessWidget {
         crossAxisAlignment: .start,
         children: [
           InkWell(
-            onTap: () => Get.toNamed('/member?mid=${item.mid}'),
+            onTap: () => PageUtils.toMember(item.mid),
             child: Padding(
               padding: const .symmetric(horizontal: 12, vertical: 5),
               child: Row(

@@ -58,6 +58,7 @@ import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/foundation.dart'
     show ValueNotifier, clampDouble, kDebugMode;
 import 'package:flutter/services.dart' show HapticFeedback, DeviceOrientation;
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:get/get.dart';
