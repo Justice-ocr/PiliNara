@@ -36,7 +36,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 
 class MusicDetailPage extends StatefulWidget {
-  const MusicDetailPage({super.key});
+  const MusicDetailPage({super.key, this.musicId, this.controllerTag});
+
+  final String? musicId;
+  final String? controllerTag;
 
   @override
   State<MusicDetailPage> createState() => _MusicDetailPageState();
@@ -44,13 +47,20 @@ class MusicDetailPage extends StatefulWidget {
 
 class _MusicDetailPageState extends CommonDynPageState<MusicDetailPage> {
   @override
-  final MusicDetailController controller = Get.putOrFind(
-    MusicDetailController.new,
-    tag: Get.parameters['musicId']!,
-  );
+  late final MusicDetailController controller;
 
   @override
   dynamic get arguments => null;
+
+  @override
+  void initState() {
+    super.initState();
+    final musicId = widget.musicId ?? Get.parameters['musicId']!;
+    controller = Get.putOrFind(
+      () => MusicDetailController(musicId: musicId),
+      tag: widget.controllerTag ?? musicId,
+    );
+  }
 
   @override
   void didChangeDependencies() {

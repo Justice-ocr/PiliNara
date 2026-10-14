@@ -20,14 +20,19 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
 class SysMsgPage extends StatefulWidget {
-  const SysMsgPage({super.key});
+  const SysMsgPage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   State<SysMsgPage> createState() => _SysMsgPageState();
 }
 
 class _SysMsgPageState extends State<SysMsgPage> {
-  final _sysMsgController = Get.put(SysMsgController());
+  late final _sysMsgController = Get.put(
+    SysMsgController(),
+    tag: widget.controllerTag,
+  );
 
   static final RegExp _urlRegExp = RegExp(
     r'#\{([^}]*)\}\{([^}]*)\}|https?:\/\/[^\s/\$.?#].[^\s]*|www\.[^\s/\$.?#].[^\s]*|【(.*?)】|（(\d+)）',

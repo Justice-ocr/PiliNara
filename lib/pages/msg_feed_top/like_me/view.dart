@@ -25,14 +25,19 @@ import 'package:material_ui/material_ui.dart' hide ListTile;
 import 'package:get/get.dart';
 
 class LikeMePage extends StatefulWidget {
-  const LikeMePage({super.key});
+  const LikeMePage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   State<LikeMePage> createState() => _LikeMePageState();
 }
 
 class _LikeMePageState extends State<LikeMePage> {
-  final LikeMeController _likeMeController = Get.put(LikeMeController());
+  late final LikeMeController _likeMeController = Get.put(
+    LikeMeController(),
+    tag: widget.controllerTag,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -180,10 +185,10 @@ class _LikeMePageState extends State<LikeMePage> {
       avatar = GestureDetector(
         onTap: () => PageUtils.toMember(firstUser.mid),
         child: NetworkImgLayer(
-        width: 45,
-        height: 45,
-        type: ImageType.avatar,
-        src: firstUser.avatar,
+          width: 45,
+          height: 45,
+          type: ImageType.avatar,
+          src: firstUser.avatar,
         ),
       );
     } else {

@@ -18,14 +18,19 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
 class BlackListPage extends StatefulWidget {
-  const BlackListPage({super.key});
+  const BlackListPage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   State<BlackListPage> createState() => _BlackListPageState();
 }
 
 class _BlackListPageState extends State<BlackListPage> {
-  final _blackListController = Get.put(BlackListController());
+  late final _blackListController = Get.put(
+    BlackListController(),
+    tag: widget.controllerTag,
+  );
 
   @override
   void dispose() {

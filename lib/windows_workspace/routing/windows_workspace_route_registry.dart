@@ -1,11 +1,15 @@
 import 'package:PiliPlus/pages/article/view.dart';
+import 'package:PiliPlus/pages/audio/view.dart';
 import 'package:PiliPlus/pages/article_list/view.dart';
 import 'package:PiliPlus/pages/blacklist/view.dart';
+import 'package:PiliPlus/pages/danmaku_block/view.dart';
 import 'package:PiliPlus/pages/dynamics_detail/view.dart';
 import 'package:PiliPlus/pages/dynamics_topic/view.dart';
 import 'package:PiliPlus/pages/download/view.dart';
+import 'package:PiliPlus/pages/dlna/view.dart';
 import 'package:PiliPlus/pages/fan/view.dart';
 import 'package:PiliPlus/pages/fav/view.dart';
+import 'package:PiliPlus/pages/fav_create/view.dart';
 import 'package:PiliPlus/pages/fav_detail/view.dart';
 import 'package:PiliPlus/pages/fav_search/view.dart';
 import 'package:PiliPlus/pages/follow/view.dart';
@@ -17,18 +21,25 @@ import 'package:PiliPlus/pages/history_search/view.dart';
 import 'package:PiliPlus/pages/later/view.dart';
 import 'package:PiliPlus/pages/later_search/view.dart';
 import 'package:PiliPlus/pages/live_area/view.dart';
+import 'package:PiliPlus/pages/live_dm_block/view.dart';
 import 'package:PiliPlus/pages/live_follow/view.dart';
+import 'package:PiliPlus/pages/main_reply/view.dart';
+import 'package:PiliPlus/pages/match_info/view.dart';
 import 'package:PiliPlus/pages/member/view.dart';
 import 'package:PiliPlus/pages/member_dynamics/view.dart';
 import 'package:PiliPlus/pages/member_guard/view.dart';
 import 'package:PiliPlus/pages/member_profile/view.dart';
 import 'package:PiliPlus/pages/member_search/view.dart';
+import 'package:PiliPlus/pages/member_upower_rank/view.dart';
+import 'package:PiliPlus/pages/member_video_web/archive/view.dart';
+import 'package:PiliPlus/pages/member_video_web/season_series/view.dart';
 import 'package:PiliPlus/pages/msg_feed_top/at_me/view.dart';
 import 'package:PiliPlus/pages/msg_feed_top/like_detail/view.dart';
 import 'package:PiliPlus/pages/msg_feed_top/like_me/view.dart';
 import 'package:PiliPlus/pages/msg_feed_top/reply_me/view.dart';
 import 'package:PiliPlus/pages/msg_feed_top/sys_msg/view.dart';
 import 'package:PiliPlus/pages/my_reply/view.dart';
+import 'package:PiliPlus/pages/music/view.dart';
 import 'package:PiliPlus/pages/popular_precious/view.dart';
 import 'package:PiliPlus/pages/popular_series/view.dart';
 import 'package:PiliPlus/pages/rank/view.dart';
@@ -237,6 +248,11 @@ abstract final class WindowsWorkspaceRouteRegistry {
           pageBuilder: FavSearchPage.new,
         ),
         const WindowsWorkspaceRouteDefinition(
+          path: '/createFav',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: CreateFavPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
           path: '/popularSeries',
           kind: WindowsWorkspaceRouteKind.nested,
           pageBuilder: PopularSeriesPage.new,
@@ -282,6 +298,36 @@ abstract final class WindowsWorkspaceRouteRegistry {
           pageBuilder: WebviewPage.new,
         ),
         const WindowsWorkspaceRouteDefinition(
+          path: '/audio',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: AudioPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/mainReply',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: MainReplyPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/matchInfo',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: MatchInfoPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/danmakuBlock',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: DanmakuBlockPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/dlna',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: DLNAPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/liveDmBlockPage',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: LiveDmBlockPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
           path: '/liveArea',
           kind: WindowsWorkspaceRouteKind.nested,
           pageBuilder: LiveAreaPage.new,
@@ -295,6 +341,26 @@ abstract final class WindowsWorkspaceRouteRegistry {
           path: '/memberGuard',
           kind: WindowsWorkspaceRouteKind.nested,
           pageBuilder: MemberGuard.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/upowerRank',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: UpowerRankPage.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/videoWeb',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: MemberVideoWeb.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/ssWeb',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: MemberSSWeb.new,
+        ),
+        const WindowsWorkspaceRouteDefinition(
+          path: '/musicDetail',
+          kind: WindowsWorkspaceRouteKind.nested,
+          pageBuilder: MusicDetailPage.new,
         ),
         const WindowsWorkspaceRouteDefinition(
           path: '/subDetail',
@@ -384,11 +450,13 @@ abstract final class WindowsWorkspaceRouteRegistry {
 }
 
 class WindowsWorkspaceRankPage extends StatelessWidget {
-  const WindowsWorkspaceRankPage({super.key});
+  const WindowsWorkspaceRankPage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('排行榜')),
-    body: const RankPage(),
+    body: RankPage(controllerTag: controllerTag),
   );
 }

@@ -10,14 +10,19 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
 class SpaceSettingPage extends StatefulWidget {
-  const SpaceSettingPage({super.key});
+  const SpaceSettingPage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   State<SpaceSettingPage> createState() => _SpaceSettingPageState();
 }
 
 class _SpaceSettingPageState extends State<SpaceSettingPage> {
-  final _controller = Get.put(SpaceSettingController());
+  late final _controller = Get.put(
+    SpaceSettingController(),
+    tag: widget.controllerTag,
+  );
 
   @override
   Widget build(BuildContext context) {

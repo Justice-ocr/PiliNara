@@ -40,6 +40,7 @@ import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/extension/rx_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
@@ -81,7 +82,8 @@ class LiveRoomController extends GetxController {
 
   /// 直播页能否被 pop：页面 popScope 的 canPop 与三点菜单小窗入口共用
   bool get canPopPage =>
-      !plPlayerController.isFullScreen.value && !plPlayerController.isDesktopPip;
+      !plPlayerController.isFullScreen.value &&
+      !plPlayerController.isDesktopPip;
 
   Timer? liveTimeTimer;
 
@@ -132,6 +134,9 @@ class LiveRoomController extends GetxController {
   final disableAutoScroll = false.obs;
   bool autoScroll = true;
   LiveMessageStream? _msgStream;
+  Timer? _liveMsgReconnectTimer;
+  bool _liveMsgStartInFlight = false;
+  int _liveMsgRequestId = 0;
   List<String> _keywordList = const [];
   Set<int> _shieldUids = const {};
   late final ScrollController scrollController;
@@ -304,7 +309,7 @@ class LiveRoomController extends GetxController {
 
   void _bindLivePlaybackRecovery() {
     // Bind only after acquiring the player, including replacement instances.
-    plPlayerController.onNeedsPlayerInit = () => queryLiveUrl();
+    plPlayerController.onNeedsPlayerInit = queryLiveUrl;
     plPlayerController.onLivePlaybackInterrupted =
         _livePlaybackRecoveryCallback;
   }
@@ -535,7 +540,7 @@ class LiveRoomController extends GetxController {
       return;
     }
     final castTitle = title.value.isNotEmpty ? title.value : null;
-    await Get.toNamed(
+    await PageUtils.toDupNamed(
       '/dlna',
       parameters: {
         'url': url,
@@ -636,8 +641,14 @@ class LiveRoomController extends GetxController {
   }
 
   void closeLiveMsg() {
-    _msgStream?.close();
+    _liveMsgRequestId++;
+    _liveMsgReconnectTimer?.cancel();
+    _liveMsgReconnectTimer = null;
+    _liveMsgStartInFlight = false;
+    final stream = _msgStream;
     _msgStream = null;
+    stream?.close(notify: false);
+    dmInfo = null;
   }
 
   @pragma('vm:notify-debugger-on-exception')
@@ -690,23 +701,59 @@ class LiveRoomController extends GetxController {
   }
 
   void startLiveMsg() {
+    if (_msgStream != null || _liveMsgStartInFlight || isClosed) {
+      return;
+    }
     if (messages.isEmpty) {
       prefetch();
       if (showSuperChat) {
         getSuperChatMsg();
       }
     }
-    if (_msgStream != null) {
-      return;
-    }
     if (dmInfo != null) {
       initDm(dmInfo!);
       return;
     }
-    LiveHttp.liveRoomGetDanmakuToken(roomId: roomId).then((res) {
+    _liveMsgStartInFlight = true;
+    final requestId = ++_liveMsgRequestId;
+    unawaited(_fetchLiveMsgToken(requestId));
+  }
+
+  Future<void> _fetchLiveMsgToken(int requestId) async {
+    try {
+      final res = await LiveHttp.liveRoomGetDanmakuToken(roomId: roomId);
+      if (requestId != _liveMsgRequestId || isClosed) return;
       if (res case Success(:final response)) {
-        initDm(dmInfo = response);
+        if (response.hostList.isEmpty) {
+          _scheduleLiveMsgReconnect();
+        } else {
+          initDm(dmInfo = response);
+        }
+      } else {
+        _scheduleLiveMsgReconnect();
       }
+    } catch (error, stackTrace) {
+      if (kDebugMode) Utils.reportError(error, stackTrace);
+      if (requestId == _liveMsgRequestId) {
+        _scheduleLiveMsgReconnect();
+      }
+    } finally {
+      if (requestId == _liveMsgRequestId) {
+        _liveMsgStartInFlight = false;
+      }
+    }
+  }
+
+  void _scheduleLiveMsgReconnect() {
+    if (isClosed ||
+        !plPlayerController.visible ||
+        !plPlayerController.playerStatus.isPlaying) {
+      return;
+    }
+    _liveMsgReconnectTimer?.cancel();
+    _liveMsgReconnectTimer = Timer(const Duration(seconds: 2), () {
+      _liveMsgReconnectTimer = null;
+      startLiveMsg();
     });
   }
 
@@ -778,20 +825,27 @@ class LiveRoomController extends GetxController {
   }
 
   void initDm(LiveDmInfoData info) {
-    if (info.hostList.isEmpty) {
+    if (info.hostList.isEmpty || isClosed) {
       return;
     }
-    _msgStream =
-        LiveMessageStream(
-            streamToken: info.token,
-            roomId: roomId,
-            uid: Accounts.heartbeat.mid,
-            servers: info.hostList
-                .map((host) => 'wss://${host.host}:${host.wssPort}/sub')
-                .toList(),
-          )
-          ..addEventListener(_danmakuListener)
-          ..init();
+    late final LiveMessageStream stream;
+    stream = LiveMessageStream(
+      streamToken: info.token,
+      roomId: roomId,
+      uid: Accounts.heartbeat.mid,
+      servers: info.hostList
+          .map((host) => 'wss://${host.host}:${host.wssPort}/sub')
+          .toList(),
+      onClosed: () {
+        if (!identical(_msgStream, stream)) return;
+        _msgStream = null;
+        dmInfo = null;
+        _scheduleLiveMsgReconnect();
+      },
+    );
+    _msgStream = stream
+      ..addEventListener(_danmakuListener)
+      ..init();
   }
 
   void addDm(dynamic msg, [DanmakuContentItem<DanmakuExtra>? item]) {

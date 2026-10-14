@@ -28,12 +28,13 @@ abstract class BaseVideoWebState<
     extends State<S>
     with GridMixin {
   late final String name;
+  Map? get routeArguments;
   BaseVideoWebCtr<R, T, V> get controller;
 
   @override
   void initState() {
     super.initState();
-    final args = Get.arguments;
+    final args = routeArguments ?? Get.arguments as Map;
     name = args['name'];
   }
 

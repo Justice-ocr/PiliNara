@@ -4,11 +4,15 @@ import 'package:PiliPlus/models_new/member/season_web/archive.dart';
 import 'package:PiliPlus/models_new/member/season_web/data.dart';
 import 'package:PiliPlus/pages/member_video_web/base/view.dart';
 import 'package:PiliPlus/pages/member_video_web/season_series/controller.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class MemberSSWeb extends StatefulWidget {
-  const MemberSSWeb({super.key});
+  const MemberSSWeb({super.key, this.arguments, this.controllerTag});
+
+  final Map? arguments;
+  final String? controllerTag;
 
   @override
   State<MemberSSWeb> createState() => _MemberSSWebState();
@@ -19,7 +23,7 @@ class MemberSSWeb extends StatefulWidget {
     required Object mid,
     required String name,
   }) {
-    return Get.toNamed(
+    return PageUtils.toDupNamed<void>(
       '/ssWeb',
       arguments: {
         'type': type,
@@ -43,9 +47,15 @@ class _MemberSSWebState
   late final MemberSSWebCtr controller;
 
   @override
+  Map? get routeArguments => widget.arguments;
+
+  @override
   void initState() {
     super.initState();
-    controller = Get.put(MemberSSWebCtr(), tag: name);
+    controller = Get.put(
+      MemberSSWebCtr(arguments: routeArguments),
+      tag: widget.controllerTag ?? name,
+    );
   }
 
   @override

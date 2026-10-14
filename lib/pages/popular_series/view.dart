@@ -20,14 +20,19 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
 class PopularSeriesPage extends StatefulWidget {
-  const PopularSeriesPage({super.key});
+  const PopularSeriesPage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   State<PopularSeriesPage> createState() => _PopularSeriesPageState();
 }
 
 class _PopularSeriesPageState extends State<PopularSeriesPage> with GridMixin {
-  final _controller = Get.put(PopularSeriesController());
+  late final _controller = Get.put(
+    PopularSeriesController(),
+    tag: widget.controllerTag,
+  );
   late final _windowsGridDelegate = SliverGridDelegateWithExtentAndRatio(
     maxCrossAxisExtent: 520,
     childAspectRatio: 4.2,

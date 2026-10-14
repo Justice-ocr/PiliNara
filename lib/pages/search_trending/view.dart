@@ -12,13 +12,11 @@ import 'package:PiliPlus/pages/search_trending/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/color_utils.dart';
 import 'package:PiliPlus/utils/extension/context_ext.dart';
-import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:get/get.dart';
@@ -39,6 +37,22 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
 
   late double _offset;
   final RxDouble _scrollRatio = 0.0.obs;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllerTag = widget.controllerTag ?? Utils.generateRandomString(8);
+    _controller = Get.put(
+      SearchTrendingController(),
+      tag: _controllerTag,
+    );
+  }
+
+  @override
+  void dispose() {
+    Get.delete<SearchTrendingController>(tag: _controllerTag);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

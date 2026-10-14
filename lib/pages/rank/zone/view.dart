@@ -15,10 +15,16 @@ import 'package:material_ui/material_ui.dart'
 import 'package:get/get.dart';
 
 class ZonePage extends StatefulWidget {
-  const ZonePage({super.key, this.rid, this.seasonType});
+  const ZonePage({
+    super.key,
+    this.rid,
+    this.seasonType,
+    this.controllerTag,
+  });
 
   final int? rid;
   final int? seasonType;
+  final String? controllerTag;
 
   @override
   State<ZonePage> createState() => _ZonePageState();
@@ -32,7 +38,9 @@ class _ZonePageState extends State<ZonePage>
   void initState() {
     controller = Get.put(
       ZoneController(rid: widget.rid, seasonType: widget.seasonType),
-      tag: '${widget.rid}${widget.seasonType}',
+      tag: widget.controllerTag == null
+          ? '${widget.rid}${widget.seasonType}'
+          : '${widget.controllerTag}:${widget.rid}${widget.seasonType}',
     );
     super.initState();
   }

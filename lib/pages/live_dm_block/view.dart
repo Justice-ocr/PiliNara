@@ -5,8 +5,8 @@ import 'package:PiliPlus/common/widgets/keep_alive_wrapper.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/common/widgets/sliver/sliver_pinned_header.dart';
-import 'package:PiliPlus/models/common/live/live_dm_silent_type.dart';
 import 'package:PiliPlus/models_new/live/live_dm_block/shield_user_list.dart';
+import 'package:PiliPlus/pages/live_room/controller.dart';
 import 'package:PiliPlus/pages/live_dm_block/controller.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
@@ -19,18 +19,42 @@ import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:get/get.dart';
 
 class LiveDmBlockPage extends StatefulWidget {
-  const LiveDmBlockPage({super.key});
+  const LiveDmBlockPage({
+    super.key,
+    this.roomId,
+    this.liveRoomController,
+  });
+
+  final String? roomId;
+  final LiveRoomController? liveRoomController;
 
   @override
   State<LiveDmBlockPage> createState() => _LiveDmBlockPageState();
 }
 
 class _LiveDmBlockPageState extends State<LiveDmBlockPage> {
-  final _controller = Get.put(
-    LiveDmBlockController(),
-    tag: Utils.generateRandomString(8),
-  );
+  late final String _controllerTag;
+  late final LiveDmBlockController _controller;
   late EdgeInsets padding;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllerTag = Utils.generateRandomString(8);
+    _controller = Get.put(
+      LiveDmBlockController(
+        roomId: widget.roomId,
+        liveRoomController: widget.liveRoomController,
+      ),
+      tag: _controllerTag,
+    );
+  }
+
+  @override
+  void dispose() {
+    Get.delete<LiveDmBlockController>(tag: _controllerTag);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +234,7 @@ class _LiveDmBlockPageState extends State<LiveDmBlockPage> {
           (e) {
             final item = e.$2;
             return SearchText(
-              text: item is ShieldUserList ? item.uname! : item as String,
+              text: item is ShieldUserList ? item.uname : item as String,
               onTap: (value) => showConfirmDialog(
                 context: context,
                 title: const Text('确定删除该规则？'),

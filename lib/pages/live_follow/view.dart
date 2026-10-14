@@ -13,14 +13,19 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
 class LiveFollowPage extends StatefulWidget {
-  const LiveFollowPage({super.key});
+  const LiveFollowPage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   State<LiveFollowPage> createState() => _LiveFollowPageState();
 }
 
 class _LiveFollowPageState extends State<LiveFollowPage> {
-  final _controller = Get.put(LiveFollowController());
+  late final _controller = Get.put(
+    LiveFollowController(),
+    tag: widget.controllerTag,
+  );
 
   @override
   Widget build(BuildContext context) {

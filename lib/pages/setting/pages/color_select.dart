@@ -26,7 +26,9 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class ColorSelectPage extends StatefulWidget {
-  const ColorSelectPage({super.key});
+  const ColorSelectPage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   State<ColorSelectPage> createState() => _ColorSelectPageState();
@@ -45,7 +47,10 @@ class Item {
 }
 
 class _ColorSelectPageState extends State<ColorSelectPage> {
-  final ctr = Get.put(_ColorSelectController());
+  late final ctr = Get.put(
+    _ColorSelectController(),
+    tag: widget.controllerTag,
+  );
   FlexSchemeVariant _dynamicSchemeVariant = Pref.schemeVariant;
 
   Future<void> _onChanged([bool? val]) async {

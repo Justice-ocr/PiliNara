@@ -20,9 +20,13 @@ class UpowerRankPage extends StatefulWidget {
   const UpowerRankPage({
     super.key,
     this.privilegeType,
+    this.arguments,
+    this.controllerTag,
   });
 
   final int? privilegeType;
+  final Map? arguments;
+  final String? controllerTag;
 
   @override
   State<UpowerRankPage> createState() => _UpowerRankPageState();
@@ -32,7 +36,7 @@ class UpowerRankPage extends StatefulWidget {
     required String name,
     required Object? count,
   }) {
-    return Get.toNamed(
+    return PageUtils.toDupNamed<void>(
       '/upowerRank',
       arguments: {
         'mid': mid,
@@ -53,7 +57,7 @@ class _UpowerRankPageState extends State<UpowerRankPage>
   @override
   void initState() {
     super.initState();
-    final params = Get.arguments;
+    final params = widget.arguments ?? Get.arguments as Map;
     _upMid = params['mid']!.toString();
     if (widget.privilegeType == null) {
       _name = params['name'];
@@ -64,7 +68,7 @@ class _UpowerRankPageState extends State<UpowerRankPage>
         privilegeType: widget.privilegeType,
         upMid: _upMid,
       ),
-      tag: '$_upMid${widget.privilegeType}',
+      tag: widget.controllerTag ?? '$_upMid${widget.privilegeType}',
     );
   }
 

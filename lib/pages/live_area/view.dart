@@ -20,14 +20,19 @@ import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class LiveAreaPage extends StatefulWidget {
-  const LiveAreaPage({super.key});
+  const LiveAreaPage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   State<LiveAreaPage> createState() => _LiveAreaPageState();
 }
 
 class _LiveAreaPageState extends State<LiveAreaPage> {
-  final _controller = Get.put(LiveAreaController());
+  late final _controller = Get.put(
+    LiveAreaController(),
+    tag: widget.controllerTag,
+  );
 
   @override
   Widget build(BuildContext context) {

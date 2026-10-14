@@ -15,7 +15,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
 class PopularPreciousPage extends StatefulWidget {
-  const PopularPreciousPage({super.key});
+  const PopularPreciousPage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   State<PopularPreciousPage> createState() => _PopularPreciousPageState();
@@ -23,7 +25,10 @@ class PopularPreciousPage extends StatefulWidget {
 
 class _PopularPreciousPageState extends State<PopularPreciousPage>
     with GridMixin {
-  final _controller = Get.put(PopularPreciousController());
+  late final _controller = Get.put(
+    PopularPreciousController(),
+    tag: widget.controllerTag,
+  );
   late final _windowsGridDelegate = SliverGridDelegateWithExtentAndRatio(
     maxCrossAxisExtent: 520,
     childAspectRatio: 4.2,
@@ -80,31 +85,34 @@ class _PopularPreciousPageState extends State<PopularPreciousPage>
           itemCount: 10,
         );
       case Success<List<HotVideoItemModel>?>(:final response):
-        return SliverGrid.builder(
-          gridDelegate: _effectiveGridDelegate,
-          itemCount: response!.length,
-          itemBuilder: (context, index) {
-            final item = response[index];
-            return VideoCardH(
-              videoItem: item,
-              onTap: () {
-                PageUtils.toVideoPage(
-                  bvid: item.bvid,
-                  cid: item.cid!,
-                  dimension: item.dimension,
-                  extraArguments: {
-                    'sourceType': SourceType.playlist,
-                    'favTitle': '入站必刷',
-                    'mediaId': _controller.mediaId,
-                    'desc': true,
-                    'oid': item.aid,
-                    'isContinuePlaying': index != 0,
-                  },
-                );
-              },
-            );
-          },
-        );
+        if (response != null && response.isNotEmpty) {
+          return SliverGrid.builder(
+            gridDelegate: _effectiveGridDelegate,
+            itemCount: response.length,
+            itemBuilder: (context, index) {
+              final item = response[index];
+              return VideoCardH(
+                videoItem: item,
+                onTap: () {
+                  PageUtils.toVideoPage(
+                    bvid: item.bvid,
+                    cid: item.cid!,
+                    dimension: item.dimension,
+                    extraArguments: {
+                      'sourceType': SourceType.playlist,
+                      'favTitle': '入站必刷',
+                      'mediaId': _controller.mediaId,
+                      'desc': true,
+                      'oid': item.aid,
+                      'isContinuePlaying': index != 0,
+                    },
+                  );
+                },
+              );
+            },
+          );
+        }
+        return HttpError(onReload: _controller.onReload);
       case Error(:final errMsg):
         return HttpError(
           errMsg: errMsg,

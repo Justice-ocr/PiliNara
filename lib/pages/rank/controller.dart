@@ -8,12 +8,20 @@ import 'package:material_ui/material_ui.dart';
 
 class RankController extends GetxController
     with GetSingleTickerProviderStateMixin, ScrollOrRefreshMixin {
+  RankController({this.controllerTag});
+
+  final String? controllerTag;
+
   RxInt tabIndex = 0.obs;
   late TabController tabController;
 
   ZoneController get controller {
     final item = RankType.values[tabController.index];
-    return Get.find<ZoneController>(tag: '${item.rid}${item.seasonType}');
+    return Get.find<ZoneController>(
+      tag: controllerTag == null
+          ? '${item.rid}${item.seasonType}'
+          : '$controllerTag:${item.rid}${item.seasonType}',
+    );
   }
 
   @override

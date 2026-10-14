@@ -62,6 +62,10 @@ class AudioController extends GetxController
         BlockConfigMixin,
         BlockMixin,
         AudioNormalizationMixin {
+  AudioController({Map? arguments}) : _routeArguments = arguments;
+
+  final Map? _routeArguments;
+
   late Int64 id;
   late Int64 oid;
   late List<Int64> subId;
@@ -160,7 +164,7 @@ class AudioController extends GetxController
   @override
   void onInit() {
     super.onInit();
-    final args = Get.arguments;
+    final args = _routeArguments ?? Get.arguments;
     oid = Int64(args['oid']);
     final id = args['id'];
     this.id = id != null ? Int64(id) : oid;
@@ -632,7 +636,7 @@ class AudioController extends GetxController
               ),
               onTap: () {
                 Get.back();
-              PiliAndroidHelper.openUrl(audioUrl);
+                PiliAndroidHelper.openUrl(audioUrl);
               },
             ),
             ListTile(

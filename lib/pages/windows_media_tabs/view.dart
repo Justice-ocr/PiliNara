@@ -1,5 +1,7 @@
+import 'package:PiliPlus/pages/dlna/view.dart';
 import 'package:PiliPlus/pages/download/view.dart';
 import 'package:PiliPlus/pages/fav/view.dart';
+import 'package:PiliPlus/pages/fav_create/view.dart';
 import 'package:PiliPlus/pages/fav_detail/view.dart';
 import 'package:PiliPlus/pages/fav_search/view.dart';
 import 'package:PiliPlus/pages/history/view.dart';
@@ -10,9 +12,12 @@ import 'package:PiliPlus/pages/article/view.dart';
 import 'package:PiliPlus/pages/article_list/view.dart';
 import 'package:PiliPlus/pages/blacklist/view.dart';
 import 'package:PiliPlus/pages/dynamics_detail/view.dart';
+import 'package:PiliPlus/pages/danmaku_block/view.dart';
 import 'package:PiliPlus/pages/dynamics_topic/view.dart';
 import 'package:PiliPlus/pages/live_area/view.dart';
+import 'package:PiliPlus/pages/live_dm_block/view.dart';
 import 'package:PiliPlus/pages/live_follow/view.dart';
+import 'package:PiliPlus/pages/live_room/controller.dart';
 import 'package:PiliPlus/pages/live_room/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/pages/main/view.dart';
@@ -26,12 +31,19 @@ import 'package:PiliPlus/pages/follow_type/followed/view.dart';
 import 'package:PiliPlus/pages/follow_type/follow_same/view.dart';
 import 'package:PiliPlus/pages/member_profile/view.dart';
 import 'package:PiliPlus/pages/member_search/view.dart';
+import 'package:PiliPlus/pages/member_upower_rank/view.dart';
+import 'package:PiliPlus/pages/member_video_web/archive/view.dart';
+import 'package:PiliPlus/pages/member_video_web/season_series/view.dart';
+import 'package:PiliPlus/pages/music/view.dart';
 import 'package:PiliPlus/pages/my_reply/view.dart';
 import 'package:PiliPlus/pages/msg_feed_top/at_me/view.dart';
 import 'package:PiliPlus/pages/msg_feed_top/like_me/view.dart';
 import 'package:PiliPlus/pages/msg_feed_top/like_detail/view.dart';
 import 'package:PiliPlus/pages/msg_feed_top/reply_me/view.dart';
 import 'package:PiliPlus/pages/msg_feed_top/sys_msg/view.dart';
+import 'package:PiliPlus/pages/audio/view.dart';
+import 'package:PiliPlus/pages/match_info/view.dart';
+import 'package:PiliPlus/pages/main_reply/view.dart';
 import 'package:PiliPlus/pages/popular_precious/view.dart';
 import 'package:PiliPlus/pages/popular_series/view.dart';
 import 'package:PiliPlus/pages/rank/view.dart';
@@ -54,6 +66,7 @@ import 'package:PiliPlus/pages/video/view.dart';
 import 'package:PiliPlus/pages/webview/view.dart';
 import 'package:PiliPlus/pages/whisper/view.dart';
 import 'package:PiliPlus/pages/whisper_detail/view.dart';
+import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_back_shortcut_listener.dart';
@@ -72,6 +85,7 @@ class WindowsMediaTabsPage extends StatefulWidget {
 
 class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
   late final MainController _mainController;
+  int _routeControllerScope = 0;
 
   @override
   void initState() {
@@ -121,7 +135,8 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
       final maximizedSplitTab = WindowsVideoTabService.maximizedSplitTab;
       final splitHorizontalRatio =
           WindowsVideoTabService.splitHorizontalRatio.value;
-      final splitVerticalRatio = WindowsVideoTabService.splitVerticalRatio.value;
+      final splitVerticalRatio =
+          WindowsVideoTabService.splitVerticalRatio.value;
 
       return WindowsBackShortcutListener(
         onBack: WindowsVideoTabService.popActiveTab,
@@ -136,25 +151,25 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
         // Escape is handled by the app-wide early key handler (main.dart
         // _onBack), which pops the active tab.
         child: Focus(
-            // Active media pages own keyboard focus. Keeping a focusable shell
-            // here prevents PlayerFocus from receiving video shortcuts.
-            canRequestFocus: false,
-            child: WindowsNeoShell(
-              mainController: _mainController,
+          // Active media pages own keyboard focus. Keeping a focusable shell
+          // here prevents PlayerFocus from receiving video shortcuts.
+          canRequestFocus: false,
+          child: WindowsNeoShell(
+            mainController: _mainController,
+            tabs: tabs,
+            activeTab: tabs[activeIndex],
+            onSplit: _showSplitSelection,
+            child: WindowsMediaTabStack(
               tabs: tabs,
-              activeTab: tabs[activeIndex],
-              onSplit: _showSplitSelection,
-              child: WindowsMediaTabStack(
-                tabs: tabs,
-                activeId: activeId,
-                splitTabs: splitTabs,
-                maximizedSplitTab: maximizedSplitTab,
-                splitHorizontalRatio: splitHorizontalRatio,
-                splitVerticalRatio: splitVerticalRatio,
-                tabBuilder: _buildTabNavigator,
-              ),
+              activeId: activeId,
+              splitTabs: splitTabs,
+              maximizedSplitTab: maximizedSplitTab,
+              splitHorizontalRatio: splitHorizontalRatio,
+              splitVerticalRatio: splitVerticalRatio,
+              tabBuilder: _buildTabNavigator,
             ),
           ),
+        ),
       );
     });
   }
@@ -198,9 +213,9 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          subtitle: Text(item.type == WindowsMediaTabType.live
-                              ? '直播'
-                              : '视频'),
+                          subtitle: Text(
+                            item.type == WindowsMediaTabType.live ? '直播' : '视频',
+                          ),
                           onChanged: (value) {
                             if (value != null) {
                               WindowsVideoTabService.toggleSplitDraft(item.id);
@@ -247,6 +262,7 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
     WindowsVideoTabItem item,
     RouteSettings settings,
   ) {
+    final controllerScope = '${item.id}:${++_routeControllerScope}';
     if (settings.name != null && settings.name != '/') {
       final data = settings.arguments as WindowsTabRouteData?;
       return GetPageRoute(
@@ -254,42 +270,85 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
         page: () => switch (settings.name) {
           '/search' => SearchPage(parameters: data?.parameters),
           '/searchTrending' => SearchTrendingPage(
-            controllerTag: '${item.id}:searchTrending',
+            controllerTag: '$controllerScope:searchTrending',
           ),
           '/member' => MemberPage(
             mid: int.tryParse(data?.parameters['mid'] ?? ''),
             fromViewAid: data?.parameters['from_view_aid'],
-            controllerTag: '${item.id}:member:${data?.parameters['mid'] ?? ''}',
+            controllerTag:
+                '$controllerScope:member:${data?.parameters['mid'] ?? ''}',
           ),
           '/memberSearch' => MemberSearchPage(parameters: data?.parameters),
           '/editProfile' => const EditProfilePage(),
-          '/spaceSetting' => const SpaceSettingPage(),
+          '/spaceSetting' => SpaceSettingPage(
+            controllerTag: '$controllerScope:spaceSetting',
+          ),
           '/dynamicDetail' => DynamicDetailPage(
             arguments: data?.arguments as Map?,
-            controllerTag: '${item.id}:dynamic:${_dynamicId(data?.arguments)}',
+            controllerTag:
+                '$controllerScope:dynamic:${_dynamicId(data?.arguments)}',
           ),
           '/articlePage' => ArticlePage(
             parameters: data?.parameters,
             controllerTag:
-                '${item.id}:article:${data?.parameters['type'] ?? ''}:'
+                '$controllerScope:article:${data?.parameters['type'] ?? ''}:'
                 '${data?.parameters['id'] ?? ''}',
           ),
-          '/articleList' => ArticleListPage(parameters: data?.parameters),
+          '/articleList' => ArticleListPage(
+            parameters: data?.parameters,
+            controllerTag:
+                '$controllerScope:articleList:${data?.parameters['id'] ?? ''}',
+          ),
           '/dynTopic' => DynTopicPage(parameters: data?.parameters),
           '/blockSetting' => const BlockSetting(),
-          '/blackListPage' => const BlackListPage(),
+          '/blackListPage' => BlackListPage(
+            controllerTag: '$controllerScope:blackList',
+          ),
           '/sponsorBlock' => const SponsorBlockPage(),
-          '/aiSetting' => const AiSettingPage(),
+          '/aiSetting' => AiSettingPage(
+            controllerTag: '$controllerScope:aiSetting',
+          ),
           '/playSpeedSet' => const PlaySpeedPage(),
-          '/colorSetting' => const ColorSelectPage(),
+          '/colorSetting' => ColorSelectPage(
+            controllerTag: '$controllerScope:colorSetting',
+          ),
           '/fontSizeSetting' => const FontSizeSelectPage(),
           '/fontSetting' => const FontSettingPage(),
-          '/liveArea' => const LiveAreaPage(),
-          '/liveFollow' => const LiveFollowPage(),
+          '/liveArea' => LiveAreaPage(
+            controllerTag: '$controllerScope:liveArea',
+          ),
+          '/liveFollow' => LiveFollowPage(
+            controllerTag: '$controllerScope:liveFollow',
+          ),
           '/memberGuard' => MemberGuard(
             arguments: data?.arguments as Map?,
             controllerTag:
-                '${item.id}:memberGuard:${(data?.arguments as Map?)?['ruid'] ?? ''}',
+                '$controllerScope:memberGuard:'
+                '${(data?.arguments as Map?)?['ruid'] ?? ''}',
+          ),
+          '/upowerRank' => UpowerRankPage(
+            arguments: data?.arguments as Map?,
+            controllerTag:
+                '$controllerScope:upowerRank:'
+                '${(data?.arguments as Map?)?['mid'] ?? ''}',
+          ),
+          '/videoWeb' => MemberVideoWeb(
+            arguments: data?.arguments as Map?,
+            controllerTag:
+                '$controllerScope:videoWeb:'
+                '${(data?.arguments as Map?)?['mid'] ?? ''}',
+          ),
+          '/ssWeb' => MemberSSWeb(
+            arguments: data?.arguments as Map?,
+            controllerTag:
+                '$controllerScope:ssWeb:'
+                '${(data?.arguments as Map?)?['mid'] ?? ''}:'
+                '${(data?.arguments as Map?)?['id'] ?? ''}',
+          ),
+          '/musicDetail' => MusicDetailPage(
+            musicId: data?.parameters['musicId'],
+            controllerTag:
+                '$controllerScope:musicDetail:${data?.parameters['musicId'] ?? ''}',
           ),
           '/barSetting' => BarSetPage(arguments: data?.arguments as Map?),
           '/historySearch' => const HistorySearchPage(),
@@ -299,46 +358,77 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
           '/favDetail' => FavDetailPage(
             parameters: data?.parameters,
             controllerTag:
-                '${item.id}:favDetail:${data?.parameters['mediaId'] ?? ''}',
+                '$controllerScope:favDetail:${data?.parameters['mediaId'] ?? ''}',
           ),
           '/favSearch' => FavSearchPage(
             arguments: data?.arguments as Map?,
           ),
-          '/popularSeries' => const PopularSeriesPage(),
-          '/popularPrecious' => const PopularPreciousPage(),
-          '/rank' => const _WindowsRankRoute(),
+          '/createFav' => CreateFavPage(
+            mediaId: data?.parameters['mediaId'],
+          ),
+          '/popularSeries' => PopularSeriesPage(
+            controllerTag: '$controllerScope:popularSeries',
+          ),
+          '/popularPrecious' => PopularPreciousPage(
+            controllerTag: '$controllerScope:popularPrecious',
+          ),
+          '/rank' => _WindowsRankRoute(controllerTag: '$controllerScope:rank'),
           '/whisperDetail' => WhisperDetailPage(
             arguments: data?.arguments as Map?,
             controllerTag:
-                '${item.id}:whisper:${(data?.arguments as Map?)?['talkerId'] ?? ''}',
+                '$controllerScope:whisper:'
+                '${(data?.arguments as Map?)?['talkerId'] ?? ''}',
           ),
-          '/replyMe' => const ReplyMePage(),
-          '/atMe' => const AtMePage(),
-          '/likeMe' => const LikeMePage(),
-          '/sysMsg' => const SysMsgPage(),
+          '/replyMe' => ReplyMePage(
+            controllerTag: '$controllerScope:replyMe',
+          ),
+          '/atMe' => AtMePage(
+            controllerTag: '$controllerScope:atMe',
+          ),
+          '/likeMe' => LikeMePage(
+            controllerTag: '$controllerScope:likeMe',
+          ),
+          '/sysMsg' => SysMsgPage(
+            controllerTag: '$controllerScope:sysMsg',
+          ),
           '/webview' => WebviewPage(
             parameters: data?.parameters,
             arguments: data?.arguments as Map?,
           ),
+          '/danmakuBlock' => DanmakuBlockPage(
+            playerController: data?.arguments as PlPlayerController?,
+          ),
+          '/dlna' => DLNAPage(parameters: data?.parameters),
+          '/audio' => AudioPage(arguments: data?.arguments as Map?),
+          '/mainReply' => MainReplyPage(arguments: data?.arguments as Map?),
+          '/matchInfo' => MatchInfoPage(
+            parameters: data?.parameters,
+            controllerTag:
+                '$controllerScope:match:${data?.parameters['cid'] ?? ''}',
+          ),
+          '/liveDmBlockPage' => LiveDmBlockPage(
+            roomId: data?.parameters['roomId'],
+            liveRoomController: _liveRoomController(data?.arguments),
+          ),
           '/subDetail' => SubDetailPage(
             arguments: data?.arguments as Map?,
             controllerTag:
-                '${item.id}:subscription:${(data?.arguments as Map?)?['id'] ?? ''}',
+                '$controllerScope:subscription:${(data?.arguments as Map?)?['id'] ?? ''}',
           ),
           '/msgLikeDetail' => LikeDetailPage(
             arguments: data?.arguments as Map?,
           ),
           '/memberDynamics' => MemberDynamicsPage(
             mid: int.tryParse(data?.parameters['mid'] ?? ''),
-            controllerTag: '${item.id}:memberDynamics',
+            controllerTag: '$controllerScope:memberDynamics',
           ),
           '/follow' => FollowPage(
             arguments: data?.arguments as Map?,
-            controllerTag: '${item.id}:follow',
+            controllerTag: '$controllerScope:follow',
           ),
           '/fan' => FansPage(
             arguments: data?.arguments as Map?,
-            controllerTag: '${item.id}:fan',
+            controllerTag: '$controllerScope:fan',
           ),
           '/followSearch' => FollowSearchPage(
             mid: int.tryParse(
@@ -346,15 +436,15 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
                   (data?.arguments as Map?)?['mid']?.toString() ??
                   '',
             ),
-            controllerTag: '${item.id}:followSearch',
+            controllerTag: '$controllerScope:followSearch',
           ),
           '/followed' => FollowedPage(
             arguments: data?.arguments as Map?,
-            controllerTag: '${item.id}:followed',
+            controllerTag: '$controllerScope:followed',
           ),
           '/sameFollowing' => FollowSamePage(
             arguments: data?.arguments as Map?,
-            controllerTag: '${item.id}:sameFollowing',
+            controllerTag: '$controllerScope:sameFollowing',
           ),
           _ => _UnknownWindowsTabRoute(routeName: settings.name!),
         },
@@ -412,6 +502,9 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
     },
   };
 
+  LiveRoomController? _liveRoomController(Object? arguments) =>
+      arguments is LiveRoomController ? arguments : null;
+
   String _dynamicId(Object? arguments) {
     if (arguments is Map) {
       return arguments['item']?.idStr.toString() ?? '';
@@ -421,12 +514,14 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
 }
 
 class _WindowsRankRoute extends StatelessWidget {
-  const _WindowsRankRoute();
+  const _WindowsRankRoute({required this.controllerTag});
+
+  final String controllerTag;
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('\u6392\u884c\u699c')),
-    body: const RankPage(),
+    body: RankPage(controllerTag: controllerTag),
   );
 }
 
@@ -457,7 +552,9 @@ class WindowsMediaTabStack extends StatelessWidget {
       final geometry = isSplit ? _splitGeometry(constraints) : null;
       final splitBounds = geometry?.bounds ?? const <String, Rect>{};
       final isMaximized =
-          isSplit && maximizedSplitTab != null && splitBounds.containsKey(maximizedSplitTab);
+          isSplit &&
+          maximizedSplitTab != null &&
+          splitBounds.containsKey(maximizedSplitTab);
       return Stack(
         fit: StackFit.expand,
         children: [
@@ -466,7 +563,12 @@ class WindowsMediaTabStack extends StatelessWidget {
               context,
               item,
               bounds: isMaximized && item.id == maximizedSplitTab
-                  ? Rect.fromLTWH(0, 0, constraints.maxWidth, constraints.maxHeight)
+                  ? Rect.fromLTWH(
+                      0,
+                      0,
+                      constraints.maxWidth,
+                      constraints.maxHeight,
+                    )
                   : splitBounds[item.id],
               layoutVisible: isSplit
                   ? splitBounds.containsKey(item.id) &&
@@ -523,19 +625,19 @@ class WindowsMediaTabStack extends StatelessWidget {
               : null,
           child: DecoratedBox(
             decoration: split && layoutVisible
-              ? BoxDecoration(
-                  border: Border.all(
-                    color: focused
-                        ? Theme.of(context).colorScheme.primary.withValues(
-                            alpha: 0.72,
-                          )
-                        : Theme.of(context).colorScheme.outline.withValues(
-                            alpha: 0.28,
-                          ),
-                    width: focused ? 2 : 1,
-                  ),
-                )
-              : const BoxDecoration(),
+                ? BoxDecoration(
+                    border: Border.all(
+                      color: focused
+                          ? Theme.of(context).colorScheme.primary.withValues(
+                              alpha: 0.72,
+                            )
+                          : Theme.of(context).colorScheme.outline.withValues(
+                              alpha: 0.28,
+                            ),
+                      width: focused ? 2 : 1,
+                    ),
+                  )
+                : const BoxDecoration(),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -607,8 +709,12 @@ class WindowsMediaTabStack extends StatelessWidget {
               () {
                 final isMuted = muted?.value ?? false;
                 return _buildSplitAction(
-                  tooltip: isMuted ? '\u53d6\u6d88\u9759\u97f3' : '\u9759\u97f3',
-                  icon: isMuted ? Icons.volume_off_outlined : Icons.volume_up_outlined,
+                  tooltip: isMuted
+                      ? '\u53d6\u6d88\u9759\u97f3'
+                      : '\u9759\u97f3',
+                  icon: isMuted
+                      ? Icons.volume_off_outlined
+                      : Icons.volume_up_outlined,
                   selected: isMuted,
                   onPressed: muted == null
                       ? null
@@ -642,13 +748,17 @@ class WindowsMediaTabStack extends StatelessWidget {
               tooltip: '\u8bbe\u4e3a\u4e3b\u97f3\u8f68',
               icon: Icons.volume_up_rounded,
               selected: focused,
-              onPressed: () => WindowsVideoTabService.setSplitPrimaryAudio(item.id),
+              onPressed: () =>
+                  WindowsVideoTabService.setSplitPrimaryAudio(item.id),
             ),
             _buildSplitAction(
-              tooltip: maximized ? '\u6062\u590d\u5206\u5c4f' : '\u6700\u5927\u5316\u5f53\u524d\u7a97\u683c',
+              tooltip: maximized
+                  ? '\u6062\u590d\u5206\u5c4f'
+                  : '\u6700\u5927\u5316\u5f53\u524d\u7a97\u683c',
               icon: maximized ? Icons.close_fullscreen : Icons.open_in_full,
               selected: maximized,
-              onPressed: () => WindowsVideoTabService.toggleSplitMaximized(item.id),
+              onPressed: () =>
+                  WindowsVideoTabService.toggleSplitMaximized(item.id),
             ),
             _buildSplitAction(
               tooltip: '\u4ece\u5206\u5c4f\u79fb\u9664',
@@ -716,30 +826,30 @@ class WindowsMediaTabStack extends StatelessWidget {
     final bottomHeight = height - dividerY - gap;
     final panes = switch (splitTabs.length) {
       2 => [
-          Rect.fromLTWH(0, 0, leftWidth, height),
-          Rect.fromLTWH(dividerX + gap, 0, rightWidth, height),
-        ],
+        Rect.fromLTWH(0, 0, leftWidth, height),
+        Rect.fromLTWH(dividerX + gap, 0, rightWidth, height),
+      ],
       3 => [
-          Rect.fromLTWH(0, 0, leftWidth, height),
-          Rect.fromLTWH(dividerX + gap, 0, rightWidth, topHeight),
-          Rect.fromLTWH(
-            dividerX + gap,
-            dividerY + gap,
-            rightWidth,
-            bottomHeight,
-          ),
-        ],
+        Rect.fromLTWH(0, 0, leftWidth, height),
+        Rect.fromLTWH(dividerX + gap, 0, rightWidth, topHeight),
+        Rect.fromLTWH(
+          dividerX + gap,
+          dividerY + gap,
+          rightWidth,
+          bottomHeight,
+        ),
+      ],
       _ => [
-          Rect.fromLTWH(0, 0, leftWidth, topHeight),
-          Rect.fromLTWH(dividerX + gap, 0, rightWidth, topHeight),
-          Rect.fromLTWH(0, dividerY + gap, leftWidth, bottomHeight),
-          Rect.fromLTWH(
-            dividerX + gap,
-            dividerY + gap,
-            rightWidth,
-            bottomHeight,
-          ),
-        ],
+        Rect.fromLTWH(0, 0, leftWidth, topHeight),
+        Rect.fromLTWH(dividerX + gap, 0, rightWidth, topHeight),
+        Rect.fromLTWH(0, dividerY + gap, leftWidth, bottomHeight),
+        Rect.fromLTWH(
+          dividerX + gap,
+          dividerY + gap,
+          rightWidth,
+          bottomHeight,
+        ),
+      ],
     };
     final dividers = <_SplitDivider>[
       _SplitDivider.vertical(
@@ -789,7 +899,8 @@ class WindowsMediaTabStack extends StatelessWidget {
           onDoubleTap: WindowsVideoTabService.resetSplitBounds,
           onHorizontalDragUpdate: vertical
               ? (details) => WindowsVideoTabService.setSplitHorizontalRatio(
-                  splitHorizontalRatio + details.delta.dx / constraints.maxWidth,
+                  splitHorizontalRatio +
+                      details.delta.dx / constraints.maxWidth,
                 )
               : null,
           onVerticalDragUpdate: vertical
@@ -824,8 +935,8 @@ class _SplitDivider {
     required this.offset,
     required this.length,
     required this.ratio,
-  })  : axis = Axis.vertical,
-        start = 0;
+  }) : axis = Axis.vertical,
+       start = 0;
 
   const _SplitDivider.horizontal({
     required this.offset,

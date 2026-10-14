@@ -15,6 +15,7 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:easy_debounce/easy_throttle.dart';
@@ -22,7 +23,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
 class MainReplyPage extends StatefulWidget {
-  const MainReplyPage({super.key});
+  const MainReplyPage({super.key, this.arguments});
+
+  final Map? arguments;
 
   @override
   State<MainReplyPage> createState() => _MainReplyPageState();
@@ -32,7 +35,7 @@ class MainReplyPage extends StatefulWidget {
     required int replyType,
     String? heroTag,
   }) {
-    Get.toNamed(
+    PageUtils.toDupNamed(
       '/mainReply',
       arguments: {
         'oid': oid,
@@ -45,8 +48,8 @@ class MainReplyPage extends StatefulWidget {
 
 class _MainReplyPageState extends State<MainReplyPage>
     with SingleTickerProviderStateMixin, BaseFabMixin, FabMixin {
-  final _controller = Get.put(
-    MainReplyController(),
+  late final _controller = Get.put(
+    MainReplyController(arguments: widget.arguments),
     tag: Utils.generateRandomString(8),
   );
 

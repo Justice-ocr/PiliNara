@@ -30,11 +30,16 @@ InputDecoration _filledDecoration(
 );
 
 class AiSettingPage extends StatelessWidget {
-  const AiSettingPage({super.key});
+  const AiSettingPage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(AiSettingController());
+    final controller = Get.put(
+      AiSettingController(),
+      tag: controllerTag,
+    );
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -44,15 +49,17 @@ class AiSettingPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         children: [
           // 总开关
-          Obx(() => SwitchListTile(
-                title: const Text('启用 AI 视频助手'),
-                subtitle: const Text('关闭后视频详情页不再显示 AI 按钮'),
-                value: controller.enableAiChat.value,
-                onChanged: (value) {
-                  controller.enableAiChat.value = value;
-                  Pref.enableAiChat = value;
-                },
-              )),
+          Obx(
+            () => SwitchListTile(
+              title: const Text('启用 AI 视频助手'),
+              subtitle: const Text('关闭后视频详情页不再显示 AI 按钮'),
+              value: controller.enableAiChat.value,
+              onChanged: (value) {
+                controller.enableAiChat.value = value;
+                Pref.enableAiChat = value;
+              },
+            ),
+          ),
           const SizedBox(height: 16),
 
           // API 配置
@@ -248,8 +255,7 @@ class AiSettingPage extends StatelessWidget {
                                           children: [
                                             Text(
                                               t.name,
-                                              style:
-                                                  theme.textTheme.titleSmall,
+                                              style: theme.textTheme.titleSmall,
                                             ),
                                             const SizedBox(height: 2),
                                             Text(
@@ -258,8 +264,8 @@ class AiSettingPage extends StatelessWidget {
                                               overflow: TextOverflow.ellipsis,
                                               style: theme.textTheme.bodySmall
                                                   ?.copyWith(
-                                                color: colorScheme.outline,
-                                              ),
+                                                    color: colorScheme.outline,
+                                                  ),
                                             ),
                                           ],
                                         ),
@@ -302,14 +308,15 @@ class AiSettingPage extends StatelessWidget {
                 children: [
                   Text('交互与显示', style: theme.textTheme.titleMedium),
                   const SizedBox(height: 8),
-                  Obx(() => SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('禁用 AI 回复自动滚动'),
-                        subtitle: const Text('AI 回复时不主动滚动到最新内容'),
-                        value: !controller.aiAutoScroll.value,
-                        onChanged: (value) =>
-                            controller.saveAiAutoScroll(!value),
-                      )),
+                  Obx(
+                    () => SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('禁用 AI 回复自动滚动'),
+                      subtitle: const Text('AI 回复时不主动滚动到最新内容'),
+                      value: !controller.aiAutoScroll.value,
+                      onChanged: (value) => controller.saveAiAutoScroll(!value),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -326,8 +333,11 @@ class AiSettingPage extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info_outline,
-                          color: colorScheme.primary, size: 20),
+                      Icon(
+                        Icons.info_outline,
+                        color: colorScheme.primary,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         '使用说明',

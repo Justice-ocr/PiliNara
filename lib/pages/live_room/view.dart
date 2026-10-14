@@ -572,15 +572,26 @@ class _LiveRoomPageState extends State<LiveRoomPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (plPlayerController.visible = state == .resumed) {
-      if (!plPlayerController.showDanmaku) {
+    final workspaceVisible =
+        !WindowsVideoTabService.enabled ||
+        WindowsVideoTabService.isVisibleTab(
+          WindowsVideoTabService.keyFromArgs(_liveTabArgs),
+        );
+    final visible = state == .resumed && workspaceVisible;
+    final wasVisible = plPlayerController.visible;
+    plPlayerController.visible = visible;
+    if (visible) {
+      if (!wasVisible || !plPlayerController.showDanmaku) {
         _liveRoomController
           ..refreshMsgIfNeeded()
-          ..startLiveTimer();
+          ..startLiveTimer()
+          ..startLiveMsg();
         plPlayerController.showDanmaku = true;
       }
-    } else if (state == .paused) {
-      _liveRoomController.cancelLiveTimer();
+    } else if (!workspaceVisible || state == .paused) {
+      _liveRoomController
+        ..cancelLiveTimer()
+        ..closeLiveMsg();
       plPlayerController
         ..showDanmaku = false
         ..danmakuController?.clear();

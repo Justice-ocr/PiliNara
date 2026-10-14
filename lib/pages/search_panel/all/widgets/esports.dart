@@ -3,8 +3,6 @@ import 'package:PiliPlus/models/search/search_esports.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
 import 'package:material_ui/material_ui.dart';
 
 class SearchEsportsItem extends StatelessWidget {
@@ -96,7 +94,7 @@ class SearchEsportsItem extends StatelessWidget {
       child: Center(
         child: GestureDetector(
           behavior: .opaque,
-          onTap: () => Get.toNamed(
+          onTap: () => PageUtils.toDupNamed(
             '/matchInfo',
             parameters: {'cid': contest.id.toString()},
           ),

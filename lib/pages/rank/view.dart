@@ -8,7 +8,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
 class RankPage extends StatefulWidget {
-  const RankPage({super.key});
+  const RankPage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   State<RankPage> createState() => _RankPageState();
@@ -16,7 +18,16 @@ class RankPage extends StatefulWidget {
 
 class _RankPageState extends State<RankPage>
     with AutomaticKeepAliveClientMixin {
-  final RankController _rankController = Get.put(RankController());
+  late final RankController _rankController;
+
+  @override
+  void initState() {
+    super.initState();
+    _rankController = Get.put(
+      RankController(controllerTag: widget.controllerTag),
+      tag: widget.controllerTag,
+    );
+  }
 
   @override
   bool get wantKeepAlive => true;
@@ -81,7 +92,11 @@ class _RankPageState extends State<RankPage>
     controller: _rankController.tabController,
     children: RankType.values
         .map(
-          (item) => ZonePage(rid: item.rid, seasonType: item.seasonType),
+          (item) => ZonePage(
+            rid: item.rid,
+            seasonType: item.seasonType,
+            controllerTag: widget.controllerTag,
+          ),
         )
         .toList(),
   );

@@ -9,6 +9,8 @@ import 'package:get/get.dart';
 
 class MemberSSWebCtr
     extends BaseVideoWebCtr<SeasonWebData, SeasonArchive, ArchiveSortTypeApp> {
+  MemberSSWebCtr({super.arguments});
+
   @override
   final Rx<ArchiveSortTypeApp> order = Rx(.desc);
   late final WebSsType _type;
@@ -16,7 +18,7 @@ class MemberSSWebCtr
 
   @override
   void onInit() {
-    final args = Get.arguments;
+    final args = arguments;
     _type = args['type'];
     _id = args['id'];
     super.onInit();

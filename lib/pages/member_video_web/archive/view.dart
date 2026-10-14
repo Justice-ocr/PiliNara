@@ -6,11 +6,15 @@ import 'package:PiliPlus/models_new/member/search_archive/vlist.dart';
 import 'package:PiliPlus/pages/member_video_web/archive/controller.dart';
 import 'package:PiliPlus/pages/member_video_web/base/view.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class MemberVideoWeb extends StatefulWidget {
-  const MemberVideoWeb({super.key});
+  const MemberVideoWeb({super.key, this.arguments, this.controllerTag});
+
+  final Map? arguments;
+  final String? controllerTag;
 
   @override
   State<MemberVideoWeb> createState() => _MemberVideoWebState();
@@ -19,7 +23,7 @@ class MemberVideoWeb extends StatefulWidget {
     required Object mid,
     required String name,
   }) {
-    return Get.toNamed(
+    return PageUtils.toDupNamed<void>(
       '/videoWeb',
       arguments: {
         'mid': mid,
@@ -41,9 +45,15 @@ class _MemberVideoWebState
   late final MemberVideoWebCtr controller;
 
   @override
+  Map? get routeArguments => widget.arguments;
+
+  @override
   void initState() {
     super.initState();
-    controller = Get.put(MemberVideoWebCtr(), tag: name);
+    controller = Get.put(
+      MemberVideoWebCtr(arguments: routeArguments),
+      tag: widget.controllerTag ?? name,
+    );
   }
 
   @override

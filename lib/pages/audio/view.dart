@@ -46,7 +46,9 @@ import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class AudioPage extends StatefulWidget {
-  const AudioPage({super.key});
+  const AudioPage({super.key, this.arguments});
+
+  final Map? arguments;
 
   @override
   State<AudioPage> createState() => _AudioPageState();
@@ -63,7 +65,7 @@ class AudioPage extends StatefulWidget {
     int? extraId,
   }) {
     heroTag ??= Utils.makeHeroTag(oid);
-    return Get.toNamed(
+    return PageUtils.toDupNamed(
       '/audio',
       arguments: {
         'id': ?id,
@@ -85,9 +87,11 @@ extension _ListOrderExt on ListOrder {
 }
 
 class _AudioPageState extends State<AudioPage> {
+  late final Map? _arguments = widget.arguments ?? Get.arguments as Map?;
+
   late final _controller = Get.put(
-    AudioController(),
-    tag: Get.arguments['heroTag'] ?? Utils.generateRandomString(8),
+    AudioController(arguments: _arguments),
+    tag: _arguments?['heroTag'] ?? Utils.generateRandomString(8),
   );
 
   @override

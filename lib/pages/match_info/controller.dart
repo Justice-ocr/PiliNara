@@ -5,8 +5,11 @@ import 'package:PiliPlus/pages/common/dyn/common_dyn_controller.dart';
 import 'package:get/get.dart';
 
 class MatchInfoController extends CommonDynController {
+  MatchInfoController({int? contestId})
+    : oid = contestId ?? int.parse(Get.parameters['cid']!);
+
   @override
-  final int oid = int.parse(Get.parameters['cid']!);
+  final int oid;
   @override
   final int replyType = 27;
 

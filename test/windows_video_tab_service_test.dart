@@ -72,6 +72,15 @@ void main() {
 
       expect(paths.toSet(), hasLength(paths.length));
       expect(
+        paths,
+        containsAll([
+          '/upowerRank',
+          '/videoWeb',
+          '/ssWeb',
+          '/musicDetail',
+        ]),
+      );
+      expect(
         WindowsVideoTabService.nestedRoutes,
         unorderedEquals(WindowsWorkspaceRouteRegistry.nestedPaths),
       );
@@ -110,6 +119,45 @@ void main() {
           .toList(growable: false);
 
       expect(missing, isEmpty);
+    });
+
+    test('scopes retained page controllers to their workspace tab', () {
+      final source = File(
+        'lib/pages/windows_media_tabs/view.dart',
+      ).readAsStringSync();
+      const scopedRouteTags = [
+        r"controllerTag: '$controllerScope:spaceSetting'",
+        r"controllerTag: '$controllerScope:blackList'",
+        r"controllerTag: '$controllerScope:aiSetting'",
+        r"controllerTag: '$controllerScope:colorSetting'",
+        r"controllerTag: '$controllerScope:liveArea'",
+        r"controllerTag: '$controllerScope:liveFollow'",
+        r"controllerTag: '$controllerScope:popularSeries'",
+        r"controllerTag: '$controllerScope:popularPrecious'",
+        r"controllerTag: '$controllerScope:replyMe'",
+        r"controllerTag: '$controllerScope:atMe'",
+        r"controllerTag: '$controllerScope:likeMe'",
+        r"controllerTag: '$controllerScope:sysMsg'",
+      ];
+
+      expect(
+        scopedRouteTags.where((tag) => !source.contains(tag)),
+        isEmpty,
+      );
+      expect(
+        source,
+        contains(r"_WindowsRankRoute(controllerTag: '$controllerScope:rank')"),
+      );
+      expect(
+        File('lib/pages/rank/view.dart').readAsStringSync(),
+        contains('controllerTag: widget.controllerTag'),
+      );
+      expect(
+        File('lib/pages/rank/zone/view.dart').readAsStringSync(),
+        contains(
+          r"'${widget.controllerTag}:${widget.rid}${widget.seasonType}'",
+        ),
+      );
     });
   });
 

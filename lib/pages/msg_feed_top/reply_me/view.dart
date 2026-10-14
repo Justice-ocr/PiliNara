@@ -23,14 +23,19 @@ import 'package:material_ui/material_ui.dart' hide ListTile;
 import 'package:get/get.dart';
 
 class ReplyMePage extends StatefulWidget {
-  const ReplyMePage({super.key});
+  const ReplyMePage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   State<ReplyMePage> createState() => _ReplyMePageState();
 }
 
 class _ReplyMePageState extends State<ReplyMePage> {
-  final _replyMeController = Get.put(ReplyMeController());
+  late final _replyMeController = Get.put(
+    ReplyMeController(),
+    tag: widget.controllerTag,
+  );
 
   @override
   Widget build(BuildContext context) {

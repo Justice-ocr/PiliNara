@@ -4,6 +4,7 @@ import 'package:PiliPlus/models_new/fav/fav_folder/list.dart';
 import 'package:PiliPlus/pages/common/common_intro_controller.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -110,7 +111,7 @@ class _FavPanelState extends State<FavPanel> {
           title: const Text('添加到收藏夹'),
           actions: [
             TextButton.icon(
-              onPressed: () => Get.toNamed('/createFav')?.then((data) {
+              onPressed: () => PageUtils.toDupNamed('/createFav')?.then((data) {
                 if (data is FavFolderInfo && mounted) {
                   widget.ctr.favFolderData.value.list?.insert(
                     1,

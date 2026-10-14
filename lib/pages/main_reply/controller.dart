@@ -6,6 +6,10 @@ import 'package:PiliPlus/pages/common/reply_controller.dart';
 import 'package:get/get.dart';
 
 class MainReplyController extends ReplyController<MainListReply> {
+  MainReplyController({Map? arguments}) : _routeArguments = arguments;
+
+  final Map? _routeArguments;
+
   late final int oid;
   late final int replyType;
   late final String? heroTag;
@@ -16,7 +20,7 @@ class MainReplyController extends ReplyController<MainListReply> {
   @override
   void onInit() {
     super.onInit();
-    final args = Get.arguments;
+    final args = _routeArguments ?? Get.arguments;
     oid = args['oid'];
     replyType = args['replyType'];
     heroTag = args['heroTag'];

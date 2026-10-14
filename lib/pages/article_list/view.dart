@@ -18,9 +18,10 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
 class ArticleListPage extends StatefulWidget {
-  const ArticleListPage({super.key, this.parameters});
+  const ArticleListPage({super.key, this.parameters, this.controllerTag});
 
   final Map<String, String>? parameters;
+  final String? controllerTag;
 
   @override
   State<ArticleListPage> createState() => _ArticleListPageState();
@@ -33,7 +34,10 @@ class _ArticleListPageState extends State<ArticleListPage> with GridMixin {
   @override
   void initState() {
     super.initState();
-    _controllerTag = widget.parameters?['id'] ?? Get.parameters['id']!;
+    _controllerTag =
+        widget.controllerTag ??
+        widget.parameters?['id'] ??
+        Get.parameters['id']!;
     _controller = Get.put(
       ArticleListController(id: widget.parameters?['id']),
       tag: _controllerTag,

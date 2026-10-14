@@ -24,7 +24,14 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 class MatchInfoPage extends StatefulWidget {
-  const MatchInfoPage({super.key});
+  const MatchInfoPage({
+    super.key,
+    this.parameters,
+    this.controllerTag,
+  });
+
+  final Map<String, String>? parameters;
+  final String? controllerTag;
 
   @override
   State<MatchInfoPage> createState() => _MatchInfoPageState();
@@ -32,9 +39,16 @@ class MatchInfoPage extends StatefulWidget {
 
 class _MatchInfoPageState extends CommonDynPageState<MatchInfoPage> {
   @override
-  final MatchInfoController controller = Get.putOrFind(
-    MatchInfoController.new,
-    tag: Get.parameters['cid']!,
+  late final MatchInfoController controller = Get.putOrFind(
+    () => MatchInfoController(
+      contestId: int.tryParse(
+        widget.parameters?['cid'] ?? Get.parameters['cid'] ?? '',
+      ),
+    ),
+    tag:
+        widget.controllerTag ??
+        widget.parameters?['cid'] ??
+        Get.parameters['cid']!,
   );
 
   @override

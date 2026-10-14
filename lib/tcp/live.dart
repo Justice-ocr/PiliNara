@@ -48,14 +48,14 @@ class PackageHeaderRes extends PackageHeader {
   final int headerSize;
 
   static PackageHeaderRes? fromBytesData(Uint8List data) {
-    if (data.length < 10) {
-      logger.w('数据不足以解析PackageHeader');
-      return null;
-    }
+    if (data.length < 16) return null;
     final byteData = ByteData.sublistView(data);
 
     final totalSize = byteData.getUint32(0, Endian.big);
     final headerSize = byteData.getUint16(4, Endian.big);
+    if (headerSize < 16 || totalSize < headerSize || totalSize > data.length) {
+      return null;
+    }
     final protocolVer = byteData.getUint16(6, Endian.big);
     final operationCode = byteData.getUint32(8, Endian.big);
     final seq = byteData.getUint32(12, Endian.big);
@@ -151,11 +151,15 @@ class LiveMessageStream {
     required this.roomId,
     required this.uid,
     required this.servers,
+    this.onClosed,
   });
+
+  final void Function()? onClosed;
 
   static final _zlib = ZLibDecoder();
 
   bool _active = true;
+  bool _closeNotified = false;
   WebSocketChannel? _channel;
   StreamSubscription? _socketSubscription;
   Timer? _timer;
@@ -183,11 +187,16 @@ class LiveMessageStream {
     try {
       Future<WebSocketChannel> getSocket() async {
         for (final server in servers) {
+          WebSocketChannel? channel;
           try {
-            final channel = WebSocketChannel.connect(Uri.parse(server));
+            channel = WebSocketChannel.connect(Uri.parse(server));
             await channel.ready;
             return channel;
-          } catch (_) {}
+          } catch (_) {
+            try {
+              await channel?.sink.close();
+            } catch (_) {}
+          }
         }
         throw Exception("all servers connect failed");
       }
@@ -209,6 +218,7 @@ class LiveMessageStream {
       _channel?.sink.add(authPackage.marshal());
     } catch (e) {
       SmartDialog.showToast("弹幕地址链接失败: $e");
+      close();
     }
   }
 
@@ -216,26 +226,30 @@ class LiveMessageStream {
   void _processingData(Uint8List data) {
     try {
       final subHeader = PackageHeaderRes.fromBytesData(data);
-      if (subHeader != null) {
-        if (_eventListeners.isNotEmpty) {
-          final msgBody = jsonDecode(
-            utf8.decode(
-              Uint8List.sublistView(
-                data,
-                subHeader.headerSize,
-                subHeader.totalSize,
-              ),
+      if (subHeader == null) {
+        close();
+        return;
+      }
+      if (_eventListeners.isNotEmpty) {
+        final msgBody = jsonDecode(
+          utf8.decode(
+            Uint8List.sublistView(
+              data,
+              subHeader.headerSize,
+              subHeader.totalSize,
             ),
-          );
-          for (final f in _eventListeners) {
-            f(msgBody);
-          }
-        }
-        if (subHeader.totalSize < data.length) {
-          _processingData(Uint8List.sublistView(data, subHeader.totalSize));
+          ),
+        );
+        for (final f in _eventListeners) {
+          f(msgBody);
         }
       }
-    } catch (_) {}
+      if (subHeader.totalSize < data.length) {
+        _processingData(Uint8List.sublistView(data, subHeader.totalSize));
+      }
+    } catch (_) {
+      close();
+    }
   }
 
   Future<void> _heartBeat() async {
@@ -265,6 +279,7 @@ class LiveMessageStream {
         _channel?.sink.add(package.marshal());
       } catch (_) {
         timer.cancel();
+        close();
       }
       heartBeatCount++;
     });
@@ -276,49 +291,69 @@ class LiveMessageStream {
 
   @pragma('vm:notify-debugger-on-exception')
   void onData(dynamic data) {
-    final header = PackageHeaderRes.fromBytesData(data as Uint8List);
-    if (header != null) {
-      //心跳包回复不用处理
-      if (header.operationCode == 3) return;
-      if (header.operationCode == 8) {
-        _heartBeat();
+    if (data is! Uint8List) {
+      close();
+      return;
+    }
+    var offset = 0;
+    while (offset < data.length) {
+      final packetData = Uint8List.sublistView(data, offset);
+      final header = PackageHeaderRes.fromBytesData(packetData);
+      if (header == null) {
+        close();
+        return;
       }
-      final List<int> decompressedData;
+      final packet = Uint8List.sublistView(packetData, 0, header.totalSize);
+      if (header.operationCode == 3) {
+        offset += header.totalSize;
+        continue;
+      }
       try {
+        if (header.operationCode == 8) {
+          _heartBeat();
+        }
         switch (header.protocolVer) {
-          case 0:
-          case 1:
-            _processingData(data);
-            return;
+          case 0 || 1:
+            _processingData(packet);
+            break;
           case 2:
-            decompressedData = _zlib.convert(Uint8List.sublistView(data, 0x10));
+            final decompressed = _zlib.convert(
+              Uint8List.sublistView(packet, header.headerSize),
+            );
+            _processingData(Uint8List.fromList(decompressed));
             break;
           case 3:
-            decompressedData = const BrotliDecoder().convert(
-              Uint8List.sublistView(data, 0x10),
+            final decompressed = const BrotliDecoder().convert(
+              Uint8List.sublistView(packet, header.headerSize),
             );
-          //debugPrint('Body: ${utf8.decode()}');
+            _processingData(Uint8List.fromList(decompressed));
+            break;
           default:
+            close();
             return;
         }
-        _processingData(
-          decompressedData is Uint8List
-              ? decompressedData
-              : Uint8List.fromList(decompressedData),
-        );
-      } catch (_) {}
+      } catch (_) {
+        close();
+        return;
+      }
+      offset += header.totalSize;
     }
   }
 
-  void close() {
+  void close({bool notify = true}) {
+    final shouldNotify = notify && !_closeNotified;
+    _closeNotified = true;
     _active = false;
-    if (kDebugMode) logger.i("$logTag close $hashCode");
+    if (kDebugMode && _channel != null) logger.i("$logTag close $hashCode");
     _timer?.cancel();
     _timer = null;
     _eventListeners.clear();
     _socketSubscription?.cancel();
     _socketSubscription = null;
-    _channel?.sink.close();
+    try {
+      _channel?.sink.close();
+    } catch (_) {}
     _channel = null;
+    if (shouldNotify) onClosed?.call();
   }
 }

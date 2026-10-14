@@ -11,7 +11,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
 class DLNAPage extends StatefulWidget {
-  const DLNAPage({super.key});
+  const DLNAPage({super.key, this.parameters});
+
+  final Map<String, String>? parameters;
 
   @override
   State<DLNAPage> createState() => _DLNAPageState();
@@ -20,8 +22,8 @@ class DLNAPage extends StatefulWidget {
 class _DLNAPageState extends State<DLNAPage> {
   final _searcher = DLNAManager();
   final Map<String, DLNADevice> _deviceList = {};
-  late final _url = Get.parameters['url']!;
-  late final _title = Get.parameters['title'];
+  late final _url = widget.parameters?['url'] ?? Get.parameters['url']!;
+  late final _title = widget.parameters?['title'] ?? Get.parameters['title'];
 
   Timer? _timer;
   bool _isSearching = false;

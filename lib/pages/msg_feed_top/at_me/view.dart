@@ -23,14 +23,19 @@ import 'package:material_ui/material_ui.dart' hide ListTile;
 import 'package:get/get.dart';
 
 class AtMePage extends StatefulWidget {
-  const AtMePage({super.key});
+  const AtMePage({super.key, this.controllerTag});
+
+  final String? controllerTag;
 
   @override
   State<AtMePage> createState() => _AtMePageState();
 }
 
 class _AtMePageState extends State<AtMePage> {
-  final AtMeController _atMeController = Get.put(AtMeController());
+  late final AtMeController _atMeController = Get.put(
+    AtMeController(),
+    tag: widget.controllerTag,
+  );
 
   @override
   Widget build(BuildContext context) {

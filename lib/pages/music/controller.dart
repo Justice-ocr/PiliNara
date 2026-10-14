@@ -5,6 +5,10 @@ import 'package:PiliPlus/pages/common/dyn/common_dyn_controller.dart';
 import 'package:get/get.dart';
 
 class MusicDetailController extends CommonDynController {
+  MusicDetailController({String? musicId}) : _providedMusicId = musicId;
+
+  final String? _providedMusicId;
+
   @override
   late final int oid;
   @override
@@ -23,7 +27,7 @@ class MusicDetailController extends CommonDynController {
   @override
   void onInit() {
     super.onInit();
-    musicId = Get.parameters['musicId']!;
+    musicId = _providedMusicId ?? Get.parameters['musicId']!;
     getMusicDetail();
   }
 

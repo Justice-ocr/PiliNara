@@ -51,7 +51,10 @@ mixin HeaderMixin<T extends StatefulWidget> on State<T> {
   }
 
   /// 弹幕功能
-  void showSetDanmaku({bool isLive = false, DanmakuMaskController? maskController}) {
+  void showSetDanmaku({
+    bool isLive = false,
+    DanmakuMaskController? maskController,
+  }) {
     // 屏蔽类型
     const blockTypesList = [
       (value: 2, label: '滚动'),
@@ -192,12 +195,13 @@ mixin HeaderMixin<T extends StatefulWidget> on State<T> {
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
-                            onPressed: () => Get
-                              ..back()
-                              ..toNamed(
+                            onPressed: () {
+                              Get.back();
+                              PageUtils.toDupNamed(
                                 '/danmakuBlock',
                                 arguments: plPlayerController,
-                              ),
+                              );
+                            },
                             child: Text(
                               "屏蔽管理(${plPlayerController.filters.count})",
                             ),
@@ -565,8 +569,8 @@ mixin HeaderMixin<T extends StatefulWidget> on State<T> {
                   max: PlPlayerController.audioDelayMax.toDouble(),
                   divisions:
                       (PlPlayerController.audioDelayMax -
-                              PlPlayerController.audioDelayMin) ~/
-                          PlPlayerController.audioDelayStep,
+                          PlPlayerController.audioDelayMin) ~/
+                      PlPlayerController.audioDelayStep,
                   value: value.toDouble(),
                   label: value > 0 ? '+$value ms' : '$value ms',
                   onChanged: (value) {

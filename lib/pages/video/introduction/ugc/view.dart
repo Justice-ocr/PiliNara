@@ -1068,7 +1068,7 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
                     _ => item.tagName!,
                   },
                   onTap: switch (item.tagType) {
-                    'bgm' => (_) => Get.toNamed(
+                    'bgm' => (_) => PageUtils.toDupNamed(
                       '/musicDetail',
                       parameters: {'musicId': item.musicId!},
                     ),

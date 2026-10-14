@@ -14,6 +14,8 @@ class MemberVideoWebCtr
           VListItemModel,
           ArchiveOrderTypeWeb
         > {
+  MemberVideoWebCtr({super.arguments});
+
   int? _totalCount;
   @override
   final Rx<ArchiveOrderTypeWeb> order = Rx(.pubdate);

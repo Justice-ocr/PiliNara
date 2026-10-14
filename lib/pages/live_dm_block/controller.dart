@@ -7,15 +7,23 @@ import 'package:material_ui/material_ui.dart';
 
 class LiveDmBlockController extends GetxController
     with GetSingleTickerProviderStateMixin {
-  final roomId = Get.parameters['roomId']!;
+  LiveDmBlockController({
+    String? roomId,
+    LiveRoomController? liveRoomController,
+  }) : roomId = roomId ?? Get.parameters['roomId']!,
+       _controller = liveRoomController;
+
+  final String roomId;
   LiveRoomController? _controller;
 
   @override
   void onInit() {
     super.onInit();
-    final args = Get.arguments;
-    if (args is LiveRoomController) {
-      _controller = args;
+    if (_controller == null) {
+      final args = Get.arguments;
+      if (args is LiveRoomController) {
+        _controller = args;
+      }
     }
     tabController = TabController(length: 2, vsync: this);
     queryData();

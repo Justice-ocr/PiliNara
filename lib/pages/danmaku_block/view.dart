@@ -20,20 +20,33 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
 class DanmakuBlockPage extends StatefulWidget {
-  const DanmakuBlockPage({super.key});
+  const DanmakuBlockPage({
+    super.key,
+    this.playerController,
+    this.controllerTag,
+  });
+
+  final PlPlayerController? playerController;
+  final String? controllerTag;
 
   @override
   State<DanmakuBlockPage> createState() => _DanmakuBlockPageState();
 }
 
 class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
-  final DanmakuBlockController _controller = Get.put(DanmakuBlockController());
+  late final String _controllerTag =
+      widget.controllerTag ?? Utils.generateRandomString(8);
+  late final DanmakuBlockController _controller = Get.put(
+    DanmakuBlockController(),
+    tag: _controllerTag,
+  );
   late PlPlayerController plPlayerController;
 
   @override
   void initState() {
     super.initState();
-    plPlayerController = Get.arguments as PlPlayerController;
+    plPlayerController =
+        widget.playerController ?? Get.arguments as PlPlayerController;
   }
 
   @override
@@ -41,6 +54,7 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
     final ruleFilter = RuleFilter.fromRuleTypeEntries(_controller.rules);
     plPlayerController.filters = ruleFilter;
     GStorage.localCache.put(LocalCacheKey.danmakuFilterRules, ruleFilter);
+    Get.delete<DanmakuBlockController>(tag: _controllerTag);
     super.dispose();
   }
 
