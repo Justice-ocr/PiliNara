@@ -40,9 +40,8 @@ abstract final class DanmakuFont {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: allowedExtensions,
-      withData: true,
     );
-    if (result == null || result.isEmpty) {
+    if (result.isEmpty) {
       return false;
     }
 

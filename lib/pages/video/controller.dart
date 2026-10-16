@@ -681,7 +681,7 @@ class VideoDetailController extends GetxController
         mediaList: mediaList,
         onChangeEpisode: (episode, {bool manual = false}) async {
           try {
-            return ugcIntroCtr.onChangeEpisode(episode, manual: manual);
+            return await ugcIntroCtr.onChangeEpisode(episode, manual: manual);
           } catch (_) {}
           return false;
         },
@@ -880,7 +880,7 @@ class VideoDetailController extends GetxController
 
     if (videoList.isEmpty) {
       final fallback = allVideos.first;
-      currentVideoQa.value = VideoQuality.fromCode(fallback.id!);
+      currentVideoQa.value = VideoQuality.fromCode(fallback.id);
       return fallback;
     }
 
