@@ -22,12 +22,12 @@ class SubDetailPage extends StatefulWidget {
   @override
   State<SubDetailPage> createState() => _SubDetailPageState();
 
-  static void toSubDetailPage(
+  static Future<void>? toSubDetailPage(
     int id, {
     String? heroTag,
     SubItemModel? subInfo,
   }) {
-    PageUtils.toDupNamed(
+    return PageUtils.toDupNamed(
       '/subDetail',
       arguments: {
         'id': id,
@@ -201,8 +201,7 @@ class _SubDetailPageState extends State<SubDetailPage> with GridMixin {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () =>
-                          PageUtils.toMember(info.upper!.mid),
+                      onTap: () => PageUtils.toMember(info.upper!.mid),
                       child: Text(
                         info.upper!.name!,
                         style: TextStyle(color: theme.colorScheme.primary),

@@ -43,7 +43,6 @@ import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class UserInfoCard extends StatelessWidget {
@@ -751,6 +750,7 @@ class UserInfoCard extends StatelessWidget {
                   tag: img.fullCover,
                   child: CachedNetworkImage(
                     fit: .cover,
+                    gaplessPlayback: true,
                     alignment: Alignment(0.0, img.dy),
                     height: kHeaderHeight,
                     width: width,
@@ -808,6 +808,7 @@ class UserInfoCard extends StatelessWidget {
           fit: .cover,
           alignment: alignment,
           height: kHeaderHeight,
+          gaplessPlayback: true,
           width: width,
           memCacheWidth: width.cacheSize(context),
           imageUrl: ImageUtils.thumbnailUrl(imgUrl),

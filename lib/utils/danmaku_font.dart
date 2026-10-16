@@ -41,7 +41,7 @@ abstract final class DanmakuFont {
       type: FileType.custom,
       allowedExtensions: allowedExtensions,
     );
-    if (result == null || result.isEmpty) {
+    if (result.isEmpty) {
       return false;
     }
 

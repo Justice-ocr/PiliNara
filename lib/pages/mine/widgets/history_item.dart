@@ -2,84 +2,34 @@ import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models_new/history/list.dart';
+import 'package:PiliPlus/pages/history/widgets/item.dart' show onPushHistory;
 import 'package:PiliPlus/utils/duration_utils.dart';
-import 'package:PiliPlus/utils/id_utils.dart';
-import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:PiliPlus/http/search.dart';
 
-/// 观看记录快捷卡片（我的页面横向列表）
-class HistoryCardItem extends StatelessWidget {
-  const HistoryCardItem({super.key, required this.item});
+/// 观看记录快捷卡片（我的页横向列表）
+class MineHistoryItem extends StatelessWidget {
+  const MineHistoryItem({
+    super.key,
+    required this.item,
+    required this.onPop,
+  });
 
   final HistoryItemModel item;
+  final VoidCallback onPop;
 
   // 宽高比与 HistoryItem 大图区一致（16:10）
   static const double _cardWidth = 180.0;
   static const double _cardHeight = 110.0;
 
   bool get _isArticle => item.history.business?.contains('article') == true;
-
   bool get _isLive => item.history.business == 'live';
 
-  bool get _isPgc => item.history.business == 'pgc';
-
-  bool get _isCheese => item.history.business == 'cheese';
-
-  bool get _isVideo => !_isArticle && !_isLive && !_isPgc && !_isCheese;
-
-  Future<void> _onTap() async {
-    final business = item.history.business;
-    if (_isArticle) {
-      PageUtils.toDupNamed(
-        '/articlePage',
-        parameters: {
-          'id': business == 'article-list'
-              ? '${item.history.cid}'
-              : '${item.history.oid}',
-          'type': 'read',
-        },
-      );
-    } else if (_isLive) {
-      if (item.liveStatus == 1) {
-        PageUtils.toLiveRoom(item.history.oid);
-      } else {
-        SmartDialog.showToast('直播未开播');
-      }
-    } else if (_isPgc) {
-      PageUtils.viewPgc(epId: item.history.epid);
-    } else if (_isCheese) {
-      if (item.uri?.isNotEmpty == true) {
-        PageUtils.viewPgcFromUri(
-          item.uri!,
-          isPgc: false,
-          aid: item.history.oid,
-        );
-      }
-    } else {
-      final int aid = item.history.oid!;
-      final String bvid = item.history.bvid ?? IdUtils.av2bv(aid);
-      int? cid =
-          item.history.cid ??
-          await SearchHttp.ab2c(
-            aid: aid,
-            bvid: bvid,
-            part: item.history.page,
-          );
-      if (cid != null) {
-        PageUtils.toVideoPage(
-          aid: aid,
-          bvid: bvid,
-          cid: cid,
-          cover: item.cover,
-          title: item.title,
-        );
-      }
-    }
-  }
+  bool get _isVideo => switch (item.history.business) {
+    'archive' => true,
+    _ => false,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -92,12 +42,11 @@ class HistoryCardItem extends StatelessWidget {
         : item.covers?.firstOrNull ?? '';
 
     return GestureDetector(
-      onTap: _onTap,
+      onTap: () => onPushHistory(item).whenComplete(onPop),
       behavior: HitTestBehavior.opaque,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 封面区域
           DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: radius,
@@ -128,7 +77,7 @@ class HistoryCardItem extends StatelessWidget {
                       width: _cardWidth,
                       height: _cardHeight,
                     ),
-                    // 右上角：直播状态 / 专栏标记 / pgc badge
+                    // 右上角：直播状态 / 专栏 / 已收藏 / 角标
                     if (_isLive)
                       PBadge(
                         text: item.liveStatus == 1 ? '直播中' : '未开播',
@@ -144,6 +93,13 @@ class HistoryCardItem extends StatelessWidget {
                         top: 6.0,
                         right: 6.0,
                         type: PBadgeType.secondary,
+                      )
+                    else if (item.isFav == 1)
+                      const PBadge(
+                        text: '已收藏',
+                        top: 6.0,
+                        right: 6.0,
+                        type: PBadgeType.gray,
                       )
                     else if (item.badge?.isNotEmpty == true)
                       PBadge(
@@ -168,7 +124,6 @@ class HistoryCardItem extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          // 标题
           SizedBox(
             width: _cardWidth,
             child: Text(
@@ -178,7 +133,6 @@ class HistoryCardItem extends StatelessWidget {
               style: theme.textTheme.bodySmall,
             ),
           ),
-          // 副标题（作者名 / showTitle）
           SizedBox(
             width: _cardWidth,
             child: Text(

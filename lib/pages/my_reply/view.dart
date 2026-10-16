@@ -18,7 +18,7 @@ import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
-import 'package:waterfall_flow/waterfall_flow.dart' show SliverWaterfallFlow;
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class MyReply extends StatefulWidget {
   const MyReply({super.key});
@@ -29,12 +29,9 @@ class MyReply extends StatefulWidget {
 
 class _MyReplyState extends State<MyReply> with DynMixin {
   final List<ReplyInfo> _replies = <ReplyInfo>[];
-  final _windowsGridDelegate =
-      SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 520,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-      );
+  final _windowsGridDelegate = SliverSimpleGridDelegateWithMaxCrossAxisExtent_(
+    maxCrossAxisExtent: 520,
+  );
 
   @override
   void initState() {
@@ -97,13 +94,16 @@ class _MyReplyState extends State<MyReply> with DynMixin {
                           bottom:
                               MediaQuery.viewPaddingOf(context).bottom + 100,
                         ),
-                        sliver: SliverWaterfallFlow(
+                        sliver: SliverMasonryGrid(
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
                           gridDelegate: _windowsGridDelegate,
                           delegate: _replyDelegate,
                         ),
                       )
                     : ViewSliverSafeArea(
-                        sliver: SliverWaterfallFlow(
+                        sliver: SliverMasonryGrid(
+                          crossAxisSpacing: 4,
                           gridDelegate: dynGridDelegate,
                           delegate: _replyDelegate,
                         ),

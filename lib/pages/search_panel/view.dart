@@ -4,11 +4,8 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/search/search_type.dart';
 import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/pages/search_panel/controller.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
-import 'package:PiliPlus/windows_ui/components/windows_neo_state.dart';
-import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
 
 abstract class CommonSearchPanel extends StatefulWidget {
   const CommonSearchPanel({
@@ -65,13 +62,7 @@ abstract class CommonSearchPanelState<
             padding: EdgeInsets.only(
               bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
             ),
-            sliver: Obx(
-              () => WindowsNeoSliverContentTransition(
-                token: controller.loadingState.value,
-                sliver: _buildBody(controller.loadingState.value),
-                enabled: WindowsVideoTabService.enabled,
-              ),
-            ),
+            sliver: Obx(() => _buildBody(controller.loadingState.value)),
           ),
         ],
       ),
@@ -83,46 +74,39 @@ abstract class CommonSearchPanelState<
   Widget _buildBody(LoadingState<List<T>?> loadingState) {
     return switch (loadingState) {
       Loading() => buildLoading,
-      Success(:final response) when response != null && response.isNotEmpty =>
-        () {
-          final filtered = controller.filterKeywords(response, getTitle);
-          if (filtered.isEmpty) {
-            return _buildFilteredOut();
-          }
-          final showLoadMore =
-              controller.hasKeywordFilter && filtered.length <= 5;
-          if (!showLoadMore) return buildList(filtered);
-          return SliverMainAxisGroup(
-            slivers: [buildList(filtered), _buildInlineLoadMore()],
-          );
-        }(),
-      Success() =>
-        WindowsVideoTabService.enabled
-            ? WindowsNeoSliverState(
-                icon: Icons.search_off_outlined,
-                title: '\u6ca1\u6709\u627e\u5230\u7ed3\u679c',
-                message:
-                    '\u8bd5\u8bd5\u5176\u4ed6\u5173\u952e\u8bcd\u6216\u8c03\u6574\u7b5b\u9009\u6761\u4ef6',
-                onRetry: controller.onReload,
-              )
-            : HttpError(onReload: controller.onReload),
-      Error(:final errMsg) =>
-        WindowsVideoTabService.enabled
-            ? WindowsNeoSliverState(
-                icon: Icons.cloud_off_outlined,
-                title: '\u52a0\u8f7d\u5931\u8d25',
-                message: errMsg,
-                onRetry: controller.onReload,
-              )
-            : HttpError(
-                errMsg: errMsg,
-                onReload: controller.onReload,
-              ),
+      Success(:final response) => buildSuccess(response),
+      Error(:final errMsg) => HttpError(
+        errMsg: errMsg,
+        onReload: controller.onReload,
+      ),
     };
   }
 
+  @protected
+  Widget buildSuccess(List<T>? response) {
+    if (response == null || response.isEmpty) {
+      return HttpError(onReload: controller.onReload);
+    }
+    return buildResults(controller.filterKeywords(response, getTitle));
+  }
+
+  @protected
+  Widget buildResults(List<T> list, {List<Widget> leading = const []}) {
+    if (list.isEmpty && leading.isEmpty) return _buildFilteredOut();
+    final showLoadMore =
+        controller.hasKeywordFilter && !controller.isEnd && list.length <= 5;
+    if (leading.isEmpty && !showLoadMore) return buildList(list);
+    return SliverMainAxisGroup(
+      slivers: [
+        ...leading,
+        if (list.isNotEmpty) buildList(list),
+        if (showLoadMore) _buildInlineLoadMore(),
+      ],
+    );
+  }
+
   Future<void> _onLoadMoreWithCooldown() async {
-    if (_isLoadingMore) return;
+    if (_isLoadingMore || controller.isEnd) return;
     setState(() => _isLoadingMore = true);
     try {
       await controller.onLoadMore();
@@ -133,19 +117,6 @@ abstract class CommonSearchPanelState<
   }
 
   Widget _buildFilteredOut() {
-    if (WindowsVideoTabService.enabled) {
-      return WindowsNeoSliverState(
-        icon: Icons.filter_list_off,
-        title: '\u5f53\u524d\u7ed3\u679c\u5df2\u88ab\u8fc7\u6ee4',
-        message:
-            '\u53ef\u4ee5\u7ee7\u7eed\u52a0\u8f7d\u66f4\u591a\u7ed3\u679c\uff0c\u76f4\u5230\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u5185\u5bb9',
-        onRetry: _onLoadMoreWithCooldown,
-        retrying: _isLoadingMore,
-        retryLabel: _isLoadingMore
-            ? '\u52a0\u8f7d\u4e2d...'
-            : '\u7ee7\u7eed\u52a0\u8f7d',
-      );
-    }
     return SliverFillRemaining(
       hasScrollBody: false,
       child: Center(
@@ -170,34 +141,38 @@ abstract class CommonSearchPanelState<
               ),
               const SizedBox(height: 6),
               Text(
-                '可以继续加载更多结果，直到找到符合条件的内容',
+                controller.isEnd
+                    ? '没有更多结果，请调整或清除关键词'
+                    : '可以继续加载更多结果，直到找到符合条件的内容',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
                   color: colorScheme.outline,
                 ),
               ),
-              const SizedBox(height: 16),
-              FilledButton.tonalIcon(
-                onPressed: _isLoadingMore ? null : _onLoadMoreWithCooldown,
-                icon: _isLoadingMore
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.keyboard_double_arrow_down, size: 18),
-                label: Text(_isLoadingMore ? '加载中...' : '继续加载'),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '加载完成后方可进行下次加载，避免触发频率限制',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: colorScheme.outline,
+              if (!controller.isEnd) ...[
+                const SizedBox(height: 16),
+                FilledButton.tonalIcon(
+                  onPressed: _isLoadingMore ? null : _onLoadMoreWithCooldown,
+                  icon: _isLoadingMore
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.keyboard_double_arrow_down, size: 18),
+                  label: Text(_isLoadingMore ? '加载中...' : '继续加载'),
                 ),
-              ),
+                const SizedBox(height: 8),
+                Text(
+                  '加载完成后方可进行下次加载，避免触发频率限制',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.outline,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

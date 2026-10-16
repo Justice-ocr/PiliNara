@@ -172,13 +172,13 @@ class _SuperChatCardState extends State<SuperChatCard> {
   }
 }
 
-  String _formatTime(int ts) {
-    final dt = DateTime.fromMillisecondsSinceEpoch(ts * 1000);
-    final h = dt.hour.toString().padLeft(2, '0');
-    final m = dt.minute.toString().padLeft(2, '0');
-    final s = dt.second.toString().padLeft(2, '0');
-    return '$h:$m:$s';
-  }
+String _formatTime(int ts) {
+  final dt = DateTime.fromMillisecondsSinceEpoch(ts * 1000);
+  final h = dt.hour.toString().padLeft(2, '0');
+  final m = dt.minute.toString().padLeft(2, '0');
+  final s = dt.second.toString().padLeft(2, '0');
+  return '$h:$m:$s';
+}
 
 Widget _build({
   required SuperChatItem item,
@@ -186,107 +186,107 @@ Widget _build({
   RxInt? remains,
   bool showTime = false,
 }) {
-    final bottomColor = ColourUtils.parseColor(item.backgroundBottomColor);
-    final border = BorderSide(color: bottomColor);
-  final sendTime = showTime ? _formatTime(item.ts) : null;
+  final bottomColor = ColourUtils.parseColor(item.backgroundBottomColor);
+  final border = BorderSide(color: bottomColor);
+  final sendTime = showTime ? _formatTime(item.startSime) : null;
 
-    Widget name = Text(
-      item.userInfo.uname,
-      maxLines: 1,
-      overflow: .ellipsis,
-      style: TextStyle(
-        color: ColourUtils.parseColor(item.userInfo.nameColor),
-      ),
-    );
-    if (item.medalInfo case final medal?) {
-      try {
-        name = Row(
-          spacing: 5,
-          children: [
-            MedalWidget.fromMedalInfo(
-              medal: medal,
-              padding: MedalWidget.mediumPadding,
-            ),
-            Flexible(child: name),
-          ],
-        );
-      } catch (e, s) {
-        if (kDebugMode) {
-          Utils.reportError(e, s);
-        }
+  Widget name = Text(
+    item.userInfo.uname,
+    maxLines: 1,
+    overflow: .ellipsis,
+    style: TextStyle(
+      color: ColourUtils.parseColor(item.userInfo.nameColor),
+    ),
+  );
+  if (item.medalInfo case final medal?) {
+    try {
+      name = Row(
+        spacing: 5,
+        children: [
+          MedalWidget.fromMedalInfo(
+            medal: medal,
+            padding: MedalWidget.mediumPadding,
+          ),
+          Flexible(child: name),
+        ],
+      );
+    } catch (e, s) {
+      if (kDebugMode) {
+        Utils.reportError(e, s);
       }
     }
+  }
 
-    Widget price = Text("￥${item.price}", style: TextStyle(color: bottomColor));
+  Widget price = Text("￥${item.price}", style: TextStyle(color: bottomColor));
   Widget? remains_;
   if (remains != null) {
     remains_ = Obx(
-        () => Text(
+      () => Text(
         remains.toString(),
-          style: const TextStyle(fontSize: 14, color: Colors.grey),
-        ),
-      );
-    }
+        style: const TextStyle(fontSize: 14, color: Colors.grey),
+      ),
+    );
+  }
 
   Widget top = Container(
-            decoration: BoxDecoration(
-              borderRadius: const .vertical(top: .circular(8)),
-              color: ColourUtils.parseColor(item.backgroundColor),
-              border: Border(top: border, left: border, right: border),
-              image: item.backgroundImage == null
-                  ? null
-                  : DecorationImage(
-                      alignment: .topRight,
-                      image: CachedNetworkImageProvider(
-                        ImageUtils.safeThumbnailUrl(item.backgroundImage),
-                      ),
-                    ),
+    decoration: BoxDecoration(
+      borderRadius: const .vertical(top: .circular(8)),
+      color: ColourUtils.parseColor(item.backgroundColor),
+      border: Border(top: border, left: border, right: border),
+      image: item.backgroundImage == null
+          ? null
+          : DecorationImage(
+              alignment: .topRight,
+              image: CachedNetworkImageProvider(
+                ImageUtils.safeThumbnailUrl(item.backgroundImage),
+              ),
             ),
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              spacing: 12,
-              children: [
-                _avatar(item.userInfo.face, item.userInfo.faceFrame),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: .min,
-                    crossAxisAlignment: .start,
-                    children: [name, price],
-                  ),
-                ),
+    ),
+    padding: const EdgeInsets.all(8),
+    child: Row(
+      spacing: 12,
+      children: [
+        _avatar(item.userInfo.face, item.userInfo.faceFrame),
+        Expanded(
+          child: Column(
+            mainAxisSize: .min,
+            crossAxisAlignment: .start,
+            children: [name, price],
+          ),
+        ),
         if (sendTime != null)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
               ?remains_,
-                      Text(
+              Text(
                 sendTime,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: ColourUtils.parseColor(
-                            item.backgroundPriceColor,
-                          ).withValues(alpha: 0.6),
-                        ),
-                      ),
-                    ],
-                  )
-                else
+                style: TextStyle(
+                  fontSize: 11,
+                  color: ColourUtils.parseColor(
+                    item.backgroundPriceColor,
+                  ).withValues(alpha: 0.6),
+                ),
+              ),
+            ],
+          )
+        else
           ?remains_,
-              ],
-            ),
+      ],
+    ),
   );
 
   final Widget msg;
 
   final style = TextStyle(
-                color: ColourUtils.parseColor(item.messageFontColor),
-                // decoration: widget.persistentSC && item.deleted
-                //     ? .lineThrough
-                //     : null,
-                // decorationThickness: 1.5,
-                // decorationStyle: .double,
-                // decorationColor: Colors.white,
+    color: ColourUtils.parseColor(item.messageFontColor),
+    // decoration: widget.persistentSC && item.deleted
+    //     ? .lineThrough
+    //     : null,
+    // decorationThickness: 1.5,
+    // decorationStyle: .double,
+    // decorationColor: Colors.white,
   );
 
   if (showMenu != null) {
@@ -303,13 +303,13 @@ Widget _build({
           bottomColor,
           Colors.white,
           .26,
-              ),
-            ),
+        ),
+      ),
       child: SelectionText(
         item.message,
         contextMenuBuilder: scMenuBuilder,
         style: style,
-          ),
+      ),
     );
   } else {
     msg = Text(item.message, style: style);
@@ -327,43 +327,43 @@ Widget _build({
         ),
         padding: const .all(8),
         child: msg,
+      ),
+    ],
+  );
+}
+
+Widget _avatar(String face, String? faceFrame) {
+  const size = 45.0;
+  final avatar = NetworkImgLayer(
+    src: face,
+    width: size,
+    height: size,
+    type: .avatar,
+  );
+  if (faceFrame != null && faceFrame.isNotEmpty) {
+    const ratio = 1.16;
+    const pendantSize = size * ratio;
+    const offset = ((1 - ratio) * size) / 2;
+    return Stack(
+      clipBehavior: .none,
+      alignment: .center,
+      children: [
+        avatar,
+        Positioned(
+          top: offset,
+          child: NetworkImgLayer(
+            type: .emote,
+            width: pendantSize,
+            height: pendantSize,
+            src: faceFrame,
+            getPlaceHolder: () => const SizedBox.shrink(),
+          ),
         ),
       ],
     );
   }
-
-Widget _avatar(String face, String? faceFrame) {
-    const size = 45.0;
-    final avatar = NetworkImgLayer(
-      src: face,
-      width: size,
-      height: size,
-      type: .avatar,
-    );
-    if (faceFrame != null && faceFrame.isNotEmpty) {
-      const ratio = 1.16;
-      const pendantSize = size * ratio;
-      const offset = ((1 - ratio) * size) / 2;
-      return Stack(
-        clipBehavior: .none,
-        alignment: .center,
-        children: [
-          avatar,
-          Positioned(
-            top: offset,
-            child: NetworkImgLayer(
-              type: .emote,
-              width: pendantSize,
-              height: pendantSize,
-              src: faceFrame,
-              getPlaceHolder: () => const SizedBox.shrink(),
-            ),
-          ),
-        ],
-      );
-    }
-    return avatar;
-  }
+  return avatar;
+}
 
 Future<void> _screenShot(
   BuildContext context,

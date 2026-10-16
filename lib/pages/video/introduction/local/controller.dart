@@ -69,8 +69,9 @@ class LocalIntroController extends CommonIntroController {
       DownloadPlaylistScope.all => collectionService.resolveAllEntries(
         downloadService.downloadList,
       ),
-      null => List<BiliDownloadEntryInfo>.from(downloadService.downloadList)
-        ..sort((a, b) => b.timeUpdateStamp.compareTo(a.timeUpdateStamp)),
+      null => List<BiliDownloadEntryInfo>.from(
+        downloadService.downloadList,
+      )..sort((a, b) => b.timeUpdateStamp.compareTo(a.timeUpdateStamp)),
     };
     for (final entry in list) {
       aidSet.add(entry.pageId);
@@ -149,8 +150,8 @@ class LocalIntroController extends CommonIntroController {
       ..bvid = entry.bvid
       ..cid.value = entry.cid
       ..args['dirPath'] = entry.entryDirPath
-      ..initFileSource(entry, isInit: false)
-      ..playerInit();
+      ..initFileSource(entry)
+      ..initPlayerIfNeeded(false);
     videoDetail
       ..value.title = entry.showTitle
       ..refresh();

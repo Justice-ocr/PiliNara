@@ -10,6 +10,7 @@ import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/grpc/bilibili/main/community/reply/v1.pb.dart'
     show ReplyInfo;
 import 'package:PiliPlus/http/loading_state.dart';
+import 'package:PiliPlus/pages/article/widgets/sliver_list.dart';
 import 'package:PiliPlus/pages/common/dyn/common_dyn_controller.dart';
 import 'package:PiliPlus/pages/common/fab_mixin.dart';
 import 'package:PiliPlus/pages/video/reply/vote/reply_vote_item.dart';
@@ -70,6 +71,7 @@ abstract class CommonDynPageMultiState<T extends StatefulWidget>
 mixin CommonDynPageMixin<T extends StatefulWidget>
     on State<T>, TickerProvider, BaseFabMixin<T>, FabMixin<T> {
   CommonDynController get controller;
+  bool get isArticle => false;
 
   late final ScrollController scrollController;
 
@@ -170,8 +172,9 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
           if (hasVote) {
             count++;
           }
-          return SliverList.builder(
+          return ArticleSliverList.builder(
             itemCount: count,
+            isArticle: isArticle,
             itemBuilder: (context, index) {
               if (hasVote) {
                 if (index == 0) {
@@ -217,7 +220,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
           );
         }
 
-        final child = HttpError(
+        final child = httpError(
           errMsg: '还没有评论',
           onReload: controller.onReload,
         );
@@ -233,8 +236,18 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
         }
         return child;
       case Error(:final errMsg):
-        return HttpError(errMsg: errMsg, onReload: controller.onReload);
+        return httpError(
+          errMsg: errMsg,
+          onReload: controller.onReload,
+        );
     }
+  }
+
+  Widget httpError({String? errMsg, VoidCallback? onReload}) {
+    return HttpError(
+      errMsg: errMsg,
+      onReload: controller.onReload,
+    );
   }
 
   void replyReply(BuildContext context, ReplyInfo replyItem, int? id) {
@@ -356,6 +369,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
           null,
           oid: controller.oid,
           replyType: controller.replyType,
+          mentionItem: controller.mentionItem,
         );
       } catch (_) {}
     },

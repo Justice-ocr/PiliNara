@@ -13,6 +13,8 @@ class MemberComicItem extends StatelessWidget {
 
   final SpaceArchiveItem item;
 
+  void onLongPress() => showPgcCover(title: item.title, cover: item.cover);
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -21,7 +23,6 @@ class MemberComicItem extends StatelessWidget {
       fontSize: 13,
       color: theme.colorScheme.onSurfaceVariant,
     );
-    void onLongPress() => imageSaveDialog(title: item.title, cover: item.cover);
     return Material(
       type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
       color: isWindowsNeo ? context.windowsNeo.surface : null,
@@ -53,7 +54,7 @@ class MemberComicItem extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AspectRatio(
-                aspectRatio: 3 / 4,
+                aspectRatio: Style.aspectRatio3x4,
                 child: LayoutBuilder(
                   builder:
                       (BuildContext context, BoxConstraints boxConstraints) {

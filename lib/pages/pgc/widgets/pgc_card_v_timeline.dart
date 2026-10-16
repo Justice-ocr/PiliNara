@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -17,6 +18,8 @@ class PgcCardVTimeline extends StatelessWidget {
   });
 
   final Episode item;
+
+  void onLongPress() => showPgcCover(title: item.title, cover: item.cover);
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +47,7 @@ class PgcCardVTimeline extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AspectRatio(
-              aspectRatio: 0.75,
+              aspectRatio: Style.aspectRatio3x4,
               child: LayoutBuilder(
                 builder: (context, boxConstraints) {
                   final double maxWidth = boxConstraints.maxWidth;

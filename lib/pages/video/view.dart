@@ -5,6 +5,7 @@ import 'dart:ui';
 
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/scroll_behavior.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
 import 'package:PiliPlus/common/widgets/flutter/popup_menu.dart';
@@ -34,10 +35,13 @@ import 'package:PiliPlus/pages/video/introduction/local/view.dart';
 import 'package:PiliPlus/pages/video/introduction/pgc/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/pgc/view.dart';
 import 'package:PiliPlus/pages/video/introduction/pgc/widgets/intro_detail.dart';
+import 'package:PiliPlus/pages/video/introduction/pgc/widgets/season.dart'
+    as pgc;
 import 'package:PiliPlus/pages/video/introduction/ugc/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/view.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/page.dart';
-import 'package:PiliPlus/pages/video/introduction/ugc/widgets/season.dart';
+import 'package:PiliPlus/pages/video/introduction/ugc/widgets/season.dart'
+    as ugc;
 import 'package:PiliPlus/pages/video/member/controller.dart';
 import 'package:PiliPlus/pages/video/member/view.dart';
 import 'package:PiliPlus/pages/video/related/view.dart';
@@ -81,8 +85,7 @@ import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/features/video/windows_neo_video_layout.dart';
-import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart'
-    hide ExtendedVisibilityDetector;
+import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:PiliPlus/common/widgets/extended_visibility_detector.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:material_ui/material_ui.dart';
@@ -185,16 +188,25 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   bool get _canPopPage =>
       videoDetailController.canPopPage(isPortrait: isPortrait);
 
+  /// 本页是否持有 controller 级 GlobalKey 的挂载权（见 VideoDetailController.pageOwner）
+  bool get _isPageOwner => identical(videoDetailController.pageOwner, this);
+
+  /// 非 owner 页面不挂 controller 级 GlobalKey：同一 controller 被两个驻栈页面
+  /// 共用时（同视频复用 / fromPip 展开），离屏旧页每次重建都会把 element 抢回去，
+  /// 可见页就只剩黑底；不挂 key 的副本只是一份不可见的普通子树
+  GlobalKey<T>? _ownedKey<T extends State<StatefulWidget>>(GlobalKey<T> key) =>
+      _isPageOwner ? key : null;
+
   bool get _shouldShowSeasonPanel {
     if (videoDetailController.isFileSource ||
         isPortrait ||
-        !videoDetailController.isUgc) {
+        !videoDetailController.plPlayerController.horizontalSeasonPanel) {
       return false;
     }
-    late final videoDetail = ugcIntroController.videoDetail.value;
-    return videoDetailController.plPlayerController.horizontalSeasonPanel &&
-        (videoDetail.ugcSeason != null ||
-            ((videoDetail.pages?.length ?? 0) > 1));
+    if (videoDetailController.isUgc) {
+      return ugcIntroController.videoDetail.value.hasSeasonOrParts;
+    }
+    return pgcIntroController.pgcItem.hasEpisodes;
   }
 
   void _resetEnteringPipFlags() {
@@ -476,6 +488,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       }
     }
 
+    // introController 是惰性字段（见字段声明），必须在三条赋值路径
+    // 汇合之后才能求值 runtimeType
+    _setPlayCallBack();
+
     // AI chat controller - create if not already registered (PiP reuse)
     if (!Get.isRegistered<AiChatController>(tag: heroTag)) {
       Get.put(AiChatController(heroTag: heroTag), tag: heroTag);
@@ -483,6 +499,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
     // 必须在 videoDetailController 三条赋值路径（恢复/新建）汇合之后绑定
     videoDetailController.onRequestInAppPip = _enterInAppPipManually;
+    // 认领 controller 级 GlobalKey 的挂载权。复用路径下旧页仍驻栈，
+    // 其后的重建不再挂这些 key（见 _ownedKey / plPlayer）
+    videoDetailController.pageOwner = this;
 
     if (fromPip) {
       _justReturnedFromPip = true;
@@ -534,6 +553,11 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         if (!mounted) return;
 
         _logSponsorBlock('First postFrameCallback executing');
+
+        // 复用时随 childKey 一起接管了旧页的 ScaffoldState，其中可能还开着
+        // 旧页的侧栏 sheet（LocalHistoryEntry 挂在旧页路由上，本页返回键关不掉），
+        // 这里主动关掉；旧页路由仍在栈内，移除 entry 是安全的
+        videoDetailController.closeBottomSheet();
 
         videoDetailController.videoState.value = true;
         videoDetailController.videoState.refresh();
@@ -651,6 +675,13 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       introController.cancelTimer();
       ctr.showDanmaku = false;
     }
+  }
+
+  void _setPlayCallBack() {
+    PlPlayerController.setPlayCallBack(
+      playCallBack,
+      playOwner: (tag: heroTag, type: introController.runtimeType),
+    );
   }
 
   Future<void>? playCallBack() {
@@ -794,6 +825,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   @override
   void dispose() {
     VideoStackManager.decrement(); // 减少视频页面层级追踪
+    // 仍是 owner 才释放；被下层页面在 didPopNext 收回后这里不能再清
+    if (identical(videoDetailController.pageOwner, this)) {
+      videoDetailController.pageOwner = null;
+    }
     final isInAppPip = PipOverlayService.isInPipMode;
     final currentVideoContextKey = PipOverlayService.contextKeyFromArgs(
       videoDetailController.args,
@@ -1053,6 +1088,11 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   void didPopNext() async {
     super.didPopNext();
 
+    // 收回 controller 级 GlobalKey 的挂载权：上层（可能复用同一 controller 的）
+    // 视频页正在离开，本页随后的 setState 会重新挂 key 把 element 接回来。
+    // 放在 isCloseAll 早返回之前：认领只是改一个字段，任何路径都不该跳过
+    videoDetailController.pageOwner = this;
+
     if (videoDetailController.plPlayerController.isCloseAll) {
       return;
     }
@@ -1088,8 +1128,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         );
         // 小窗里的实际状态是用户最新的播放意图（可能在小窗中手动暂停过），
         // 先于关闭小窗记录，交由 didPopNext 末尾统一对账
-        videoDetailController.playerStatus =
-            plPlayerController?.playerStatus;
+        videoDetailController.playerStatus = plPlayerController?.playerStatus;
         // 返回展开：小窗飞回页内播放器位置，非销毁式 stopPip 推迟到握手完成；
         // 无法归位（无小窗会话）则维持旧的瞬时关闭
         if (PipOverlayService.transition.beginRestore()) {
@@ -1137,7 +1176,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     final bool fromPip = _routeArgs['fromPip'] ?? false;
     if (fromPip) {
       isShowing = true;
-      PlPlayerController.setPlayCallBack(playCallBack);
+      _setPlayCallBack();
       introController.startTimer();
 
       // 重新恢复 SponsorBlock
@@ -1159,12 +1198,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       return;
     }
 
-    if (videoDetailController.plPlayerController.playerStatus.isPlaying &&
-        videoDetailController.playerStatus != PlayerStatus.playing) {
-      videoDetailController.plPlayerController.pause();
-    }
-
-    PlPlayerController.setPlayCallBack(playCallBack);
+    _setPlayCallBack();
 
     introController.startTimer();
 
@@ -1335,9 +1369,12 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                   ),
                 ),
           body: ExtendedNestedScrollView(
-            key: videoDetailController.scrollKey,
-            controller: videoDetailController.scrollCtr,
             onlyOneScrollInBody: true,
+            physics: platformClampingPhysics,
+            key: _ownedKey(videoDetailController.scrollKey),
+            // 共享 ScrollController 同时挂两个滚动视图会触发单 position 断言，非 owner 不接
+            controller: _isPageOwner ? videoDetailController.scrollCtr : null,
+            scrollBehavior: const NoOverscrollIndicator(),
             pinnedHeaderSliverHeightBuilder: () {
               double pinnedHeight = this.isFullScreen || !isPortrait
                   ? maxHeight - (isWindowMode && !isPortrait ? 0 : padding.top)
@@ -1589,7 +1626,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
               ];
             },
             body: Scaffold(
-              key: videoDetailController.childKey,
+              key: _ownedKey(videoDetailController.childKey),
               resizeToAvoidBottomInset: false,
               backgroundColor: Colors.transparent,
               body: Column(
@@ -1660,7 +1697,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
             width: introWidth,
             height: maxHeight - padding.top,
             child: Scaffold(
-              key: videoDetailController.childKey,
+              key: _ownedKey(videoDetailController.childKey),
               resizeToAvoidBottomInset: false,
               backgroundColor: Colors.transparent,
               body: Column(
@@ -1728,7 +1765,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                   width: introWidth,
                   height: introHeight,
                   child: Scaffold(
-                    key: videoDetailController.childKey,
+                    key: _ownedKey(videoDetailController.childKey),
                     resizeToAvoidBottomInset: false,
                     backgroundColor: Colors.transparent,
                     body: Column(
@@ -1812,7 +1849,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
             width: maxWidth - width - padding.horizontal,
             height: maxHeight - padding.top,
             child: Scaffold(
-              key: videoDetailController.childKey,
+              key: _ownedKey(videoDetailController.childKey),
               resizeToAvoidBottomInset: false,
               backgroundColor: Colors.transparent,
               body: Column(
@@ -1915,7 +1952,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
             width: maxWidth - padding.horizontal,
             height: bottomHeight,
             child: Scaffold(
-              key: videoDetailController.childKey,
+              key: _ownedKey(videoDetailController.childKey),
               resizeToAvoidBottomInset: false,
               backgroundColor: Colors.transparent,
               body: Column(
@@ -2280,6 +2317,14 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     bool isInAppPip = false,
     bool forOverlay = false,
   }) {
+    // 非 owner 页（同一 controller 的另一个驻栈页面正在前台）不构建播放器副本：
+    // 既不能挂 videoPlayerKey/headerCtrKey 去抢 element，也不该为同一播放器
+    // 单例再渲染一份 PLVideoPlayer。build() 的 isPipMode 分支与各布局都经此方法
+    if (!_isPageOwner) {
+      return const SizedBox.shrink();
+    }
+    // 小窗内容已轻量化（PipMiniVideoContent），本方法只服务页面副本，
+    // videoPlayerKey 不再有共享冲突，同时兼任收起源矩形/归位目标矩形的量取锚点
     final Widget player = popScope(
       // 小窗副本不挂 videoPlayerKey：页面副本常驻路由栈（收起时仍 mounted），
       // 共享 key 会导致 overlay 插入时偷走页面 element，留下截断的 Stack
@@ -2321,8 +2366,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                     : Obx(
                         () => PlDanmaku(
                           key: ValueKey(videoDetailController.cid.value),
-                          isPipMode: isPipMode,
                           cid: videoDetailController.cid.value,
+                          isPipMode: isPipMode,
                           playerController: plPlayerController!,
                           isFullScreen: plPlayerController!.isFullScreen.value,
                           isFileSource: videoDetailController.isFileSource,
@@ -2394,7 +2439,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         this.isFullScreen ||
         videoDetailController.plPlayerController.isDesktopPip;
     return Scaffold(
-      key: videoDetailController.childKey,
+      key: _ownedKey(videoDetailController.childKey),
       backgroundColor: context.windowsNeo.background,
       resizeToAvoidBottomInset: false,
       body: LayoutBuilder(
@@ -2918,7 +2963,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
             width: MediaQuery.textScalerOf(context).scale(120),
             child: AnimatedList(
               padding: EdgeInsets.zero,
-              key: videoDetailController.listKey,
+              key: _ownedKey(videoDetailController.listKey),
               reverse: true,
               shrinkWrap: true,
               initialItemCount: videoDetailController.listData.length,
@@ -3109,11 +3154,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
             PgcIntroPage(
               key: videoIntroKey,
               heroTag: heroTag,
-              cid: videoDetailController.cid.value,
               showEpisodes: showEpisodes,
               showIntroDetail: showIntroDetail,
               maxWidth: width ?? maxWidth,
-              isLandscape: !isPortrait,
+              isPortrait: isPortrait,
             ),
           SliverToBoxAdapter(
             child: SizedBox(
@@ -3185,11 +3229,57 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   }
 
   Widget get seasonPanel {
-    final videoDetail = ugcIntroController.videoDetail.value;
+    if (videoDetailController.isUgc) return ugcSeasonPanel;
+    return pgcSeasonPanel;
+  }
+
+  Widget get pgcSeasonPanel {
+    Widget child = Obx(
+      () => EpisodePanel(
+        heroTag: heroTag,
+        enableSlide: false,
+        ugcIntroController: null,
+        type: .pgc,
+        cover: null,
+        list: [pgcIntroController.pgcItem.episodes!],
+        bvid: videoDetailController.bvid,
+        aid: videoDetailController.aid,
+        cid: videoDetailController.cid.value,
+        onChangeEpisode: pgcIntroController.onChangeEpisode,
+        showTitle: false,
+        isSupportReverse: false,
+      ),
+    );
+    if (pgcIntroController.pgcItem.hasSeasons) {
+      child = Column(
+        children: [
+          Padding(
+            padding: const .only(left: 12, top: 8, right: 12),
+            child: Builder(
+              builder: (context) {
+                return pgc.SeasonPanel(
+                  seasons: pgcIntroController.pgcItem.seasons!,
+                  pgcController: pgcIntroController,
+                  onSeasonChanged: () {
+                    if (context.mounted) (context as Element).markNeedsBuild();
+                  },
+                );
+              },
+            ),
+          ),
+          Expanded(child: child),
+        ],
+      );
+    }
+    return KeepAliveWrapper(child: child);
+  }
+
+  Widget get ugcSeasonPanel {
+    final videoDetail = ugcIntroController.videoDetail.rawValue;
     return KeepAliveWrapper(
       child: Column(
         children: [
-          if ((videoDetail.pages?.length ?? 0) > 1)
+          if (videoDetail.hasParts)
             if (videoDetail.ugcSeason != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -3206,10 +3296,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                   () => EpisodePanel(
                     heroTag: heroTag,
                     enableSlide: false,
-                    ugcIntroController: videoDetailController.isUgc
-                        ? ugcIntroController
-                        : null,
-                    type: EpisodeType.part,
+                    ugcIntroController: ugcIntroController,
+                    type: .part,
                     list: [videoDetail.pages!],
                     cover: videoDetailController.cover.value,
                     bvid: videoDetailController.bvid,
@@ -3220,13 +3308,13 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                         ? ugcIntroController.onChangeEpisode
                         : pgcIntroController.onChangeEpisode,
                     showTitle: false,
-                    isSupportReverse: videoDetailController.isUgc,
+                    isSupportReverse: true,
                     onReverse: () => onReversePlay(isSeason: false),
                   ),
                 ),
               ),
           if (videoDetail.ugcSeason != null) ...[
-            if ((videoDetail.pages?.length ?? 0) > 1) ...[
+            if (videoDetail.hasParts) ...[
               const SizedBox(height: 8),
               Divider(
                 height: 1,
@@ -3236,7 +3324,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Obx(
-                () => SeasonPanel(
+                () => ugc.SeasonPanel(
                   key: ValueKey(introController.videoDetail.value),
                   heroTag: heroTag,
                   canTap: false,
@@ -3250,10 +3338,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                 () => EpisodePanel(
                   heroTag: heroTag,
                   enableSlide: false,
-                  ugcIntroController: videoDetailController.isUgc
-                      ? ugcIntroController
-                      : null,
-                  type: EpisodeType.season,
+                  ugcIntroController: ugcIntroController,
+                  type: .season,
                   initialTabIndex: videoDetailController.seasonIndex.value,
                   cover: videoDetailController.cover.value,
                   seasonId: videoDetail.ugcSeason!.id,
@@ -3271,7 +3357,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                       ? ugcIntroController.onChangeEpisode
                       : pgcIntroController.onChangeEpisode,
                   showTitle: false,
-                  isSupportReverse: videoDetailController.isUgc,
+                  isSupportReverse: true,
                   onReverse: () => onReversePlay(isSeason: true),
                 ),
               ),
@@ -3291,7 +3377,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
   // ai总结
   void showAiBottomSheet() {
-    videoDetailController.childKey.currentState?.showBottomSheet(
+    videoDetailController.showBottomSheet(
       backgroundColor: Colors.transparent,
       constraints: const BoxConstraints(),
       (context) =>
@@ -3301,7 +3387,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
   // ai字幕分析
   void showAiChatBottomSheet() {
-    videoDetailController.childKey.currentState?.showBottomSheet(
+    videoDetailController.showBottomSheet(
       backgroundColor: Colors.transparent,
       constraints: const BoxConstraints(),
       (context) => AiChatPage(heroTag: heroTag),
@@ -3312,7 +3398,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     PgcInfoModel videoDetail,
     List<VideoTagItem>? videoTags,
   ) {
-    videoDetailController.childKey.currentState?.showBottomSheet(
+    videoDetailController.showBottomSheet(
       backgroundColor: Colors.transparent,
       constraints: const BoxConstraints(),
       (context) => PgcIntroPanel(
@@ -3380,7 +3466,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
             : child,
       );
     } else {
-      videoDetailController.childKey.currentState?.showBottomSheet(
+      videoDetailController.showBottomSheet(
         backgroundColor: Colors.transparent,
         constraints: const BoxConstraints(),
         (context) => listSheetContent(),
@@ -3501,7 +3587,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
             : child,
       );
     } else {
-      videoDetailController.childKey.currentState?.showBottomSheet(
+      videoDetailController.showBottomSheet(
         backgroundColor: Colors.transparent,
         constraints: const BoxConstraints(),
         (context) => ViewPointsPage(
@@ -3874,7 +3960,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       case WindowsVideoMemberPresentation.fullPage:
         PageUtils.toMember(mid, fromViewAid: videoDetailController.aid);
       case WindowsVideoMemberPresentation.horizontalSheet:
-        videoDetailController.childKey.currentState?.showBottomSheet(
+        videoDetailController.showBottomSheet(
           shape: const RoundedRectangleBorder(),
           constraints: const BoxConstraints(),
           (context) {

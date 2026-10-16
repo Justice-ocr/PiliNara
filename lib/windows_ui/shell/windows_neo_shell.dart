@@ -16,10 +16,10 @@ enum WindowsNeoLayoutMode { narrow, compact, expanded }
 
 extension on WindowsNeoLayoutMode {
   double get sidebarWidth => switch (this) {
-        WindowsNeoLayoutMode.narrow => 0,
-        WindowsNeoLayoutMode.compact => 64,
-        WindowsNeoLayoutMode.expanded => 216,
-      };
+    WindowsNeoLayoutMode.narrow => 0,
+    WindowsNeoLayoutMode.compact => 64,
+    WindowsNeoLayoutMode.expanded => 216,
+  };
 
   bool get showLabels => this == WindowsNeoLayoutMode.expanded;
 }
@@ -44,16 +44,23 @@ class WindowsNeoShell extends StatefulWidget {
   State<WindowsNeoShell> createState() => _WindowsNeoShellState();
 }
 
-class _WindowsNeoShellState extends State<WindowsNeoShell> with WindowListener {
+class _WindowsNeoShellState extends State<WindowsNeoShell> {
   bool _navigationOpen = false;
   bool _isMaximized = false;
+  Window? _window;
+  int? _windowListener;
 
   @override
   void initState() {
     super.initState();
-    windowManager.addListener(this);
-    windowManager.isMaximized().then((value) {
-      if (mounted) setState(() => _isMaximized = value);
+    _window = WindowManager.instance.getCurrent();
+    _isMaximized = _window?.isMaximized ?? false;
+    _windowListener = _window?.addListener((event) {
+      if (event is WindowMaximizedEvent || event is WindowRestoredEvent) {
+        if (mounted) {
+          setState(() => _isMaximized = _window?.isMaximized ?? false);
+        }
+      }
     });
     _syncWindowTitle();
   }
@@ -69,15 +76,11 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> with WindowListener {
 
   @override
   void dispose() {
-    windowManager.removeListener(this);
+    if (_windowListener case final listener?) {
+      _window?.removeListener(listener);
+    }
     super.dispose();
   }
-
-  @override
-  void onWindowMaximize() => setState(() => _isMaximized = true);
-
-  @override
-  void onWindowUnmaximize() => setState(() => _isMaximized = false);
 
   WindowsNeoLayoutMode _layoutMode(double width) {
     if (width < 760) return WindowsNeoLayoutMode.narrow;
@@ -91,9 +94,10 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> with WindowListener {
         valueListenable: WindowsNeoThemeController.family,
         builder: (context, family, _) =>
             ValueListenableBuilder<WindowsNeoThemeDepth>(
-          valueListenable: WindowsNeoThemeController.depth,
-          builder: (context, depth, _) => _buildThemed(context, family, depth),
-        ),
+              valueListenable: WindowsNeoThemeController.depth,
+              builder: (context, depth, _) =>
+                  _buildThemed(context, family, depth),
+            ),
       );
 
   Widget _buildThemed(
@@ -111,7 +115,7 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> with WindowListener {
       duration: MediaQuery.maybeOf(context)?.disableAnimations == true
           ? Duration.zero
           : (neoTheme.extension<WindowsNeoTokens>()?.motionStandard ??
-              const Duration(milliseconds: 200)),
+                const Duration(milliseconds: 200)),
       curve: Curves.easeOutCubic,
       child: Builder(
         builder: (context) => LayoutBuilder(
@@ -224,7 +228,7 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> with WindowListener {
   }
 
   void _syncWindowTitle() {
-    windowManager.setTitle('${widget.activeTab.title} - ${Constants.appName}');
+    _window?.title = '${widget.activeTab.title} - ${Constants.appName}';
   }
 
   void _openSearch() {
@@ -258,8 +262,9 @@ class _WindowsNeoTitleBar extends StatelessWidget {
         child: Row(
           children: [
             SizedBox(
-              width:
-                  mode == WindowsNeoLayoutMode.narrow ? 48 : mode.sidebarWidth,
+              width: mode == WindowsNeoLayoutMode.narrow
+                  ? 48
+                  : mode.sidebarWidth,
               child: Row(
                 children: [
                   if (mode == WindowsNeoLayoutMode.narrow)
@@ -350,27 +355,31 @@ class _WindowsNeoTitleBar extends StatelessWidget {
               ),
             ),
             WindowCaptionButton.minimize(
-              brightness:
-                  tokens.usesDarkChrome ? Brightness.dark : theme.brightness,
-              onPressed: windowManager.minimize,
+              brightness: tokens.usesDarkChrome
+                  ? Brightness.dark
+                  : theme.brightness,
+              onPressed: () => WindowManager.instance.getCurrent()?.minimize(),
             ),
             isMaximized
                 ? WindowCaptionButton.unmaximize(
                     brightness: tokens.usesDarkChrome
                         ? Brightness.dark
                         : theme.brightness,
-                    onPressed: windowManager.unmaximize,
+                    onPressed: () =>
+                        WindowManager.instance.getCurrent()?.restore(),
                   )
                 : WindowCaptionButton.maximize(
                     brightness: tokens.usesDarkChrome
                         ? Brightness.dark
                         : theme.brightness,
-                    onPressed: windowManager.maximize,
+                    onPressed: () =>
+                        WindowManager.instance.getCurrent()?.maximize(),
                   ),
             WindowCaptionButton.close(
-              brightness:
-                  tokens.usesDarkChrome ? Brightness.dark : theme.brightness,
-              onPressed: windowManager.close,
+              brightness: tokens.usesDarkChrome
+                  ? Brightness.dark
+                  : theme.brightness,
+              onPressed: () => WindowManager.instance.getCurrent()?.close(),
             ),
           ],
         ),
@@ -453,9 +462,11 @@ class _WindowsNeoSidebar extends StatelessWidget {
                       () => ListView(
                         padding: EdgeInsets.zero,
                         children: [
-                          for (var index = 0;
-                              index < mainController.navigationBars.length;
-                              index++)
+                          for (
+                            var index = 0;
+                            index < mainController.navigationBars.length;
+                            index++
+                          )
                             _WindowsNeoNavItem(
                               label: _labelForNavigation(
                                 mainController.navigationBars[index],
@@ -463,7 +474,8 @@ class _WindowsNeoSidebar extends StatelessWidget {
                               icon: _iconForNavigation(
                                 mainController.navigationBars[index],
                               ),
-                              selected: activeTab.isHome &&
+                              selected:
+                                  activeTab.isHome &&
                                   mainController.selectedIndex.value == index,
                               showLabel: mode.showLabels,
                               onTap: () {
@@ -526,30 +538,30 @@ class _WindowsNeoSidebar extends StatelessWidget {
     required String label,
     required IconData icon,
     required String route,
-  }) =>
-      _WindowsNeoNavItem(
-        label: label,
-        icon: icon,
-        selected: activeTab.type == WindowsWorkspaceTabType.tool &&
-            activeTab.arguments['tabRoute'] == route,
-        showLabel: mode.showLabels,
-        onTap: () {
-          PageUtils.openToolTab(route: route, title: label);
-          onNavigate();
-        },
-      );
+  }) => _WindowsNeoNavItem(
+    label: label,
+    icon: icon,
+    selected:
+        activeTab.type == WindowsWorkspaceTabType.tool &&
+        activeTab.arguments['tabRoute'] == route,
+    showLabel: mode.showLabels,
+    onTap: () {
+      PageUtils.openToolTab(route: route, title: label);
+      onNavigate();
+    },
+  );
 
   static String _labelForNavigation(NavigationBarType type) => switch (type) {
-        NavigationBarType.home => '首页',
-        NavigationBarType.dynamics => '动态',
-        NavigationBarType.mine => '我的',
-      };
+    NavigationBarType.home => '首页',
+    NavigationBarType.dynamics => '动态',
+    NavigationBarType.mine => '我的',
+  };
 
   static IconData _iconForNavigation(NavigationBarType type) => switch (type) {
-        NavigationBarType.home => Icons.home_outlined,
-        NavigationBarType.dynamics => Icons.motion_photos_on_outlined,
-        NavigationBarType.mine => Icons.person_outline,
-      };
+    NavigationBarType.home => Icons.home_outlined,
+    NavigationBarType.dynamics => Icons.motion_photos_on_outlined,
+    NavigationBarType.mine => Icons.person_outline,
+  };
 }
 
 class _WindowsNeoNavItem extends StatelessWidget {
@@ -570,8 +582,9 @@ class _WindowsNeoNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
-    final foreground =
-        selected ? tokens.navigationForeground : tokens.navigationMuted;
+    final foreground = selected
+        ? tokens.navigationForeground
+        : tokens.navigationMuted;
     final radius = tokens.navigationItemRadius;
     final item = WindowsNeoHoverHalo(
       borderRadius: radius,
@@ -600,14 +613,14 @@ class _WindowsNeoNavItem extends StatelessWidget {
                       child: Text(
                         tokens.shellWordmark,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: tokens.navigationForeground.withValues(
-                                alpha: 0.13,
-                              ),
-                              fontSize: 25,
-                              fontStyle: FontStyle.italic,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0,
-                            ),
+                          color: tokens.navigationForeground.withValues(
+                            alpha: 0.13,
+                          ),
+                          fontSize: 25,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0,
+                        ),
                       ),
                     ),
                   ),
@@ -648,14 +661,15 @@ class _WindowsNeoNavItem extends StatelessWidget {
                               tokens.motionFast,
                             ),
                             curve: Curves.easeOutCubic,
-                            style: Theme.of(
+                            style:
+                                Theme.of(
                                   context,
                                 ).textTheme.bodyMedium?.copyWith(
-                                      color: foreground,
-                                      fontWeight: selected
-                                          ? FontWeight.w600
-                                          : FontWeight.w400,
-                                    ) ??
+                                  color: foreground,
+                                  fontWeight: selected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ) ??
                                 TextStyle(color: foreground),
                             child: Text(
                               label,
@@ -771,10 +785,10 @@ class _WindowsNeoSidebarArtworkLayer extends StatelessWidget {
             child: Text(
               tokens.shellMark,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.78),
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0,
-                  ),
+                color: Colors.white.withValues(alpha: 0.78),
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0,
+              ),
             ),
           ),
         ],
@@ -814,10 +828,10 @@ class _WindowsNeoSidebarArtworkLayer extends StatelessWidget {
             child: Text(
               tokens.shellMark,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.92),
-                    fontWeight: FontWeight.w900,
-                    height: .9,
-                  ),
+                color: Colors.white.withValues(alpha: 0.92),
+                fontWeight: FontWeight.w900,
+                height: .9,
+              ),
             ),
           ),
           Positioned(
@@ -826,10 +840,10 @@ class _WindowsNeoSidebarArtworkLayer extends StatelessWidget {
             child: Text(
               tokens.shellWordmark,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.88),
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.8,
-                  ),
+                color: Colors.white.withValues(alpha: 0.88),
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.8,
+              ),
             ),
           ),
         ],
@@ -883,10 +897,10 @@ class _WindowsNeoArkStage extends StatelessWidget {
               child: Text(
                 'MEDIA / ${tokens.shellMark}',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.90),
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.4,
-                    ),
+                  color: Colors.white.withValues(alpha: 0.90),
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.4,
+                ),
               ),
             ),
           ),
@@ -903,10 +917,10 @@ class _WindowsNeoArkStage extends StatelessWidget {
               child: Text(
                 tokens.shellWordmark,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.94),
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.4,
-                    ),
+                  color: Colors.white.withValues(alpha: 0.94),
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.4,
+                ),
               ),
             ),
           ),
@@ -926,17 +940,17 @@ class _WindowsNeoSidebarPanel extends StatelessWidget {
     final tokens = context.windowsNeo;
     return switch (artwork) {
       WindowsNeoSidebarArtwork.instrumentPanel => _WindowsNeoEndfieldStage(
-          tokens: tokens,
-        ),
+        tokens: tokens,
+      ),
       WindowsNeoSidebarArtwork.archivePanel => _WindowsNeoExAstrisStage(
-          tokens: tokens,
-        ),
+        tokens: tokens,
+      ),
       WindowsNeoSidebarArtwork.playfulPanel => _WindowsNeoPopucomStage(
-          tokens: tokens,
-        ),
+        tokens: tokens,
+      ),
       WindowsNeoSidebarArtwork.studioPanel => _WindowsNeoCorporateStage(
-          tokens: tokens,
-        ),
+        tokens: tokens,
+      ),
       _ => const SizedBox.shrink(),
     };
   }
@@ -949,72 +963,72 @@ class _WindowsNeoEndfieldStage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Stack(
-        fit: StackFit.expand,
-        children: [
-          ColoredBox(color: tokens.surfaceRaised),
-          Positioned(
-            left: 0,
-            top: 0,
-            bottom: 0,
-            child: Container(width: 38, color: tokens.ink),
+    fit: StackFit.expand,
+    children: [
+      ColoredBox(color: tokens.surfaceRaised),
+      Positioned(
+        left: 0,
+        top: 0,
+        bottom: 0,
+        child: Container(width: 38, color: tokens.ink),
+      ),
+      Positioned(
+        left: 12,
+        top: 12,
+        child: Text(
+          '01',
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+            color: tokens.accent,
+            fontWeight: FontWeight.w900,
+            height: .8,
           ),
-          Positioned(
-            left: 12,
-            top: 12,
-            child: Text(
-              '01',
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    color: tokens.accent,
-                    fontWeight: FontWeight.w900,
-                    height: .8,
-                  ),
+        ),
+      ),
+      Positioned(
+        left: 50,
+        top: 16,
+        child: Text(
+          'FIELD / WORKSPACE',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: tokens.ink,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.8,
+          ),
+        ),
+      ),
+      Positioned.fill(
+        child: CustomPaint(
+          painter: _WindowsNeoEndfieldStagePainter(
+            ruleColor: tokens.ink.withValues(alpha: 0.18),
+            signalColor: tokens.accent,
+          ),
+        ),
+      ),
+      Positioned(
+        left: 50,
+        right: 12,
+        bottom: 11,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: tokens.ink.withValues(alpha: 0.28)),
             ),
           ),
-          Positioned(
-            left: 50,
-            top: 16,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 5),
             child: Text(
-              'FIELD / WORKSPACE',
+              'ROUTE // WORKSPACE',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: tokens.ink,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.8,
-                  ),
-            ),
-          ),
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _WindowsNeoEndfieldStagePainter(
-                ruleColor: tokens.ink.withValues(alpha: 0.18),
-                signalColor: tokens.accent,
+                color: tokens.muted,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.25,
               ),
             ),
           ),
-          Positioned(
-            left: 50,
-            right: 12,
-            bottom: 11,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: tokens.ink.withValues(alpha: 0.28)),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.only(top: 5),
-                child: Text(
-                  'ROUTE // WORKSPACE',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: tokens.muted,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.25,
-                      ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
+        ),
+      ),
+    ],
+  );
 }
 
 class _WindowsNeoExAstrisStage extends StatelessWidget {
@@ -1024,56 +1038,56 @@ class _WindowsNeoExAstrisStage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Stack(
-        fit: StackFit.expand,
-        children: [
-          ColoredBox(color: tokens.background),
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _WindowsNeoOrbitStagePainter(
-                lineColor: tokens.accent.withValues(alpha: 0.44),
-                pointColor: tokens.secondaryAccent.withValues(alpha: 0.54),
-              ),
-            ),
+    fit: StackFit.expand,
+    children: [
+      ColoredBox(color: tokens.background),
+      Positioned.fill(
+        child: CustomPaint(
+          painter: _WindowsNeoOrbitStagePainter(
+            lineColor: tokens.accent.withValues(alpha: 0.44),
+            pointColor: tokens.secondaryAccent.withValues(alpha: 0.54),
           ),
-          Positioned(
-            right: 14,
-            top: 16,
-            child: Text(
-              '03',
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.16),
-                    fontFamilyFallback: tokens.displayFontFallback,
-                    fontWeight: FontWeight.w500,
-                    height: .82,
-                  ),
-            ),
+        ),
+      ),
+      Positioned(
+        right: 14,
+        top: 16,
+        child: Text(
+          '03',
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+            color: Colors.white.withValues(alpha: 0.16),
+            fontFamilyFallback: tokens.displayFontFallback,
+            fontWeight: FontWeight.w500,
+            height: .82,
           ),
-          Positioned(
-            left: 12,
-            top: 12,
-            child: Text(
-              'ARCHIVE',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.88),
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 2.2,
-                  ),
-            ),
+        ),
+      ),
+      Positioned(
+        left: 12,
+        top: 12,
+        child: Text(
+          'ARCHIVE',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: Colors.white.withValues(alpha: 0.88),
+            fontWeight: FontWeight.w700,
+            letterSpacing: 2.2,
           ),
-          Positioned(
-            left: 12,
-            bottom: 12,
-            child: Text(
-              'ORBIT / 03',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: tokens.accent,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5,
-                  ),
-            ),
+        ),
+      ),
+      Positioned(
+        left: 12,
+        bottom: 12,
+        child: Text(
+          'ORBIT / 03',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: tokens.accent,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.5,
           ),
-        ],
-      );
+        ),
+      ),
+    ],
+  );
 }
 
 class _WindowsNeoPopucomStage extends StatelessWidget {
@@ -1083,86 +1097,86 @@ class _WindowsNeoPopucomStage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Stack(
-        fit: StackFit.expand,
-        children: [
-          const ColoredBox(color: Color(0xFF3994FF)),
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 0,
-            child: SizedBox(
-              height: 35,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF252B35),
-                  border: Border(
-                    bottom: BorderSide(
-                      color: tokens.accent.withValues(alpha: 0.72),
-                      width: 2,
-                    ),
-                  ),
+    fit: StackFit.expand,
+    children: [
+      const ColoredBox(color: Color(0xFF3994FF)),
+      Positioned(
+        left: 0,
+        right: 0,
+        top: 0,
+        child: SizedBox(
+          height: 35,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: const Color(0xFF252B35),
+              border: Border(
+                bottom: BorderSide(
+                  color: tokens.accent.withValues(alpha: 0.72),
+                  width: 2,
                 ),
               ),
             ),
           ),
-          Positioned(
-            right: 12,
-            top: 12,
-            child: Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                color: tokens.accent,
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF141414), width: 2),
-              ),
+        ),
+      ),
+      Positioned(
+        right: 12,
+        top: 12,
+        child: Container(
+          width: 54,
+          height: 54,
+          decoration: BoxDecoration(
+            color: tokens.accent,
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0xFF141414), width: 2),
+          ),
+        ),
+      ),
+      Positioned(
+        right: 35,
+        bottom: 14,
+        child: Transform.rotate(
+          angle: .18,
+          child: Container(
+            width: 74,
+            height: 30,
+            decoration: BoxDecoration(
+              color: tokens.tertiaryAccent,
+              borderRadius: BorderRadius.zero,
+              border: Border.all(color: const Color(0xFF141414), width: 2),
+              boxShadow: const [
+                BoxShadow(color: Color(0xFF141414), offset: Offset(4, 4)),
+              ],
             ),
           ),
-          Positioned(
-            right: 35,
-            bottom: 14,
-            child: Transform.rotate(
-              angle: .18,
-              child: Container(
-                width: 74,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: tokens.tertiaryAccent,
-                  borderRadius: BorderRadius.zero,
-                  border: Border.all(color: const Color(0xFF141414), width: 2),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0xFF141414), offset: Offset(4, 4)),
-                  ],
-                ),
-              ),
-            ),
+        ),
+      ),
+      Positioned(
+        left: 14,
+        top: 10,
+        child: Text(
+          'PLAY',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.5,
           ),
-          Positioned(
-            left: 14,
-            top: 10,
-            child: Text(
-              'PLAY',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.5,
-                  ),
-            ),
+        ),
+      ),
+      Positioned(
+        left: 14,
+        bottom: 15,
+        child: Text(
+          'CO-OP / 04',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.4,
           ),
-          Positioned(
-            left: 14,
-            bottom: 15,
-            child: Text(
-              'CO-OP / 04',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.4,
-                  ),
-            ),
-          ),
-        ],
-      );
+        ),
+      ),
+    ],
+  );
 }
 
 class _WindowsNeoCorporateStage extends StatelessWidget {
@@ -1172,75 +1186,75 @@ class _WindowsNeoCorporateStage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Stack(
-        fit: StackFit.expand,
-        children: [
-          ColoredBox(color: tokens.ink),
-          Positioned(
-            right: 16,
-            top: 12,
-            child: Text(
-              '05',
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.14),
-                    fontWeight: FontWeight.w800,
-                    height: .82,
-                  ),
+    fit: StackFit.expand,
+    children: [
+      ColoredBox(color: tokens.ink),
+      Positioned(
+        right: 16,
+        top: 12,
+        child: Text(
+          '05',
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+            color: Colors.white.withValues(alpha: 0.14),
+            fontWeight: FontWeight.w800,
+            height: .82,
+          ),
+        ),
+      ),
+      Positioned(
+        left: 14,
+        top: 16,
+        child: Text(
+          'STUDIO',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 2.4,
+          ),
+        ),
+      ),
+      Positioned(
+        left: 14,
+        right: 14,
+        bottom: 24,
+        child: Container(
+          height: 1,
+          color: Colors.white.withValues(alpha: 0.78),
+        ),
+      ),
+      Positioned(
+        right: 14,
+        top: 14,
+        bottom: 14,
+        child: Container(width: 3, color: tokens.accent),
+      ),
+      Positioned(
+        left: 14,
+        bottom: 10,
+        child: Row(
+          children: [
+            Text(
+              'PILI NARA',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.72),
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.4,
+              ),
             ),
-          ),
-          Positioned(
-            left: 14,
-            top: 16,
-            child: Text(
-              'STUDIO',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 2.4,
-                  ),
+            const SizedBox(width: 7),
+            Text(
+              'WORK / 05',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: tokens.accent,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+              ),
             ),
-          ),
-          Positioned(
-            left: 14,
-            right: 14,
-            bottom: 24,
-            child: Container(
-              height: 1,
-              color: Colors.white.withValues(alpha: 0.78),
-            ),
-          ),
-          Positioned(
-            right: 14,
-            top: 14,
-            bottom: 14,
-            child: Container(width: 3, color: tokens.accent),
-          ),
-          Positioned(
-            left: 14,
-            bottom: 10,
-            child: Row(
-              children: [
-                Text(
-                  'PILI NARA',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.72),
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.4,
-                      ),
-                ),
-                const SizedBox(width: 7),
-                Text(
-                  'WORK / 05',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: tokens.accent,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.5,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
+          ],
+        ),
+      ),
+    ],
+  );
 }
 
 class _WindowsNeoEndfieldStagePainter extends CustomPainter {
@@ -1344,11 +1358,11 @@ class _WindowsNeoSidebarSignature extends StatelessWidget {
                   child: Text(
                     '01',
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          color: tokens.accent.withValues(alpha: 0.18),
-                          fontWeight: FontWeight.w800,
-                          height: 0.9,
-                          letterSpacing: 1,
-                        ),
+                      color: tokens.accent.withValues(alpha: 0.18),
+                      fontWeight: FontWeight.w800,
+                      height: 0.9,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
                 Positioned(
@@ -1369,9 +1383,7 @@ class _WindowsNeoSidebarSignature extends StatelessWidget {
                         children: [
                           Text(
                             tokens.shellWordmark,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelLarge
+                            style: Theme.of(context).textTheme.labelLarge
                                 ?.copyWith(
                                   color: tokens.navigationForeground.withValues(
                                     alpha: 0.70,
@@ -1383,9 +1395,7 @@ class _WindowsNeoSidebarSignature extends StatelessWidget {
                           const SizedBox(height: 1),
                           Text(
                             tokens.shellSubmark,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
+                            style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
                                   color: tokens.navigationMuted,
                                   fontWeight: FontWeight.w700,
@@ -1589,8 +1599,9 @@ class _WindowsNeoRecentTabsMenu extends StatelessWidget {
       icon: Icon(
         Icons.history_rounded,
         size: 18,
-        color:
-            tabs.isEmpty ? tokens.muted.withValues(alpha: 0.42) : tokens.muted,
+        color: tabs.isEmpty
+            ? tokens.muted.withValues(alpha: 0.42)
+            : tokens.muted,
       ),
       itemBuilder: (context) => [
         for (final item in tabs)
@@ -1709,9 +1720,10 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                                   item.title,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodySmall?.copyWith(
+                                  style:
+                                      Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.copyWith(
                                         color: foreground,
                                         fontWeight: active
                                             ? FontWeight.w600
@@ -1722,8 +1734,10 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                               if (item.supportsAudio)
                                 Obx(
                                   () {
-                                    final audible = WindowsVideoTabService
-                                        .isTabAudioEnabled(item.id);
+                                    final audible =
+                                        WindowsVideoTabService.isTabAudioEnabled(
+                                          item.id,
+                                        );
                                     return SizedBox(
                                       width: 28,
                                       height: 28,
@@ -1740,11 +1754,11 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                                                     .withValues(alpha: 0.12),
                                               )
                                             : null,
-                                        onPressed: () => WindowsVideoTabService
-                                            .setTabAudioEnabled(
-                                          item.id,
-                                          !audible,
-                                        ),
+                                        onPressed: () =>
+                                            WindowsVideoTabService.setTabAudioEnabled(
+                                              item.id,
+                                              !audible,
+                                            ),
                                         icon: Icon(
                                           audible
                                               ? Icons.volume_up_rounded
@@ -1844,17 +1858,17 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
   }
 
   static IconData _iconForItem(WindowsWorkspaceTab item) => switch (item.type) {
-        WindowsWorkspaceTabType.home => Icons.home_outlined,
-        WindowsWorkspaceTabType.search => Icons.search,
-        WindowsWorkspaceTabType.live => Icons.sensors,
-        WindowsWorkspaceTabType.video => Icons.play_circle_outline,
-        WindowsWorkspaceTabType.member => Icons.person_outline,
-        WindowsWorkspaceTabType.dynamic => Icons.motion_photos_on_outlined,
-        WindowsWorkspaceTabType.tool => switch (item.arguments['tabRoute']) {
-            '/setting' => Icons.settings_outlined,
-            '/download' => Icons.download_outlined,
-            '/whisper' => Icons.chat_bubble_outline,
-            _ => Icons.apps_outlined,
-          },
-      };
+    WindowsWorkspaceTabType.home => Icons.home_outlined,
+    WindowsWorkspaceTabType.search => Icons.search,
+    WindowsWorkspaceTabType.live => Icons.sensors,
+    WindowsWorkspaceTabType.video => Icons.play_circle_outline,
+    WindowsWorkspaceTabType.member => Icons.person_outline,
+    WindowsWorkspaceTabType.dynamic => Icons.motion_photos_on_outlined,
+    WindowsWorkspaceTabType.tool => switch (item.arguments['tabRoute']) {
+      '/setting' => Icons.settings_outlined,
+      '/download' => Icons.download_outlined,
+      '/whisper' => Icons.chat_bubble_outline,
+      _ => Icons.apps_outlined,
+    },
+  };
 }

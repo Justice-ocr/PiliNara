@@ -9,7 +9,7 @@ class SearchResultController extends GetxController {
 
   final String keyword;
 
-  RxList<int> count = List.filled(SearchType.values.length, -1).obs;
+  RxList<int> count = List.filled(SearchType.actives.length, -1).obs;
 
   RxInt toTopIndex = (-1).obs;
 

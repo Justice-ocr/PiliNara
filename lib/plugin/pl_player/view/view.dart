@@ -56,11 +56,13 @@ import 'package:PiliPlus/plugin/pl_player/widgets/play_pause_btn.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/speed_lock_arrows.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
+import 'package:PiliPlus/utils/desktop/window_controller.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
+import 'package:PiliPlus/utils/ios/pip_helper.dart';
 import 'package:PiliPlus/utils/mobile_observer.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -84,7 +86,6 @@ import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
-import 'package:window_manager/window_manager.dart';
 
 part 'widgets.dart';
 
@@ -226,7 +227,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
     if ((widget.headerControl.key as GlobalKey<TimeBatteryMixin>).currentState
         case final state?) {
       if (state.mounted) {
-        state.getBatteryLevelIfNeeded();
+        state.updateBatteryInfoIfNeeded();
         state.provider
           ?..startIfNeeded()
           ..muted = !visible;
@@ -307,10 +308,10 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                 (await FlutterVolumeController.getVolume())!;
             FlutterVolumeController.addListener(
               (double value) {
-              if (mounted && !plPlayerController.volumeInterceptEventStream) {
-                // 只更新系统音量记录，不影响播放器音量和指示器显示
-                plPlayerController.systemVolume.value = value;
-              }
+                if (mounted && !plPlayerController.volumeInterceptEventStream) {
+                  // 只更新系统音量记录，不影响播放器音量和指示器显示
+                  plPlayerController.systemVolume.value = value;
+                }
               },
               category: AudioSessionCategory.playback,
               emitOnStart: false,
@@ -378,6 +379,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Keep playing in the PiP window.
+    if (Platform.isIOS && IOSPipHelper.isActive) return;
     if (!plPlayerController.continuePlayInBackground.value) {
       late final player = plPlayerController.videoPlayerController;
       if (const <AppLifecycleState>[.paused, .detached].contains(state)) {
@@ -461,7 +464,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
   ) {
     final videoDetail = introController.videoDetail.value;
     final isSeason = videoDetail.ugcSeason != null;
-    final isPart = videoDetail.pages != null && videoDetail.pages!.length > 1;
+    final isPart = videoDetail.hasParts;
     final isPgc = !videoDetailController.isUgc;
     final isPlayAll = videoDetailController.isPlayAll;
     final anySeason = isSeason || isPart || isPgc || isPlayAll;
@@ -1039,16 +1042,14 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       if (!plPlayerController.isDesktopPip) .fullscreen,
     ];
     return PlayerBar(
-      children: [
-        Row(
-          mainAxisSize: .min,
-          children: userSpecifyItemLeft.map(progressWidget).toList(),
-        ),
-        Row(
-          mainAxisSize: .min,
-          children: userSpecifyItemRight.map(progressWidget).toList(),
-        ),
-      ],
+      left: Row(
+        mainAxisSize: .min,
+        children: userSpecifyItemLeft.map(progressWidget).toList(),
+      ),
+      right: Row(
+        mainAxisSize: .min,
+        children: userSpecifyItemRight.map(progressWidget).toList(),
+      ),
     );
   }
 
@@ -1091,8 +1092,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
   }
 
   void _initDanmakuMask() {
-    final maskController =
-        widget.videoDetailController?.danmakuMaskController;
+    final maskController = widget.videoDetailController?.danmakuMaskController;
     if (maskController == null || plPlayerController.isLive) return;
     final driver = _maskDriver = DanmakuMaskClipDriver(
       frame: maskController.frame,
@@ -1113,8 +1113,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
     final driver = _maskDriver;
     if (driver == null) return;
     _maskDriver = null;
-    widget.videoDetailController?.danmakuMaskController.frame
-        .removeListener(driver.update);
+    widget.videoDetailController?.danmakuMaskController.frame.removeListener(
+      driver.update,
+    );
     _transformationController.removeListener(driver.update);
     videoController.rect.removeListener(driver.update);
     for (final subscription in _maskSubscriptions) {
@@ -1137,7 +1138,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
     final height = rect.height / _devicePixelRatio;
     final aspectRatio = videoFit.aspectRatio;
     final videoSize = Size(
-      aspectRatio == null ? rect.width / _devicePixelRatio : height * aspectRatio,
+      aspectRatio == null
+          ? rect.width / _devicePixelRatio
+          : height * aspectRatio,
       height,
     );
     final fit = DanmakuMaskGeometry.fittedBoxTransform(
@@ -1977,7 +1980,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                     child: plPlayerController.isDesktopPip
                         ? GestureDetector(
                             behavior: HitTestBehavior.translucent,
-                            onPanStart: (_) => windowManager.startDragging(),
+                            onPanStart: (_) => WindowController.instance.window
+                                ?.startDragging(),
                             child: widget.headerControl,
                           )
                         : widget.headerControl,

@@ -1,52 +1,27 @@
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
-import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models_new/later/list.dart';
+import 'package:PiliPlus/pages/later/widgets/video_card_h_later.dart'
+    show onPushLater;
 import 'package:PiliPlus/utils/duration_utils.dart';
-import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
-class ToViewCardItem extends StatelessWidget {
-  const ToViewCardItem({super.key, required this.item});
+/// 稍后再看快捷卡片（我的页横向列表）
+class MineLaterItem extends StatelessWidget {
+  const MineLaterItem({
+    super.key,
+    required this.item,
+    required this.onPop,
+  });
 
   final LaterItemModel item;
+  final VoidCallback onPop;
 
   static const double _cardWidth = 180.0;
   static const double _cardHeight = 110.0;
-
-  Future<void> _onTap() async {
-    if (item.isPugv ?? false) {
-      PageUtils.viewPugv(seasonId: item.aid);
-      return;
-    }
-    if (item.isPgc ?? false) {
-      if (item.bangumi?.epId != null) {
-        PageUtils.viewPgc(epId: item.bangumi!.epId);
-      } else if (item.redirectUrl?.isNotEmpty == true) {
-        PageUtils.viewPgcFromUri(item.redirectUrl!);
-      }
-      return;
-    }
-    try {
-      final cid =
-          item.cid ?? await SearchHttp.ab2c(aid: item.aid, bvid: item.bvid);
-      if (cid != null) {
-        PageUtils.toVideoPage(
-          aid: item.aid,
-          bvid: item.bvid,
-          cid: cid,
-          cover: item.pic,
-          title: item.title,
-        );
-      }
-    } catch (err) {
-      SmartDialog.showToast(err.toString());
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +31,7 @@ class ToViewCardItem extends StatelessWidget {
     final hasDuration = item.duration != null && item.duration != 0;
 
     return GestureDetector(
-      onTap: _onTap,
+      onTap: () => onPushLater(item).whenComplete(onPop),
       behavior: HitTestBehavior.opaque,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,13 +66,9 @@ class ToViewCardItem extends StatelessWidget {
                       width: _cardWidth,
                       height: _cardHeight,
                     ),
-                    if (item.pgcLabel?.isNotEmpty == true)
-                      PBadge(
-                        text: item.pgcLabel,
-                        top: 6.0,
-                        right: 6.0,
-                        type: PBadgeType.primary,
-                      ),
+                    // 右上角：充电专属 / 合作 / pgc / 课堂
+                    ?item.label,
+                    // 右下角：进度（只显示角标文字，无进度条）
                     if (hasDuration)
                       PBadge(
                         text: item.progress == -1

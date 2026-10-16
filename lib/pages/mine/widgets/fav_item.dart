@@ -5,22 +5,20 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:get/get.dart';
 
 class FavFolderItem extends StatelessWidget {
   const FavFolderItem({
     super.key,
     required this.item,
     required this.onPop,
-    required this.heroTag,
   });
 
   final FavFolderInfo item;
   final VoidCallback onPop;
-  final String heroTag;
 
   @override
   Widget build(BuildContext context) {
+    final heroTag = 'fav-folder-${item.id}';
     final theme = Theme.of(context);
     final isWindowsNeo = WindowsVideoTabService.enabled;
     final radius = BorderRadius.circular(isWindowsNeo ? 6 : 12);
@@ -71,8 +69,9 @@ class FavFolderItem extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             ' ${item.title}',
-            overflow: TextOverflow.fade,
             maxLines: 1,
+            overflow: .ellipsis,
+            style: const TextStyle(height: 1.42, letterSpacing: 0.3),
           ),
           Text(
             ' 共${item.mediaCount}条视频 · ${BiliUtils.isPublicFavText(item.attr)}',

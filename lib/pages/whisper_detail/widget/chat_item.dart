@@ -25,7 +25,6 @@ import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class ChatItem extends StatelessWidget {
@@ -712,9 +711,9 @@ class ChatItem extends StatelessWidget {
                   emote: matchStr,
                   triggerMode: .tap,
                   colorScheme: theme.colorScheme,
-                child: NetworkImgLayer(
-                  width: size,
-                  height: size,
+                  child: NetworkImgLayer(
+                    width: size,
+                    height: size,
                     src: url,
                     type: .emote,
                   ),
@@ -821,6 +820,7 @@ class ChatItem extends StatelessWidget {
           borderRadius: Style.mdRadius,
           child: CachedNetworkImage(
             width: maxWidth,
+            gaplessPlayback: true,
             memCacheWidth: maxWidth.cacheSize(context),
             imageUrl: ImageUtils.thumbnailUrl(content['pic_url']),
             placeholder: (_, _) => const SizedBox.shrink(),

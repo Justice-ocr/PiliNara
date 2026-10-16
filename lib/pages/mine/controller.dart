@@ -1,41 +1,59 @@
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
+import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart'
+    show RefreshIndicatorState;
 import 'package:PiliPlus/http/fav.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/models/common/account_type.dart';
-import 'package:PiliPlus/models_new/history/list.dart';
-import 'package:PiliPlus/models_new/later/list.dart';
-import 'package:PiliPlus/utils/accounts.dart';
+import 'package:PiliPlus/models/common/later_view_type.dart';
+import 'package:PiliPlus/models/common/mine_tab_type.dart';
 import 'package:PiliPlus/models/common/theme/theme_type.dart';
 import 'package:PiliPlus/models/user/info.dart';
 import 'package:PiliPlus/models/user/stat.dart';
 import 'package:PiliPlus/models_new/fav/fav_folder/data.dart';
-import 'package:PiliPlus/pages/common/common_data_controller.dart';
+import 'package:PiliPlus/models_new/fav/fav_folder/list.dart';
+import 'package:PiliPlus/models_new/history/data.dart';
+import 'package:PiliPlus/models_new/history/list.dart';
+import 'package:PiliPlus/models_new/later/data.dart';
+import 'package:PiliPlus/models_new/later/list.dart';
+import 'package:PiliPlus/models_new/sub/sub/data.dart';
+import 'package:PiliPlus/models_new/sub/sub/list.dart';
+import 'package:PiliPlus/pages/common/common_controller.dart'
+    show ScrollOrRefreshMixin;
+import 'package:PiliPlus/pages/common/common_list_controller.dart';
 import 'package:PiliPlus/services/account_service.dart';
+import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
-import 'package:PiliPlus/utils/page_utils.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:material_ui/material_ui.dart' hide RefreshIndicatorState;
 
-class MineController extends CommonDataController<FavFolderData, FavFolderData>
-    with AccountMixin {
+class MineController extends GetxController
+    with AccountMixin, ScrollOrRefreshMixin {
   @override
   AccountService accountService = Get.find<AccountService>();
 
-  int? favFolderCount;
+  @override
+  final ScrollController scrollController = ScrollController();
 
-  final Rx<LoadingState<List<HistoryItemModel>?>> historyLoadingState =
-      LoadingState<List<HistoryItemModel>?>.loading().obs;
+  final GlobalKey<RefreshIndicatorState> refreshKey =
+      GlobalKey<RefreshIndicatorState>();
 
-  final Rx<LoadingState<List<LaterItemModel>?>> toViewLoadingState =
-      LoadingState<List<LaterItemModel>?>.loading().obs;
+  @override
+  Future<void> showRefresh() => refreshKey.currentState?.show() ?? onRefresh();
+
+  @override
+  void onClose() {
+    scrollController.dispose();
+    super.onClose();
+  }
 
   // 用户信息 头像、昵称、lv
   final Rx<UserInfoData> userInfo = UserInfoData().obs;
@@ -59,70 +77,74 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
     (
       icon: CustomIcons.history,
       title: '观看记录',
-      onTap: () => _openLoginRequiredTool(route: '/history', title: '观看记录'),
+      onTap: () {
+        if (isLogin) {
+          PageUtils.openToolTab(route: '/history', title: '观看记录');
+        }
+      },
     ),
     (
       icon: CustomIcons.subscriptions_outlined,
       title: '我的订阅',
-      onTap: () =>
-          _openLoginRequiredTool(route: '/subscription', title: '我的订阅'),
+      onTap: () {
+        if (isLogin) {
+          PageUtils.openToolTab(route: '/subscription', title: '我的订阅');
+        }
+      },
     ),
     (
       icon: CustomIcons.watch_later_outlined,
       title: '稍后再看',
-      onTap: () => _openLoginRequiredTool(route: '/later', title: '稍后再看'),
+      onTap: () {
+        if (isLogin) {
+          PageUtils.openToolTab(route: '/later', title: '稍后再看');
+        }
+      },
     ),
   ];
 
-  void _openLoginRequiredTool({required String route, required String title}) {
-    if (!isLogin) {
-      SmartDialog.showToast('请先登录');
-      return;
+  late final Set<MineTabType> mineTabs;
+  FavCtr? favCtr;
+  HistoryCtr? historyCtr;
+  LaterCtr? laterCtr;
+  SubCtr? subCtr;
+
+  Iterable<MineRefreshMixin> tabCtr() sync* {
+    if (favCtr != null) yield favCtr!;
+    if (historyCtr != null) yield historyCtr!;
+    if (laterCtr != null) yield laterCtr!;
+    if (subCtr != null) yield subCtr!;
+  }
+
+  void _initTabs() {
+    mineTabs = Pref.mineTabs;
+    for (final tab in mineTabs) {
+      switch (tab) {
+        case .favorite:
+          favCtr = FavCtr();
+        case .history:
+          historyCtr = HistoryCtr();
+        case .later:
+          laterCtr = LaterCtr();
+        case .sub:
+          subCtr = SubCtr();
+      }
     }
-    PageUtils.openToolTab(route: route, title: title);
   }
 
   @override
   void onInit() {
     super.onInit();
-    UserInfoData? userInfoCache = Pref.userInfoCache;
+    _initTabs();
+    final userInfoCache = Pref.userInfoCache;
     if (userInfoCache != null) {
       userInfo.value = userInfoCache;
-      queryData();
       queryUserInfo();
-      queryHistory();
-      queryToView();
+      tabCtr().forEach((ctr) => ctr.queryData());
     }
   }
 
-  Future<void> queryToView() async {
-    final res = await UserHttp.seeYouLater(page: 1);
-    if (res case Success(:final response)) {
-      toViewLoadingState.value = Success(response.list?.take(20).toList());
-    } else if (res case Error(:final errMsg, :final code)) {
-      toViewLoadingState.value = Error(errMsg, code: code);
-    }
-  }
-
-  Future<void> queryHistory() async {
-    final res = await UserHttp.historyList(
-      type: 'all',
-      account: Accounts.history,
-    );
-    if (res case Success(:final response)) {
-      historyLoadingState.value = Success(response.list?.take(20).toList());
-    } else if (res case Error(:final errMsg, :final code)) {
-      historyLoadingState.value = Error(errMsg, code: code);
-    }
-  }
-
-  bool get isLogin {
-    if (!accountService.isLogin.value) {
-      // SmartDialog.showToast('账号未登录');
-      return false;
-    }
-    return true;
-  }
+  bool get isLogin => accountService.isLogin.value;
 
   Future<void> queryUserInfo() async {
     final res = await UserHttp.userInfo();
@@ -157,22 +179,6 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
     if (res case Success(:final response)) {
       userStat.value = response;
     }
-  }
-
-  @override
-  bool customHandleResponse(bool isRefresh, Success<FavFolderData> response) {
-    favFolderCount = response.response.count;
-    loadingState.value = response;
-    return true;
-  }
-
-  @override
-  Future<LoadingState<FavFolderData>> customGetData() {
-    return FavHttp.userfavFolder(
-      pn: 1,
-      ps: 20,
-      mid: Accounts.main.mid,
-    );
   }
 
   static void onChangeAnonymity() {
@@ -220,6 +226,7 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
                     '不产生查询或播放记录\n'
                     '点赞等其它操作不受影响\n'
                     '播放进度信息跟随视频取流\n'
+                    '上次观看分p信息跟随主账号\n'
                     '(前往隐私设置了解详情)',
                     style: theme.textTheme.bodySmall,
                   ),
@@ -255,7 +262,7 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
         res == true
             ? Accounts.set(AccountType.heartbeat, AnonymousAccount())
             : Accounts.accountMode[AccountType.heartbeat.index] =
-                AnonymousAccount();
+                  AnonymousAccount();
       });
     } else {
       Accounts.set(AccountType.heartbeat, Accounts.main);
@@ -300,7 +307,7 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
   void push(String name) {
     late final mid = userInfo.value.mid;
     if (isLogin && mid != null) {
-      PageUtils.toDupNamed('/$name', parameters: {'mid': '$mid'});
+      Get.toNamed('/$name?mid=$mid');
     }
   }
 
@@ -308,7 +315,7 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
     if (!accountService.isLogin.value || longPress) {
       Get.toNamed('/loginPage');
     } else {
-      PageUtils.toMember(userInfo.value.mid);
+      Get.toNamed('/member?mid=${userInfo.value.mid}');
     }
   }
 
@@ -317,14 +324,12 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
     if (!accountService.isLogin.value) {
       return Future.syncValue(null);
     }
-    queryUserInfo();
-    queryHistory();
-    queryToView();
-    return super.onRefresh().whenComplete(() {
-      if (isManual) {
-        scrollController.jumpToTop();
-      }
-    });
+    if (isManual) {
+      queryUserInfo();
+    }
+    return Future.wait(
+      tabCtr().map((ctr) => ctr.onRefresh(isManual: isManual)),
+    );
   }
 
   @override
@@ -334,9 +339,117 @@ class MineController extends CommonDataController<FavFolderData, FavFolderData>
     } else {
       userInfo.value = UserInfoData();
       userStat.value = const UserStat();
-      loadingState.value = LoadingState.loading();
-      historyLoadingState.value = LoadingState.loading();
-      toViewLoadingState.value = LoadingState.loading();
+      tabCtr().forEach(
+        (ctr) => ctr.loadingState.value = LoadingState.loading(),
+      );
     }
   }
+}
+
+const _ps = 20;
+
+mixin MineRefreshMixin<R, T> on CommonListController<R, T> {
+  int? count;
+
+  @override
+  void checkIsEnd(int length) {
+    if (count != null && length >= count!) {
+      isEnd = true;
+    }
+  }
+
+  @override
+  Future<void> onRefresh({bool isManual = true}) {
+    count = null;
+    if (isManual) {
+      return super.onRefresh().whenComplete(scrollController.jumpToTop);
+    }
+    return super.onRefresh();
+  }
+}
+
+class FavCtr extends CommonListController<FavFolderData, FavFolderInfo>
+    with MineRefreshMixin {
+  @override
+  List<FavFolderInfo>? getDataList(FavFolderData response) {
+    count = response.count;
+    if (response.hasMore == false) isEnd = true;
+    return response.list;
+  }
+
+  @override
+  Future<LoadingState<FavFolderData>> customGetData() => FavHttp.userfavFolder(
+    pn: page,
+    ps: _ps,
+    mid: Accounts.main.mid,
+  );
+}
+
+class HistoryCtr extends CommonListController<HistoryData, HistoryItemModel>
+    with MineRefreshMixin {
+  int? viewAt;
+  int? max;
+
+  @override
+  List<HistoryItemModel>? getDataList(HistoryData response) {
+    final last = response.list?.lastOrNull;
+    if (last == null) {
+      isEnd = true;
+      max = viewAt = null;
+    } else {
+      isEnd = false;
+      max = last.history.oid;
+      viewAt = last.viewAt;
+    }
+    return response.list;
+  }
+
+  @override
+  Future<LoadingState<HistoryData>> customGetData() => UserHttp.historyList(
+    type: 'all',
+    viewAt: viewAt,
+    max: max,
+    ps: _ps,
+    account: Accounts.history,
+  );
+
+  @override
+  Future<void> onRefresh({bool isManual = true}) {
+    viewAt = null;
+    max = null;
+    return super.onRefresh(isManual: isManual);
+  }
+}
+
+class LaterCtr extends CommonListController<LaterData, LaterItemModel>
+    with MineRefreshMixin {
+  @override
+  List<LaterItemModel>? getDataList(LaterData response) {
+    count = response.count;
+    return response.list;
+  }
+
+  @override
+  Future<LoadingState<LaterData>> customGetData() => UserHttp.seeYouLater(
+    page: page,
+    ps: _ps,
+    viewed: LaterViewType.all.type,
+  );
+}
+
+class SubCtr extends CommonListController<SubData, SubItemModel>
+    with MineRefreshMixin {
+  @override
+  List<SubItemModel>? getDataList(SubData response) {
+    count = response.count;
+    if (response.hasMore == false) isEnd = true;
+    return response.list;
+  }
+
+  @override
+  Future<LoadingState<SubData>> customGetData() => UserHttp.userSubFolder(
+    pn: page,
+    ps: _ps,
+    mid: Accounts.main.mid,
+  );
 }

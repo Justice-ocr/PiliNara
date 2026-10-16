@@ -17,7 +17,6 @@ import 'package:PiliPlus/pages/video/reply_reply/view.dart';
 import 'package:PiliPlus/pages/video/windows_video_context_controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
-import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -141,6 +140,7 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
                     null,
                     oid: _videoReplyController.aid,
                     replyType: _videoReplyController.videoType.replyType,
+                    mentionItem: _videoReplyController.mentionItem,
                   );
                 },
                 tooltip: '发表评论',

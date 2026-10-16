@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'package:PiliPlus/common/assets.dart';
-import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/floating_navigation_bar.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
@@ -11,9 +9,10 @@ import 'package:PiliPlus/common/widgets/route_aware_mixin.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/pages/home/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
-import 'package:PiliPlus/plugin/pl_player/controller.dart';
-import 'package:PiliPlus/utils/android/android_helper.dart';
+import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
+import 'package:PiliPlus/utils/desktop/tray_controller.dart';
+import 'package:PiliPlus/utils/desktop/window_controller.dart';
 import 'package:PiliPlus/utils/extension/context_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
@@ -21,16 +20,13 @@ import 'package:PiliPlus/utils/mobile_observer.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
-import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:get/get.dart';
-import 'package:tray_manager/tray_manager.dart';
-import 'package:win32/win32.dart' as kernel32;
-import 'package:window_manager/window_manager.dart';
+import 'package:nativeapi/nativeapi.dart' as nativeapi;
 
 class MainApp extends StatefulWidget {
   const MainApp({
@@ -47,14 +43,8 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends PopScopeState<MainApp>
-    with
-        RouteAware,
-        RouteAwareMixin,
-        WidgetsBindingObserver,
-        WindowListener,
-        TrayListener {
+    with RouteAware, RouteAwareMixin, WidgetsBindingObserver {
   late final MainController _mainController;
-  late final _setting = GStorage.setting;
   late EdgeInsets _padding;
   late ThemeData theme;
   Brightness? _brightness;
@@ -72,13 +62,8 @@ class _MainAppState extends PopScopeState<MainApp>
     super.initState();
     addObserverMobile(this);
     if (PlatformUtils.isDesktop) {
-      windowManager
-        ..addListener(this)
-        ..setPreventClose(true);
-      if (_mainController.showTrayIcon) {
-        trayManager.addListener(this);
-        _handleTray();
-      }
+      WindowController.instance.init();
+      TrayController.instance.init();
     }
     if (!Platform.isMacOS) {
       PiliScheme.init();
@@ -96,7 +81,9 @@ class _MainAppState extends PopScopeState<MainApp>
     if (PlatformUtils.isDesktop) {
       if (_brightness != brightness) {
         _brightness = brightness;
-        windowManager.setBrightness(brightness);
+        nativeapi.Application.instance.setBrightness(
+          brightness == .dark ? .dark : .light,
+        );
       }
     }
     if (!_mainController.useSideBar) {
@@ -138,8 +125,8 @@ class _MainAppState extends PopScopeState<MainApp>
   @override
   void dispose() {
     if (PlatformUtils.isDesktop) {
-      trayManager.removeListener(this);
-      windowManager.removeListener(this);
+      WindowController.instance.dispose();
+      TrayController.instance.dispose();
     }
     removeObserverMobile(this);
     PiliScheme.listener?.cancel();
@@ -147,141 +134,10 @@ class _MainAppState extends PopScopeState<MainApp>
     super.dispose();
   }
 
-  @override
-  void onWindowMaximize() {
-    _setting.put(SettingBoxKey.isWindowMaximized, true);
-  }
-
-  @override
-  void onWindowUnmaximize() {
-    _setting.put(SettingBoxKey.isWindowMaximized, false);
-  }
-
-  @override
-  Future<void> onWindowMoved() async {
-    if (PlPlayerController.instance?.isDesktopPip ?? false) {
-      return;
-    }
-    final Offset offset = await windowManager.getPosition();
-    _setting.put(SettingBoxKey.windowPosition, [offset.dx, offset.dy]);
-  }
-
-  @override
-  Future<void> onWindowResized() async {
-    if (PlPlayerController.instance?.isDesktopPip ?? false) {
-      return;
-    }
-    final Rect bounds = await windowManager.getBounds();
-    _setting.putAll({
-      SettingBoxKey.windowSize: [bounds.width, bounds.height],
-      SettingBoxKey.windowPosition: [bounds.left, bounds.top],
-    });
-  }
-
-  @override
-  void onWindowClose() {
-    if (_mainController.showTrayIcon && _mainController.minimizeOnExit) {
-      windowManager.hide();
-      _onHideWindow();
-    } else {
-      _onClose();
-    }
-  }
-
-  Future<void> _onClose() async {
-    await GStorage.compact();
-    await GStorage.close();
-    await trayManager.destroy();
-    if (Platform.isWindows) {
-      // flutter_inappwebview
-      // 6.2.0-beta.2+ https://github.com/pichillilorenzo/flutter_inappwebview/issues/2482
-      // 6.1.5 https://github.com/pichillilorenzo/flutter_inappwebview/issues/2512#issuecomment-3031039587
-      final hProcess = kernel32.GetCurrentProcess();
-      kernel32.TerminateProcess(hProcess, 0);
-    } else {
-      exit(0);
-    }
-  }
-
-  @override
-  void onWindowMinimize() {
-    _onHideWindow();
-  }
-
-  @override
-  void onWindowRestore() {
-    _onShowWindow();
-  }
-
-  void _onHideWindow() {
-    if (_mainController.pauseOnMinimize) {
-      if (PlPlayerController.instance case final player?) {
-        if (_mainController.isPlaying = player.playerStatus.isPlaying) {
-          player.pause();
-        }
-      } else {
-        _mainController.isPlaying = false;
-      }
-    }
-  }
-
-  void _onShowWindow() {
-    if (_mainController.pauseOnMinimize && _mainController.isPlaying) {
-      PlPlayerController.instance?.play();
-    }
-  }
-
-  @override
-  Future<void> onTrayIconMouseDown() async {
-    if (await windowManager.isVisible()) {
-      _onHideWindow();
-      windowManager.hide();
-    } else {
-      _onShowWindow();
-      windowManager.show();
-    }
-  }
-
-  @override
-  Future<void> onTrayIconRightMouseDown() async {
-    // ignore: deprecated_member_use
-    trayManager.popUpContextMenu(bringAppToFront: true);
-  }
-
-  @override
-  void onTrayMenuItemClick(MenuItem menuItem) {
-    switch (menuItem.key) {
-      case 'show':
-        windowManager.show();
-      case 'exit':
-        _onClose();
-    }
-  }
-
-  Future<void> _handleTray() async {
-    if (Platform.isWindows) {
-      await trayManager.setIcon(Assets.logoIco);
-    } else {
-      await trayManager.setIcon(Assets.logoLarge);
-    }
-    if (!Platform.isLinux) {
-      await trayManager.setToolTip(Constants.appName);
-    }
-
-    Menu trayMenu = Menu(
-      items: [
-        MenuItem(key: 'show', label: '显示窗口'),
-        MenuItem.separator(),
-        MenuItem(key: 'exit', label: '退出 ${Constants.appName}'),
-      ],
-    );
-    await trayManager.setContextMenu(trayMenu);
-  }
-
   @pragma('vm:prefer-inline')
   static void _onBack() {
     if (Platform.isAndroid) {
-      PiliAndroidHelper.back();
+      AndroidHelper.back();
     }
   }
 
@@ -536,7 +392,10 @@ class _MainAppState extends PopScopeState<MainApp>
     if (Pref.enableGradientBg) {
       child = Material(
         child: Stack(
-          children: [Positioned.fill(child: _gradientBg()), child],
+          children: [
+            Positioned.fill(child: _gradientBg()),
+            child,
+          ],
         ),
       );
     }

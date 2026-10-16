@@ -50,8 +50,11 @@ class _SearchResultPageState extends State<SearchResultPage>
 
     _tabController = TabController(
       vsync: this,
-      initialIndex: _args['initIndex'] ?? 0,
-      length: SearchType.values.length,
+      initialIndex: (_args['initIndex'] as int? ?? 0).clamp(
+        0,
+        SearchType.actives.length - 1,
+      ),
+      length: SearchType.actives.length,
     );
 
     if (_isFromSearch) {
@@ -96,7 +99,7 @@ class _SearchResultPageState extends State<SearchResultPage>
         ],
         stageMode: WindowsNeoStageMode.browse,
         stageScene: WindowsNeoStageScene.discover,
-        stageState: _labelForType(SearchType.values[_tabController.index]),
+        stageState: _labelForType(SearchType.actives[_tabController.index]),
         stageIndex: _tabController.index,
         commandBar: _buildTabBar(theme, desktop: true),
         child: _buildTabView(),
@@ -150,7 +153,7 @@ class _SearchResultPageState extends State<SearchResultPage>
   }
 
   Widget _buildTabBar(ThemeData theme, {bool desktop = false}) {
-    final tabs = SearchType.values
+    final tabs = SearchType.actives
         .map(
           (item) => Obx(() {
             final count = _searchResultController.count[item.index];
@@ -206,7 +209,7 @@ class _SearchResultPageState extends State<SearchResultPage>
 
   Widget _buildTabView() => tabBarView(
     controller: _tabController,
-    children: SearchType.values
+    children: SearchType.actives
         .map(
           (item) => switch (item) {
             SearchType.all => SearchAllPanel(

@@ -2,7 +2,9 @@
 enum SubtitleFormat {
   json,
   vtt,
-  srt,
+  srt;
+
+  String get label => name.toUpperCase();
 }
 
 abstract final class SubtitleUtils {
@@ -48,7 +50,8 @@ abstract final class SubtitleUtils {
       // SRT structure: Index, Timestamp, Content, Empty Line
       sb.writeln(i + 1);
       sb.writeln(
-          "${_srtTimecode(item['from'])} --> ${_srtTimecode(item['to'])}");
+        "${_srtTimecode(item['from'])} --> ${_srtTimecode(item['to'])}",
+      );
       sb.writeln(item['content'].toString().trim());
       sb.writeln();
     }

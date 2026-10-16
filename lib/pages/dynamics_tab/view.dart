@@ -16,8 +16,7 @@ import 'package:PiliPlus/windows_ui/features/dynamics/windows_neo_dynamics_layou
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
-import 'package:waterfall_flow/waterfall_flow.dart'
-    hide SliverWaterfallFlowDelegateWithMaxCrossAxisExtent;
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class DynamicsTabPage extends StatefulWidget {
   const DynamicsTabPage({super.key, required this.dynamicsType});
@@ -139,11 +138,11 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
           final crossAxisCount = WindowsNeoDynamicsLayout.crossAxisCount(
             width,
           );
-          return SliverWaterfallFlow(
-            gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+          return SliverMasonryGrid(
+            crossAxisSpacing: WindowsNeoDynamicsLayout.gridSpacing,
+            mainAxisSpacing: WindowsNeoDynamicsLayout.gridSpacing,
+            gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: crossAxisCount,
-              crossAxisSpacing: WindowsNeoDynamicsLayout.gridSpacing,
-              mainAxisSpacing: WindowsNeoDynamicsLayout.gridSpacing,
             ),
             delegate: _buildDelegate(response),
           );
@@ -151,7 +150,8 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
       );
     }
     if (GlobalData().dynamicsWaterfallFlow) {
-      return SliverWaterfallFlow(
+      return SliverMasonryGrid(
+        crossAxisSpacing: 4,
         gridDelegate: dynGridDelegate,
         delegate: _buildDelegate(response),
       );

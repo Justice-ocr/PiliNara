@@ -9,10 +9,9 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:waterfall_flow/waterfall_flow.dart'
-    hide SliverWaterfallFlowDelegateWithMaxCrossAxisExtent;
 
 class MemberDynamicsPage extends StatefulWidget {
   const MemberDynamicsPage({super.key, this.mid, this.controllerTag});
@@ -28,12 +27,9 @@ class _MemberDynamicsPageState extends State<MemberDynamicsPage>
     with AutomaticKeepAliveClientMixin, DynMixin {
   late MemberDynamicsController _memberDynamicController;
   late int mid;
-  final _windowsGridDelegate =
-      SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 520,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-      );
+  final _windowsGridDelegate = SliverSimpleGridDelegateWithMaxCrossAxisExtent_(
+    maxCrossAxisExtent: 520,
+  );
 
   @override
   bool get wantKeepAlive => true;
@@ -97,12 +93,14 @@ class _MemberDynamicsPageState extends State<MemberDynamicsPage>
       Success(:final response) =>
         response != null && response.isNotEmpty
             ? GlobalData().dynamicsWaterfallFlow
-                  ? SliverWaterfallFlow(
+                  ? SliverMasonryGrid(
+                      mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : 0,
+                      crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : 4,
                       gridDelegate: WindowsVideoTabService.enabled
                           ? _windowsGridDelegate
                           : dynGridDelegate,
                       delegate: SliverChildBuilderDelegate(
-                        (_, index) => _itemBuilder(response, index),
+                        (context, index) => _itemBuilder(response, index),
                         childCount: response.length,
                       ),
                     )

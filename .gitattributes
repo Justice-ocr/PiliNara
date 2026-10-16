@@ -1,1 +1,2 @@
-*.patch text eol=lf
+# Unified diff context lines may consist of a single space.
+*.patch text eol=lf whitespace=-blank-at-eol

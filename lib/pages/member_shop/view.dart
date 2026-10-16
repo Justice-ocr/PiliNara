@@ -11,10 +11,9 @@ import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:waterfall_flow/waterfall_flow.dart'
-    hide SliverWaterfallFlowDelegateWithMaxCrossAxisExtent;
 
 class MemberShop extends StatefulWidget {
   const MemberShop({
@@ -78,18 +77,18 @@ class _MemberShopState extends State<MemberShop>
     }
   }
 
-  late final gridDelegate = SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+  late final gridDelegate = SliverSimpleGridDelegateWithMaxCrossAxisExtent_(
     maxCrossAxisExtent: WindowsVideoTabService.enabled
         ? 300
         : Grid.smallCardWidth,
-    mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.safeSpace,
-    crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.safeSpace,
   );
 
   Widget _buildBody(LoadingState<List<SpaceShopItem>?> loadingState) {
     switch (loadingState) {
       case Loading():
-        return SliverWaterfallFlow(
+        return SliverMasonryGrid(
+          mainAxisSpacing: Style.safeSpace,
+          crossAxisSpacing: Style.safeSpace,
           gridDelegate: gridDelegate,
           delegate: const SliverSingleChildDelegate(
             count: 10,
@@ -100,12 +99,12 @@ class _MemberShopState extends State<MemberShop>
         if (response == null || response.isEmpty) {
           return HttpError(onReload: _controller.onReload);
         }
-        Widget sliver = SliverWaterfallFlow(
+        Widget sliver = SliverMasonryGrid(
+          mainAxisSpacing: Style.safeSpace,
+          crossAxisSpacing: Style.safeSpace,
           gridDelegate: gridDelegate,
           delegate: SliverChildBuilderDelegate(
-            (_, index) {
-              return MemberShopItem(item: response[index]);
-            },
+            (context, index) => MemberShopItem(item: response[index]),
             childCount: response.length,
           ),
         );

@@ -2,11 +2,11 @@
 import 'package:get/get.dart';
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:PiliPlus/models/common/enum_with_label.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/menu_row.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
+import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:collection/collection.dart';
@@ -119,11 +119,11 @@ class ShutdownTimerService {
         isManual: true,
       );
       if (res != null) {
-        res.whenComplete(() => exit(0));
+        res.whenComplete(DeviceUtils.exitApp);
         return;
       }
     }
-    exit(0);
+    DeviceUtils.exitApp();
   }
 
   static (int hour, int minute) _parseMinutes(int minutes) =>

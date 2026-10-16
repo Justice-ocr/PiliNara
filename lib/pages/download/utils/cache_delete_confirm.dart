@@ -4,7 +4,7 @@ import 'package:PiliPlus/models_new/download/bili_download_entry_info.dart';
 import 'package:PiliPlus/models_new/download/download_collection.dart';
 import 'package:PiliPlus/services/download/download_collection_service.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
-import 'package:PiliPlus/utils/cache_manager.dart';
+import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -96,9 +96,11 @@ Future<bool> confirmDeleteFolders({
   }
   final folderIds = folderList.map((item) => item.id).toSet();
   final entries = _uniqueEntries(
-    folderList.expand((folder) => collectionService.resolveFolderEntries(
-      folder.id,
-    )),
+    folderList.expand(
+      (folder) => collectionService.resolveFolderEntries(
+        folder.id,
+      ),
+    ),
   );
   final choice = await _showPrimaryDialog(
     context: context,
@@ -184,9 +186,7 @@ Future<_CacheChoice?> _showPrimaryDialog({
                       deleteCache = value ?? false;
                     }),
               title: const Text('同时删除本地离线缓存'),
-              subtitle: cacheCount == 0
-                  ? const Text('当前没有已完成的本地离线缓存')
-                  : null,
+              subtitle: cacheCount == 0 ? const Text('当前没有已完成的本地离线缓存') : null,
             ),
           ],
         ),
@@ -334,5 +334,5 @@ String _formatEntriesSize(List<BiliDownloadEntryInfo> entries) {
     0,
     (previous, entry) => previous + entry.totalBytes,
   );
-  return CacheManager.formatSize(total);
+  return total.formatSize;
 }

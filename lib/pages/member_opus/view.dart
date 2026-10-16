@@ -12,10 +12,9 @@ import 'package:PiliPlus/pages/member_opus/widgets/space_opus_item.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:waterfall_flow/waterfall_flow.dart'
-    hide SliverWaterfallFlowDelegateWithMaxCrossAxisExtent;
 
 class MemberOpus extends StatefulWidget {
   const MemberOpus({
@@ -133,17 +132,17 @@ class _MemberOpusState extends State<MemberOpus>
     );
   }
 
-  late final gridDelegate = SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+  late final gridDelegate = SliverSimpleGridDelegateWithMaxCrossAxisExtent_(
     maxCrossAxisExtent: WindowsVideoTabService.enabled
         ? 360
         : Grid.smallCardWidth,
-    mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.safeSpace,
-    crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : Style.safeSpace,
   );
 
   Widget _buildBody(LoadingState<List<SpaceOpusItemModel>?> loadingState) {
     return switch (loadingState) {
-      Loading() => SliverWaterfallFlow(
+      Loading() => SliverMasonryGrid(
+        mainAxisSpacing: Style.safeSpace,
+        crossAxisSpacing: Style.safeSpace,
         gridDelegate: gridDelegate,
         delegate: const SliverSingleChildDelegate(
           count: 10,
@@ -152,10 +151,12 @@ class _MemberOpusState extends State<MemberOpus>
       ),
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? SliverWaterfallFlow(
+            ? SliverMasonryGrid(
+                mainAxisSpacing: Style.safeSpace,
+                crossAxisSpacing: Style.safeSpace,
                 gridDelegate: gridDelegate,
                 delegate: SliverChildBuilderDelegate(
-                  (_, index) {
+                  (context, index) {
                     if (index == response.length - 1) {
                       _controller.onLoadMore();
                     }
