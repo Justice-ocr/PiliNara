@@ -2,12 +2,14 @@ import 'package:PiliPlus/common/skeleton/video_card_v.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
+import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_v.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/pages/rcmd/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/pages/home/home_preview_scope.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/windows_ui/features/home/windows_neo_recommendation_grid.dart';
 import 'package:material_ui/material_ui.dart';
@@ -34,7 +36,7 @@ class _RcmdPageState extends State<RcmdPage>
       return WindowsNeoRecommendationGrid(controller: controller);
     }
     final colorScheme = ColorScheme.of(context);
-    return Container(
+    final child = Container(
       clipBehavior: .hardEdge,
       margin: const .symmetric(horizontal: Style.safeSpace),
       decoration: const BoxDecoration(borderRadius: Style.mdRadius),
@@ -55,6 +57,25 @@ class _RcmdPageState extends State<RcmdPage>
         ),
       ),
     );
+    if (PlatformUtils.isDesktop && Pref.showRefreshFAB) {
+      return ScaffoldLayout(
+        body: child,
+        fab: Padding(
+          padding: const .only(
+            right: kFloatingActionButtonMargin,
+            bottom: 80 + kFloatingActionButtonMargin,
+          ),
+          child: FloatingActionButton(
+            tooltip: '刷新',
+            onPressed: controller.toTopAndRefresh,
+            backgroundColor: colorScheme.secondaryContainer,
+            foregroundColor: colorScheme.onSecondaryContainer,
+            child: const Icon(Icons.refresh),
+          ),
+        ),
+      );
+    }
+    return child;
   }
 
   late final gridDelegate = SliverGridDelegateWithExtentAndRatio(

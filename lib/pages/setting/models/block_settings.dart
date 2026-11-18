@@ -56,7 +56,7 @@ List<SettingsModel> get blockSettings => [
     key: SettingBoxKey.banWordForVideoTag,
     onChanged: (value) {
       RecommendFilter.videoTagRegExp = value;
-      RecommendFilter.enableVideoTagFilter = value.pattern.isNotEmpty;
+      RecommendFilter.enableVideoTagFilter = value.isNotEmpty;
     },
   ),
   SwitchModel(

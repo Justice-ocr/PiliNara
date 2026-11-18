@@ -10,6 +10,10 @@ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/image_viewer/hero.dart';
 import 'package:PiliPlus/common/widgets/progress_bar/audio_video_progress_bar.dart';
 import 'package:PiliPlus/common/widgets/progress_bar/segment_progress_bar.dart';
+import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
+import 'package:PiliPlus/common/widgets/scroll_physics.dart'
+    show platformClampingPhysics;
+import 'package:PiliPlus/common/widgets/selection_text.dart';
 import 'package:PiliPlus/grpc/bilibili/app/listener/v1.pb.dart';
 import 'package:PiliPlus/models/common/image_preview_type.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
@@ -22,7 +26,6 @@ import 'package:PiliPlus/pages/video/widgets/header_control.dart'
     show HeaderControlState;
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
 import 'package:PiliPlus/services/shutdown_timer_service.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/services/pip_overlay_service.dart';
 import 'package:PiliPlus/services/live_pip_overlay_service.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
@@ -32,18 +35,18 @@ import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
+import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:material_ui/material_ui.dart' hide DraggableScrollableSheet;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:material_ui/material_ui.dart' hide DraggableScrollableSheet;
 
 class AudioPage extends StatefulWidget {
   const AudioPage({super.key, this.arguments});
@@ -87,11 +90,9 @@ extension _ListOrderExt on ListOrder {
 }
 
 class _AudioPageState extends State<AudioPage> {
-  late final Map? _arguments = widget.arguments ?? Get.arguments as Map?;
-
   late final _controller = Get.put(
-    AudioController(arguments: _arguments),
-    tag: _arguments?['heroTag'] ?? Utils.generateRandomString(8),
+    AudioController(arguments: widget.arguments),
+    tag: widget.arguments?['heroTag'] ?? Utils.generateRandomString(8),
   );
 
   @override
@@ -103,11 +104,12 @@ class _AudioPageState extends State<AudioPage> {
         callOnClose: false,
         immediate: true,
         releaseSavedOwner: true,
-        // The originating video page may still be in the route stack.
+        // 小窗 owner 的视频页仍在栈内时只暂停不 dispose，避免破坏其计数
         disposeSavedOwnerPlayer: VideoStackManager.getCount() == 0,
       );
     }
     if (LivePipOverlayService.isInPipMode) {
+      // 旧直播 controller 就此退休，关闭其弹幕流/计时器/通知条目防泄漏
       LivePipOverlayService.cleanupSavedController();
       LivePipOverlayService.stopLivePip(callOnClose: false);
     }
@@ -122,51 +124,9 @@ class _AudioPageState extends State<AudioPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme.of(context);
-    final size = MediaQuery.sizeOf(context);
-    final isWindowsNeo = WindowsVideoTabService.enabled;
-    final isPortrait = isWindowsNeo ? size.width < 760 : size.isPortrait;
+    final isPortrait = MediaQuery.sizeOf(context).isPortrait;
     final padding = MediaQuery.viewPaddingOf(context);
-    final content = isPortrait
-        ? Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: _buildInfo(colorScheme, isPortrait)),
-              const SizedBox(height: 25),
-              _buildProgressBar(colorScheme),
-              _buildDuration(colorScheme),
-              _buildControls(),
-            ],
-          )
-        : Row(
-            spacing: 12,
-            children: [
-              Expanded(
-                child: _buildInfo(colorScheme, isPortrait),
-              ),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Obx(() {
-                      final audioItem = _controller.audioItem.value;
-                      if (audioItem != null) {
-                        return _buildActions(audioItem);
-                      }
-                      return const SizedBox.shrink();
-                    }),
-                    const SizedBox(height: 25),
-                    _buildProgressBar(colorScheme),
-                    _buildDuration(colorScheme),
-                    _buildControls(),
-                  ],
-                ),
-              ),
-            ],
-          );
-    return Scaffold(
-      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
-      resizeToAvoidBottomInset: false,
+    return SimpleScaffold(
       appBar: AppBar(
         actions: [
           if (_controller.isUgc && _controller.enableSponsorBlock)
@@ -216,23 +176,50 @@ class _AudioPageState extends State<AudioPage> {
           const SizedBox(width: 5),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) => Align(
-          alignment: Alignment.topCenter,
-          child: SizedBox(
-            width: isWindowsNeo ? min(1200.0, constraints.maxWidth) : null,
-            height: constraints.maxHeight,
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: isWindowsNeo ? 24 : 20 + padding.left,
-                top: isWindowsNeo ? 16 : 0,
-                right: isWindowsNeo ? 24 : 20 + padding.right,
-                bottom: 30 + padding.bottom,
-              ),
-              child: content,
-            ),
-          ),
+      body: Padding(
+        padding: EdgeInsets.only(
+          left: 20 + padding.left,
+          right: 20 + padding.right,
+          bottom: 30 + padding.bottom,
         ),
+        child: isPortrait
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: _buildInfo(colorScheme, isPortrait)),
+                  const SizedBox(height: 25),
+                  _buildProgressBar(colorScheme),
+                  _buildDuration(colorScheme),
+                  _buildControls(),
+                ],
+              )
+            : Row(
+                spacing: 12,
+                children: [
+                  Expanded(
+                    child: _buildInfo(colorScheme, isPortrait),
+                  ),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Obx(() {
+                          final audioItem = _controller.audioItem.value;
+                          if (audioItem != null) {
+                            return _buildActions(audioItem);
+                          }
+                          return const SizedBox.shrink();
+                        }),
+                        const SizedBox(height: 25),
+                        _buildProgressBar(colorScheme),
+                        _buildDuration(colorScheme),
+                        _buildControls(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -251,8 +238,7 @@ class _AudioPageState extends State<AudioPage> {
           maxWidth: min(640, context.mediaQueryShortestSide),
         ),
         builder: (context) {
-          final theme = Theme.of(context);
-          final colorScheme = theme.colorScheme;
+          final colorScheme = ColorScheme.of(context);
           Widget child = CustomScrollView(
             controller: scrollController,
             physics: _controller.reachStart
@@ -279,7 +265,6 @@ class _AudioPageState extends State<AudioPage> {
                         initiallyExpanded: isCurr,
                         collapsedIconColor: isCurr ? colorScheme.primary : null,
                         iconColor: isCurr ? null : colorScheme.onSurfaceVariant,
-                        controlAffinity: ListTileControlAffinity.leading,
                         title: Text(
                           item.arc.title,
                           maxLines: 1,
@@ -460,11 +445,8 @@ class _AudioPageState extends State<AudioPage> {
                 ),
                 Expanded(
                   child: Material(
-                    type: MaterialType.transparency,
-                    child: Theme(
-                      data: theme.copyWith(dividerColor: Colors.transparent),
-                      child: child,
-                    ),
+                    type: .transparency,
+                    child: child,
                   ),
                 ),
                 Divider(
@@ -784,7 +766,7 @@ class _AudioPageState extends State<AudioPage> {
             ActionItem(
               icon: const Icon(FontAwesomeIcons.circlePlay),
               onTap: () {
-                _controller.player?.pause();
+                _controller.onPause();
                 PageUtils.toVideoPage(
                   cid: audioItem.associatedItem.subId.first.toInt(),
                   aid: audioItem.associatedItem.oid.toInt(),
@@ -801,20 +783,18 @@ class _AudioPageState extends State<AudioPage> {
 
   void _onDragStart(ThumbDragDetails details) {
     _controller
-      ..position.value = details.timeStamp
+      ..position.value = details.timeStamp.inSeconds
       ..isDragging = true;
   }
 
   void _onDragUpdate(ThumbDragDetails details) {
-    _controller
-      ..isDragging = true
-      ..position.value = details.timeStamp;
+    _controller.position.value = details.timeStamp.inSeconds;
   }
 
-  void _onSeek(Duration value) {
+  void _onSeek(Duration duration) {
     _controller
       ..isDragging = false
-      ..onSeek(value);
+      ..onSeek(duration);
   }
 
   Widget _buildProgressBar(ColorScheme colorScheme) {
@@ -825,8 +805,8 @@ class _AudioPageState extends State<AudioPage> {
         : const Color(0x33999999);
     Widget child = Obx(
       () => ProgressBar(
-        progress: _controller.position.value,
-        total: _controller.duration.value,
+        progress: Duration(seconds: _controller.position.value),
+        total: Duration(seconds: _controller.duration.value),
         baseBarColor: baseBarColor,
         progressBarColor: primary,
         bufferedBarColor: Colors.transparent,
@@ -886,7 +866,7 @@ class _AudioPageState extends State<AudioPage> {
               final position = _controller.position.value;
               if (_controller.player != null) {
                 return Text(
-                  DurationUtils.formatDuration(position.inSeconds),
+                  DurationUtils.formatDuration(position),
                 );
               }
               return const SizedBox.shrink();
@@ -895,7 +875,7 @@ class _AudioPageState extends State<AudioPage> {
               final duration = _controller.duration.value;
               if (_controller.player != null) {
                 return Text(
-                  DurationUtils.formatDuration(duration.inSeconds),
+                  DurationUtils.formatDuration(duration),
                 );
               }
               return const SizedBox.shrink();
@@ -962,9 +942,10 @@ class _AudioPageState extends State<AudioPage> {
             Expanded(
               child: Center(
                 child: ListView(
-                  key: const PageStorageKey(_AudioPageState),
+                  padding: .zero,
                   shrinkWrap: true,
-                  physics: const ClampingScrollPhysics(),
+                  physics: platformClampingPhysics,
+                  key: const PageStorageKey(_AudioPageState),
                   children: [
                     Center(
                       child: GestureDetector(
@@ -983,18 +964,17 @@ class _AudioPageState extends State<AudioPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    SelectableText(
+                    SelectionText(
                       audioItem.arc.title,
                       style: const TextStyle(height: 1.7, fontSize: 16),
-                      scrollPhysics: const NeverScrollableScrollPhysics(),
                     ),
                     const SizedBox(height: 12),
                     if (audioItem.owner.hasName()) ...[
                       GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () {
-                          _controller.player?.pause();
-                          PageUtils.toMember(audioItem.owner.mid);
+                          _controller.onPause();
+                          Get.toNamed('/member?mid=${audioItem.owner.mid}');
                         },
                         child: Row(
                           spacing: 6,
@@ -1008,7 +988,10 @@ class _AudioPageState extends State<AudioPage> {
                                 type: ImageType.avatar,
                               ),
                             Text(
-                              audioItem.owner.name,
+                              remarkedName(
+                                audioItem.owner.mid.toInt(),
+                                audioItem.owner.name,
+                              ),
                             ),
                           ],
                         ),
@@ -1049,10 +1032,7 @@ class _AudioPageState extends State<AudioPage> {
                     ),
                     if (audioItem.arc.hasDesc()) ...[
                       const SizedBox(height: 10),
-                      SelectableText(
-                        audioItem.arc.desc,
-                        scrollPhysics: const NeverScrollableScrollPhysics(),
-                      ),
+                      SelectionText(audioItem.arc.desc),
                     ],
                   ],
                 ),

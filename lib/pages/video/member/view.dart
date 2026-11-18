@@ -156,9 +156,7 @@ class _HorizontalMemberPageState extends State<HorizontalMemberPage> {
                   left: 0,
                   right: 0,
                   top: displacement + 35,
-                  child: Obx(
-                    () => RefreshIndicator_(isRefreshing: _isRefreshing.value),
-                  ),
+                  child: RefreshIndicator_(isRefreshing: _isRefreshing),
                 ),
               ],
             ),

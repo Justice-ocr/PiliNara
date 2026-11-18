@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/hit_test.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/models/common/member/contribute_type.dart';
 import 'package:PiliPlus/models_new/space/space/tab2.dart';
@@ -93,7 +94,7 @@ class _MemberContributeState extends State<MemberContribute>
     );
     return _controller.tabs != null
         ? Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .stretch,
             children: [
               if (isWindowsNeo)
                 Container(

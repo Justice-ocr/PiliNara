@@ -220,7 +220,7 @@ class _LoginPageState extends State<LoginPage> {
       children: [
         const SizedBox(height: 20),
         const Text('使用账号密码登录'),
-        const SizedBox(height: 10),
+        const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: TextField(
@@ -279,15 +279,10 @@ class _LoginPageState extends State<LoginPage> {
                   builder: (context) => SimpleDialog(
                     clipBehavior: Clip.hardEdge,
                     title: const Text('忘记密码？'),
-                    contentPadding: const EdgeInsets.fromLTRB(
-                      0.0,
-                      2.0,
-                      0.0,
-                      16.0,
-                    ),
+                    contentPadding: const .only(top: 2, bottom: 16),
                     children: [
                       const Padding(
-                        padding: EdgeInsets.fromLTRB(25, 0, 25, 10),
+                        padding: .fromLTRB(25, 0, 25, 10),
                         child: Text("试试扫码、手机号登录，或选择"),
                       ),
                       ListTile(
@@ -312,9 +307,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                       ),
                       ListTile(
-                        title: const Text(
-                          '找回密码（电脑版）',
-                        ),
+                        title: const Text('找回密码（电脑版）'),
                         leading: const Icon(Icons.desktop_windows_outlined),
                         subtitle: const Text(
                           'https://passport.bilibili.com/pc/passport/findPassword',

@@ -13,13 +13,11 @@ import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/services/logger.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
-import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
-import 'package:PiliPlus/utils/login_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -257,23 +255,13 @@ Commit Hash: ${BuildConfig.commitHash}''',
           ListTile(
             title: const Text('导入/导出登录信息'),
             leading: const Icon(Icons.import_export_outlined),
-            onTap: () => showImportExportDialog<Map>(
+            onTap: () => showImportExportDialog<Map<String, dynamic>>(
               context,
               title: '登录信息',
               localFileName: () => 'account',
               onExport: () =>
                   Utils.jsonEncoder.convert(Accounts.account.toMap()),
-              onImport: (json) async {
-                final res = json.map(
-                  (key, value) => MapEntry(key, LoginAccount.fromJson(value)),
-                );
-                await Accounts.account.putAll(res);
-                await Accounts.refresh();
-                MineController.anonymity.value = !Accounts.heartbeat.isLogin;
-                if (Accounts.main.isLogin) {
-                  await LoginUtils.onLoginMain();
-                }
-              },
+              onImport: Accounts.importJsonAccount,
             ),
           ),
           ListTile(
@@ -287,6 +275,12 @@ Commit Hash: ${BuildConfig.commitHash}''',
               onExport: GStorage.exportAllSettings,
               onImport: GStorage.importAllJsonSettings,
             ),
+          ),
+          ListTile(
+            title: const Text('导入/导出所有数据'),
+            dense: false,
+            leading: const Icon(Icons.archive_outlined),
+            onTap: () => showDataImportExportDialog(context),
           ),
           ListTile(
             title: const Text('重置所有设置'),

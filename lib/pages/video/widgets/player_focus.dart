@@ -8,13 +8,13 @@ import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/services.dart'
     show KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, HardwareKeyboard;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
 
-class PlayerFocus extends StatefulWidget {
+class PlayerFocus extends StatelessWidget {
   const PlayerFocus({
     super.key,
     required this.child,
@@ -24,6 +24,7 @@ class PlayerFocus extends StatefulWidget {
     this.canPlay,
     this.onSkipSegment,
     this.onRefresh,
+    this.focusNode,
     this.shouldIgnoreShortcuts,
   });
 
@@ -34,10 +35,10 @@ class PlayerFocus extends StatefulWidget {
   final ValueGetter<bool>? canPlay;
   final ValueGetter<bool>? onSkipSegment;
   final VoidCallback? onRefresh;
-  final ValueGetter<bool>? shouldIgnoreShortcuts;
 
-  @override
-  State<PlayerFocus> createState() => _PlayerFocusState();
+  /// 外部持有的焦点节点：供页面在点击/悬停视频区时抢回焦点（恢复方向键音量控制）
+  final FocusNode? focusNode;
+  final ValueGetter<bool>? shouldIgnoreShortcuts;
 
   static bool _shouldHandle(LogicalKeyboardKey logicalKey) {
     return logicalKey == LogicalKeyboardKey.tab ||
@@ -46,70 +47,28 @@ class PlayerFocus extends StatefulWidget {
         logicalKey == LogicalKeyboardKey.arrowUp ||
         logicalKey == LogicalKeyboardKey.arrowDown;
   }
-}
-
-class _PlayerFocusState extends State<PlayerFocus> {
-  final _focusNode = FocusNode(debugLabel: 'player-keyboard-shortcuts');
-
-  PlPlayerController get plPlayerController => widget.plPlayerController;
-  CommonIntroController? get introController => widget.introController;
-  VoidCallback get onSendDanmaku => widget.onSendDanmaku;
-  ValueGetter<bool>? get canPlay => widget.canPlay;
-  ValueGetter<bool>? get onSkipSegment => widget.onSkipSegment;
-  VoidCallback? get onRefresh => widget.onRefresh;
-  ValueGetter<bool>? get shouldIgnoreShortcuts => widget.shouldIgnoreShortcuts;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _focusNode.requestFocus();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Focus(
-      focusNode: _focusNode,
+      focusNode: focusNode,
+      autofocus: true,
       onKeyEvent: (node, event) {
-        // A page can explicitly identify its text editor. This is more reliable
-        // than inspecting the focus tree, whose node context may be the Focus
-        // wrapper rather than the EditableText widget on desktop.
-        if ((shouldIgnoreShortcuts?.call() ?? false) ||
-            _isEditableTextFocused) {
+        if (shouldIgnoreShortcuts?.call() ?? false) {
           return KeyEventResult.ignored;
         }
-        final handled = _handleKey(event);
-        if (handled || PlayerFocus._shouldHandle(event.logicalKey)) {
+        final handled = _handleKey(context, event);
+        if (handled || _shouldHandle(event.logicalKey)) {
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
       },
-      child: Listener(
-        behavior: HitTestBehavior.translucent,
-        onPointerDown: (_) => _focusNode.requestFocus(),
-        child: widget.child,
-      ),
+      child: child,
     );
   }
 
   bool get isFullScreen => plPlayerController.isFullScreen.value;
   bool get hasPlayer => plPlayerController.videoPlayerController != null;
-
-  bool get _isEditableTextFocused {
-    final focusContext = FocusManager.instance.primaryFocus?.context;
-    return focusContext != null &&
-        (focusContext.widget is EditableText ||
-            focusContext.findAncestorWidgetOfExactType<EditableText>() != null);
-  }
 
   void _setVolume({required bool isIncrease}) {
     final volume = isIncrease
@@ -119,6 +78,18 @@ class _PlayerFocusState extends State<PlayerFocus> {
           )
         : math.max(0.0, plPlayerController.volume.value - 0.1);
     plPlayerController.setVolume(volume);
+  }
+
+  void _stepPlaybackSpeed({required bool isIncrease}) {
+    final speed = plPlayerController.playbackSpeed;
+    final speedList = plPlayerController.speedList;
+    final newSpeed = isIncrease
+        ? speedList.where((e) => e > speed).minOrNull
+        : speedList.where((e) => e < speed).maxOrNull;
+    if (newSpeed != null) {
+      plPlayerController.setPlaybackSpeed(newSpeed);
+    }
+    SmartDialog.showToast('${newSpeed ?? speed}x播放');
   }
 
   void _updateVolume(KeyEvent event, {required bool isIncrease}) {
@@ -137,7 +108,7 @@ class _PlayerFocusState extends State<PlayerFocus> {
     }
   }
 
-  bool _handleKey(KeyEvent event) {
+  bool _handleKey(BuildContext context, KeyEvent event) {
     final key = event.logicalKey;
 
     final isKeyQ = key == LogicalKeyboardKey.keyQ;
@@ -158,7 +129,7 @@ class _PlayerFocusState extends State<PlayerFocus> {
         introController!.onCancelTriple(isKeyQ);
       }
       return true;
-    } else if (event is KeyDownEvent && Platform.isWindows) {
+    } else if (event is KeyDownEvent) {
       if (introController?.isTripling ?? false) {
         introController!.onCancelTriple();
       }
@@ -167,6 +138,27 @@ class _PlayerFocusState extends State<PlayerFocus> {
     final isArrowUp = key == LogicalKeyboardKey.arrowUp;
     if (isArrowUp || key == LogicalKeyboardKey.arrowDown) {
       _updateVolume(event, isIncrease: isArrowUp);
+      return true;
+    }
+
+    if (key == .arrowLeft) {
+      if (!plPlayerController.isLive) {
+        if (event is KeyDownEvent) {
+          if (hasPlayer) {
+            plPlayerController
+              ..longPressTimer?.cancel()
+              ..longPressTimer = Timer.periodic(
+                const Duration(milliseconds: 200),
+                plPlayerController.multiBackwardStart,
+              );
+          }
+        } else if (event is KeyUpEvent) {
+          plPlayerController.cancelLongPressTimer();
+          if (hasPlayer) {
+            plPlayerController.multiBackwardEnd();
+          }
+        }
+      }
       return true;
     }
 
@@ -247,7 +239,11 @@ class _PlayerFocusState extends State<PlayerFocus> {
         case LogicalKeyboardKey.keyM:
           if (hasPlayer) {
             final isMuted = !plPlayerController.isMuted;
-            plPlayerController.setMuted(isMuted);
+            plPlayerController.setVolumeCapped(
+              plPlayerController.videoPlayerController,
+              isMuted ? 0 : plPlayerController.volume.value,
+            );
+            unawaited(plPlayerController.setMuted(isMuted));
             SmartDialog.showToast('${isMuted ? '' : '取消'}静音');
           }
           return true;
@@ -287,14 +283,6 @@ class _PlayerFocusState extends State<PlayerFocus> {
         }
 
         switch (key) {
-          case LogicalKeyboardKey.arrowLeft:
-            if (hasPlayer) {
-              plPlayerController.onBackward(
-                plPlayerController.fastForBackwardDuration,
-              );
-            }
-            return true;
-
           case LogicalKeyboardKey.keyW:
             if (HardwareKeyboard.instance.isMetaPressed) {
               return true;
@@ -312,7 +300,7 @@ class _PlayerFocusState extends State<PlayerFocus> {
 
           case LogicalKeyboardKey.keyG:
             if (introController case final UgcIntroController ugcCtr) {
-              ugcCtr.actionRelationMod(Get.context!);
+              ugcCtr.actionRelationMod(context);
             }
             return true;
 
@@ -329,6 +317,12 @@ class _PlayerFocusState extends State<PlayerFocus> {
               if (!introController.nextPlay(manual: true)) {
                 SmartDialog.showToast('已经是最后一集了');
               }
+            }
+            return true;
+
+          case LogicalKeyboardKey.comma || LogicalKeyboardKey.period:
+            if (hasPlayer && !plPlayerController.longPressStatus.value) {
+              _stepPlaybackSpeed(isIncrease: key == LogicalKeyboardKey.period);
             }
             return true;
         }

@@ -1,22 +1,18 @@
 import 'package:PiliPlus/common/skeleton/video_reply.dart';
+import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
+import 'package:PiliPlus/common/widgets/scaffold/mini_scaffold.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models_new/video/video_note_list/list.dart';
 import 'package:PiliPlus/pages/common/slide/common_slide_page.dart';
 import 'package:PiliPlus/pages/video/note/controller.dart';
 import 'package:PiliPlus/pages/webview/view.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
-import 'package:PiliPlus/common/widgets/extended_visibility_detector.dart';
-import 'package:PiliPlus/utils/page_utils.dart';
-import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
-import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -59,82 +55,76 @@ class _NoteListPageState extends State<NoteListPage>
   }
 
   @override
-  Widget buildPage(ThemeData theme) {
-    return Scaffold(
-      backgroundColor: WindowsVideoTabService.enabled
-          ? context.windowsNeo.surface
-          : null,
-      resizeToAvoidBottomInset: false,
-      body: Column(
-        children: [
-          SizedBox(
-            height: 45,
-            child: AppBar(
-              primary: false,
-              automaticallyImplyLeading: false,
-              titleSpacing: 16,
-              toolbarHeight: 45,
-              backgroundColor: Colors.transparent,
-              title: Obx(() {
-                final count = _controller.count.value;
-                return Text('笔记${count == -1 ? '' : '($count)'}');
-              }),
-              shape: Border(
-                bottom: BorderSide(
-                  color: WindowsVideoTabService.enabled
-                      ? context.windowsNeo.border
-                      : theme.colorScheme.outline.withValues(alpha: 0.1),
+  Widget buildPage() {
+    return Material(
+      child: MiniScaffold(
+        body: Column(
+          children: [
+            Container(
+              height: 45,
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                  ),
                 ),
               ),
-              actions: [
-                IconButton(
-                  tooltip: '关闭',
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: () => Navigator.of(context).maybePop(),
-                ),
-                const SizedBox(width: 2),
-              ],
+              child: Row(
+                children: [
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Obx(() {
+                      final count = _controller.count.value;
+                      return Text(
+                        '笔记${count == -1 ? '' : '($count)'}',
+                        style: const TextStyle(fontSize: 16),
+                      );
+                    }),
+                  ),
+                  IconButton(
+                    tooltip: '关闭',
+                    icon: const Icon(Icons.close, size: 20),
+                    onPressed: Get.back,
+                  ),
+                  const SizedBox(width: 2),
+                ],
+              ),
             ),
-          ),
-          Expanded(child: enableSlide ? slideList(theme) : buildList(theme)),
-        ],
+            Expanded(child: enableSlide ? slideList() : buildList()),
+          ],
+        ),
       ),
     );
   }
 
   late Key _key;
-  late bool _isNested;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final controller = PrimaryScrollController.of(context);
-    _isNested = controller is ExtendedNestedScrollController;
     _key = ValueKey(controller.hashCode);
   }
 
   @override
-  Widget buildList(ThemeData theme) {
-    Widget child = refreshIndicator(
+  Widget buildList() {
+    final child = refreshIndicator(
       onRefresh: _controller.onRefresh,
       child: CustomScrollView(
         key: _key,
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverPadding(
-            padding: const EdgeInsets.only(bottom: 100),
+            padding: const .only(bottom: 100),
             sliver: Obx(
-              () => _buildBody(theme, _controller.loadingState.value),
+              () => _buildBody(_controller.loadingState.value),
             ),
           ),
         ],
       ),
     );
-    if (_isNested) {
-      child = ExtendedVisibilityDetector(
-        uniqueKey: const ValueKey(NoteListPage),
-        child: child,
-      );
+    if (!Accounts.main.isLogin) {
+      return child;
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -148,15 +138,11 @@ class _NoteListPageState extends State<NoteListPage>
             bottom: MediaQuery.viewPaddingOf(context).bottom + 6,
           ),
           decoration: BoxDecoration(
-            color: WindowsVideoTabService.enabled
-                ? context.windowsNeo.surfaceRaised
-                : theme.hoverColor,
+            color: theme.hoverColor,
             border: Border(
               top: BorderSide(
                 width: 0.5,
-                color: WindowsVideoTabService.enabled
-                    ? context.windowsNeo.border
-                    : theme.colorScheme.outline.withValues(alpha: 0.1),
+                color: theme.colorScheme.outline.withValues(alpha: 0.1),
               ),
             ),
           ),
@@ -179,49 +165,48 @@ class _NoteListPageState extends State<NoteListPage>
   }
 
   Widget _buildBody(
-    ThemeData theme,
     LoadingState<List<VideoNoteItemModel>?> loadingState,
   ) {
-    late final divider = Divider(
-      height: 1,
-      color: WindowsVideoTabService.enabled
-          ? context.windowsNeo.border
-          : theme.colorScheme.outline.withValues(alpha: 0.1),
-    );
-    return switch (loadingState) {
-      Loading() => SliverPrototypeExtentList.builder(
-        prototypeItem: const VideoReplySkeleton(),
-        itemBuilder: (_, _) => const VideoReplySkeleton(),
-        itemCount: 8,
-      ),
-      Success(:final response) =>
-        response != null && response.isNotEmpty
-            ? SliverList.separated(
-                itemBuilder: (context, index) {
-                  if (index == response.length - 1) {
-                    _controller.onLoadMore();
-                  }
-                  return _itemWidget(theme, response[index]);
-                },
-                itemCount: response.length,
-                separatorBuilder: (context, index) => divider,
-              )
-            : HttpError(onReload: _controller.onReload),
-      Error(:final errMsg) => HttpError(
-        errMsg: errMsg,
-        onReload: _controller.onReload,
-      ),
-    };
+    switch (loadingState) {
+      case Loading():
+        return const SliverPrototypeExtentList(
+          prototypeItem: VideoReplySkeleton(),
+          delegate: SliverSingleChildDelegate(
+            count: 8,
+            child: VideoReplySkeleton(),
+          ),
+        );
+      case Success(:final response):
+        if (response != null && response.isNotEmpty) {
+          final divider = Divider(
+            height: 1,
+            color: theme.colorScheme.outline.withValues(alpha: 0.1),
+          );
+          return SliverList.separated(
+            itemBuilder: (context, index) {
+              if (index == response.length - 1) {
+                _controller.onLoadMore();
+              }
+              return _itemWidget(response[index]);
+            },
+            itemCount: response.length,
+            separatorBuilder: (context, index) => divider,
+          );
+        }
+        return HttpError(onReload: _controller.onReload);
+      case Error(:final errMsg):
+        return HttpError(
+          errMsg: errMsg,
+          onReload: _controller.onReload,
+        );
+    }
   }
 
-  Widget _itemWidget(ThemeData theme, VideoNoteItemModel item) {
+  Widget _itemWidget(VideoNoteItemModel item) {
     return Material(
-      type: WindowsVideoTabService.enabled
-          ? MaterialType.canvas
-          : MaterialType.transparency,
-      color: WindowsVideoTabService.enabled ? context.windowsNeo.surface : null,
+      type: MaterialType.transparency,
       child: InkWell(
-        onTap: () => PageUtils.toDupNamed(
+        onTap: () => Get.toNamed(
           '/articlePage',
           parameters: {
             'id': item.cvid!.toString(),
@@ -234,7 +219,7 @@ class _NoteListPageState extends State<NoteListPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               GestureDetector(
-                onTap: () => PageUtils.toMember(item.author!.mid),
+                onTap: () => Get.toNamed('/member?mid=${item.author!.mid}'),
                 child: NetworkImgLayer(
                   height: 34,
                   width: 34,
@@ -249,7 +234,8 @@ class _NoteListPageState extends State<NoteListPage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     GestureDetector(
-                      onTap: () => PageUtils.toMember(item.author!.mid),
+                      onTap: () =>
+                          Get.toNamed('/member?mid=${item.author!.mid}'),
                       child: Row(
                         children: [
                           Text(
@@ -310,14 +296,10 @@ class _NoteListPageState extends State<NoteListPage>
     );
   }
 
-  void _onTakeNote(BuildContext panelContext) {
-    if (!Accounts.main.isLogin) {
-      SmartDialog.showToast('账号未登录');
-      return;
-    }
+  void _onTakeNote(BuildContext context) {
     final url =
         'https://www.bilibili.com/h5/note-app?oid=${widget.oid}&pagefrom=ugcvideo&is_stein_gate=${widget.isStein ? 1 : 0}';
-    Scaffold.of(panelContext).showBottomSheet(
+    MiniScaffold.of(context).showBottomSheet(
       constraints: const BoxConstraints(),
       (context) => WebviewPage(oid: widget.oid, title: widget.title, url: url),
     );

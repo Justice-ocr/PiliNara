@@ -1,5 +1,5 @@
 import 'package:PiliPlus/pages/dlna/view.dart';
-import 'package:PiliPlus/pages/download/view.dart';
+import 'package:PiliPlus/pages/download/download/view.dart';
 import 'package:PiliPlus/pages/fav/view.dart';
 import 'package:PiliPlus/pages/fav_create/view.dart';
 import 'package:PiliPlus/pages/fav_detail/view.dart';

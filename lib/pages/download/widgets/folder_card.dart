@@ -4,10 +4,7 @@ import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/select_mask.dart';
 import 'package:PiliPlus/models_new/download/bili_download_entry_info.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
-import 'package:PiliPlus/windows_ui/components/windows_neo_hover_halo.dart';
-import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as path;
 
@@ -21,6 +18,7 @@ class DownloadFolderCard extends StatelessWidget {
     this.onLongPress,
     this.trailing,
     this.checked = false,
+    this.subtitle,
   });
 
   final String title;
@@ -31,20 +29,13 @@ class DownloadFolderCard extends StatelessWidget {
   final Widget? trailing;
   final bool checked;
 
+  /// 第三行的说明文字，默认按空 / 非空文件夹给。
+  final String? subtitle;
+
   @override
   Widget build(BuildContext context) {
-    final isWindowsNeo = WindowsVideoTabService.enabled;
-    final card = Material(
-      type: isWindowsNeo ? MaterialType.card : MaterialType.transparency,
-      color: isWindowsNeo ? context.windowsNeo.surface : null,
-      elevation: 0,
-      shape: isWindowsNeo
-          ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6),
-              side: BorderSide(color: context.windowsNeo.border),
-            )
-          : null,
-      clipBehavior: isWindowsNeo ? Clip.antiAlias : Clip.none,
+    return Material(
+      type: MaterialType.transparency,
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
@@ -93,7 +84,7 @@ class DownloadFolderCard extends StatelessWidget {
                     ),
                     const Spacer(),
                     Text(
-                      count == 0 ? '空文件夹' : '本地离线缓存',
+                      subtitle ?? (count == 0 ? '空文件夹' : '本地离线缓存'),
                       style: TextStyle(
                         fontSize: 12,
                         color: Theme.of(context).colorScheme.outline,
@@ -111,12 +102,6 @@ class DownloadFolderCard extends StatelessWidget {
         ),
       ),
     );
-    return isWindowsNeo
-        ? WindowsNeoHoverHalo(
-            borderRadius: context.windowsNeo.cardRadius,
-            child: card,
-          )
-        : card;
   }
 
   Widget _buildCover(BuildContext context, double width, double height) {

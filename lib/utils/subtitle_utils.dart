@@ -1,3 +1,5 @@
+import 'package:PiliPlus/utils/path_utils.dart';
+
 // Logic inspired by BiliRoamingX.
 enum SubtitleFormat {
   json,
@@ -8,6 +10,15 @@ enum SubtitleFormat {
 }
 
 abstract final class SubtitleUtils {
+  static const String _json = '.json';
+  static const String _bcc = '.bcc';
+  static bool isJson(String fileName) =>
+      fileName.endsWith(_json) ||
+      fileName.endsWith(_bcc) ||
+      fileName.endsWith(PathUtils.subtitleExt);
+
+  static const exts = [_json, 'vtt', 'srt', 'ass', _bcc, PathUtils.subtitleExt];
+
   static String _vttTimecode(num seconds) {
     final int h = seconds ~/ 3600;
     seconds %= 3600;

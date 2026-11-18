@@ -142,6 +142,7 @@ class _MemberPageState extends State<MemberPage> {
                         chargeCount: _userController.chargeCount,
                         guards: _userController.guards,
                         guardCount: _userController.guardCount,
+                        hasMedal: _userController.medal == 1,
                       ),
                     ),
                   ),

@@ -5,7 +5,7 @@ import 'package:PiliPlus/pages/blacklist/view.dart';
 import 'package:PiliPlus/pages/danmaku_block/view.dart';
 import 'package:PiliPlus/pages/dynamics_detail/view.dart';
 import 'package:PiliPlus/pages/dynamics_topic/view.dart';
-import 'package:PiliPlus/pages/download/view.dart';
+import 'package:PiliPlus/pages/download/download/view.dart';
 import 'package:PiliPlus/pages/dlna/view.dart';
 import 'package:PiliPlus/pages/fan/view.dart';
 import 'package:PiliPlus/pages/fav/view.dart';

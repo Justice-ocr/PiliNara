@@ -4,6 +4,7 @@ import 'package:PiliPlus/http/login.dart';
 import 'package:PiliPlus/models/common/setting_type.dart';
 import 'package:PiliPlus/pages/about/view.dart';
 import 'package:PiliPlus/pages/login/controller.dart';
+import 'package:PiliPlus/pages/setting/common_setting.dart';
 import 'package:PiliPlus/pages/setting/block_setting.dart';
 import 'package:PiliPlus/pages/setting/dynamics_setting.dart';
 import 'package:PiliPlus/pages/setting/extra_setting.dart';
@@ -445,6 +446,10 @@ class _SettingPageState extends State<SettingPage> {
     SettingType.dynamicsSetting => DynamicsSetting(showAppBar: showAppBar),
     SettingType.videoSetting => VideoSetting(showAppBar: showAppBar),
     SettingType.playSetting => PlaySetting(showAppBar: showAppBar),
+    SettingType.dmSetting || SettingType.replySetting => CommonSetting(
+      settingType: type,
+      showAppBar: showAppBar,
+    ),
     SettingType.styleSetting => StyleSetting(showAppBar: showAppBar),
     SettingType.extraSetting => ExtraSetting(showAppBar: showAppBar),
     SettingType.webdavSetting => WebDavSettingPage(showAppBar: showAppBar),

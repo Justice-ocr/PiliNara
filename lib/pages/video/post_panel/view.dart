@@ -15,18 +15,14 @@ import 'package:PiliPlus/pages/common/slide/common_slide_page.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/post_panel/popup_menu_text.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
-import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
-import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
-import 'package:PiliPlus/common/widgets/extended_visibility_detector.dart';
 import 'package:PiliPlus/utils/extension/context_ext.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
 
 class PostPanel extends CommonSlidePage {
   const PostPanel({
@@ -113,36 +109,94 @@ class PostPanel extends CommonSlidePage {
               icon: const Icon(Icons.edit),
               onPressed: () async {
                 String initV = value;
-                final res = await showDialog<String>(
-                  context: context,
-                  builder: (dialogContext) => AlertDialog(
-                    content: TextFormField(
-                      initialValue: value,
-                      autofocus: true,
+                final String? res;
+                final textField = TextFormField(
+                  initialValue: value,
+                  autofocus: true,
                   textInputAction: .done,
-                      onChanged: (value) => initV = value,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[\d:.]+')),
-                      ],
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(dialogContext).pop(),
-                        child: Text(
-                          '取消',
-                          style: TextStyle(
-                            color: theme.colorScheme.outline,
+                  onChanged: (value) => initV = value,
+                  decoration: PlatformUtils.isMobile
+                      ? const InputDecoration(
+                          border: .none,
+                          isDense: true,
+                          contentPadding: .zero,
+                        )
+                      : null,
+                  onFieldSubmitted: (value) => Get.back(result: initV),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[\d:.]+')),
+                  ],
+                );
+                if (PlatformUtils.isDesktop || context.isTablet) {
+                  res = await showDialog<String>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      content: textField,
+                      title: Text(
+                        '${isFirst ? '开始' : '结束'}: ',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      contentPadding: const .fromLTRB(24, 6, 24, 16),
+                      actions: [
+                        TextButton(
+                          onPressed: Get.back,
+                          child: Text(
+                            '取消',
+                            style: TextStyle(color: theme.colorScheme.outline),
                           ),
                         ),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(dialogContext).pop(initV),
-                        child: const Text('确定'),
-                      ),
-                    ],
-                  ),
-                );
-
+                        TextButton(
+                          onPressed: () => Get.back(result: initV),
+                          child: const Text('确定'),
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  res = await showModalBottomSheet<String>(
+                    context: context,
+                    useSafeArea: true,
+                    isScrollControlled: true,
+                    constraints: const BoxConstraints(maxWidth: 450),
+                    builder: (context) {
+                      final colorScheme = ColorScheme.of(context);
+                      return Padding(
+                        padding: const .symmetric(horizontal: 16, vertical: 10),
+                        child: ViewInsetsSafeArea(
+                          child: SafeArea(
+                            bottom: true,
+                            child: Row(
+                              spacing: 10,
+                              mainAxisSize: .min,
+                              children: [
+                                Text('${isFirst ? '开始' : '结束'}: '),
+                                Expanded(child: textField),
+                                iconButton(
+                                  size: 34,
+                                  iconSize: 19,
+                                  tooltip: '取消',
+                                  onPressed: Get.back,
+                                  iconColor: colorScheme.outline,
+                                  bgColor: colorScheme.onInverseSurface,
+                                  icon: const Icon(Icons.clear),
+                                ),
+                                iconButton(
+                                  size: 34,
+                                  iconSize: 19,
+                                  tooltip: '确定',
+                                  onPressed: () => Get.back(result: initV),
+                                  iconColor: colorScheme.onSecondaryContainer,
+                                  bgColor: colorScheme.secondaryContainer,
+                                  icon: const Icon(Icons.check),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
                 if (res != null) {
                   try {
                     List<num> split = res
@@ -195,127 +249,113 @@ class _PostPanelState extends State<PostPanel>
 
   double currentPos() => plPlayerController.positionInMilliseconds / 1000;
 
+  late double bottom;
+
   @override
-  Widget buildPage(ThemeData theme) {
-    return Scaffold(
-      backgroundColor: WindowsVideoTabService.enabled
-          ? context.windowsNeo.surface
-          : null,
-      resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        primary: false,
-        toolbarHeight: 45,
-        automaticallyImplyLeading: false,
-        titleSpacing: 16,
-        title: const Text('提交片段'),
-        actions: [
-          iconButton(
-            size: 32,
-            context: context,
-            tooltip: '添加片段',
-            onPressed: () {
-              setState(() {
-                list.insert(
-                  0,
-                  PostSegmentModel(
-                    segment: Pair(
-                      first: 0,
-                      second: currentPos(),
+  Widget buildPage() {
+    return SimpleScaffold(
+      appBar: SizedBox(
+        height: 45,
+        child: Row(
+          children: [
+            const SizedBox(width: 16),
+            const Expanded(child: Text('提交片段', style: TextStyle(fontSize: 16))),
+            iconButton(
+              size: 32,
+              context: context,
+              tooltip: '添加片段',
+              onPressed: () {
+                setState(() {
+                  list.insert(
+                    0,
+                    PostSegmentModel(
+                      segment: Pair(
+                        first: 0,
+                        second: currentPos(),
+                      ),
+                      category: SegmentType.sponsor,
+                      actionType: ActionType.skip,
                     ),
-                    category: SegmentType.sponsor,
-                    actionType: ActionType.skip,
-                  ),
-                );
-              });
-            },
-            icon: const Icon(Icons.add),
-          ),
-          const SizedBox(width: 10),
-          iconButton(
-            size: 32,
-            context: context,
-            tooltip: '关闭',
-            onPressed: () => Navigator.of(context).maybePop(),
-            icon: const Icon(Icons.close),
-          ),
-          const SizedBox(width: 16),
-        ],
+                  );
+                });
+              },
+              icon: const Icon(Icons.add),
+            ),
+            const SizedBox(width: 10),
+            iconButton(
+              size: 32,
+              context: context,
+              tooltip: '关闭',
+              onPressed: Get.back,
+              icon: const Icon(Icons.close),
+            ),
+            const SizedBox(width: 16),
+          ],
+        ),
       ),
-      body: enableSlide ? slideList(theme) : buildList(theme),
+      body: enableSlide ? slideList() : buildList(),
+      fab: list.isEmpty
+          ? null
+          : Padding(
+              padding: .only(
+                right: kFloatingActionButtonMargin,
+                bottom: kFloatingActionButtonMargin + bottom,
+              ),
+              child: FloatingActionButton(
+                tooltip: '提交',
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('确定无误再提交'),
+                    actions: [
+                      TextButton(
+                        onPressed: Get.back,
+                        child: Text(
+                          '取消',
+                          style: TextStyle(color: theme.colorScheme.outline),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _onPost,
+                        child: const Text('确定提交'),
+                      ),
+                    ],
+                  ),
+                ),
+                child: const Icon(Icons.check),
+              ),
+            ),
     );
   }
 
   late Key _key;
-  late bool _isNested;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final controller = PrimaryScrollController.of(context);
-    _isNested = controller is ExtendedNestedScrollController;
     _key = ValueKey(controller.hashCode);
+    bottom = MediaQuery.viewPaddingOf(context).bottom;
   }
 
   @override
-  Widget buildList(ThemeData theme) {
+  Widget buildList() {
     if (list.isEmpty) {
       return scrollableError;
     }
-    final bottom = MediaQuery.viewPaddingOf(context).bottom;
-    Widget child = ListView.builder(
+    return ListView.builder(
       key: _key,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.only(bottom: 88 + bottom),
       itemCount: list.length,
       itemBuilder: (context, index) {
-        return _buildItem(theme, index, list[index]);
+        return _buildItem(index, list[index]);
       },
-    );
-    if (_isNested) {
-      child = ExtendedVisibilityDetector(
-        uniqueKey: const ValueKey(PostPanel),
-        child: child,
-      );
-    }
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        child,
-        Positioned(
-          right: kFloatingActionButtonMargin,
-          bottom: kFloatingActionButtonMargin + bottom,
-          child: FloatingActionButton(
-            tooltip: '提交',
-            onPressed: () => showDialog(
-              context: context,
-              builder: (dialogContext) => AlertDialog(
-                title: const Text('确定无误再提交'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(),
-                    child: Text(
-                      '取消',
-                      style: TextStyle(color: theme.colorScheme.outline),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop();
-                      _onPost();
-                    },
-                    child: const Text('确定提交'),
-                  ),
-                ],
-              ),
-            ),
-            child: const Icon(Icons.check),
-          ),
-        ),
-      ],
     );
   }
 
   Future<void> _onPost() async {
+    Get.back();
     final res = await SponsorBlock.postSkipSegments(
       bvid: videoDetailController.bvid,
       cid: videoDetailController.cid.value,
@@ -324,7 +364,7 @@ class _PostPanelState extends State<PostPanel>
     );
 
     if (res case Success(:final response)) {
-      Navigator.of(context).maybePop();
+      Get.back();
       SmartDialog.showToast('提交成功');
       list.clear();
       videoDetailController.handleSBData(response);
@@ -336,7 +376,7 @@ class _PostPanelState extends State<PostPanel>
     }
   }
 
-  Widget _buildItem(ThemeData theme, int index, PostSegmentModel item) {
+  Widget _buildItem(int index, PostSegmentModel item) {
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -348,13 +388,8 @@ class _PostPanelState extends State<PostPanel>
           ),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: WindowsVideoTabService.enabled
-                ? context.windowsNeo.surfaceRaised
-                : theme.colorScheme.onInverseSurface,
-            borderRadius: const BorderRadius.all(Radius.circular(6)),
-            border: WindowsVideoTabService.enabled
-                ? Border.all(color: context.windowsNeo.border)
-                : null,
+            color: theme.colorScheme.onInverseSurface,
+            borderRadius: const BorderRadius.all(Radius.circular(12)),
           ),
           child: Builder(
             builder: (context) => Column(
@@ -484,20 +519,20 @@ class _PostPanelState extends State<PostPanel>
               final player = plPlayerController.videoPlayerController;
               if (player != null) {
                 final start = (item.segment.first * 1000).round();
-                Future<void> seekTo() => plPlayerController.seek(
+                Future<void> seekTo() => plPlayerController.seekTo(
                   Duration(milliseconds: (item.segment.second * 1000).round()),
                 );
                 if (start <= 0) {
                   seekTo();
                   if (!player.state.playing) {
-                    await player.play();
+                    await plPlayerController.play();
                   }
                   return;
                 }
                 final seek = max(0, start - 2000);
-                await plPlayerController.seek(Duration(milliseconds: seek));
+                await plPlayerController.seekTo(Duration(milliseconds: seek));
                 if (!player.state.playing) {
-                  await player.play();
+                  await plPlayerController.play();
                 }
                 if (start > seek) {
                   final posSub = player.stream.position.listen(

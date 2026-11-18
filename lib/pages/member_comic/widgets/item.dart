@@ -9,7 +9,7 @@ import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
 
 class MemberComicItem extends StatelessWidget {
-  const MemberComicItem({super.key, required this.item});
+  const MemberComicItem(this.item, {super.key});
 
   final SpaceArchiveItem item;
 

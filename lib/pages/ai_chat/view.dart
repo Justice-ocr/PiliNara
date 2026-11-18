@@ -67,7 +67,8 @@ class _AiChatPageState extends State<AiChatPage>
   /// Mobile: consume Enter to prevent it from bubbling up to PlayerFocus
   /// (which would open the danmaku input panel).
   static KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.enter) {
       if (Platform.isAndroid || Platform.isIOS) {
         // On mobile, stop the KeyEvent from propagating to ancestor focus
         // handlers (e.g. PlayerFocus → send danmaku), but let the platform
@@ -75,8 +76,9 @@ class _AiChatPageState extends State<AiChatPage>
         return KeyEventResult.skipRemainingHandlers;
       }
       if (!HardwareKeyboard.instance.isShiftPressed) {
-        final state = node.context?.findAncestorStateOfType<_AiChatPageState>();
-        if (state != null && !state.chatCtl.isAnalyzing.value) {
+        final state =
+            node.context?.findAncestorStateOfType<_AiChatPageState>();
+        if (state != null && !state.chatCtl.isRequesting.value) {
           state._sendCustomPrompt();
         }
         return KeyEventResult.handled;
@@ -96,6 +98,7 @@ class _AiChatPageState extends State<AiChatPage>
 
   @override
   void dispose() {
+    // 请求由视频页持有的 controller 管理，关闭面板后继续接收结果。
     _inputCtl.dispose();
     _focusNode
       ..removeListener(_onFocusChanged)
@@ -295,6 +298,7 @@ class _AiChatPageState extends State<AiChatPage>
   }
 
   void _sendCustomPrompt() {
+    if (chatCtl.isRequesting.value) return;
     final text = _inputCtl.text.trim();
     if (text.isEmpty) return;
     _inputCtl.clear();
@@ -308,7 +312,7 @@ class _AiChatPageState extends State<AiChatPage>
   }
 
   @override
-  Widget buildPage(ThemeData theme) {
+  Widget buildPage() {
     _templates = AiChatService.getTemplates();
     final colorScheme = theme.colorScheme;
     return FocusScope(
@@ -318,110 +322,101 @@ class _AiChatPageState extends State<AiChatPage>
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         child: Column(
           children: [
-            // Drag handle
-            GestureDetector(
-              onTap: () => Navigator.of(context).maybePop(),
-              child: SizedBox(
-                height: _isCompact ? 24 : 35,
-                child: Center(
-                  child: Container(
-                    width: 32,
-                    height: 3,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary,
-                      borderRadius: const BorderRadius.all(Radius.circular(3)),
-                    ),
+          // Drag handle
+          GestureDetector(
+            onTap: Get.back,
+            child: SizedBox(
+              height: _isCompact ? 24 : 35,
+              child: Center(
+                child: Container(
+                  width: 32,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    borderRadius: const BorderRadius.all(Radius.circular(3)),
                   ),
                 ),
               ),
             ),
+          ),
 
-            // Title bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.auto_awesome,
-                    color: colorScheme.primary,
-                    size: _isCompact ? 18 : 22,
+          // Title bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Icon(Icons.auto_awesome, color: colorScheme.primary, size: _isCompact ? 18 : 22),
+                const SizedBox(width: 8),
+                Text(
+                  'AI 视频助手',
+                  style: (_isCompact ? theme.textTheme.titleSmall : theme.textTheme.titleMedium)?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'AI 视频助手',
-                    style:
-                        (_isCompact
-                                ? theme.textTheme.titleSmall
-                                : theme.textTheme.titleMedium)
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                  ),
-                  const Spacer(),
-                  Obx(() {
-                    if (chatCtl.messages.isNotEmpty) {
-                      return TextButton.icon(
-                        onPressed: chatCtl.clearMessages,
-                        style: _isCompact
-                            ? TextButton.styleFrom(
-                                visualDensity: VisualDensity.compact,
-                              )
-                            : null,
-                        icon: const Icon(Icons.refresh, size: 18),
-                        label: const Text('重置'),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  }),
-                ],
-              ),
+                 ),
+                 const Spacer(),
+                 Obx(() {
+                  if (chatCtl.messages.isNotEmpty) {
+                    return TextButton.icon(
+                      onPressed: chatCtl.clearMessages,
+                      style: _isCompact
+                          ? TextButton.styleFrom(visualDensity: VisualDensity.compact)
+                          : null,
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: const Text('重置'),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }),
+              ],
             ),
-            SizedBox(height: _isCompact ? 4 : 8),
+          ),
+          SizedBox(height: _isCompact ? 4 : 8),
 
-            // Prompt selector + analyze button
+          // Prompt selector + analyze button
           _collapsibleBar(
             slideUp: true,
             child: Column(
               key: _promptBarKey,
               children: [
-            _buildPromptBar(theme),
-            Divider(height: 1, color: colorScheme.outlineVariant),
-            Obx(() {
-              if (!chatCtl.subtitleWarning.value) {
-                return const SizedBox.shrink();
-              }
-              return Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 6,
-                ),
-                color: colorScheme.errorContainer,
-                child: Text(
-                  '提示：当前视频文本较长，AI 首次阅读需要几秒钟，请耐心等待',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.onErrorContainer,
-                  ),
-                ),
-              );
-            }),
+                _buildPromptBar(theme),
+                Divider(height: 1, color: colorScheme.outlineVariant),
+                Obx(() {
+                  if (!chatCtl.subtitleWarning.value) {
+                    return const SizedBox.shrink();
+                  }
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
+                    color: colorScheme.errorContainer,
+                    child: Text(
+                      '提示：当前视频文本较长，AI 首次阅读需要几秒钟，请耐心等待',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onErrorContainer,
+                      ),
+                    ),
+                  );
+                }),
               ],
             ),
           ),
 
-            // Content area (slideable)
-            Expanded(
-              child: enableSlide ? slideList(theme) : buildList(theme),
-            ),
-
-            // Input bar
-          _collapsibleBar(
-            slideUp: false,
-            child: _buildInputBar(theme),
+          // Content area (slideable)
+          Expanded(
+            child: enableSlide ? slideList() : buildList(),
           ),
-          ],
-        ),
+
+          // Input bar
+          Obx(() => _collapsibleBar(
+            slideUp: false,
+            keepVisible: chatCtl.isRequesting.value,
+            child: _buildInputBar(theme),
+          )),
+        ],
+      ),
       ),
     );
   }
@@ -436,12 +431,16 @@ class _AiChatPageState extends State<AiChatPage>
   ///
   /// 用 [SizeTransition] 而非 CustomHeightWidget：这里需要裁剪溢出内容，
   /// 提示词栏上方还有标题栏，不裁剪会画到标题栏上。
-  Widget _collapsibleBar({required bool slideUp, required Widget child}) {
+  Widget _collapsibleBar({
+    required bool slideUp,
+    required Widget child,
+    bool keepVisible = false,
+  }) {
     return ValueListenableBuilder<double>(
       valueListenable: _barCollapse,
       child: child,
       builder: (context, progress, child) => SizeTransition(
-        sizeFactor: AlwaysStoppedAnimation(1 - progress),
+        sizeFactor: AlwaysStoppedAnimation(keepVisible ? 1.0 : 1 - progress),
         alignment: slideUp ? Alignment.bottomLeft : Alignment.topLeft,
         child: child,
       ),
@@ -449,7 +448,7 @@ class _AiChatPageState extends State<AiChatPage>
   }
 
   @override
-  Widget buildList(ThemeData theme) {
+  Widget buildList() {
     return Listener(
       // 鼠标滚轮/触控板滚动没有 dragDetails，由指针信号单独跟随
       onPointerSignal: _onPointerSignal,
@@ -460,10 +459,7 @@ class _AiChatPageState extends State<AiChatPage>
   Widget _buildPromptBar(ThemeData theme) {
     final colorScheme = theme.colorScheme;
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: _isCompact ? 4 : 8,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: _isCompact ? 4 : 8),
       child: Row(
         children: [
           Expanded(
@@ -508,7 +504,7 @@ class _AiChatPageState extends State<AiChatPage>
           ),
           const SizedBox(width: 12),
           Obx(() {
-            final analyzing = chatCtl.isAnalyzing.value;
+            final requesting = chatCtl.isRequesting.value;
             final hasContext = chatCtl.hasVideoContext.value;
             final hasSubs = chatCtl.hasSubtitles;
             return Row(
@@ -518,26 +514,17 @@ class _AiChatPageState extends State<AiChatPage>
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: IconButton(
-                      onPressed: (analyzing || hasContext)
-                          ? null
-                          : () => chatCtl.loadVideoContext(),
+                      onPressed: (requesting || hasContext) ? null : () => chatCtl.loadVideoContext(),
                       icon: Icon(Icons.post_add, size: _isCompact ? 18 : 22),
                       tooltip: '载入上下文',
                     ),
                   ),
                 FilledButton.icon(
-                  onPressed: analyzing ? null : _sendSelectedPrompt,
+                  onPressed: requesting ? null : _sendSelectedPrompt,
                   style: _isCompact
-                      ? FilledButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                        )
+                      ? FilledButton.styleFrom(visualDensity: VisualDensity.compact)
                       : null,
-                  icon: analyzing
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.play_arrow, size: 20),
+                  icon: const Icon(Icons.play_arrow, size: 20),
                   label: const Text('分析'),
                 ),
               ],
@@ -571,8 +558,8 @@ class _AiChatPageState extends State<AiChatPage>
                   chatCtl.hasVideoContext.value
                       ? '视频上下文已载入，请输入你的问题'
                       : chatCtl.hasSubtitles
-                      ? '选择提示词后点击「分析」或「载入上下文」'
-                      : '输入问题开始对话',
+                          ? '选择提示词后点击「分析」或「载入上下文」'
+                          : '输入问题开始对话',
                   style: TextStyle(color: colorScheme.outline),
                 ),
               ],
@@ -588,20 +575,20 @@ class _AiChatPageState extends State<AiChatPage>
          child: Stack(
            children: [
              ListView.builder(
-        controller: _scrollCtl,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        itemCount: msgs.length,
-        itemBuilder: (context, index) {
-          final msg = msgs[index];
-          if (msg.isDivider) return _buildDivider(theme);
-          if (msg.role == 'user') {
-            final displayText = msg.templateName != null
-                ? '/${msg.templateName}'
-                : msg.content;
-            return _buildUserMessage(displayText, theme);
-          }
-          return _buildAssistantMessage(msg, theme);
-        },
+               controller: _scrollCtl,
+               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+               itemCount: msgs.length,
+               itemBuilder: (context, index) {
+                 final msg = msgs[index];
+                 if (msg.isDivider) return _buildDivider(theme);
+                 if (msg.role == 'user') {
+                   final displayText = msg.templateName != null
+                       ? '/${msg.templateName}'
+                       : msg.content;
+                   return _buildUserMessage(displayText, theme);
+                 }
+                 return _buildAssistantMessage(msg, theme);
+               },
              ),
              if (!_isAtBottom)
                Positioned(
@@ -616,7 +603,7 @@ class _AiChatPageState extends State<AiChatPage>
                ),
            ],
          ),
-      );
+       );
     });
   }
 
@@ -648,8 +635,7 @@ class _AiChatPageState extends State<AiChatPage>
       alignment: Alignment.centerRight,
       child: Container(
         constraints: BoxConstraints(
-          maxWidth:
-              MediaQuery.sizeOf(context).width * (_isCompact ? 0.92 : 0.8),
+          maxWidth: MediaQuery.sizeOf(context).width * (_isCompact ? 0.92 : 0.8),
         ),
         margin: EdgeInsets.symmetric(vertical: _isCompact ? 2 : 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -686,8 +672,7 @@ class _AiChatPageState extends State<AiChatPage>
         children: [
           Container(
             constraints: BoxConstraints(
-              maxWidth:
-                  MediaQuery.sizeOf(context).width * (_isCompact ? 0.95 : 0.85),
+              maxWidth: MediaQuery.sizeOf(context).width * (_isCompact ? 0.95 : 0.85),
             ),
             margin: EdgeInsets.symmetric(vertical: _isCompact ? 2 : 4),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -702,8 +687,8 @@ class _AiChatPageState extends State<AiChatPage>
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 // 思考块是整条助手消息内部第一个子 Widget，不是独立消息
                 if (msg.hasReasoning) ...[
                   _ReasoningBlock(
@@ -712,9 +697,9 @@ class _AiChatPageState extends State<AiChatPage>
                     onOuterScrollBy: _scrollOuterBy,
                     isOuterAtBottom: () => _isAtBottom,
                     onInnerWheelConsumed: () => _reasoningWheelConsumed = true,
-                      ),
+                  ),
                   if (msg.content.isNotEmpty) const SizedBox(height: 8),
-                    ],
+                ],
                 if (msg.content.isNotEmpty)
                   SelectionArea(
                     child: MarkdownBody(
@@ -882,7 +867,7 @@ class _AiChatPageState extends State<AiChatPage>
                     ],
                   ),
               ],
-                  ),
+            ),
           ),
           // Copy button at bottom-right of bubble, after streaming ends
           if (!msg.isStreaming && msg.content.isNotEmpty)
@@ -915,13 +900,12 @@ class _AiChatPageState extends State<AiChatPage>
     try {
       final videoCtl = Get.find<VideoDetailController>(tag: widget.heroTag);
       final duration = videoCtl.plPlayerController.duration.value;
-      if (duration.inSeconds > 0 && seconds > duration.inSeconds) {
+      if (seconds > duration.inSeconds) {
         SmartDialog.showToast('时间戳超出视频时长');
         return;
       }
       videoCtl.plPlayerController.seekTo(
         Duration(seconds: seconds),
-        isSeek: false,
       );
     } catch (_) {
       SmartDialog.showToast('跳转失败');
@@ -932,9 +916,7 @@ class _AiChatPageState extends State<AiChatPage>
     final colorScheme = theme.colorScheme;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final safeBottom = MediaQuery.of(context).viewPadding.bottom;
-    final bottomPadding = bottomInset > 0
-        ? bottomInset + 4.0
-        : safeBottom + (_isCompact ? 8.0 : 16.0);
+    final bottomPadding = bottomInset > 0 ? bottomInset + 4.0 : safeBottom + (_isCompact ? 8.0 : 16.0);
     return Container(
       padding: EdgeInsets.fromLTRB(16, _isCompact ? 4 : 8, 8, bottomPadding),
       decoration: BoxDecoration(
@@ -968,12 +950,30 @@ class _AiChatPageState extends State<AiChatPage>
             ),
           ),
           const SizedBox(width: 8),
-          Obx(
-            () => IconButton.filled(
-              onPressed: chatCtl.isAnalyzing.value ? null : _sendCustomPrompt,
-              icon: const Icon(Icons.send),
-            ),
-          ),
+          Obx(() {
+            final requesting = chatCtl.isRequesting.value;
+            return IconButton.filled(
+              onPressed: requesting ? chatCtl.cancelRequest : _sendCustomPrompt,
+              tooltip: requesting ? '停止生成' : '发送',
+              icon: requesting
+                  ? SizedBox.square(
+                      dimension: 24,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Positioned.fill(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.onPrimary,
+                            ),
+                          ),
+                          const Icon(Icons.stop_rounded, size: 16),
+                        ],
+                      ),
+                    )
+                  : const Icon(Icons.send),
+            );
+          }),
         ],
       ),
     );
@@ -984,9 +984,9 @@ class _AiChatPageState extends State<AiChatPage>
 /// Avoids matching IP addresses (192.168.x.x:80) and URLs.
 class TimestampSyntax extends md.InlineSyntax {
   TimestampSyntax()
-    : super(
+      : super(
         r'(?<![.\d])(?:\[| ［|【|[\(])?(\d{1,2})[：:](\d{2})(?:[：:](\d{2}))?(?:\]| ［|】|[\)])?(?![.\d])',
-      );
+        );
 
   @override
   bool onMatch(md.InlineParser parser, Match match) {

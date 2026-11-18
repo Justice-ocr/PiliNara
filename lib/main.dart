@@ -13,7 +13,8 @@ import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
 import 'package:PiliPlus/router/app_pages.dart';
 import 'package:PiliPlus/services/account_service.dart';
-import 'package:PiliPlus/services/download/download_collection_service.dart';
+import 'package:PiliPlus/services/download/download_folder_service.dart';
+import 'package:PiliPlus/services/download/download_library_service.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/services/logger.dart';
 import 'package:PiliPlus/services/route_stack_observer.dart';
@@ -37,7 +38,6 @@ import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:audio_service_mpris/audio_service_mpris.dart';
 import 'package:catcher_2/catcher_2.dart';
 import 'package:collection/collection.dart';
 import 'package:dynamic_color/dynamic_color.dart' show DynamicColorPlugin;
@@ -49,6 +49,7 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:nativeapi/nativeapi.dart' as nativeapi show Size, Rectangle;
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
@@ -122,7 +123,8 @@ void main(List<String> arguments) async {
   Get
     ..lazyPut(AccountService.new)
     ..lazyPut(DownloadService.new)
-    ..put(DownloadCollectionService());
+    ..put(DownloadFolderService())
+    ..put(DownloadLibraryService());
   HttpOverrides.global = _CustomHttpOverrides();
 
   if (PlatformUtils.isMobile) {
@@ -141,17 +143,7 @@ void main(List<String> arguments) async {
       );
     }
     await setupServiceLocator();
-  } else if (Platform.isMacOS) {
-    await setupServiceLocator();
-  } else if (Platform.isLinux) {
-    AudioServiceMpris.init(
-      identity: Constants.appName,
-      canControl: true,
-      canPlay: true,
-      canPause: true,
-      canGoNext: true,
-      canGoPrevious: true,
-    );
+  } else if (Platform.isMacOS || Platform.isLinux) {
     await setupServiceLocator();
   }
 
@@ -222,16 +214,22 @@ void main(List<String> arguments) async {
   if (PlatformUtils.isDesktop) {
     final window = WindowManager.instance.getCurrent();
     if (window != null) {
+      final showTitleBar = Pref.showWindowTitleBar;
+      // macOS 隐藏标题栏时改用 contentUnderTitleBar，保持窗口可拖动
+      final useContentUnderTitleBar = Platform.isMacOS && !showTitleBar;
+      final (nativeapi.Size minSize, nativeapi.Rectangle bounds) =
+          calcWindowBounds();
       window
         ..titleBarStyle =
             WindowsVideoTabService.enabled || !Pref.showWindowTitleBar
             ? .hidden
             : .normal
         ..isWindowControlButtonsVisible = !WindowsVideoTabService.enabled
-        ..bounds = calcWindowBounds()
-        ..minimumSize = DeviceUtils.desktopMinSize
+        ..bounds = bounds
+        ..minimumSize = minSize
         ..isVisibleInTaskbar = true
         ..title = Constants.appName;
+      if (useContentUnderTitleBar) window.setContentUnderTitleBar(true);
       if (Pref.isWindowMaximized) window.maximize();
       void show([_]) => window
         ..focus()

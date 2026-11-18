@@ -8,6 +8,9 @@ import 'package:PiliPlus/common/widgets/flutter/popup_menu.dart';
 import 'package:PiliPlus/common/widgets/flutter/text_field/text_field.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
+import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
+import 'package:PiliPlus/common/widgets/scroll_physics.dart'
+    show platformAlwaysClampingPhysics;
 import 'package:PiliPlus/grpc/bilibili/im/type.pb.dart' show Msg;
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/msg.dart';
@@ -17,20 +20,20 @@ import 'package:PiliPlus/pages/emote/view.dart';
 import 'package:PiliPlus/pages/whisper_detail/controller.dart';
 import 'package:PiliPlus/pages/whisper_detail/widget/chat_item.dart';
 import 'package:PiliPlus/pages/whisper_link_setting/view.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/file_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
-import 'package:PiliPlus/utils/extension/widget_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
-import 'package:material_ui/material_ui.dart' hide TextField;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:material_ui/material_ui.dart' hide TextField;
 import 'package:mime/mime.dart';
+
+const _kMaxExtent = 625.0;
+const _kConstraints = BoxConstraints(maxWidth: _kMaxExtent);
 
 class WhisperDetailPage extends CommonRichTextPubPage {
   const WhisperDetailPage({
@@ -49,77 +52,30 @@ class WhisperDetailPage extends CommonRichTextPubPage {
 
 class _WhisperDetailPageState
     extends CommonRichTextPubPageState<WhisperDetailPage> {
-  late final WhisperDetailController _whisperDetailController;
-  late final String _controllerTag;
-
-  @override
-  void initState() {
-    super.initState();
-    final arguments = widget.arguments ?? Get.arguments as Map?;
-    _controllerTag =
-        widget.controllerTag ?? Utils.makeHeroTag(arguments?['talkerId']);
-    _whisperDetailController = Get.put(
-      WhisperDetailController(arguments: arguments),
-      tag: _controllerTag,
-    );
-  }
-
-  @override
-  void dispose() {
-    Get.delete<WhisperDetailController>(tag: _controllerTag);
-    super.dispose();
-  }
+  late final _whisperDetailController = Get.put(
+    WhisperDetailController(arguments: widget.arguments),
+    tag: widget.controllerTag ??
+        Utils.makeHeroTag(
+          widget.arguments?['talkerId'] ?? Get.parameters['talkerId'],
+        ),
+  );
 
   @override
   Widget build(BuildContext context) {
     final padding = MediaQuery.viewPaddingOf(context);
-    final isWindowsNeo = WindowsVideoTabService.enabled;
     late final containerColor = ElevationOverlay.colorWithOverlay(
-      isWindowsNeo
-          ? context.windowsNeo.surfaceRaised
-          : theme.colorScheme.surface,
-      isWindowsNeo ? context.windowsNeo.hover : theme.hoverColor,
+      theme.colorScheme.surface,
+      theme.hoverColor,
       1,
     );
-    final content = Padding(
-      padding: EdgeInsets.only(
-        left: isWindowsNeo ? 0 : padding.left,
-        right: isWindowsNeo ? 0 : padding.right,
-      ),
-      child: Column(
-        children: [
-          Expanded(
-            child: Listener(
-              onPointerDown: hidePanel,
-              behavior: HitTestBehavior.opaque,
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Obx(
-                  () => _buildBody(
-                    _whisperDetailController.loadingState.value,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          if (_whisperDetailController.mid != null) ...[
-            _buildInputView(theme, containerColor),
-            buildPanelContainer(containerColor),
-          ] else
-            SizedBox(height: padding.bottom),
-        ],
-      ),
-    );
-    return Scaffold(
-      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
-      resizeToAvoidBottomInset: false,
+    return SimpleScaffold(
       appBar: AppBar(
         title: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
             if (_whisperDetailController.mid != null) {
               feedBack();
-              PageUtils.toMember(_whisperDetailController.mid);
+              Get.toNamed('/member?mid=${_whisperDetailController.mid}');
             }
           },
           child: Row(
@@ -160,9 +116,8 @@ class _WhisperDetailPageState
         actions: [
           IconButton(
             tooltip: '设置',
-            onPressed: () => PageUtils.toPage(
-              context,
-              () => WhisperLinkSettingPage(
+            onPressed: () => Get.to(
+              WhisperLinkSettingPage(
                 talkerUid: _whisperDetailController.talkerId,
               ),
             ),
@@ -175,28 +130,33 @@ class _WhisperDetailPageState
           const SizedBox(width: 5),
         ],
       ),
-      body: isWindowsNeo
-          ? LayoutBuilder(
-              builder: (context, constraints) {
-                final horizontal = constraints.maxWidth > 860
-                    ? (constraints.maxWidth - 820) / 2
-                    : 20.0;
-                return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: horizontal),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: context.windowsNeo.surface,
-                      border: Border(
-                        left: BorderSide(color: context.windowsNeo.border),
-                        right: BorderSide(color: context.windowsNeo.border),
-                      ),
-                    ),
-                    child: content,
-                  ),
-                );
-              },
-            )
-          : content.constraintWidth(),
+      body: Padding(
+        padding: EdgeInsets.only(left: padding.left, right: padding.right),
+        child: Column(
+          children: [
+            Expanded(
+              child: Listener(
+                onPointerDown: hidePanel,
+                behavior: .opaque,
+                child: Obx(
+                  () => _buildBody(_whisperDetailController.loadingState.value),
+                ),
+              ),
+            ),
+            if (_whisperDetailController.mid != null) ...[
+              ConstrainedBox(
+                constraints: _kConstraints,
+                child: _buildInputView(containerColor),
+              ),
+              ConstrainedBox(
+                constraints: _kConstraints,
+                child: buildPanelContainer(containerColor),
+              ),
+            ] else
+              SizedBox(height: padding.bottom),
+          ],
+        ),
+      ),
     );
   }
 
@@ -206,12 +166,10 @@ class _WhisperDetailPageState
       Success(:final response) =>
         response != null && response.isNotEmpty
             ? ChatListView.separated(
-                maxExtent: 625,
+                maxExtent: _kMaxExtent,
                 itemCount: response.length,
                 padding: const .all(kChatListPadding),
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: ClampingScrollPhysics(),
-                ),
+                physics: platformAlwaysClampingPhysics,
                 controller: _whisperDetailController.scrollController,
                 itemBuilder: (context, int index) {
                   if (index == response.length - 1) {
@@ -315,18 +273,12 @@ class _WhisperDetailPageState
     );
   }
 
-  Widget _buildInputView(ThemeData theme, Color containerColor) {
-    final isWindowsNeo = WindowsVideoTabService.enabled;
+  Widget _buildInputView(Color containerColor) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: containerColor,
-        borderRadius: isWindowsNeo
-            ? BorderRadius.zero
-            : const BorderRadius.vertical(top: Radius.circular(16)),
-        border: isWindowsNeo
-            ? Border(top: BorderSide(color: context.windowsNeo.border))
-            : null,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -338,42 +290,27 @@ class _WhisperDetailPageState
             tooltip: '表情',
           ),
           Expanded(
-            child: Listener(
-              onPointerUp: (event) {
-                // Currently it may be emojiPanel.
-                if (readOnly.value) {
-                  updatePanelType(.keyboard);
-                }
-              },
-              child: Obx(
-                () => RichTextField(
-                  key: key,
-                  readOnly: readOnly.value,
-                  focusNode: focusNode,
-                  controller: editController,
-                  minLines: 1,
-                  maxLines: 4,
-                  onChanged: onChanged,
-                  onSubmitted: onSubmitted,
-                  textInputAction: TextInputAction.newline,
-                  decoration: InputDecoration(
-                    filled: true,
-                    hintText: '发个消息聊聊呗~',
-                    fillColor: isWindowsNeo
-                        ? context.windowsNeo.surface
-                        : theme.colorScheme.surface,
-                    border: OutlineInputBorder(
-                      borderSide: isWindowsNeo
-                          ? BorderSide(color: context.windowsNeo.border)
-                          : BorderSide.none,
-                      borderRadius: BorderRadius.circular(6),
-                      gapPadding: 0,
-                    ),
-                    contentPadding: const EdgeInsets.all(10),
-                  ),
+            child: RichTextField(
+              key: key,
+              focusNode: focusNode,
+              controller: editController,
+              minLines: 1,
+              maxLines: 4,
+              onChanged: onChanged,
+              onSubmitted: onSubmitted,
+              textInputAction: TextInputAction.newline,
+              decoration: InputDecoration(
+                filled: true,
+                hintText: '发个消息聊聊呗~',
+                fillColor: theme.colorScheme.surface,
+                border: const OutlineInputBorder(
+                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.all(Radius.circular(6)),
+                  gapPadding: 0,
                 ),
-                // inputFormatters: [LengthLimitingTextInputFormatter(500)],
+                contentPadding: const EdgeInsets.all(10),
               ),
+              // inputFormatters: [LengthLimitingTextInputFormatter(500)],
             ),
           ),
           Obx(

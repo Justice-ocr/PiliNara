@@ -222,9 +222,9 @@ class DynamicsController extends GetxController
           scrollController.animToTop();
         }
         EasyThrottle.throttle(
-          'topOrRefresh',
+          topOrRefreshThrottleKey,
           const Duration(milliseconds: 500),
-          onRefresh,
+          showRefresh,
         );
       } else {
         animateToTop();

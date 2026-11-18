@@ -16,6 +16,7 @@ class BottomControl extends StatelessWidget {
     super.key,
     required this.maxWidth,
     required this.isFullScreen,
+    required this.animCtr,
     required this.controller,
     required this.buildBottomControl,
     required this.videoDetailController,
@@ -24,6 +25,7 @@ class BottomControl extends StatelessWidget {
 
   final double maxWidth;
   final bool isFullScreen;
+  final AnimationController animCtr;
   final PlPlayerController controller;
   final ValueGetter<Widget> buildBottomControl;
   final VideoDetailController videoDetailController;

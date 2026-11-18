@@ -2,19 +2,18 @@ import 'package:PiliPlus/common/widgets/appbar/appbar.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
+import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/models_new/download/bili_download_entry_info.dart';
 import 'package:PiliPlus/pages/common/multi_select/base.dart'
     show BaseMultiSelectMixin;
 import 'package:PiliPlus/pages/download/detail/widgets/item.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
-import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
-import 'package:material_ui/material_ui.dart'
-    hide SliverGridDelegateWithMaxCrossAxisExtent;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart'
+    hide SliverGridDelegateWithMaxCrossAxisExtent;
 
 class DownloadingPage extends StatefulWidget {
   const DownloadingPage({super.key});
@@ -24,7 +23,7 @@ class DownloadingPage extends StatefulWidget {
 }
 
 class _DownloadingPageState extends State<DownloadingPage>
-    with BaseMultiSelectMixin<BiliDownloadEntryInfo> {
+    with BaseMultiSelectMixin<BiliDownloadEntryInfo>, GridMixin {
   final _downloadService = Get.find<DownloadService>();
   late final _waitDownloadQueue = _downloadService.waitDownloadQueue;
   @override
@@ -43,11 +42,7 @@ class _DownloadingPageState extends State<DownloadingPage>
             handleSelect();
           }
         },
-        child: Scaffold(
-          backgroundColor: WindowsVideoTabService.enabled
-              ? context.windowsNeo.background
-              : null,
-          resizeToAvoidBottomInset: false,
+        child: SimpleScaffold(
           appBar: MultiSelectAppBarWidget(
             ctr: this,
             child: AppBar(
@@ -71,54 +66,37 @@ class _DownloadingPageState extends State<DownloadingPage>
           body: CustomScrollView(
             slivers: [
               ViewSliverSafeArea(
-                sliver: SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                    WindowsVideoTabService.enabled ? 18 : 0,
-                    WindowsVideoTabService.enabled ? 16 : 0,
-                    WindowsVideoTabService.enabled ? 18 : 0,
-                    WindowsVideoTabService.enabled ? 100 : 0,
-                  ),
-                  sliver: Obx(() {
-                    if (_waitDownloadQueue.isNotEmpty) {
-                      return SliverGrid.builder(
-                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          mainAxisSpacing: WindowsVideoTabService.enabled
-                              ? 12
-                              : 2,
-                          crossAxisSpacing: WindowsVideoTabService.enabled
-                              ? 12
-                              : 0,
-                          mainAxisExtent: WindowsVideoTabService.enabled
-                              ? 112
-                              : 100,
-                          maxCrossAxisExtent: WindowsVideoTabService.enabled
-                              ? 520
-                              : Grid.smallCardWidth * 2,
-                        ),
-                        itemCount: _waitDownloadQueue.length,
-                        itemBuilder: (context, index) {
-                          final entry = _waitDownloadQueue[index];
-                          final isCurr = entry.cid == _downloadService.curCid;
-                          return DetailItem(
+                sliver: Obx(() {
+                  if (_waitDownloadQueue.isNotEmpty) {
+                    return SliverGrid.builder(
+                      gridDelegate: gridDelegate,
+                      itemCount: _waitDownloadQueue.length,
+                      itemBuilder: (context, index) {
+                        final entry = _waitDownloadQueue[index];
+                        final isCurr = entry.cid == _downloadService.curCid;
+                        return DetailItem(
+                          entry: entry,
+                          downloadService: _downloadService,
+                          showTitle: true,
+                          isCurr: isCurr,
+                          customOnLongPress: () {
+                            this.enableMultiSelect.value = true;
+                            onSelect(entry);
+                          },
+                          onDelete: () => _downloadService.deleteDownload(
                             entry: entry,
-                            downloadService: _downloadService,
-                            showTitle: true,
-                            isCurr: isCurr,
-                            onDelete: () => _downloadService.deleteDownload(
-                              entry: entry,
-                              removeQueue: true,
-                              downloadNext:
-                                  isCurr &&
-                                  entry.status == DownloadStatus.downloading,
-                            ),
-                            controller: this,
-                          );
-                        },
-                      );
-                    }
-                    return const HttpError();
-                  }),
-                ),
+                            removeQueue: true,
+                            downloadNext:
+                                isCurr &&
+                                entry.status == DownloadStatus.downloading,
+                          ),
+                          controller: this,
+                        );
+                      },
+                    );
+                  }
+                  return const HttpError();
+                }),
               ),
             ],
           ),

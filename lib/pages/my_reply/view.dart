@@ -1,37 +1,44 @@
+import 'dart:typed_data';
+
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/dialog/export_import.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
+import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/grpc/bilibili/main/community/reply/v1.pb.dart'
     show ReplyInfo;
 import 'package:PiliPlus/pages/video/reply/widgets/reply_item_grpc.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/pages/video/reply_reply/view.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
+import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/utils/reply_scheme_helper.dart';
 import 'package:PiliPlus/utils/reply_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
-import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:material_ui/material_ui.dart';
-import 'package:get/get.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
 
 class MyReply extends StatefulWidget {
   const MyReply({super.key});
 
   @override
   State<MyReply> createState() => _MyReplyState();
+
+  static Map<String, Uint8List> json2ReplyProto(List<dynamic> list) => {
+    for (var e in list)
+      e['id'].toString(): (ReplyInfo.create()..mergeFromProto3Json(e))
+          .writeToBuffer(),
+  };
 }
 
 class _MyReplyState extends State<MyReply> with DynMixin {
   final List<ReplyInfo> _replies = <ReplyInfo>[];
-  final _windowsGridDelegate = SliverSimpleGridDelegateWithMaxCrossAxisExtent_(
-    maxCrossAxisExtent: 520,
-  );
 
   @override
   void initState() {
@@ -47,14 +54,11 @@ class _MyReplyState extends State<MyReply> with DynMixin {
 
   @override
   Widget build(BuildContext context) {
-    final isWindowsNeo = WindowsVideoTabService.enabled;
-    return Scaffold(
-      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
-      resizeToAvoidBottomInset: false,
+    return SimpleScaffold(
       appBar: AppBar(
         title: const Text('我的评论'),
         actions: [
-          if (kDebugMode)
+          if (kDebugMode) ...[
             IconButton(
               tooltip: 'Clear',
               onPressed: () => showConfirmDialog(
@@ -68,6 +72,12 @@ class _MyReplyState extends State<MyReply> with DynMixin {
               ),
               icon: const Icon(Icons.clear_all),
             ),
+            IconButton(
+              tooltip: 'Refresh',
+              onPressed: () => setState(_initReply),
+              icon: const Icon(Icons.refresh),
+            ),
+          ],
           IconButton(
             tooltip: '导出',
             onPressed: _showExportDialog,
@@ -85,53 +95,46 @@ class _MyReplyState extends State<MyReply> with DynMixin {
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           _replies.isNotEmpty
-              ? isWindowsNeo
-                    ? SliverPadding(
-                        padding: EdgeInsets.only(
-                          left: 18,
-                          top: 16,
-                          right: 18,
-                          bottom:
-                              MediaQuery.viewPaddingOf(context).bottom + 100,
-                        ),
-                        sliver: SliverMasonryGrid(
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          gridDelegate: _windowsGridDelegate,
-                          delegate: _replyDelegate,
-                        ),
-                      )
-                    : ViewSliverSafeArea(
-                        sliver: SliverMasonryGrid(
-                          crossAxisSpacing: 4,
-                          gridDelegate: dynGridDelegate,
-                          delegate: _replyDelegate,
-                        ),
-                      )
+              ? ViewSliverSafeArea(
+                  sliver: SliverMasonryGrid(
+                    crossAxisSpacing: 4,
+                    gridDelegate: dynGridDelegate,
+                    delegate: SliverChildBuilderDelegate(
+                      childCount: _replies.length,
+                      (context, index) => ReplyItemGrpc(
+                        replyLevel: 0,
+                        needDivider: false,
+                        replyItem: _replies[index],
+                        replyReply: _replyReply,
+                        onDelete: (_, _) => _onDelete(index),
+                        onCheckReply: _onCheckReply,
+                      ),
+                    ),
+                  ),
+                )
               : const HttpError(),
         ],
       ),
     );
   }
 
-  SliverChildBuilderDelegate get _replyDelegate => SliverChildBuilderDelegate(
-    childCount: _replies.length,
-    (context, index) => ReplyItemGrpc(
-      replyLevel: 0,
-      needDivider: false,
-      replyItem: _replies[index],
-      replyReply: _replyReply,
-      onDelete: (_, _) => _onDelete(index),
-      onCheckReply: _onCheckReply,
-    ),
-  );
-
   void _replyReply(ReplyInfo replyInfo, int? rpid) {
-    switch (replyInfo.type.toInt()) {
+    int? rootRpId, secondRpId;
+    final id = replyInfo.id.toInt();
+    if (replyInfo.hasRoot()) {
+      rootRpId = replyInfo.root.toInt();
+      secondRpId = id;
+    } else {
+      rootRpId = id;
+    }
+    final type = replyInfo.type.toInt();
+    switch (type) {
       case 1:
         PiliScheme.videoPush(
           replyInfo.oid.toInt(),
           null,
+          rootRpId: rootRpId,
+          secondRpId: secondRpId,
         );
       case 12:
         PageUtils.toDupNamed(
@@ -140,12 +143,28 @@ class _MyReplyState extends State<MyReply> with DynMixin {
             'id': replyInfo.oid.toString(),
             'type': 'read',
           },
+          arguments: {
+            rootRpIdKey: rootRpId,
+            secondRpIdKey: ?secondRpId,
+          },
         );
       case _:
-        PageUtils.pushDynFromId(
-          rid: replyInfo.oid.toString(),
-          type: replyInfo.type,
-        );
+        if (BiliUtils.isDynOrArticle(type)) {
+          PageUtils.pushDynFromId(
+            rid: replyInfo.oid.toString(),
+            type: type,
+            rootRpId: rootRpId,
+            secondRpId: secondRpId,
+          );
+        } else {
+          // TODO:
+          VideoReplyReplyPanel.toReply(
+            oid: replyInfo.oid.toInt(),
+            rootId: rootRpId,
+            rpId: secondRpId,
+            type: type,
+          );
+        }
     }
   }
 
@@ -206,11 +225,7 @@ class _MyReplyState extends State<MyReply> with DynMixin {
   }
 
   Future<void> _onImport(List<dynamic> list) async {
-    await GStorage.reply!.putAll({
-      for (var e in list)
-        e['id'].toString(): (ReplyInfo.create()..mergeFromProto3Json(e))
-            .writeToBuffer(),
-    });
+    await GStorage.reply!.putAll(MyReply.json2ReplyProto(list));
     if (mounted) {
       _initReply();
       setState(() {});

@@ -1,5 +1,5 @@
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/models_new/download/download_collection.dart';
+import 'package:PiliPlus/models_new/download/download_playback.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/download/bili_download_entry_info.dart';
 import 'package:PiliPlus/pages/common/multi_select/base.dart';
@@ -8,7 +8,6 @@ import 'package:PiliPlus/pages/download/detail/widgets/item.dart';
 import 'package:PiliPlus/pages/download/download_action_mixin.dart';
 import 'package:PiliPlus/pages/download/search/controller.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart'
@@ -70,15 +69,8 @@ class _DownloadSearchPageState
   @override
   Widget buildList(List<BiliDownloadEntryInfo> list) {
     if (list.isNotEmpty) {
-      final grid = SliverGrid.builder(
-        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          mainAxisSpacing: WindowsVideoTabService.enabled ? 12 : 2,
-          crossAxisSpacing: WindowsVideoTabService.enabled ? 12 : 0,
-          mainAxisExtent: WindowsVideoTabService.enabled ? 112 : 100,
-          maxCrossAxisExtent: WindowsVideoTabService.enabled
-              ? 520
-              : Grid.smallCardWidth * 2,
-        ),
+      return SliverGrid.builder(
+        gridDelegate: gridDelegate,
         itemBuilder: (context, index) {
           final entry = list[index];
           return DetailItem(
@@ -92,11 +84,6 @@ class _DownloadSearchPageState
           );
         },
         itemCount: list.length,
-      );
-      if (!WindowsVideoTabService.enabled) return grid;
-      return SliverPadding(
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
-        sliver: grid,
       );
     }
     return const HttpError();

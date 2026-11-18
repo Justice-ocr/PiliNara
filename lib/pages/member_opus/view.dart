@@ -4,12 +4,13 @@ import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
+import 'package:PiliPlus/grpc/bilibili/app/dynamic/v2.pb.dart'
+    show OpusFlowItem;
 import 'package:PiliPlus/http/loading_state.dart';
-import 'package:PiliPlus/models_new/space/space_opus/item.dart';
 import 'package:PiliPlus/pages/common/fab_mixin.dart';
 import 'package:PiliPlus/pages/member_opus/controller.dart';
-import 'package:PiliPlus/pages/member_opus/widgets/space_opus_item.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/pages/member_opus/widgets/collection_item.dart';
+import 'package:PiliPlus/pages/member_opus/widgets/space_opus_item_grpc.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -39,6 +40,7 @@ class _MemberOpusState extends State<MemberOpus>
         BaseFabMixin,
         LazyFabMixin {
   late final MemberOpusController _controller;
+  late ColorScheme colorScheme;
 
   @override
   void initState() {
@@ -50,6 +52,12 @@ class _MemberOpusState extends State<MemberOpus>
       ),
       tag: widget.heroTag,
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    colorScheme = .of(context);
   }
 
   @override
@@ -133,44 +141,69 @@ class _MemberOpusState extends State<MemberOpus>
   }
 
   late final gridDelegate = SliverSimpleGridDelegateWithMaxCrossAxisExtent_(
-    maxCrossAxisExtent: WindowsVideoTabService.enabled
-        ? 360
-        : Grid.smallCardWidth,
+    maxCrossAxisExtent: Grid.smallCardWidth,
   );
 
-  Widget _buildBody(LoadingState<List<SpaceOpusItemModel>?> loadingState) {
-    return switch (loadingState) {
-      Loading() => SliverMasonryGrid(
-        mainAxisSpacing: Style.safeSpace,
-        crossAxisSpacing: Style.safeSpace,
-        gridDelegate: gridDelegate,
-        delegate: const SliverSingleChildDelegate(
-          count: 10,
-          child: SpaceOpusSkeleton(),
-        ),
-      ),
-      Success(:final response) =>
-        response != null && response.isNotEmpty
-            ? SliverMasonryGrid(
-                mainAxisSpacing: Style.safeSpace,
-                crossAxisSpacing: Style.safeSpace,
-                gridDelegate: gridDelegate,
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    if (index == response.length - 1) {
-                      _controller.onLoadMore();
-                    }
-                    return SpaceOpusItem(item: response[index]);
-                  },
-                  childCount: response.length,
+  Widget _buildBody(LoadingState<List<OpusFlowItem>?> loadingState) {
+    switch (loadingState) {
+      case Loading():
+        return SliverMasonryGrid(
+          mainAxisSpacing: Style.safeSpace,
+          crossAxisSpacing: Style.safeSpace,
+          gridDelegate: gridDelegate,
+          delegate: const SliverSingleChildDelegate(
+            count: 10,
+            child: SpaceOpusSkeleton(),
+          ),
+        );
+      case Success(:final response):
+        if (response != null && response.isNotEmpty) {
+          final child = SliverMasonryGrid(
+            mainAxisSpacing: Style.safeSpace,
+            crossAxisSpacing: Style.safeSpace,
+            gridDelegate: gridDelegate,
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                if (index == response.length - 1) {
+                  _controller.onLoadMore();
+                }
+                return SpaceOpusItemGrpc(item: response[index]);
+              },
+              childCount: response.length,
+            ),
+          );
+          if (_controller.collection case final collection?
+              when collection.allCollections.isNotEmpty) {
+            return SliverMainAxisGroup(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const .only(bottom: 10),
+                    child: Text(
+                      collection.title,
+                      style: TextStyle(color: colorScheme.outline),
+                    ),
+                  ),
                 ),
-              )
-            : HttpError(onReload: _controller.onReload),
-      Error(:final errMsg) => HttpError(
-        errMsg: errMsg,
-        onReload: _controller.onReload,
-      ),
-    };
+                SliverToBoxAdapter(
+                  child: CollectionSection(
+                    collection: collection,
+                    onCollapse: _controller.onCollapseCollection,
+                  ),
+                ),
+                child,
+              ],
+            );
+          }
+          return child;
+        }
+        return HttpError(onReload: _controller.onReload);
+      case Error(:final errMsg):
+        return HttpError(
+          errMsg: errMsg,
+          onReload: _controller.onReload,
+        );
+    }
   }
 
   @override

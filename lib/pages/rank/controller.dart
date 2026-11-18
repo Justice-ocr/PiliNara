@@ -44,4 +44,7 @@ class RankController extends GetxController
 
   @override
   void toTopAndRefresh() => controller.toTopAndRefresh();
+
+  @override
+  Future<void> showRefresh() => controller.showRefresh();
 }

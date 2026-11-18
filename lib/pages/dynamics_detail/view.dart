@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/flutter/dyn_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/flutter/text_field/controller.dart';
+import 'package:PiliPlus/common/widgets/gesture/horizontal_drag_gesture_recognizer.dart';
 import 'package:PiliPlus/common/widgets/pair.dart';
+import 'package:PiliPlus/common/widgets/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/scaffold/mini_scaffold.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/scroll_behavior.dart'
@@ -30,18 +33,16 @@ import 'package:PiliPlus/pages/dynamics/widgets/dynamic_panel.dart';
 import 'package:PiliPlus/pages/dynamics_create/view.dart';
 import 'package:PiliPlus/pages/dynamics_detail/controller.dart';
 import 'package:PiliPlus/pages/dynamics_repost/view.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
+import 'package:PiliPlus/utils/reply_scheme_helper.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
-import 'package:PiliPlus/windows_ui/components/windows_neo_context_panel.dart';
-import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:material_ui/material_ui.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
 
 class DynamicDetailPage extends StatefulWidget {
   const DynamicDetailPage({
@@ -57,244 +58,82 @@ class DynamicDetailPage extends StatefulWidget {
   State<DynamicDetailPage> createState() => _DynamicDetailPageState();
 }
 
-class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
+class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
+    with DynReplyLocateStateMixin {
   @override
   late final DynamicDetailController controller;
-  late final DynLikeController _likeController;
   late final DynRepostController _repostController;
-  bool _windowsReactionOpen = false;
-  late final bool Function() _windowsReactionPopper =
-      _popWindowsReactionContext;
-  Map? _registeredWindowsTabArguments;
+  late final DynLikeController _likeController;
 
-  bool get _useWindowsReactionPanel {
-    final size = MediaQuery.sizeOf(context);
-    return WindowsVideoTabService.enabled &&
-        size.width >= 960 &&
-        size.height >= 560;
+  late final RxBool _isRefreshing = false.obs;
+
+  void _stopRefresh() {
+    if (!mounted) return;
+    _isRefreshing.value = false;
   }
 
-  Map? get _windowsTabArguments {
-    final arguments = Get.arguments;
-    return WindowsVideoTabService.currentArguments ??
-        (arguments is Map ? arguments : null);
+  void _onRefresh(Future<void> future) {
+    _isRefreshing.value = true;
+    future.whenComplete(_stopRefresh);
   }
+
+  @override
+  dynamic get arguments => {'item': controller.dynItem};
 
   @override
   void initState() {
-    final args = widget.arguments ?? Get.arguments as Map;
-    final item = args['item'] as DynamicItemModel;
-    controller = Get.putOrFind(
-      () => DynamicDetailController(
-        item: item,
-        onUpdate: args['onUpdate'],
-        count: item.modules.moduleStat?.comment?.count ?? -1,
-      ),
-      tag: widget.controllerTag ?? item.idStr.toString(),
-    );
-    final stat = item.modules.moduleStat;
-    _likeController = Get.putOrFind(
-      () => DynLikeController(
-        item.idStr.toString(),
-        count: stat?.like?.count ?? -1,
-      ),
-      tag: widget.controllerTag ?? item.idStr.toString(),
-    );
-    _repostController = Get.putOrFind(
-      () => DynRepostController(
-        item.idStr.toString(),
-        count: stat?.forward?.count ?? -1,
-      ),
-      tag: widget.controllerTag ?? item.idStr.toString(),
-    );
-    if (WindowsVideoTabService.enabled) {
-      _registeredWindowsTabArguments = _windowsTabArguments;
-      if (_registeredWindowsTabArguments case final tabArguments?) {
-        WindowsVideoTabService.registerContextPopper(
-          tabArguments,
-          _windowsReactionPopper,
-        );
-      }
-    }
     super.initState();
+    final Map args = widget.arguments ?? Get.arguments;
+    final item = args['item'] as DynamicItemModel;
+    final id = item.idStr.toString();
+    if (args['viewComment'] == true || args.containsKey(rootRpIdKey)) {
+      WidgetsBinding.instance.addPostFrameCallback(_jumpToComment);
+    }
+    final stat = item.modules.moduleStat;
+    controller = Get.putOrFind<DynamicDetailController>(
+      () => DynamicDetailController(count: stat?.comment?.count ?? -1),
+      tag: widget.controllerTag ?? id,
+    );
+    _repostController = Get.putOrFind<DynRepostController>(
+      () => DynRepostController(id, count: stat?.forward?.count ?? -1),
+      tag: '${widget.controllerTag ?? id}:repost',
+    );
+    _likeController = Get.putOrFind<DynLikeController>(
+      () => DynLikeController(id, count: stat?.like?.count ?? -1),
+      tag: '${widget.controllerTag ?? id}:like',
+    );
   }
+
+  ScrollableState? _scrollable;
 
   @override
   void dispose() {
-    if (WindowsVideoTabService.enabled) {
-      if (_registeredWindowsTabArguments case final tabArguments?) {
-        WindowsVideoTabService.unregisterContextPopper(
-          tabArguments,
-          _windowsReactionPopper,
-        );
-      }
-    }
+    _scrollable = null;
     super.dispose();
-  }
-
-  void _showReactions() {
-    if (_useWindowsReactionPanel) {
-      setState(() => _windowsReactionOpen = true);
-      return;
-    }
-    final size = MediaQuery.sizeOf(context);
-    showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      showDragHandle: true,
-      constraints: BoxConstraints(
-        maxWidth: WindowsVideoTabService.enabled ? 620 : double.infinity,
-      ),
-      builder: (context) => SizedBox(
-        height: min(size.height * 0.82, 720),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 10, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Obx(
-                      () => Text(
-                        '赞 ${NumUtils.numFormat(max(0, _likeController.count.value))} · 转发 ${NumUtils.numFormat(max(0, _repostController.count.value))}',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: '关闭',
-                    onPressed: Navigator.of(context).pop,
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: _buildReactions(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  bool _popWindowsReactionContext() {
-    if (!_windowsReactionOpen || !mounted) return false;
-    setState(() => _windowsReactionOpen = false);
-    return true;
-  }
-
-  @override
-  dynamic get arguments => {
-    'item': controller.dynItem,
-  };
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (scrollController.hasClients) {
-        controller.showTitle.value =
-            scrollController.positions.first.pixels > 55;
-      }
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Obx(
       () {
         controller.detailVersion.value;
-        return Scaffold(
-          backgroundColor: WindowsVideoTabService.enabled
-              ? context.windowsNeo.background
-              : null,
-          resizeToAvoidBottomInset: false,
-          appBar: _buildAppBar(),
-          body: Padding(
-            padding: EdgeInsets.only(
-              left: WindowsVideoTabService.enabled ? 0 : padding.left,
-              right: WindowsVideoTabService.enabled ? 0 : padding.right,
+        return SelectionTapRegionSurface(
+          isScrolling: () => _scrollable?.shouldIgnorePointer ?? false,
+          child: SimpleScaffold(
+            appBar: _buildAppBar(),
+            body: Padding(
+              padding: EdgeInsets.only(left: padding.left, right: padding.right),
+              child: _buildBody(),
             ),
-            child: _buildWindowsInteractionBody(theme),
-          ),
-          floatingActionButtonLocation: floatingActionButtonLocation,
-          floatingActionButton: SlideTransition(
-            position: fabAnimation,
-            child: _buildBottom(theme),
+            fab: SlideTransition(
+              position: fabAnimation,
+              child: _buildBottom(),
+            ),
           ),
         );
       },
     );
   }
-
-  Widget _buildWindowsInteractionBody(ThemeData theme) {
-    final content = isPortrait
-        ? refreshIndicator(
-            onRefresh: controller.onRefresh,
-            child: _buildBody(theme),
-          )
-        : _buildBody(theme);
-    if (_windowsReactionOpen && !_useWindowsReactionPanel) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !_useWindowsReactionPanel) {
-          setState(() => _windowsReactionOpen = false);
-        }
-      });
-    }
-    if (!_windowsReactionOpen || !_useWindowsReactionPanel) return content;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: content),
-        VerticalDivider(width: 1, color: context.windowsNeo.border),
-        SizedBox(
-          width: min(420, MediaQuery.sizeOf(context).width * 0.32),
-          child: ColoredBox(
-            color: context.windowsNeo.surface,
-            child: WindowsNeoContextPanel(
-              title: '赞与转发',
-              onBack: () => setState(() => _windowsReactionOpen = false),
-              child: _buildReactions(),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildReactions() => DefaultTabController(
-    length: 2,
-    child: Column(
-      children: [
-        const TabBar(
-          tabs: [
-            Tab(text: '赞'),
-            Tab(text: '转发'),
-          ],
-        ),
-        Expanded(
-          child: TabBarView(
-            children: [
-              DynLikePage(
-                id: controller.dynItem.idStr,
-                controller: _likeController,
-                isPortrait: false,
-              ),
-              DynRepostPage(
-                id: controller.dynItem.idStr,
-                controller: _repostController,
-                isPortrait: false,
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
 
   void _onEdit() {
     final item = controller.dynItem;
@@ -319,15 +158,14 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
       try {
         for (final e in richTextNodes) {
           if (e.type == 'RICH_TEXT_NODE_TYPE_EMOJI') {
-            const placeHolder = '\uFFFC';
             items.add(
               RichTextItem(
-                text: placeHolder,
+                text: Style.placeHolder,
                 rawText: e.origText,
                 type: .emoji,
                 range: TextRange(
                   start: buffer.length,
-                  end: buffer.length + placeHolder.length,
+                  end: buffer.length + Style.placeHolder.length,
                 ),
                 emote: Emote(
                   url: e.emoji!.url!,
@@ -335,7 +173,7 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
                 ),
               ),
             );
-            buffer.write(placeHolder);
+            buffer.write(Style.placeHolder);
             continue;
           }
           final range = TextRange(
@@ -460,96 +298,109 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
         : [ratioWidget(maxWidth), const SizedBox(width: 16)],
   );
 
-  Widget _buildBody(ThemeData theme) {
-    final isWindowsNeo = WindowsVideoTabService.enabled;
-    double padding = isWindowsNeo
-        ? max((maxWidth - 820) / 2, 0)
-        : max(maxWidth / 2 - Grid.smallCardWidth, 0);
-    Widget child;
+  Widget _buildTabBar() {
+    return SizedBox(
+      height: 40,
+      child: DynTabBar(
+        padding: .zero,
+        // isScrollable: true,
+        indicatorSize: .tab,
+        tabAlignment: .start,
+        controller: tabController,
+        labelPadding: const .symmetric(horizontal: 12),
+        dividerColor: theme.colorScheme.outline.withValues(alpha: 0.1),
+        onTap: (value) {
+          if (!tabController.indexIsChanging) {
+            final positions = PrimaryScrollController.of(context).positions;
+            if (positions.length == 1) {
+              final postion = positions.single;
+              if (postion.pixels >= postion.maxScrollExtent) {
+                postion.jumpTo(postion.pixels);
+              }
+              switch (value) {
+                case 0:
+                  _onRefresh(_repostController.onRefresh());
+                case 1:
+                  _onRefresh(controller.onRefresh());
+                case 2:
+                  _onRefresh(_likeController.onRefresh());
+              }
+            } else if (positions.length > 1) {
+              positions.elementAt(1).jumpTo(0);
+            }
+          }
+        },
+        tabs: DynType.values
+            .map(
+              (e) => Tab(
+                child: Obx(() {
+                  final count = switch (e) {
+                    .repost => _repostController.count.value,
+                    .reply => controller.count.value,
+                    .like => _likeController.count.value,
+                  };
+                  return Text(
+                    '${e.label}${count < 0 ? '' : ' ${NumUtils.numFormat(count)}'}',
+                  );
+                }),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
+  Widget _buildTabBody([bool isPortrait = true]) {
+    Widget reply = CustomScrollView(
+      primary: true,
+      key: const PageStorageKey(DynType.reply),
+      physics: ReloadScrollPhysics(
+        controller: controller,
+        parent: isPortrait ? platformAlwaysClampingPhysics : null,
+      ),
+      slivers: [
+        buildReplyHeader(isPortrait),
+        Obx(() => replyList(controller.loadingState.value)),
+      ],
+    );
+    if (!isPortrait) {
+      reply = refreshIndicator(onRefresh: controller.onRefresh, child: reply);
+    }
+
+    final child = TabBarView(
+      controller: tabController,
+      hitTestBehavior: .translucent,
+      physics: const NeverScrollableScrollPhysics(),
+      horizontalDragGestureRecognizer:
+          CustomHorizontalDragGestureRecognizer.new,
+      children: DynType.values
+          .map(
+            (e) => switch (e) {
+              .repost => DynRepostPage(
+                isPortrait: isPortrait,
+                id: controller.dynItem.idStr,
+                controller: _repostController,
+              ),
+              .reply => reply,
+              .like => DynLikePage(
+                isPortrait: isPortrait,
+                id: controller.dynItem.idStr,
+                controller: _likeController,
+              ),
+            },
+          )
+          .toList(),
+    );
     if (isPortrait) {
-      child = Padding(
-        padding: EdgeInsets.symmetric(horizontal: padding),
-        child: CustomScrollView(
-          controller: scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: DynamicPanel(
-                item: controller.dynItem,
-                isDetail: true,
-                isDetailPortraitW: isPortrait,
-                onSetPubSetting: controller.onSetPubSetting,
-                onEdit: _onEdit,
-                onSetReplySubject: controller.onSetReplySubject,
-              ),
-            ),
-            buildReplyHeader(theme),
-            Obx(() => replyList(controller.loadingState.value)),
-          ],
-        ),
-      );
-    } else {
-      final flex = controller.ratio[0].toInt();
-      final flex1 = controller.ratio[1].toInt();
-      final leftWidth = maxWidth * flex / (flex + flex1);
-      padding = isWindowsNeo ? max((leftWidth - 820) / 2, 20) : padding / 4;
-      child = Row(
+      return Stack(
+        clipBehavior: .none,
         children: [
-          Expanded(
-            flex: flex,
-            child: CustomScrollView(
-              controller: scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverPadding(
-                  padding: EdgeInsets.only(
-                    left: padding,
-                    right: isWindowsNeo ? padding : 0,
-                    bottom: this.padding.bottom + 100,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: DynamicPanel(
-                      item: controller.dynItem,
-                      isDetail: true,
-                      isDetailPortraitW: isPortrait,
-                      onSetPubSetting: controller.onSetPubSetting,
-                      onEdit: _onEdit,
-                      onSetReplySubject: controller.onSetReplySubject,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (isWindowsNeo)
-            VerticalDivider(width: 1, color: context.windowsNeo.border),
-          Expanded(
-            flex: flex1,
-            child: ColoredBox(
-              color: isWindowsNeo
-                  ? context.windowsNeo.surface
-                  : Colors.transparent,
-              child: Padding(
-                padding: EdgeInsets.only(right: isWindowsNeo ? 0 : padding),
-                child: Scaffold(
-                  backgroundColor: Colors.transparent,
-                  resizeToAvoidBottomInset: false,
-                  body: refreshIndicator(
-                    onRefresh: controller.onRefresh,
-                    child: CustomScrollView(
-                      controller: scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      slivers: [
-                        buildReplyHeader(theme),
-                        Obx(
-                          () => replyList(controller.loadingState.value),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          child,
+          Positioned(
+            left: 0,
+            right: 0,
+            top: displacement,
+            child: RefreshIndicator_(isRefreshing: _isRefreshing),
           ),
         ],
       );
@@ -557,7 +408,96 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
     return child;
   }
 
-  Widget _buildBottom(ThemeData theme) {
+  Widget _buildDynPanel() {
+    return SliverToBoxWithOffsetAdapter(
+      offset: 55,
+      onVisibilityChanged: controller.showTitle.call,
+      child: Builder(
+        builder: (context) {
+          _scrollable = Scrollable.maybeOf(context);
+          return DynamicPanel(
+            item: controller.dynItem,
+            isDetail: true,
+            isDetailPortraitW: isPortrait,
+            onSetPubSetting: controller.onSetPubSetting,
+            onEdit: _onEdit,
+            onSetReplySubject: controller.onSetReplySubject,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPortrait(double padding) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: padding),
+      child: NestedScrollView(
+        scrollBehavior: const NoOverscrollIndicator(),
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [_buildDynPanel()];
+        },
+        body: Column(
+          children: [
+            _buildTabBar(),
+            Expanded(child: _buildTabBody()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHorizontal(double padding) {
+    padding = padding / 4;
+    final flex = controller.ratio[0].toInt();
+    final flex1 = controller.ratio[1].toInt();
+    final child = Row(
+      children: [
+        Expanded(
+          flex: flex,
+          child: CustomScrollView(
+            primary: true,
+            slivers: [
+              SliverPadding(
+                padding: .only(
+                  left: padding,
+                  bottom: this.padding.bottom + 100,
+                ),
+                sliver: _buildDynPanel(),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          flex: flex1,
+          child: Padding(
+            padding: EdgeInsets.only(right: padding),
+            child: MiniScaffold(
+              body: Column(
+                children: [
+                  _buildTabBar(),
+                  Expanded(child: _buildTabBody(false)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+    return child;
+  }
+
+  Widget _buildBody() {
+    double padding = max(maxWidth / 2 - Grid.smallCardWidth, 0);
+    Widget child;
+    if (isPortrait) {
+      child = _buildPortrait(padding);
+    } else {
+      child = _buildHorizontal(padding);
+    }
+    return fabAnimWrapper(child: child);
+  }
+
+  Widget _buildBottom() {
     if (!controller.showDynActionBar) {
       return fabButton;
     }
@@ -596,7 +536,8 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
       );
     }
 
-    final moduleStat = controller.dynItem.modules.moduleStat;
+    final dynItem = controller.dynItem;
+    final moduleStat = dynItem.modules.moduleStat;
     return Padding(
       padding: .only(left: padding.left, right: padding.right),
       child: Column(
@@ -612,14 +553,10 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
           ),
           Container(
             decoration: BoxDecoration(
-              color: WindowsVideoTabService.enabled
-                  ? context.windowsNeo.surface
-                  : theme.colorScheme.surface,
+              color: theme.colorScheme.surface,
               border: Border(
                 top: BorderSide(
-                  color: WindowsVideoTabService.enabled
-                      ? context.windowsNeo.border
-                      : theme.colorScheme.outline.withValues(alpha: 0.08),
+                  color: theme.colorScheme.outline.withValues(alpha: 0.08),
                 ),
               ),
             ),
@@ -639,7 +576,7 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
                           isScrollControlled: true,
                           useSafeArea: true,
                           builder: (context) => RepostPanel(
-                            item: controller.dynItem,
+                            item: dynItem,
                             onSuccess: () {
                               if (forward != null) {
                                 int count = forward.count ?? 0;
@@ -649,6 +586,12 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
                                 }
                               }
                             },
+                            replyInfo: (
+                              oid: controller.oid,
+                              replyType: controller.replyType,
+                            ),
+                            mentionItem:
+                                dynItem.modules.moduleAuthor?.mentionItem,
                           ),
                         ),
                       );
@@ -661,16 +604,16 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
                     text: '分享',
                     stat: null,
                     onPressed: (_) => ShareUtils.shareText(
-                      '${HttpString.dynamicShareBaseUrl}/${controller.dynItem.idStr}',
+                      '${HttpString.opusBaseUrl}/${controller.dynItem.idStr}',
                     ),
                   ),
                 ),
                 Expanded(
                   child: textIconButton(
-                    icon: Icons.people_alt_outlined,
-                    text: '赞与转发',
-                    stat: null,
-                    onPressed: (_) => _showReactions(),
+                    icon: FontAwesomeIcons.comment,
+                    text: '评论',
+                    stat: moduleStat?.comment,
+                    onPressed: _jumpToComment,
                   ),
                 ),
                 Expanded(
@@ -682,7 +625,7 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
                         text: '点赞',
                         stat: moduleStat?.like,
                         onPressed: (iconColor) => RequestUtils.onLikeDynamic(
-                          controller.dynItem,
+                          dynItem,
                           iconColor == primary,
                           () {
                             if (context.mounted) {
@@ -700,5 +643,45 @@ class _DynamicDetailPageState extends CommonDynPageState<DynamicDetailPage> {
         ],
       ),
     );
+  }
+
+  @override
+  Widget buildReplyHeader([bool isPortrait = true]) {
+    final secondary = theme.colorScheme.secondary;
+    final child = Padding(
+      padding: const .fromLTRB(12, 2.5, 6, 2.5),
+      child: Obx(
+        () {
+          final sortType = controller.sortType.value;
+          return Row(
+            mainAxisAlignment: .spaceBetween,
+            children: [
+              Text(sortType.desc),
+              TextButton.icon(
+                style: Style.buttonStyle,
+                onPressed: controller.queryBySort,
+                icon: Icon(Icons.sort, size: 16, color: secondary),
+                label: Text(
+                  sortType.descShort,
+                  style: TextStyle(fontSize: 13, color: secondary),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    return SliverFloatingHeaderWidget(
+      backgroundColor: theme.colorScheme.surface,
+      child: child,
+    );
+  }
+
+  void _jumpToComment([_]) {
+    if (!isPortrait) return;
+    try {
+      final position = PrimaryScrollController.of(context).position;
+      position.jumpTo(position.maxScrollExtent);
+    } catch (_) {}
   }
 }

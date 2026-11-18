@@ -7,6 +7,8 @@ import 'package:PiliPlus/common/widgets/scroll_physics.dart'
     show tabBarScrollPhysics;
 import 'package:PiliPlus/common/widgets/selection_text.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
+import 'package:PiliPlus/http/live.dart';
+import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/image_preview_type.dart';
 import 'package:PiliPlus/models/common/member/user_info_type.dart';
 import 'package:PiliPlus/models/model_owner.dart';
@@ -24,7 +26,6 @@ import 'package:PiliPlus/pages/member/widget/header_layout_widget.dart';
 import 'package:PiliPlus/pages/member/widget/medal_widget.dart';
 import 'package:PiliPlus/pages/member_guard/view.dart';
 import 'package:PiliPlus/pages/member_upower_rank/view.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/bili_colors.dart';
@@ -39,10 +40,10 @@ import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class UserInfoCard extends StatelessWidget {
@@ -63,6 +64,7 @@ class UserInfoCard extends StatelessWidget {
     required this.chargeCount,
     required this.guards,
     required this.guardCount,
+    required this.hasMedal,
   });
 
   final bool isOwner;
@@ -80,6 +82,7 @@ class UserInfoCard extends StatelessWidget {
   final Object? chargeCount;
   final List<Owner>? guards;
   final Object? guardCount;
+  final bool hasMedal;
 
   @override
   Widget build(BuildContext context) {
@@ -87,94 +90,11 @@ class UserInfoCard extends StatelessWidget {
     final isLight = colorScheme.isLight;
     final width = context.width;
     final isPortrait = width < 600;
-    if (WindowsVideoTabService.enabled) {
-      return ViewSafeArea(
-        top: false,
-        child: width >= 760
-            ? _buildWindowsNeo(context, colorScheme, isLight, width)
-            : DecoratedBox(
-                decoration: BoxDecoration(
-                  color: context.windowsNeo.surface,
-                  border: Border(
-                    bottom: BorderSide(color: context.windowsNeo.border),
-                  ),
-                ),
-                child: _buildV(context, colorScheme, isLight, width),
-              ),
-      );
-    }
     return ViewSafeArea(
       top: !isPortrait,
       child: isPortrait
           ? _buildV(context, colorScheme, isLight, width)
           : _buildH(context, colorScheme, isLight),
-    );
-  }
-
-  Widget _buildWindowsNeo(
-    BuildContext context,
-    ColorScheme scheme,
-    bool isLight,
-    double width,
-  ) {
-    final tokens = context.windowsNeo;
-    final imgUrls = images.collectionTopSimple?.top?.imgUrls;
-    final header = imgUrls != null && imgUrls.isNotEmpty
-        ? _buildCollectionHeader(context, scheme, isLight, imgUrls, width)
-        : _buildHeader(
-            context,
-            isLight,
-            width,
-            (isLight || images.nightImgurl.isNullOrEmpty
-                    ? images.imgUrl
-                    : images.nightImgurl)
-                .http2https,
-          );
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: tokens.surface,
-        border: Border(bottom: BorderSide(color: tokens.border)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          header,
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 18),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Transform.translate(
-                  offset: const Offset(0, -30),
-                  child: _buildAvatar(scheme),
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 14),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: _buildLeft(context, scheme, isLight, false),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 24),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 340),
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 14),
-                    child: _buildRight(scheme),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (card.prInfo?.content?.isNotEmpty ?? false)
-            buildPrInfo(context, scheme, isLight, card.prInfo!),
-        ],
-      ),
     );
   }
 
@@ -428,8 +348,14 @@ class UserInfoCard extends StatelessWidget {
   }
 
   Widget _buildExtraInfo(ColorScheme colorScheme) {
+    final style = TextStyle(
+      fontSize: 12,
+      height: 1,
+      color: colorScheme.outline,
+    );
+    const strutStyle = StrutStyle(leading: 0, height: 1, fontSize: 12);
     return Padding(
-      padding: const .only(left: 20, top: 6, right: 20),
+      padding: const .only(left: 20, top: 8, right: 20),
       child: Wrap(
         spacing: 10,
         runSpacing: 8,
@@ -439,7 +365,8 @@ class UserInfoCard extends StatelessWidget {
             onTap: () => Utils.copyText(card.mid.toString()),
             child: Text(
               'UID: ${card.mid}',
-              style: TextStyle(fontSize: 12, color: colorScheme.outline),
+              style: style,
+              strutStyle: strutStyle,
             ),
           ),
           ...?card.spaceTag?.map(
@@ -447,10 +374,10 @@ class UserInfoCard extends StatelessWidget {
               final hasUri = item.uri?.isNotEmpty ?? false;
               final child = Text(
                 item.title ?? '',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: hasUri ? colorScheme.secondary : colorScheme.outline,
-                ),
+                style: hasUri
+                    ? TextStyle(fontSize: 12, color: colorScheme.secondary)
+                    : style,
+                strutStyle: strutStyle,
               );
               if (hasUri) {
                 return GestureDetector(
@@ -461,6 +388,22 @@ class UserInfoCard extends StatelessWidget {
               return child;
             },
           ),
+          if (hasMedal)
+            Builder(
+              builder: (context) {
+                final medalName = card.medalName;
+                return GestureDetector(
+                  onTap: medalName == null
+                      ? null
+                      : () => Utils.copyText(medalName),
+                  child: Text(
+                    '粉丝勋章${medalName == null ? '' : ': $medalName'}',
+                    style: style,
+                    strutStyle: strutStyle,
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );
@@ -536,7 +479,7 @@ class UserInfoCard extends StatelessWidget {
               onPressed: () {
                 if (Accounts.main.isLogin) {
                   int mid = int.parse(card.mid!);
-                  PageUtils.toDupNamed(
+                  Get.toNamed(
                     '/whisperDetail',
                     arguments: {
                       'talkerId': mid,

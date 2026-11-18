@@ -1,14 +1,16 @@
 import 'dart:async';
-import 'dart:math' show max;
+import 'dart:io' show Platform;
 
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
+import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
-import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/utils/device_utils.dart';
+import 'package:PiliPlus/utils/dlna_utils.dart';
+import 'package:PiliPlus/utils/permission_handler.dart';
 import 'package:dlna_dart/dlna.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
 
 class DLNAPage extends StatefulWidget {
   const DLNAPage({super.key, this.parameters});
@@ -22,11 +24,13 @@ class DLNAPage extends StatefulWidget {
 class _DLNAPageState extends State<DLNAPage> {
   final _searcher = DLNAManager();
   final Map<String, DLNADevice> _deviceList = {};
-  late final _url = widget.parameters?['url'] ?? Get.parameters['url']!;
-  late final _title = widget.parameters?['title'] ?? Get.parameters['title'];
+  late final _url = (widget.parameters ?? Get.parameters)['url']!;
+  late final _title = (widget.parameters ?? Get.parameters)['title'];
 
   Timer? _timer;
   bool _isSearching = false;
+  PermissionStatus? _permissionStatus;
+  String? _searchError;
   DLNADevice? _lastDevice;
   String? _lastDeviceKey;
 
@@ -39,26 +43,41 @@ class _DLNAPageState extends State<DLNAPage> {
   Future<void> _onSearch({bool isInit = false}) async {
     if (_isSearching) return;
     _isSearching = true;
+    _permissionStatus = null;
+    _searchError = null;
     if (!isInit && mounted) {
       _lastDevice = null;
       _deviceList.clear();
       setState(() {});
     }
-    final deviceManager = await _searcher.start();
-    if (!mounted) {
-      return;
-    }
-    _timer = Timer(const Duration(seconds: 20), _searcher.stop);
-    await for (final deviceList in deviceManager.devices.stream) {
-      if (mounted) {
-        _deviceList.addAll(deviceList);
-        setState(() {});
+    try {
+      // PiliPlus targets API 37; older systems do not require this permission.
+      if (Platform.isAndroid && DeviceUtils.sdkInt >= 37) {
+        final status = await Permission.accessLocalNetwork.request();
+        if (!mounted) return;
+        _permissionStatus = status;
+        if (!status.isGranted) return;
       }
-    }
-    if (mounted) {
-      setState(() {
-        _isSearching = false;
-      });
+      final deviceManager = await _searcher.start();
+      if (!mounted) return;
+      _timer = Timer(const Duration(seconds: 20), _searcher.stop);
+      await for (final deviceList in deviceManager.devices.stream) {
+        if (mounted) {
+          _deviceList.addAll(deviceList);
+          setState(() {});
+        }
+      }
+    } catch (_) {
+      _searchError = '搜索设备失败，请检查网络后重试';
+    } finally {
+      _timer?.cancel();
+      _timer = null;
+      _searcher.stop();
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+        });
+      }
     }
   }
 
@@ -75,14 +94,7 @@ class _DLNAPageState extends State<DLNAPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme.of(context);
-    final isWindowsNeo = WindowsVideoTabService.enabled;
-    final horizontalPadding = max(
-      18.0,
-      (MediaQuery.sizeOf(context).width - 820) / 2,
-    );
-    return Scaffold(
-      backgroundColor: isWindowsNeo ? context.windowsNeo.background : null,
-      resizeToAvoidBottomInset: false,
+    return SimpleScaffold(
       appBar: AppBar(
         title: const Text('投屏'),
         actions: [
@@ -97,18 +109,7 @@ class _DLNAPageState extends State<DLNAPage> {
       body: CustomScrollView(
         slivers: [
           if (_isSearching) linearLoading,
-          if (isWindowsNeo)
-            SliverPadding(
-              padding: EdgeInsets.fromLTRB(
-                horizontalPadding,
-                16,
-                horizontalPadding,
-                MediaQuery.viewPaddingOf(context).bottom + 100,
-              ),
-              sliver: _buildBody(colorScheme),
-            )
-          else
-            ViewSliverSafeArea(sliver: _buildBody(colorScheme)),
+          ViewSliverSafeArea(sliver: _buildBody(colorScheme)),
         ],
       ),
     );
@@ -116,20 +117,30 @@ class _DLNAPageState extends State<DLNAPage> {
 
   Widget _buildBody(ColorScheme colorScheme) {
     if (!_isSearching && _deviceList.isEmpty) {
+      if (_permissionStatus case final status? when !status.isGranted) {
+        final permanentlyDenied = status.isPermanentlyDenied;
+        return HttpError(
+          errMsg: permanentlyDenied
+              ? '局域网权限未授权，请在系统设置中允许附近的设备，返回后点击搜索'
+              : '需要局域网权限才能搜索投屏设备',
+          btnText: permanentlyDenied ? '前往设置' : '授予权限',
+          onReload: permanentlyDenied ? openAppSettings : _onSearch,
+        );
+      }
       return HttpError(
-        errMsg: '没有设备',
+        errMsg: _searchError ?? '没有设备',
         onReload: _onSearch,
       );
     }
     if (_deviceList.isNotEmpty) {
       final keys = _deviceList.keys.toList();
-      return SliverList.separated(
+      return SliverList.builder(
         itemCount: keys.length,
         itemBuilder: (context, index) {
           final key = keys[index];
           final device = _deviceList[key]!;
           final isCurr = key == _lastDeviceKey;
-          final tile = ListTile(
+          return ListTile(
             title: Text(
               device.info.friendlyName,
               style: isCurr ? TextStyle(color: colorScheme.primary) : null,
@@ -137,6 +148,7 @@ class _DLNAPageState extends State<DLNAPage> {
             subtitle: Text(key),
             onTap: () async {
               if (isCurr) return;
+              normalizeLegacyDlnaControlUrls(device);
               _lastDevice?.pause();
               _lastDevice = device;
               _lastDeviceKey = key;
@@ -145,12 +157,7 @@ class _DLNAPageState extends State<DLNAPage> {
               await device.play();
             },
           );
-          if (!WindowsVideoTabService.enabled) return tile;
-          return Material(color: context.windowsNeo.surface, child: tile);
         },
-        separatorBuilder: (_, _) => WindowsVideoTabService.enabled
-            ? Divider(height: 1, color: context.windowsNeo.border)
-            : const SizedBox.shrink(),
       );
     }
     return const SliverToBoxAdapter();
