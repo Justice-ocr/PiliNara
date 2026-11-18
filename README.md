@@ -11,7 +11,7 @@
 </div>
 </div>
     <p>基于PiliPlus做了一些自用修改</p>
-    
+
 <img src="assets/screenshots/510shots_so.png" width="32%" alt="home" />
 <img src="assets/screenshots/174shots_so.png" width="32%" alt="home" />
 <img src="assets/screenshots/850shots_so.png" width="32%" alt="home" />
@@ -258,7 +258,7 @@ Fork特性：
   - [x] 观看记录
   - [x] 我的收藏
   - [x] 站内私信
-  
+
 - [x] 动态相关
   - [x] 全部、投稿、番剧分类查看
   - [x] 动态评论查看
@@ -280,14 +280,14 @@ Fork特性：
   - [x] 字幕
   - [x] 记忆播放
   - [x] 视频比例：高度/宽度适应、填充、包含等
-     
+
 - [x] 搜索相关
   - [x] 热搜
   - [x] 搜索历史
   - [x] 默认搜索词
   - [x] 投稿、番剧、直播间、用户搜索
   - [x] 视频搜索排序、按时长筛选
-    
+
 - [x] 视频详情页相关
   - [x] 视频选集(分p)切换
   - [x] 点赞、投币、收藏/取消收藏
@@ -299,7 +299,7 @@ Fork特性：
   - [x] 评论笔记图片查看、保存
 
 - [x] 设置相关
-  - [x] 画质、音质、解码方式预设      
+  - [x] 画质、音质、解码方式预设
   - [x] 图片质量设定
   - [x] 主题模式：亮色/暗色/跟随系统
   - [x] 震动反馈(可选)
@@ -369,12 +369,13 @@ yay -S pilinara-bin
 <br/>
 <br/>
 
+
 ## Star History
 
-<a href="https://star-history.dera.page/#Starfallan/PiliNara">
+<a href="https://www.star-history.com/?repos=starfallan%2Fpilinara&type=date&legend=bottom-right">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=Starfallan/PiliNara&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=Starfallan/PiliNara" />
-   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=Starfallan/PiliNara" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=starfallan/pilinara&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=starfallan/pilinara&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=starfallan/pilinara&type=date&legend=top-left" />
  </picture>
 </a>

@@ -142,7 +142,7 @@ class _PlDanmakuState extends State<PlDanmaku> {
       final blockColorful = DanmakuOptions.blockColorful;
       final danmakuWeight = DanmakuOptions.danmakuWeight;
       for (DanmakuElem e in currentDanmakuList) {
-        if (e.weight < danmakuWeight) return;
+        if (e.weight < danmakuWeight) continue;
         if (e.mode == 7) {
           if (kDebugMode &&
               !_loggedEarlySpecialDanmaku &&
@@ -190,7 +190,7 @@ class _PlDanmakuState extends State<PlDanmaku> {
             itemFontSize = e.fontsize.toDouble() * scale;
           }
           // If itemFontSize is null, canvas_danmaku uses global fontSize from DanmakuOption
-          
+
           _controller!.addDanmaku(
             DanmakuContentItem(
               e.content,

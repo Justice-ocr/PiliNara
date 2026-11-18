@@ -2,8 +2,10 @@ param(
     [string]$platform = ""
 )
 
-git config --global user.name "ci"
-git config --global user.email "example@example.com"
+$env:GIT_AUTHOR_NAME = "ci"
+$env:GIT_AUTHOR_EMAIL = "example@example.com"
+$env:GIT_COMMITTER_NAME = "ci"
+$env:GIT_COMMITTER_EMAIL = "example@example.com"
 
 # TODO: remove
 # https://github.com/flutter/flutter/issues/182281
@@ -297,7 +299,7 @@ if (-not $MaterialUiDir) {
 Write-Host "material_ui dir: $($MaterialUiDir.FullName)"
 
 Get-ChildItem -Path "$env:GITHUB_WORKSPACE/lib/scripts/material" -Filter *.patch | ForEach-Object {
-    (Get-Content $_.FullName -Raw) -replace "`r`n", "`n" | 
+    (Get-Content $_.FullName -Raw) -replace "`r`n", "`n" |
         Set-Content -NoNewline $_.FullName
 }
 

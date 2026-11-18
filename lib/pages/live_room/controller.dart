@@ -9,7 +9,7 @@ import 'package:PiliPlus/http/live.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/video.dart';
 import 'package:PiliPlus/models/common/super_chat_type.dart';
-import 'package:PiliPlus/models/common/video/live_quality.dart';
+import 'package:PiliPlus/models/common/video/base_quality.dart';
 import 'package:PiliPlus/models/model_owner.dart';
 import 'package:PiliPlus/models_new/live/live_danmaku/danmaku_msg.dart';
 import 'package:PiliPlus/models_new/live/live_danmaku/live_emote.dart';
@@ -41,6 +41,8 @@ import 'package:PiliPlus/utils/extension/rx_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
@@ -132,21 +134,29 @@ class LiveRoomController extends GetxController {
   int builtLength = 0;
   final messages = <dynamic>[].obs;
   bool get shouldRefresh => builtLength != messages.length;
-  late final fsSC = Rxn<SuperChatItem>();
   late final RxList<SuperChatItem> superChatMsg = <SuperChatItem>[].obs;
   final disableAutoScroll = false.obs;
   bool autoScroll = true;
   LiveMessageStream? _msgStream;
+
+  late final fsSC = Rxn<SuperChatItem>();
+  late final enableFSSC = Pref.enableFullScreenSC;
+  late final fsSCScale = Pref.fullScreenSCScale;
+  late final fsSCOpacity = Pref.fullScreenSCOpacity;
+
   List<String> _keywordList = const [];
   Set<int> _shieldUids = const {};
   late final ScrollController scrollController;
   late final RxInt pageIndex = 0.obs;
   PageController? pageController;
 
-  int? currentQn = PlatformUtils.isMobile ? null : Pref.liveQuality;
-  final currentQnDesc = ''.obs;
   final RxBool isPortrait = false.obs;
-  late List<({int code, String desc})> acceptQnList = [];
+  late List<LiveQuality> acceptQnList = [];
+  final Rxn<LiveQuality> currentQn = Rxn<LiveQuality>(
+    PlatformUtils.isMobile || Platform.isLinux
+        ? null
+        : .fromCode(Pref.liveQuality),
+  );
 
   late final bool isLogin;
   late final int mid;
@@ -283,9 +293,9 @@ class LiveRoomController extends GetxController {
       return null;
     }
 
-    // 如果播放器已被彻底销毁（例如在其他页面关闭了小窗），重新获取单例实例
-    if (plPlayerController.videoPlayerController == null) {
-      plPlayerController = PlPlayerController.ensureInstance(isLive: true);
+    // 当前引用已失效时，重新取得单例并持有一次引用。
+    if (!identical(plPlayerController, PlPlayerController.instance)) {
+      plPlayerController = PlPlayerController.getInstance(isLive: true);
     }
 
     // 确保播放器处于直播模式
@@ -313,12 +323,14 @@ class LiveRoomController extends GetxController {
   }
 
   Future<void> queryLiveUrl({bool autoFullScreenFlag = false}) async {
-    currentQn ??= await ConnectivityUtils.isWiFi
-        ? Pref.liveQuality
-        : Pref.liveQualityCellular;
+    currentQn.value ??= .fromCode(
+      await ConnectivityUtils.isWiFi
+          ? Pref.liveQuality
+          : Pref.liveQualityCellular,
+    );
     final res = await LiveHttp.liveRoomInfo(
       roomId: roomId,
-      qn: currentQn,
+      qn: currentQn.value!.code,
       onlyAudio: plPlayerController.onlyPlayAudio.value,
     );
     if (res case Success(:final response)) {
@@ -443,16 +455,9 @@ class LiveRoomController extends GetxController {
         .getOrFirst(formatIndex)
         .codec
         .getOrFirst(codecIndex);
+    acceptQnList = item.acceptQn;
     // 以服务端返回的码率为准
-    currentQn = item.currentQn;
-    acceptQnList = item.acceptQn.map((e) {
-      return (
-        code: e,
-        desc: LiveQuality.fromCode(e)?.desc ?? e.toString(),
-      );
-    }).toList();
-    currentQnDesc.value =
-        LiveQuality.fromCode(currentQn)?.desc ?? currentQn.toString();
+    currentQn.value = item.currentQn;
     videoUrl = VideoUtils.getLiveCdnUrl(item, index: liveUrlIndex);
     return playerInit()?.whenComplete(_startSizeSub);
   }
@@ -500,7 +505,7 @@ class LiveRoomController extends GetxController {
             if (codecName.contains('av1')) {
               score -= 30;
             }
-            if (codecItem.currentQn == currentQn) {
+            if (codecItem.currentQn == currentQn.value) {
               score += 10;
             }
             if (urlInfo.$1 == liveUrlIndex) {
@@ -749,13 +754,11 @@ class LiveRoomController extends GetxController {
   }
 
   // 修改画质
-  Future<void>? changeQn(int qn) {
-    if (currentQn == qn) {
+  Future<void>? changeQn(LiveQuality qn) {
+    if (currentQn.value == qn) {
       return null;
     }
-    currentQn = qn;
-    currentQnDesc.value =
-        LiveQuality.fromCode(currentQn)?.desc ?? currentQn.toString();
+    currentQn.value = qn;
     return queryLiveUrl();
   }
 
@@ -861,6 +864,7 @@ class LiveRoomController extends GetxController {
           final item = SuperChatItem.fromJson(obj['data'], roomId);
           superChatMsg.insert(0, item);
           addDm(item);
+          if (!enableFSSC) return;
           if (Platform.isAndroid && AndroidHelper.isPipMode) return;
           if (plPlayerController.showDanmaku &&
               (isFullScreen || plPlayerController.isDesktopPip)) {
@@ -962,10 +966,10 @@ class LiveRoomController extends GetxController {
           return Theme(
             data: ThemeUtils.darkTheme,
             child: LiveSendDmPanel(
-              fromEmote: fromEmote,
               liveRoomController: this,
               items: savedDanmaku,
               autofocus: !fromEmote,
+              panelType: fromEmote ? .emoji : .none,
               onSave: (msg) {
                 if (msg.isEmpty) {
                   savedDanmaku?.clear();
@@ -1200,5 +1204,15 @@ class LiveRoomController extends GetxController {
       }
     }
     fansMedalData.refresh();
+  }
+  void toggleDanmaku() {
+    final newVal = !plPlayerController.enableShowLiveDanmaku.rawValue;
+    plPlayerController.enableShowLiveDanmaku.value = newVal;
+    if (!plPlayerController.tempPlayerConf) {
+      GStorage.setting.put(
+        SettingBoxKey.enableShowLiveDanmaku,
+        newVal,
+      );
+    }
   }
 }

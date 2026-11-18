@@ -11,22 +11,17 @@ abstract final class RecommendFilter {
   static bool applyFilterToHotVideos = Pref.applyFilterToHotVideos;
   static bool applyFilterToRankVideos = Pref.applyFilterToRankVideos;
   static bool applyFilterToSearch = Pref.applyFilterToSearch;
-  static RegExp videoTagRegExp = RegExp(
-    Pref.parseBanWordToRegex(Pref.banWordForVideoTag),
-    caseSensitive: false,
+  static List<RegExp> videoTagRegExp = Pref.compileBanWord(
+    Pref.banWordForVideoTag,
   );
-  static bool enableVideoTagFilter = videoTagRegExp.pattern.isNotEmpty;
+  static bool enableVideoTagFilter = videoTagRegExp.isNotEmpty;
 
-  static RegExp rcmdRegExp = RegExp(
-    Pref.parseBanWordToRegex(Pref.banWordForRecommend),
-    caseSensitive: false,
+  static List<RegExp> rcmdRegExp = Pref.compileBanWord(Pref.banWordForRecommend);
+  static bool enableFilter = rcmdRegExp.isNotEmpty;
+  static List<RegExp> rcmdUpNameRegExp = Pref.compileBanWord(
+    Pref.banWordForRecommendUpName,
   );
-  static bool enableFilter = rcmdRegExp.pattern.isNotEmpty;
-  static RegExp rcmdUpNameRegExp = RegExp(
-    Pref.parseBanWordToRegex(Pref.banWordForRecommendUpName),
-    caseSensitive: false,
-  );
-  static bool enableUpNameFilter = rcmdUpNameRegExp.pattern.isNotEmpty;
+  static bool enableUpNameFilter = rcmdUpNameRegExp.isNotEmpty;
   static Map<int, String> recommendBlockedMids = Pref.recommendBlockedMids;
 
   static bool isWhitelisted(int? mid) {
@@ -42,7 +37,7 @@ abstract final class RecommendFilter {
     return filterAll(videoItem);
   }
 
-  /// hot/rank/[filterWithExempt]
+  /// hot/rank/[filterAll]
   static bool filterLikeRatio(int? like, int? view) {
     if (view != null) {
       return (view > -1 && view < minPlayForRcmd) ||
@@ -53,7 +48,7 @@ abstract final class RecommendFilter {
     return false;
   }
 
-  /// hot/rank/[filterWithExempt]
+  /// hot/rank/[filterAll]
   static bool filterTitle(String title) {
     return (enableFilter && rcmdRegExp.hasMatch(title));
   }
