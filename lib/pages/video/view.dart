@@ -2732,6 +2732,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
             title: entry.title,
             onBack: _popWindowsVideoContext,
             child: VideoReplyReplyPanel(
+              onClose: _popWindowsVideoContext,
               enableSlide: false,
               id: replyId,
               oid: replyItem.oid.toInt(),

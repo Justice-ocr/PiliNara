@@ -20,6 +20,7 @@ import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/desktop/window_controller.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/ios/pip_helper.dart';
+import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -91,13 +92,14 @@ List<SettingsModel> get playSettings => [
     setKey: SettingBoxKey.showFsLockBtn,
     defaultVal: true,
   ),
-  const SwitchModel(
-    title: '锁定后禁止重力感应旋转',
-    subtitle: '全屏锁定后不再随设备方向翻转（仅横屏视频生效）',
-    leading: Icon(Icons.screen_lock_rotation),
-    setKey: SettingBoxKey.lockFsRotation,
-    defaultVal: false,
-  ),
+  if (PlatformUtils.isMobile && !DeviceUtils.isChromeOS)
+    const SwitchModel(
+      title: '锁定后禁止重力感应旋转',
+      subtitle: '全屏锁定后不再随设备方向翻转（仅横屏视频生效）',
+      leading: Icon(Icons.screen_lock_rotation),
+      setKey: SettingBoxKey.lockFsRotation,
+      defaultVal: false,
+    ),
   const SwitchModel(
     title: '锁定按钮显示在右侧',
     subtitle: '开启后锁定按钮移至右侧，与截图按钮一同垂直居中排列',

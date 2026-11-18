@@ -41,6 +41,7 @@ class VideoReplyReplyPanel extends CommonSlidePage {
     this.isNested = false,
     this.heroTag,
     this.upMid,
+    this.onClose,
   });
   final int? id;
   final int oid;
@@ -52,6 +53,7 @@ class VideoReplyReplyPanel extends CommonSlidePage {
   final bool isNested;
   final String? heroTag;
   final Int64? upMid;
+  final VoidCallback? onClose;
 
   static Future<void>? toReply({
     required int oid,
@@ -169,7 +171,7 @@ class _VideoReplyReplyPanelState extends State<VideoReplyReplyPanel>
                         IconButton(
                           tooltip: '关闭',
                           icon: const Icon(Icons.close, size: 20),
-                          onPressed: Get.back,
+                          onPressed: widget.onClose ?? Get.back,
                         ),
                       ],
                     ),

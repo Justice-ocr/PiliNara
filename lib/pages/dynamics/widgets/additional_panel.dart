@@ -74,8 +74,11 @@ Widget? addWidget(
       case 'ADDITIONAL_TYPE_RESERVE' when (additional.reserve != null):
         final reserve = additional.reserve!;
         if (reserve.state != -1 && reserve.title != null) {
+          final jumpUrl = reserve.button?.jumpUrl;
           child = InkWell(
-            onTap: () {},
+            onTap: jumpUrl == null || jumpUrl.isEmpty
+                ? null
+                : () => PiliScheme.routePushFromUrl(jumpUrl),
             borderRadius: borderRadius,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
