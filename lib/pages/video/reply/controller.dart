@@ -12,7 +12,7 @@ import 'package:PiliPlus/pages/video/windows_video_context_controller.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/reply_scheme_helper.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:flutter/widgets.dart' show BoxConstraints, WidgetsBinding;
+import 'package:flutter/widgets.dart' show BoxConstraints, VoidCallback, WidgetsBinding;
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:get/get.dart';
 
@@ -77,7 +77,10 @@ class VideoReplyController extends ReplyController<MainListReply>
           )) {
         return;
       }
-      videoCtr.childKey.currentState?.showBottomSheet(
+      final scaffold = videoCtr.childKey.currentState;
+      if (scaffold == null) return;
+      late final VoidCallback closeSheet;
+      final sheet = scaffold.showBottomSheet(
         constraints: const BoxConstraints(),
         (context) => VideoReplyReplyPanel(
           id: id,
@@ -86,11 +89,13 @@ class VideoReplyController extends ReplyController<MainListReply>
           firstFloor: replyItem.replyControl.isNote ? null : replyItem,
           replyType: videoCtr.videoType.replyType,
           isVideoDetail: true,
+          onClose: () => closeSheet(),
           isNested: videoCtr.scrollKey.currentContext != null,
           heroTag: heroTag,
           upMid: upMid,
         ),
       );
+      closeSheet = sheet.close;
     });
   }
 

@@ -275,7 +275,8 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
   }
 
   void replyReply(BuildContext context, ReplyInfo replyItem, int? id) {
-    Widget replyReplyPage({bool showBackBtn = true}) {
+    Widget replyReplyPage({VoidCallback? onClose}) {
+      final showBackBtn = onClose == null;
       final child = ViewSafeArea(
         left: showBackBtn,
         right: showBackBtn,
@@ -285,6 +286,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
           oid: replyItem.oid.toInt(),
           rpid: replyItem.id.toInt(),
           isVideoDetail: !showBackBtn,
+          onClose: onClose,
           replyType: controller.replyType,
           firstFloor: replyItem,
           heroTag: arguments?['heroTag'],
@@ -313,7 +315,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
         hideFab();
         scaffoldState.showBottomSheet(
           constraints: const BoxConstraints(),
-          (context) => replyReplyPage(showBackBtn: false),
+          (context) => replyReplyPage(onClose: scaffoldState.closeBottomSheet),
         );
         return;
       }

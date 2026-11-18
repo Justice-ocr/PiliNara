@@ -42,7 +42,7 @@ class VideoReplyReplyPanel extends CommonSlidePage {
     this.heroTag,
     this.upMid,
     this.onClose,
-  });
+  }) : assert(!isVideoDetail || onClose != null);
   final int? id;
   final int oid;
   final int rpid;
@@ -171,7 +171,7 @@ class _VideoReplyReplyPanelState extends State<VideoReplyReplyPanel>
                         IconButton(
                           tooltip: '关闭',
                           icon: const Icon(Icons.close, size: 20),
-                          onPressed: widget.onClose ?? Get.back,
+                          onPressed: widget.onClose,
                         ),
                       ],
                     ),
@@ -416,7 +416,8 @@ class _VideoReplyReplyPanelState extends State<VideoReplyReplyPanel>
   }
 
   void _showDialogue(BuildContext context, ReplyInfo replyItem) {
-    MiniScaffold.of(context).showBottomSheet(
+    final scaffold = MiniScaffold.of(context);
+    scaffold.showBottomSheet(
       constraints: const BoxConstraints(),
       (context) => VideoReplyReplyPanel(
         oid: replyItem.oid.toInt(),
@@ -424,6 +425,7 @@ class _VideoReplyReplyPanelState extends State<VideoReplyReplyPanel>
         dialog: replyItem.dialog.toInt(),
         replyType: widget.replyType,
         isVideoDetail: true,
+        onClose: scaffold.closeBottomSheet,
         isNested: widget.isNested,
         heroTag: widget.heroTag,
       ),
