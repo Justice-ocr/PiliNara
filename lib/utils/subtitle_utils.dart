@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:PiliPlus/utils/path_utils.dart';
 
 // Logic inspired by BiliRoamingX.
@@ -18,6 +21,17 @@ abstract final class SubtitleUtils {
       fileName.endsWith(PathUtils.subtitleExt);
 
   static const exts = [_json, 'vtt', 'srt', 'ass', _bcc, PathUtils.subtitleExt];
+
+  // Earlier Neo builds cached the body array without the BCC wrapper.
+  static List decodeBody(String source) => switch (jsonDecode(source)) {
+    {'body': final List body} => body,
+    final List body => body,
+    _ => throw const FormatException('字幕缺少 body 数组'),
+  };
+
+  static Uint8List encodeDocument(List body) => utf8.encode(
+    jsonEncode({'body': body}),
+  );
 
   static String _vttTimecode(num seconds) {
     final int h = seconds ~/ 3600;

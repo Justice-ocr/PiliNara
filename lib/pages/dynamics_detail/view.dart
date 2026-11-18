@@ -91,7 +91,10 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
     }
     final stat = item.modules.moduleStat;
     controller = Get.putOrFind<DynamicDetailController>(
-      () => DynamicDetailController(count: stat?.comment?.count ?? -1),
+      () => DynamicDetailController(
+        replyRouteArguments: args,
+        count: stat?.comment?.count ?? -1,
+      ),
       tag: widget.controllerTag ?? id,
     );
     _repostController = Get.putOrFind<DynRepostController>(

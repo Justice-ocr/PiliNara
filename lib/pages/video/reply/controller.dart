@@ -8,6 +8,7 @@ import 'package:PiliPlus/pages/common/reply/reply_controller.dart';
 import 'package:PiliPlus/pages/common/reply/vote/reply_vote_mixin.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/reply_reply/view.dart';
+import 'package:PiliPlus/pages/video/windows_video_context_controller.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/reply_scheme_helper.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -23,9 +24,10 @@ class VideoReplyController extends ReplyController<MainListReply>
         MainReplyLocateMixin,
         BaseReplyFoldMixin<MainListReply>,
         ReplyFoldMixin {
-  VideoReplyController({
-    required this.heroTag,
-  });
+  VideoReplyController({required this.videoCtr});
+
+  @override
+  Map get replyRouteArguments => videoCtr.args;
   late final isPugv = videoCtr.videoType == .pugv;
 
   @override
@@ -34,8 +36,8 @@ class VideoReplyController extends ReplyController<MainListReply>
   @override
   int get replyType => videoCtr.videoType.replyType;
 
-  final String heroTag;
-  late final videoCtr = Get.find<VideoDetailController>(tag: heroTag);
+  final VideoDetailController videoCtr;
+  String get heroTag => videoCtr.heroTag;
 
   // 是否正在进入应用内小窗
   bool isEnteringPip = false;
@@ -67,7 +69,14 @@ class VideoReplyController extends ReplyController<MainListReply>
   }
 
   void replyReply(ReplyInfo replyItem, int? id) {
-    EasyThrottle.throttle('replyReply', const Duration(milliseconds: 500), () {
+    EasyThrottle.throttle('replyReply:$heroTag', const Duration(milliseconds: 500), () {
+      final owner = videoCtr.pageOwner;
+      if (owner is WindowsVideoReplyPresenter &&
+          owner.openWindowsReplyContext(
+            WindowsVideoReplyContext(replyItem: replyItem, replyId: id),
+          )) {
+        return;
+      }
       videoCtr.childKey.currentState?.showBottomSheet(
         constraints: const BoxConstraints(),
         (context) => VideoReplyReplyPanel(

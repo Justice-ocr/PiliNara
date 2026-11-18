@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert' show jsonDecode, jsonEncode, utf8;
+import 'dart:convert' show jsonDecode, jsonEncode;
 import 'dart:io' show Directory, File;
 
 import 'package:PiliPlus/grpc/dm.dart';
@@ -657,7 +657,7 @@ class DownloadService extends GetxService {
       if (sub.id == null || sub.subtitleUrl?.isNotEmpty != true) return false;
       final body = await VideoHttp.fetchSubtitleBody(sub.subtitleUrl!);
       if (body == null) return false;
-      final bytes = utf8.encode(jsonEncode(body));
+      final bytes = SubtitleUtils.encodeDocument(body);
       final file = File(sub.toPath(entry.entryDirPath));
       await file.parent.create(recursive: true);
       temporary = File('${file.path}.${DateTime.now().microsecondsSinceEpoch}.tmp');

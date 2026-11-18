@@ -1,5 +1,5 @@
 import 'dart:async' show StreamSubscription, Timer;
-import 'dart:convert' show jsonDecode, jsonEncode, utf8;
+import 'dart:convert' show utf8;
 import 'dart:io' show Platform, File;
 import 'dart:typed_data' show Uint8List;
 
@@ -1246,13 +1246,13 @@ class HeaderControlState extends State<HeaderControl>
     );
   }
 
-  Future<Uint8List?> _loadSubtitleJsonBytes(Subtitle item) async {
-    if (item is LocalSubtitle) return File(item.path).readAsBytes();
+  Future<List?> _loadSubtitleBody(Subtitle item) async {
+    if (item is LocalSubtitle) {
+      return SubtitleUtils.decodeBody(await File(item.path).readAsString());
+    }
     final url = item.subtitleUrl;
     if (url == null || url.isEmpty) return null;
-    final body = await VideoHttp.fetchSubtitleBody(url);
-    if (body == null) return null;
-    return Uint8List.fromList(utf8.encode(jsonEncode(body)));
+    return VideoHttp.fetchSubtitleBody(url);
   }
 
   Future<Uint8List?> _loadSubtitleVttBytes(int index, Subtitle item) async {
@@ -1342,12 +1342,13 @@ class HeaderControlState extends State<HeaderControl>
                     case .vtt:
                       bytes = await _loadSubtitleVttBytes(i, item);
                     case .srt:
-                      final jsonBytes = await _loadSubtitleJsonBytes(item);
-                      if (jsonBytes == null) return;
-                      final body = jsonDecode(utf8.decode(jsonBytes))['body'] as List;
-                      bytes = Uint8List.fromList(utf8.encode(SubtitleUtils.json2Srt(body)));
+                      final body = await _loadSubtitleBody(item);
+                      if (body == null) return;
+                      bytes = utf8.encode(SubtitleUtils.json2Srt(body));
                     case .json:
-                      bytes = await _loadSubtitleJsonBytes(item);
+                      final body = await _loadSubtitleBody(item);
+                      if (body == null) return;
+                      bytes = SubtitleUtils.encodeDocument(body);
                   }
                   if (bytes == null) return;
                   final videoDetail = introController.videoDetail.value;

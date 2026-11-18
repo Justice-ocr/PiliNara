@@ -349,16 +349,19 @@ void main() {
     expect(find.byType(SearchEsportsItem), findsOneWidget);
   });
 
-  testWidgets('视频列表混入的直播和课堂忽略标签条件', (tester) async {
-    final live = _video('直播', 1)..isLive = true;
-    final course = _video('课堂', 2)..isPugv = true;
-    final video = _video('普通视频', 3);
-    final controller = _SearchController(searchType: SearchType.video)
-      ..seed(SearchVideoData(list: [live, course, video]));
-    controller.includeKeywords.add('#历史');
-    await _pumpPanel(tester, controller);
-    expect(_visibleVideos(tester), [live, course]);
-  });
+  for (final type in [SearchType.video, SearchType.all]) {
+    testWidgets('$type 混入的直播和课堂忽略标签条件', (tester) async {
+      final live = _video('直播', 1)..isLive = true;
+      final course = _video('课堂', 2)..isPugv = true;
+      final video = _video('普通视频', 3);
+      final data = (type == SearchType.all ? _mixedData() : SearchVideoData())
+        ..list = [live, course, video];
+      final controller = _SearchController(searchType: type)..seed(data);
+      controller.includeKeywords.add('#历史');
+      await _pumpPanel(tester, controller);
+      expect(_visibleVideos(tester), [live, course]);
+    });
+  }
 
   testWidgets('标签筛选后追加分页仍过滤新结果，清除可恢复全部已加载视频', (tester) async {
     final first = _video('首屏视频', 1, '生活');

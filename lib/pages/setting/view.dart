@@ -89,6 +89,16 @@ class _SettingPageState extends State<SettingPage> {
       icon: Icon(Icons.touch_app_outlined),
     ),
     _SettingsModel(
+      type: SettingType.dmSetting,
+      subtitle: '点击弹幕、弹幕行高、彩色弹幕、合并弹幕',
+      icon: Icon(Icons.subtitles_outlined),
+    ),
+    _SettingsModel(
+      type: SettingType.replySetting,
+      subtitle: '评论展示、过滤、屏蔽、记录',
+      icon: Icon(Icons.comment_outlined),
+    ),
+    _SettingsModel(
       type: SettingType.styleSetting,
       subtitle: '横屏适配（平板）、侧栏、列宽、首页、动态红点、主题、字号、图片、帧率等',
       icon: Icon(Icons.style_outlined),

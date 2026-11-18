@@ -84,7 +84,7 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
   void initState() {
     super.initState();
     introController = Get.putOrFind(
-      UgcIntroController.new,
+      () => UgcIntroController(videoDetailCtr),
       tag: widget.heroTag,
     );
   }

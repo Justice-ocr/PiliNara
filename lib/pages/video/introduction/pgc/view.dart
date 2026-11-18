@@ -58,7 +58,9 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
   void initState() {
     super.initState();
     introController = Get.putOrFind(
-      PgcIntroController.new,
+      () => PgcIntroController(
+        Get.find<VideoDetailController>(tag: widget.heroTag),
+      ),
       tag: widget.heroTag,
     );
     videoDetailCtr = introController.videoDetailCtr;

@@ -22,7 +22,6 @@ import 'package:PiliPlus/pages/video/reply/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
 import 'package:PiliPlus/services/logger.dart';
 import 'package:PiliPlus/services/service_locator.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
@@ -43,6 +42,7 @@ typedef OnChangePgcEpisode = Function(
 });
 
 class PgcIntroController extends CommonIntroController {
+  PgcIntroController(super.videoDetailCtr);
   late int seasonId;
   late int epId;
 
@@ -78,7 +78,7 @@ class PgcIntroController extends CommonIntroController {
 
   @override
   void onInit() {
-    final args = WindowsVideoTabService.currentArguments ?? Get.arguments;
+    final args = videoDetailCtr.args;
     seasonId = args['seasonId'];
     epId = args['epId'];
     isPgc = args['videoType'] == VideoType.pgc;

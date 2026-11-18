@@ -104,7 +104,8 @@ class VideoDetailPageV extends StatefulWidget {
 }
 
 class _VideoDetailPageVState extends State<VideoDetailPageV>
-    with RouteAware, RouteAwareMixin, WidgetsBindingObserver {
+    with RouteAware, RouteAwareMixin, WidgetsBindingObserver
+    implements WindowsVideoReplyPresenter {
   late final String heroTag;
 
   Map get _routeArgs => widget.arguments ?? (Get.arguments as Map);
@@ -288,8 +289,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   @override
   void initState() {
     super.initState();
-    WindowsVideoTabService.currentArguments = _routeArgs;
-    heroTag = _routeArgs['heroTag'];
+    final args = _routeArgs;
+    heroTag = args['heroTag'];
     VideoStackManager.increment(); // 追踪视频页面层级
     final bool fromPip = _routeArgs['fromPip'] ?? false;
     final String? targetContextKey = PipOverlayService.contextKeyFromArgs(
@@ -370,7 +371,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           immediate: true,
           targetContextKey: targetContextKey,
         );
-        videoDetailController = Get.put(VideoDetailController(), tag: heroTag);
+        videoDetailController = Get.put(
+          VideoDetailController(args: args),
+          tag: heroTag,
+        );
       }
     } else {
       // 非 PiP 返回，正常流程（包括原页面还留在栈中或由于某些原因被销毁重构）
@@ -398,7 +402,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           disposeSavedOwnerPlayer: !fromVideoPage,
         );
       }
-      videoDetailController = Get.put(VideoDetailController(), tag: heroTag);
+      videoDetailController = Get.put(
+        VideoDetailController(args: args),
+        tag: heroTag,
+      );
     }
 
     if (WindowsVideoTabService.enabled) {
@@ -439,9 +446,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         _logSponsorBlock('Restored VideoReplyController from PiP');
       } else {
         _videoReplyController = Get.put(
-          VideoReplyController(
-            heroTag: heroTag,
-          ),
+          VideoReplyController(videoCtr: videoDetailController),
           tag: heroTag,
         );
       }
@@ -461,7 +466,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         Get.put(localIntroController, tag: heroTag);
         _logSponsorBlock('Restored LocalIntroController from PiP');
       } else {
-        localIntroController = Get.put(LocalIntroController(), tag: heroTag);
+        localIntroController = Get.put(
+          LocalIntroController(videoDetailController),
+          tag: heroTag,
+        );
       }
     } else if (videoDetailController.isUgc) {
       if (savedIntroController != null &&
@@ -473,7 +481,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           'Restored UgcIntroController from PiP, videoDetail.bvid: ${ugcIntroController.videoDetail.value.bvid}',
         );
       } else {
-        ugcIntroController = Get.put(UgcIntroController(), tag: heroTag);
+        ugcIntroController = Get.put(
+          UgcIntroController(videoDetailController),
+          tag: heroTag,
+        );
       }
     } else {
       if (savedIntroController != null &&
@@ -483,7 +494,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         Get.put(pgcIntroController, tag: heroTag);
         _logSponsorBlock('Restored PgcIntroController from PiP');
       } else {
-        pgcIntroController = Get.put(PgcIntroController(), tag: heroTag);
+        pgcIntroController = Get.put(
+          PgcIntroController(videoDetailController),
+          tag: heroTag,
+        );
       }
     }
 
@@ -3286,14 +3300,12 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
               )
             else
               Expanded(
-                child: Obx(
-                  () => EpisodePanel(
-                    enableSlide: false,
-                    type: .part,
-                    isSidePanel: true,
-                    introController: ugcIntroController,
-                    onReverse: () => onReversePlay(isSeason: false),
-                  ),
+                child: EpisodePanel(
+                  enableSlide: false,
+                  type: .part,
+                  isSidePanel: true,
+                  introController: ugcIntroController,
+                  onReverse: () => onReversePlay(isSeason: false),
                 ),
               ),
           if (videoDetail.ugcSeason != null) ...[
@@ -3313,14 +3325,12 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
               ),
             ),
             Expanded(
-              child: Obx(
-                () => EpisodePanel(
-                  enableSlide: false,
-                  type: .season,
-                  isSidePanel: true,
-                  introController: ugcIntroController,
-                  onReverse: () => onReversePlay(isSeason: true),
-                ),
+              child: EpisodePanel(
+                enableSlide: false,
+                type: .season,
+                isSidePanel: true,
+                introController: ugcIntroController,
+                onReverse: () => onReversePlay(isSeason: true),
               ),
             ),
           ],
@@ -3340,8 +3350,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     videoDetailController.showBottomSheet(
       backgroundColor: Colors.transparent,
       constraints: const BoxConstraints(),
-      (context) =>
-          AiConclusionPanel(item: ugcIntroController.aiConclusionResult!),
+      (context) => AiConclusionPanel(
+        item: ugcIntroController.aiConclusionResult!,
+        onSeek: videoDetailController.plPlayerController.seekTo,
+      ),
     );
   }
 
@@ -3900,8 +3912,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
   }
 
-  bool _openWindowsReplyContext(WindowsVideoReplyContext entry) {
-    if (!_windowsUsesSidePanel || !mounted) return false;
+  @override
+  bool openWindowsReplyContext(WindowsVideoReplyContext entry) {
+    if (!_windowsUsesSidePanel || !mounted || isFullScreen ||
+        videoDetailController.plPlayerController.isDesktopPip) return false;
     _pushWindowsVideoContext(entry);
     return true;
   }

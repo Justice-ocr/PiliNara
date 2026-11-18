@@ -284,7 +284,6 @@ class VideoPopupMenu extends StatelessWidget {
                         context,
                         Theme.of(context),
                         res,
-                        tap: false,
                       ),
                     ),
                   ),

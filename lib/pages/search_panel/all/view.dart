@@ -62,7 +62,7 @@ class _SearchAllPanelState
     final filteredVideos = controller.filterKeywords(
       response ?? const <SearchVideoItemModel>[],
       getTitle,
-      getTags: (item) => item.tag?.split(',') ?? const [],
+      getTags: getTags,
     );
     final filteredActivities = controller.filterKeywords(
       activities,

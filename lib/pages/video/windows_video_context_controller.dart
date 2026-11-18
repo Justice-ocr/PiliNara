@@ -33,6 +33,10 @@ final class WindowsVideoReplyContext extends WindowsVideoContextEntry {
   String get title => '评论详情';
 }
 
+abstract interface class WindowsVideoReplyPresenter {
+  bool openWindowsReplyContext(WindowsVideoReplyContext entry);
+}
+
 class WindowsVideoContextController {
   final List<WindowsVideoContextEntry> _history = [];
 

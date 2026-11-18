@@ -47,6 +47,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class UgcIntroController extends CommonIntroController with ReloadMixin {
+  UgcIntroController(super.videoDetailCtr);
   late final RxBool expand;
   final RxBool status = true.obs;
 
@@ -92,7 +93,7 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
         }
       });
     }
-    videoDetail.value.title = Get.arguments['title'] ?? '';
+    videoDetail.value.title = videoDetailCtr.args['title'] ?? '';
   }
 
   // 获取视频简介&分p
@@ -793,7 +794,10 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
     if (Get.isRegistered<RelatedController>(tag: heroTag)) {
       relatedCtr = Get.find<RelatedController>(tag: heroTag);
     } else {
-      relatedCtr = Get.put(RelatedController(autoQuery: false), tag: heroTag)
+      relatedCtr = Get.put(
+        RelatedController(bvid: bvid, autoQuery: false),
+        tag: heroTag,
+      )
         ..queryData().whenComplete(playRelated);
       return false;
     }

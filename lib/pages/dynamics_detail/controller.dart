@@ -21,7 +21,10 @@ class DynamicDetailController extends CommonDynController
         MainReplyLocateMixin,
         DynReplyLocateMixin {
   static const String _kWebLinkPlaceholder = '网页链接';
-  DynamicDetailController({super.count});
+  DynamicDetailController({required this.replyRouteArguments, super.count});
+
+  @override
+  final Map replyRouteArguments;
 
   @override
   late int oid;

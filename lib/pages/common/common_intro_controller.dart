@@ -12,7 +12,6 @@ import 'package:PiliPlus/models_new/video/video_detail/stat_detail.dart';
 import 'package:PiliPlus/models_new/video/video_tag/data.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/triple_mixin.dart';
-import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
@@ -28,12 +27,14 @@ import 'package:material_ui/material_ui.dart';
 
 abstract class CommonIntroController extends GetxController
     with GetSingleTickerProviderStateMixin, TripleMixin, FavMixin {
-  late final String heroTag;
+  CommonIntroController(this.videoDetailCtr);
+
+  final VideoDetailController videoDetailCtr;
+  String get heroTag => videoDetailCtr.heroTag;
 
   int get aid => videoDetailCtr.aid;
   String get bvid => videoDetailCtr.bvid;
   RxInt get cid => videoDetailCtr.cid;
-  late final videoDetailCtr = Get.find<VideoDetailController>(tag: heroTag);
 
   // 是否稍后再看
   late final RxBool hasLater;
@@ -80,8 +81,7 @@ abstract class CommonIntroController extends GetxController
   @override
   void onInit() {
     super.onInit();
-    final args = WindowsVideoTabService.currentArguments ?? Get.arguments;
-    heroTag = args['heroTag'];
+    final args = videoDetailCtr.args;
     hasLater = RxBool(
       args['viewLater'] ?? args['sourceType'] == SourceType.watchLater,
     );

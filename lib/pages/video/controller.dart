@@ -95,8 +95,10 @@ typedef SubtitleData = ({bool isData, String id});
 
 class VideoDetailController extends GetxController
     with GetTickerProviderStateMixin, BlockMixin {
+  VideoDetailController({required this.args});
+
   /// 路由传参
-  late final Map args;
+  final Map args;
   late String bvid;
   late int aid;
   late final RxInt cid;
@@ -578,7 +580,6 @@ class VideoDetailController extends GetxController
   @override
   void onInit() {
     super.onInit();
-    args = WindowsVideoTabService.currentArguments ?? Get.arguments;
     plPlayerController = _createPlayerController(args)..brightness.value = -1;
     plPlayerController.onNeedsPlayerInit = () async {
       playedTime = plPlayerController.videoPlayerController?.state.position;
@@ -1590,7 +1591,7 @@ class VideoDetailController extends GetxController
       String sub = buffer.toString();
       sub = await compute<List, String>(
         SubtitleUtils.json2Vtt,
-        jsonDecode(sub)['body'],
+        SubtitleUtils.decodeBody(sub),
       );
       if (isClosed || cid.value != subtitleCid) return null;
       data = (isData: true, id: sub);
@@ -1655,10 +1656,22 @@ class VideoDetailController extends GetxController
       return cached.isData ? 'memory://${cached.id}' : cached.id;
     }
 
-    final result = await VideoHttp.vttSubtitles(
-      subtitles[subIdx].subtitleUrl!,
-    );
-    if (result == null) return null;
+    final item = subtitles[subIdx];
+    if (item is LocalSubtitle) {
+      final local = await loadFileSubtitle(
+        path: item.path,
+        fileName: item.path,
+        cacheIndex: subIdx,
+      );
+      if (local == null) return null;
+      return local.isData ? 'memory://${local.id}' : local.id;
+    }
+    final url = item.subtitleUrl;
+    if (url == null || url.isEmpty) return null;
+    final requestedCid = cid.value;
+    final result = await VideoHttp.vttSubtitles(url);
+    if (result == null || isClosed || cid.value != requestedCid ||
+        subIdx >= subtitles.length || !identical(subtitles[subIdx], item)) return null;
     final subtitle = (isData: true, id: result);
     vttSubtitles[subIdx] = subtitle;
     return 'memory://${subtitle.id}';

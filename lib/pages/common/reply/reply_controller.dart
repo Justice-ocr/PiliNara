@@ -20,7 +20,8 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 mixin MainReplyLocateMixin on ReplyLocateMixin<MainListReply> {
-  final Map args = Get.arguments ?? const {};
+  Map? get replyRouteArguments => Get.arguments as Map?;
+  late final Map args = Map.of(replyRouteArguments ?? const {});
 
   Int64? targetRootRpId; // highlight
   void clearTargetRootRpId() {

@@ -57,7 +57,7 @@ abstract final class VideoHttp {
     String subtitleUrl, {
     SubtitleFormat format = SubtitleFormat.vtt,
   }) async {
-    final res = await Request().get('https:$subtitleUrl');
+    final res = await Request().get(subtitleUrl.http2https);
     if (res.data?['body'] case List list) {
       return switch (format) {
         SubtitleFormat.json => null,
@@ -1036,7 +1036,7 @@ abstract final class VideoHttp {
     String subtitleUrl, {
     CancelToken? cancelToken,
   }) async {
-    final res = await Request().get("https:$subtitleUrl", cancelToken: cancelToken);
+    final res = await Request().get(subtitleUrl.http2https, cancelToken: cancelToken);
     return res.data?['body'] as List?;
   }
 

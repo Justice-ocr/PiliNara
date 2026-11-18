@@ -1,17 +1,17 @@
 import 'package:PiliPlus/common/widgets/gesture/tap_gesture_recognizer.dart';
 import 'package:PiliPlus/models_new/video/video_ai_conclusion/model_result.dart';
 import 'package:PiliPlus/pages/common/slide/common_slide_page.dart';
-import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
-import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class AiConclusionPanel extends CommonSlidePage {
   final AiConclusionResult item;
+  final ValueChanged<Duration> onSeek;
 
   const AiConclusionPanel({
     super.key,
     required this.item,
+    required this.onSeek,
   });
 
   @override
@@ -22,8 +22,9 @@ class AiConclusionPanel extends CommonSlidePage {
     ThemeData theme,
     AiConclusionResult res, {
     Key? key,
-    bool tap = true,
+    ValueChanged<Duration>? onSeek,
   }) {
+    final tap = onSeek != null;
     final outline = res.outline;
     final hasOutline = outline != null && outline.isNotEmpty;
     return SelectionArea(
@@ -92,24 +93,14 @@ class AiConclusionPanel extends CommonSlidePage {
                                     text: DurationUtils.formatDuration(
                                       item.timestamp,
                                     ),
-                                    style: tap
+                                    style: tap && item.timestamp != null
                                         ? TextStyle(
                                             color: theme.colorScheme.primary,
                                           )
                                         : null,
-                                    recognizer: tap
+                                    recognizer: onSeek != null && item.timestamp != null
                                         ? (NoDeadlineTapGestureRecognizer()
-                                            ..onTap = () {
-                                              try {
-                                                Get.find<VideoDetailController>(
-                                                  tag: Get.arguments['heroTag'],
-                                                ).plPlayerController.seekTo(
-                                                  Duration(
-                                                    seconds: item.timestamp!,
-                                                  ),
-                                                );
-                                              } catch (_) {}
-                                            })
+                                            ..onTap = () => onSeek(Duration(seconds: item.timestamp!)))
                                         : null,
                                   ),
                                   const TextSpan(text: ' '),
@@ -181,6 +172,7 @@ class _AiDetailState extends State<AiConclusionPanel>
       theme,
       widget.item,
       key: _key,
+      onSeek: widget.onSeek,
     );
   }
 }
