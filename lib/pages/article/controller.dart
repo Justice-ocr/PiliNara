@@ -22,11 +22,18 @@ import 'package:PiliPlus/utils/url_utils.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
-class ArticleController extends CommonDynController {
-  ArticleController({Map<String, String?>? parameters})
+class ArticleController extends CommonDynController
+    with
+        GetSingleTickerProviderStateMixin,
+        ReplyLocateMixin,
+        MainReplyLocateMixin,
+        DynReplyLocateMixin {
+  ArticleController({Map<String, String?>? parameters, this.replyRouteArguments})
     : _parameters = parameters;
 
   final Map<String, String?>? _parameters;
+  @override
+  final Map? replyRouteArguments;
   late String id;
   late String type;
 

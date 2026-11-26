@@ -290,6 +290,7 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
           ),
           '/articlePage' => ArticlePage(
             parameters: data?.parameters,
+            arguments: data?.arguments as Map? ?? const {},
             controllerTag:
                 '$controllerScope:article:${data?.parameters['type'] ?? ''}:'
                 '${data?.parameters['id'] ?? ''}',

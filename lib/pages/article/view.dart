@@ -42,9 +42,15 @@ import 'package:html/parser.dart' as parser;
 import 'package:material_ui/material_ui.dart';
 
 class ArticlePage extends StatefulWidget {
-  const ArticlePage({super.key, this.parameters, this.controllerTag});
+  const ArticlePage({
+    super.key,
+    this.parameters,
+    this.arguments,
+    this.controllerTag,
+  });
 
   final Map<String, String?>? parameters;
+  final Map? arguments;
   final String? controllerTag;
 
   @override
@@ -68,7 +74,11 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage>
   void initState() {
     final params = widget.parameters ?? Get.parameters;
     controller = Get.putOrFind(
-      () => ArticleController(parameters: params),
+      () => ArticleController(
+        parameters: params,
+        replyRouteArguments: widget.arguments ??
+            (widget.parameters == null ? Get.arguments as Map? : null),
+      ),
       tag: widget.controllerTag ?? '${params['type']!}${params['id']!}',
     );
     if (params.containsKey('viewComment') || controller.rootRpId != null) {
