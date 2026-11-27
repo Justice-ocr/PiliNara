@@ -23,6 +23,8 @@ class WindowsNeoMediaBadge extends StatelessWidget {
       WindowsNeoThemeFamily.exAstris => tokens.background,
       WindowsNeoThemeFamily.popucom => const Color(0xFF252B35),
       WindowsNeoThemeFamily.corporate => tokens.chromeSurface,
+      WindowsNeoThemeFamily.custom =>
+        tokens.isDarkSurface ? tokens.surfaceRaised : const Color(0xFF1F242A),
     };
     return DecoratedBox(
       decoration: BoxDecoration(

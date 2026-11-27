@@ -319,6 +319,7 @@ class _WindowsNeoPageHeaderCuePainter extends CustomPainter {
             rulePaint,
           );
       case WindowsNeoThemeFamily.miku:
+      case WindowsNeoThemeFamily.custom:
         break;
     }
   }

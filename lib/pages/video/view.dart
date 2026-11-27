@@ -79,6 +79,7 @@ import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_context_panel.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_resize_handle.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
@@ -140,6 +141,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   late final bool Function() _windowsContextPopper = _popWindowsVideoContext;
   bool _windowsUsesSidePanel = false;
   double? _windowsSidePanelWidth;
+  bool _windowsTheaterMode = false;
 
   // 归位动画进行中：页面播放器以透明占位先行布局（供量取目标矩形），
   // 恢复握手完成后亮出，期间小窗是唯一可见端
@@ -2496,11 +2498,12 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     final showRelated =
         videoDetailController.isUgc && videoDetailController.showRelatedVideo;
     final showSeason = _shouldShowSeasonPanel;
-    final hasSidePanel =
+    final hasSideContent =
         _windowsContextController.canPop ||
         showRelated ||
         videoDetailController.showReply ||
         showSeason;
+    final hasSidePanel = hasSideContent && !_windowsTheaterMode;
     final sideWidth = WindowsNeoVideoLayout.sidePanelWidth(
       width,
       visible: hasSidePanel,
@@ -2523,16 +2526,65 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
               SizedBox(
                 width: mainWidth,
                 height: playerHeight,
-                child: _buildWindowsMediaStage(
-                  width: mainWidth,
-                  height: playerHeight,
-                  stateLabel: _windowsContextController.canPop
-                      ? 'CONTEXT'
-                      : showRelated
-                      ? 'RELATED'
-                      : videoDetailController.showReply
-                      ? 'COMMENTS'
-                      : 'DETAILS',
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _buildWindowsMediaStage(
+                      width: mainWidth,
+                      height: playerHeight,
+                      stateLabel: _windowsTheaterMode
+                          ? 'THEATER'
+                          : _windowsContextController.canPop
+                          ? 'CONTEXT'
+                          : showRelated
+                          ? 'RELATED'
+                          : videoDetailController.showReply
+                          ? 'COMMENTS'
+                          : 'DETAILS',
+                    ),
+                    if (_windowsTheaterMode && hasSideContent)
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Tooltip(
+                          message: '展开侧栏',
+                          child: Material(
+                            color: Colors.black.withValues(alpha: 0.56),
+                            borderRadius: context.windowsNeo.actionRadius,
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: () =>
+                                  setState(() => _windowsTheaterMode = false),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 9,
+                                  vertical: 5,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.vertical_split_outlined,
+                                      size: 15,
+                                      color: context.windowsNeo.accent,
+                                    ),
+                                    const SizedBox(width: 5),
+                                    const Text(
+                                      '展开侧栏',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               Divider(height: 1, color: context.windowsNeo.border),
@@ -2566,29 +2618,21 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   }
 
   Widget _buildWindowsSidePanelResizeHandle(double width, double sideWidth) =>
-      MouseRegion(
-        cursor: SystemMouseCursors.resizeColumn,
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onHorizontalDragUpdate: (details) {
-            setState(() {
-              _windowsSidePanelWidth =
-                  WindowsNeoVideoLayout.clampSidePanelWidth(
-                    sideWidth - details.delta.dx,
-                    width,
-                  );
-            });
-          },
-          child: SizedBox(
-            width: 6,
-            child: Center(
-              child: Container(
-                width: 1,
-                color: context.windowsNeo.border,
-              ),
-            ),
-          ),
-        ),
+      WindowsNeoResizeHandle(
+        onDragDelta: (dx) {
+          setState(() {
+            _windowsSidePanelWidth =
+                WindowsNeoVideoLayout.clampSidePanelWidth(
+                  sideWidth - dx,
+                  width,
+                );
+          });
+        },
+        onReset: () {
+          if (_windowsSidePanelWidth != null) {
+            setState(() => _windowsSidePanelWidth = null);
+          }
+        },
       );
 
   Widget _buildWindowsCompactLayout(double width, double height) {
@@ -2672,9 +2716,28 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     key: const ValueKey('windows-video-context-tabs'),
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      buildTabBar(
-        introText: '相关视频',
-        showIntro: showRelated,
+      Row(
+        children: [
+          Expanded(
+            child: buildTabBar(
+              introText: '相关视频',
+              showIntro: showRelated,
+            ),
+          ),
+          Tooltip(
+            message: '剧场模式（收起侧栏）',
+            child: IconButton(
+              iconSize: 18,
+              visualDensity: VisualDensity.compact,
+              onPressed: () => setState(() => _windowsTheaterMode = true),
+              icon: Icon(
+                Icons.aspect_ratio_rounded,
+                color: context.windowsNeo.muted,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       Expanded(
         child: tabBarView(

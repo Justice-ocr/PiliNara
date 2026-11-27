@@ -26,6 +26,7 @@ import 'package:PiliPlus/pages/member/widget/header_layout_widget.dart';
 import 'package:PiliPlus/pages/member/widget/medal_widget.dart';
 import 'package:PiliPlus/pages/member_guard/view.dart';
 import 'package:PiliPlus/pages/member_upower_rank/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/bili_colors.dart';
@@ -40,6 +41,7 @@ import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -833,44 +835,125 @@ class UserInfoCard extends StatelessWidget {
     return child;
   }
 
-  Column _buildH(BuildContext context, ColorScheme scheme, bool isLight) =>
-      Column(
-        mainAxisSize: .min,
-        crossAxisAlignment: .start,
+  Widget _buildWindowsHeroBanner(
+    BuildContext context,
+    bool isLight,
+  ) {
+    final tokens = context.windowsNeo;
+    final imgUrls = images.collectionTopSimple?.top?.imgUrls;
+    final bannerUrl = imgUrls != null && imgUrls.isNotEmpty
+        ? imgUrls.first.header
+        : (isLight
+                  ? images.imgUrl
+                  : images.nightImgurl.isNullOrEmpty
+                  ? images.imgUrl
+                  : images.nightImgurl)
+              .http2https;
+    final fullCover = imgUrls != null && imgUrls.isNotEmpty
+        ? imgUrls.first.fullCover
+        : bannerUrl;
+
+    return SizedBox(
+      height: 156,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          // _buildHeader(context),
-          const SizedBox(height: kToolbarHeight),
-          Row(
-            children: [
-              const SizedBox(width: 20),
-              Padding(
-                padding: .only(
-                  top: 10,
-                  bottom: card.prInfo?.content?.isNotEmpty == true ? 0 : 10,
-                ),
-                child: _buildAvatar(scheme),
+          if (bannerUrl.isNotEmpty)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => PageUtils.imageView(
+                imgList: [SourceModel(url: fullCover)],
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 5,
-                child: Column(
-                  mainAxisSize: .min,
-                  crossAxisAlignment: .start,
-                  children: [
-                    const SizedBox(height: 10),
-                    ..._buildLeft(context, scheme, isLight, false),
-                    const SizedBox(height: 5),
+              child: CachedNetworkImage(
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                imageUrl: ImageUtils.thumbnailUrl(bannerUrl),
+                placeholder: (_, _) => ColoredBox(color: tokens.hover),
+                fadeInDuration: const Duration(milliseconds: 200),
+              ),
+            )
+          else
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    tokens.accentSurface,
+                    tokens.surface,
                   ],
                 ),
               ),
-              Expanded(flex: 3, child: _buildRight(scheme)),
-              const SizedBox(width: 20),
-            ],
+            ),
+          IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: isLight ? 0.14 : 0.28),
+                    tokens.surface.withValues(alpha: 0.26),
+                    tokens.surface,
+                  ],
+                  stops: const [0.0, 0.56, 1.0],
+                ),
+              ),
+            ),
           ),
-          if (card.prInfo?.content?.isNotEmpty ?? false)
-            buildPrInfo(context, scheme, isLight, card.prInfo!),
         ],
-      );
+      ),
+    );
+  }
+
+  Column _buildH(BuildContext context, ColorScheme scheme, bool isLight) {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    return Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
+      children: [
+        if (isWindowsNeo)
+          _buildWindowsHeroBanner(context, isLight)
+        else
+          const SizedBox(height: kToolbarHeight),
+        Row(
+          children: [
+            const SizedBox(width: 20),
+            Padding(
+              padding: .only(
+                top: isWindowsNeo ? 0 : 10,
+                bottom: card.prInfo?.content?.isNotEmpty == true ? 0 : 10,
+              ),
+              child: _buildAvatar(scheme),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 5,
+              child: Column(
+                mainAxisSize: .min,
+                crossAxisAlignment: .start,
+                children: [
+                  SizedBox(height: isWindowsNeo ? 2 : 10),
+                  ..._buildLeft(context, scheme, isLight, false),
+                  const SizedBox(height: 5),
+                ],
+              ),
+            ),
+            Expanded(flex: 3, child: _buildRight(scheme)),
+            const SizedBox(width: 20),
+          ],
+        ),
+        if (card.prInfo?.content?.isNotEmpty ?? false)
+          buildPrInfo(context, scheme, isLight, card.prInfo!),
+        if (isWindowsNeo)
+          Divider(
+            height: 1,
+            color: context.windowsNeo.border.withValues(alpha: 0.45),
+          ),
+      ],
+    );
+  }
 
   Widget _buildChargeItem(
     ColorScheme colorScheme,

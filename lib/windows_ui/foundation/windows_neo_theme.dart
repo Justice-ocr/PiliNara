@@ -14,6 +14,7 @@ enum WindowsNeoThemeFamily {
   exAstris,
   popucom,
   corporate,
+  custom,
   ;
 
   static WindowsNeoThemeFamily fromStorageValue(int value) =>
@@ -76,6 +77,7 @@ extension WindowsNeoThemeFamilyArtwork on WindowsNeoThemeFamily {
         WindowsNeoThemeFamily.corporate =>
           'assets/images/windows_neo_corporate_sidebar.png',
         WindowsNeoThemeFamily.miku => null,
+        WindowsNeoThemeFamily.custom => null,
       };
 }
 
@@ -233,6 +235,23 @@ abstract final class WindowsNeoThemeRegistry {
     tokenBuilder: _buildCorporateTokens,
   );
 
+  static const custom = WindowsNeoThemeDefinition(
+    family: WindowsNeoThemeFamily.custom,
+    label: 'Custom',
+    description: '自定义工坊',
+    identity: WindowsNeoThemeIdentity(
+      shellMark: '06',
+      shellWordmark: 'CUSTOM',
+      shellSubmark: 'STUDIO',
+      backdropPattern: WindowsNeoBackdropPattern.studioGrid,
+      sidebarArtwork: WindowsNeoSidebarArtwork.studioPanel,
+      usesSquaredGeometry: false,
+      showRhythmTicks: false,
+    ),
+    defaultDepth: WindowsNeoThemeDepth.maximal,
+    tokenBuilder: _buildCustomTokens,
+  );
+
   static const values = <WindowsNeoThemeDefinition>[
     miku,
     endfield,
@@ -240,6 +259,7 @@ abstract final class WindowsNeoThemeRegistry {
     exAstris,
     popucom,
     corporate,
+    custom,
   ];
 
   static WindowsNeoThemeDefinition resolve(WindowsNeoThemeFamily family) =>
@@ -498,29 +518,190 @@ abstract final class WindowsNeoThemeRegistry {
       motionPage: const Duration(milliseconds: 260),
     );
   }
+
+  static WindowsNeoTokens _buildCustomTokens(
+    ThemeData theme,
+    WindowsNeoThemeDefinition definition,
+    WindowsNeoThemeDepth depth,
+  ) {
+    final isDark = theme.brightness == Brightness.dark;
+    final seed = WindowsNeoThemeController.customAccent.value;
+    final squared = WindowsNeoThemeController.customSquared.value;
+    final hsl = HSLColor.fromColor(seed);
+
+    final accentInk = isDark
+        ? hsl
+              .withLightness(hsl.lightness.clamp(0.62, 0.78))
+              .withSaturation((hsl.saturation * 0.95).clamp(0.35, 0.95))
+              .toColor()
+        : hsl
+              .withLightness(hsl.lightness.clamp(0.24, 0.36))
+              .withSaturation(
+                hsl.saturation > 0.12
+                    ? hsl.saturation.clamp(0.45, 0.92)
+                    : hsl.saturation,
+              )
+              .toColor();
+    final accentBorder = isDark
+        ? hsl.withLightness(hsl.lightness.clamp(0.58, 0.74)).toColor()
+        : hsl.withLightness(hsl.lightness.clamp(0.34, 0.46)).toColor();
+    final secondary = hsl
+        .withHue((hsl.hue + 32) % 360)
+        .withLightness(isDark ? 0.68 : 0.56)
+        .toColor();
+    final tertiary = hsl
+        .withHue((hsl.hue + 195) % 360)
+        .withSaturation((hsl.saturation * 0.7).clamp(0.25, 0.75))
+        .withLightness(isDark ? 0.66 : 0.64)
+        .toColor();
+
+    final background = Color.alphaBlend(
+      seed.withValues(alpha: isDark ? 0.045 : 0.04),
+      isDark ? const Color(0xFF101317) : const Color(0xFFF1F4F7),
+    );
+    final sidebar = Color.alphaBlend(
+      seed.withValues(alpha: isDark ? 0.07 : 0.085),
+      isDark ? const Color(0xFF151A20) : const Color(0xFFE3EAEF),
+    );
+    final surface = Color.alphaBlend(
+      seed.withValues(alpha: isDark ? 0.035 : 0.015),
+      isDark ? const Color(0xFF1B2026) : const Color(0xFFFAFBFD),
+    );
+    final surfaceRaised = isDark
+        ? Color.alphaBlend(
+            seed.withValues(alpha: 0.04),
+            const Color(0xFF232A32),
+          )
+        : const Color(0xFFFFFFFF);
+    final border = Color.alphaBlend(
+      seed.withValues(alpha: isDark ? 0.16 : 0.18),
+      isDark ? const Color(0xFF3E4752) : const Color(0xFFBCC7D0),
+    );
+    final muted = isDark ? const Color(0xFFAAB5BF) : const Color(0xFF5D6B77);
+    final hover = Color.alphaBlend(
+      seed.withValues(alpha: isDark ? 0.14 : 0.10),
+      isDark ? const Color(0xFF2B343E) : const Color(0xFFE6EEF3),
+    );
+
+    return WindowsNeoTokens(
+      definition: definition,
+      depth: depth,
+      background: background,
+      sidebar: sidebar,
+      surface: surface,
+      surfaceRaised: surfaceRaised,
+      border: border,
+      muted: muted,
+      hover: hover,
+      accent: seed,
+      accentInk: accentInk,
+      accentBorder: accentBorder,
+      accentSurface: Color.alphaBlend(
+        seed.withValues(alpha: isDark ? 0.22 : 0.13),
+        surface,
+      ),
+      accentSoft: Color.alphaBlend(
+        seed.withValues(alpha: isDark ? 0.14 : 0.08),
+        surface,
+      ),
+      ink: isDark ? const Color(0xFFEDF2F7) : const Color(0xFF1F2933),
+      secondaryAccent: secondary,
+      tertiaryAccent: tertiary,
+      bannerAccentEnd: secondary,
+      radiusSm: squared ? 0 : 8,
+      radiusMd: squared ? 0 : 10,
+      radiusLg: squared ? 0 : 16,
+      motionFast: const Duration(milliseconds: 140),
+      motionStandard: const Duration(milliseconds: 200),
+      motionPage: const Duration(milliseconds: 240),
+    );
+  }
 }
 
 /// Keeps the Windows theme live while leaving the global light/dark preference
 /// and non-Windows platforms untouched.
 abstract final class WindowsNeoThemeController {
+  static T _readPref<T>(T Function() reader, T fallback) {
+    try {
+      return reader();
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  static Future<void> _writePref(String key, dynamic value) async {
+    try {
+      await GStorage.setting.put(key, value);
+    } catch (_) {
+      // Ignore in unit tests where Hive storage is not initialized.
+    }
+  }
+
   static final ValueNotifier<WindowsNeoThemeFamily> family = ValueNotifier(
-    WindowsNeoThemeFamily.fromStorageValue(Pref.windowsNeoThemeFamily),
+    WindowsNeoThemeFamily.fromStorageValue(
+      _readPref(() => Pref.windowsNeoThemeFamily, 0),
+    ),
   );
   static final ValueNotifier<WindowsNeoThemeDepth> depth = ValueNotifier(
-    WindowsNeoThemeDepth.fromStorageValue(Pref.windowsNeoThemeDepth),
+    WindowsNeoThemeDepth.fromStorageValue(
+      _readPref(() => Pref.windowsNeoThemeDepth, 3),
+    ),
   );
+  static final ValueNotifier<Color> customAccent = ValueNotifier(
+    Color(_readPref(() => Pref.windowsNeoCustomAccent, 0xFF39C5BB)),
+  );
+  static final ValueNotifier<String> customWallpaper = ValueNotifier(
+    _readPref(() => Pref.windowsNeoCustomWallpaper, ''),
+  );
+  static final ValueNotifier<double> customOpacity = ValueNotifier(
+    _readPref(() => Pref.windowsNeoCustomOpacity, 0.14).clamp(0.05, 0.30),
+  );
+  static final ValueNotifier<bool> customSquared = ValueNotifier(
+    _readPref(() => Pref.windowsNeoCustomSquared, false),
+  );
+  static final ValueNotifier<bool> hoverPreview = ValueNotifier(
+    _readPref(() => Pref.windowsNeoHoverPreview, true),
+  );
+  static final ValueNotifier<int> customVersion = ValueNotifier<int>(0);
 
   static Future<void> select(WindowsNeoThemeFamily value) async {
     family.value = value;
-    await GStorage.setting.put(
-      SettingBoxKey.windowsNeoThemeFamily,
-      value.index,
-    );
+    await _writePref(SettingBoxKey.windowsNeoThemeFamily, value.index);
   }
 
   static Future<void> selectDepth(WindowsNeoThemeDepth value) async {
     depth.value = value;
-    await GStorage.setting.put(SettingBoxKey.windowsNeoThemeDepth, value.index);
+    await _writePref(SettingBoxKey.windowsNeoThemeDepth, value.index);
+  }
+
+  static Future<void> setCustomAccent(Color color) async {
+    customAccent.value = color;
+    customVersion.value++;
+    await _writePref(SettingBoxKey.windowsNeoCustomAccent, color.toARGB32());
+  }
+
+  static Future<void> setCustomWallpaper(String path) async {
+    customWallpaper.value = path;
+    customVersion.value++;
+    await _writePref(SettingBoxKey.windowsNeoCustomWallpaper, path);
+  }
+
+  static Future<void> setCustomOpacity(double opacity) async {
+    final clamped = opacity.clamp(0.05, 0.30);
+    customOpacity.value = clamped;
+    customVersion.value++;
+    await _writePref(SettingBoxKey.windowsNeoCustomOpacity, clamped);
+  }
+
+  static Future<void> setCustomSquared(bool squared) async {
+    customSquared.value = squared;
+    customVersion.value++;
+    await _writePref(SettingBoxKey.windowsNeoCustomSquared, squared);
+  }
+
+  static Future<void> setHoverPreview(bool enabled) async {
+    hoverPreview.value = enabled;
+    await _writePref(SettingBoxKey.windowsNeoHoverPreview, enabled);
   }
 }
 
@@ -636,32 +817,24 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
   BorderRadius get chipRadius => BorderRadius.circular(radiusSm);
   BorderRadius get panelRadius => BorderRadius.circular(radiusLg);
 
+  bool get usesRoundedGeometry => radiusSm > 0;
+
   /// The five Ark UI-derived families use ruled, rectangular instrumentation.
-  /// Miku deliberately remains the sole soft-surface exception.
-  BorderRadius get workspaceTabRadius => switch (family) {
-        WindowsNeoThemeFamily.miku => BorderRadius.circular(6),
-        _ => BorderRadius.zero,
-      };
+  /// Miku uses soft-surface geometry, and Custom follows the user's choice.
+  BorderRadius get workspaceTabRadius =>
+      usesRoundedGeometry ? BorderRadius.circular(6) : BorderRadius.zero;
 
-  BorderRadius get sidebarArtworkRadius => switch (family) {
-        WindowsNeoThemeFamily.miku => BorderRadius.circular(8),
-        _ => BorderRadius.zero,
-      };
+  BorderRadius get sidebarArtworkRadius =>
+      usesRoundedGeometry ? BorderRadius.circular(8) : BorderRadius.zero;
 
-  BorderRadius get navigationItemRadius => switch (family) {
-        WindowsNeoThemeFamily.miku => BorderRadius.circular(6),
-        _ => BorderRadius.zero,
-      };
+  BorderRadius get navigationItemRadius =>
+      usesRoundedGeometry ? BorderRadius.circular(6) : BorderRadius.zero;
 
-  BorderRadius get mediaBadgeRadius => switch (family) {
-        WindowsNeoThemeFamily.miku => BorderRadius.circular(4),
-        _ => BorderRadius.zero,
-      };
+  BorderRadius get mediaBadgeRadius =>
+      usesRoundedGeometry ? BorderRadius.circular(4) : BorderRadius.zero;
 
-  BorderRadius get actionRadius => switch (family) {
-        WindowsNeoThemeFamily.miku => BorderRadius.circular(6),
-        _ => BorderRadius.zero,
-      };
+  BorderRadius get actionRadius =>
+      usesRoundedGeometry ? BorderRadius.circular(6) : BorderRadius.zero;
 
   bool get isMaximal => depth == WindowsNeoThemeDepth.maximal;
   String get shellMark => identity.shellMark;
@@ -719,7 +892,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
             'IBM Plex Sans',
             'Microsoft YaHei UI',
           ],
-        WindowsNeoThemeFamily.miku => const [
+        WindowsNeoThemeFamily.miku || WindowsNeoThemeFamily.custom => const [
             'Segoe UI Variable Display',
             'Noto Sans SC',
             'Microsoft YaHei UI',
@@ -898,6 +1071,11 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
           Color.alphaBlend(accent.withValues(alpha: 0.05), navigationSurface),
           navigationSurface,
         ],
+      WindowsNeoThemeFamily.custom => [
+          Color.alphaBlend(accent.withValues(alpha: 0.34), navigationSurface),
+          Color.alphaBlend(accent.withValues(alpha: 0.14), navigationSurface),
+          navigationSurface,
+        ],
     };
     return LinearGradient(
       begin: Alignment.centerLeft,
@@ -937,7 +1115,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
           fontWeight: FontWeight.w800,
           letterSpacing: .55,
         ),
-      WindowsNeoThemeFamily.miku => base,
+      WindowsNeoThemeFamily.miku || WindowsNeoThemeFamily.custom => base,
     };
   }
 
@@ -974,7 +1152,7 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
           fontWeight: FontWeight.w700,
           letterSpacing: .18,
         ),
-      WindowsNeoThemeFamily.miku => base,
+      WindowsNeoThemeFamily.miku || WindowsNeoThemeFamily.custom => base,
     };
   }
 
@@ -1299,7 +1477,7 @@ abstract final class WindowsNeoTheme {
           }
           return 5.0;
         }),
-        radius: tokens.family == WindowsNeoThemeFamily.miku
+        radius: tokens.usesRoundedGeometry
             ? const Radius.circular(4)
             : Radius.zero,
         thumbColor: WidgetStateProperty.resolveWith((states) {
@@ -1351,7 +1529,9 @@ class WindowsNeoPageTransitionsBuilder extends PageTransitionsBuilder {
       WindowsNeoThemeFamily.exAstris => const Offset(0, 0.014),
       WindowsNeoThemeFamily.popucom => const Offset(0, 0.020),
       WindowsNeoThemeFamily.corporate => const Offset(0.016, 0),
-      WindowsNeoThemeFamily.miku => const Offset(0, 0.014),
+      WindowsNeoThemeFamily.miku ||
+      WindowsNeoThemeFamily.custom =>
+        const Offset(0, 0.014),
     };
     return FadeTransition(
       opacity: Tween<double>(begin: 0.90, end: 1).animate(curved),

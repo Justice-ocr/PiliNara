@@ -20,12 +20,14 @@ import 'package:PiliPlus/pages/emote/view.dart';
 import 'package:PiliPlus/pages/whisper_detail/controller.dart';
 import 'package:PiliPlus/pages/whisper_detail/widget/chat_item.dart';
 import 'package:PiliPlus/pages/whisper_link_setting/view.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/file_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -41,10 +43,12 @@ class WhisperDetailPage extends CommonRichTextPubPage {
     super.autofocus = false,
     this.arguments,
     this.controllerTag,
+    this.embedded = false,
   });
 
   final Map? arguments;
   final String? controllerTag;
+  final bool embedded;
 
   @override
   State<WhisperDetailPage> createState() => _WhisperDetailPageState();
@@ -68,8 +72,21 @@ class _WhisperDetailPageState
       theme.hoverColor,
       1,
     );
+    final isNeoEmbedded = widget.embedded && WindowsVideoTabService.enabled;
+    final neoTokens = isNeoEmbedded ? context.windowsNeo : null;
     return SimpleScaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: !widget.embedded,
+        backgroundColor: neoTokens?.surface,
+        bottom: neoTokens != null
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(1),
+                child: Divider(
+                  height: 1,
+                  color: neoTokens.border.withValues(alpha: 0.45),
+                ),
+              )
+            : null,
         title: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
@@ -130,31 +147,34 @@ class _WhisperDetailPageState
           const SizedBox(width: 5),
         ],
       ),
-      body: Padding(
-        padding: EdgeInsets.only(left: padding.left, right: padding.right),
-        child: Column(
-          children: [
-            Expanded(
-              child: Listener(
-                onPointerDown: hidePanel,
-                behavior: .opaque,
-                child: Obx(
-                  () => _buildBody(_whisperDetailController.loadingState.value),
+      body: ColoredBox(
+        color: neoTokens?.background ?? Colors.transparent,
+        child: Padding(
+          padding: EdgeInsets.only(left: padding.left, right: padding.right),
+          child: Column(
+            children: [
+              Expanded(
+                child: Listener(
+                  onPointerDown: hidePanel,
+                  behavior: .opaque,
+                  child: Obx(
+                    () => _buildBody(_whisperDetailController.loadingState.value),
+                  ),
                 ),
               ),
-            ),
-            if (_whisperDetailController.mid != null) ...[
-              ConstrainedBox(
-                constraints: _kConstraints,
-                child: _buildInputView(containerColor),
-              ),
-              ConstrainedBox(
-                constraints: _kConstraints,
-                child: buildPanelContainer(containerColor),
-              ),
-            ] else
-              SizedBox(height: padding.bottom),
-          ],
+              if (_whisperDetailController.mid != null) ...[
+                ConstrainedBox(
+                  constraints: _kConstraints,
+                  child: _buildInputView(containerColor),
+                ),
+                ConstrainedBox(
+                  constraints: _kConstraints,
+                  child: buildPanelContainer(containerColor),
+                ),
+              ] else
+                SizedBox(height: padding.bottom),
+            ],
+          ),
         ),
       ),
     );

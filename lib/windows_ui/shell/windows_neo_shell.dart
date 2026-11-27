@@ -1,8 +1,17 @@
+import 'dart:io' show File;
+
 import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
+import 'package:PiliPlus/models/common/theme/theme_type.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
+import 'package:PiliPlus/utils/desktop/windows_dwm_bridge.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:PiliPlus/utils/theme_utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_command_palette.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_hover_halo.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
@@ -96,8 +105,11 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> {
         builder: (context, family, _) =>
             ValueListenableBuilder<WindowsNeoThemeDepth>(
               valueListenable: WindowsNeoThemeController.depth,
-              builder: (context, depth, _) =>
-                  _buildThemed(context, family, depth),
+              builder: (context, depth, _) => ValueListenableBuilder<int>(
+                valueListenable: WindowsNeoThemeController.customVersion,
+                builder: (context, _, _) =>
+                    _buildThemed(context, family, depth),
+              ),
             ),
       );
 
@@ -106,11 +118,18 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> {
     WindowsNeoThemeFamily family,
     WindowsNeoThemeDepth depth,
   ) {
+    final baseTheme = Theme.of(context);
     final neoTheme = WindowsNeoTheme.apply(
-      Theme.of(context),
+      baseTheme,
       family: family,
       depth: depth,
     );
+    final neoTokens = neoTheme.extension<WindowsNeoTokens>();
+    if (neoTokens != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        WindowsDwmBridge.sync(neoTokens, baseTheme.brightness);
+      });
+    }
     return AnimatedTheme(
       data: neoTheme,
       duration: MediaQuery.maybeOf(context)?.disableAnimations == true
@@ -230,9 +249,13 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> {
   }
 
   void _openSearch() {
-    WindowsVideoTabService.select(WindowsVideoTabService.homeTabId);
     _closeNavigation();
-    WidgetsBinding.instance.addPostFrameCallback((_) => PageUtils.toSearch());
+    WindowsNeoCommandPalette.show(
+      context,
+      onSplit: widget.onSplit,
+      onToggleSidebar: () =>
+          setState(() => _sidebarCollapsed = !_sidebarCollapsed),
+    );
   }
 }
 
@@ -769,7 +792,7 @@ class _WindowsNeoNavItem extends StatelessWidget {
                         ? tokens.navigationForeground.withValues(alpha: 0.78)
                         : tokens.accent,
                     borderRadius: BorderRadius.circular(
-                      tokens.family == WindowsNeoThemeFamily.miku ? 2 : 0,
+                      tokens.usesRoundedGeometry ? 2 : 0,
                     ),
                   ),
                 ),
@@ -860,6 +883,88 @@ class _WindowsNeoSidebarArtworkLayer extends StatelessWidget {
                 fontWeight: FontWeight.w900,
                 letterSpacing: 0,
               ),
+            ),
+          ),
+        ],
+      );
+    }
+    if (tokens.family == WindowsNeoThemeFamily.custom) {
+      final path = WindowsNeoThemeController.customWallpaper.value;
+      final file = path.isNotEmpty ? File(path) : null;
+      final hasFile = file != null && file.existsSync();
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          if (hasFile)
+            Opacity(
+              opacity: 0.84,
+              child: Image.file(
+                file,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                filterQuality: FilterQuality.medium,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              ),
+            )
+          else
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    tokens.accent.withValues(alpha: 0.85),
+                    tokens.secondaryAccent.withValues(alpha: 0.55),
+                    tokens.surfaceRaised,
+                  ],
+                ),
+              ),
+            ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  const Color(0xFF101317).withValues(alpha: 0.72),
+                  const Color(0xFF101317).withValues(alpha: 0.28),
+                  Colors.transparent,
+                ],
+                stops: const [0, 0.55, 1],
+              ),
+            ),
+          ),
+          Positioned(
+            left: 12,
+            top: 10,
+            child: Text(
+              tokens.shellMark,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.92),
+                fontWeight: FontWeight.w900,
+                height: .9,
+                fontFamilyFallback: tokens.displayFontFallback,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 12,
+            bottom: 11,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(width: 2.5, height: 14, color: tokens.accent),
+                const SizedBox(width: 6),
+                Text(
+                  '${tokens.shellWordmark} · ${tokens.shellSubmark}',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.90),
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.4,
+                    fontFamilyFallback: tokens.displayFontFallback,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1511,10 +1616,30 @@ class _WindowsNeoSidebarSignature extends StatelessWidget {
   }
 }
 
-class _WindowsNeoThemeQuickBar extends StatelessWidget {
+class _WindowsNeoThemeQuickBar extends StatefulWidget {
   const _WindowsNeoThemeQuickBar({required this.showLabel});
 
   final bool showLabel;
+
+  @override
+  State<_WindowsNeoThemeQuickBar> createState() =>
+      _WindowsNeoThemeQuickBarState();
+}
+
+class _WindowsNeoThemeQuickBarState extends State<_WindowsNeoThemeQuickBar> {
+  Future<void> _cycleBrightness() async {
+    final current = Pref.themeMode;
+    final next = switch (current) {
+      ThemeType.system => ThemeType.light,
+      ThemeType.light => ThemeType.dark,
+      ThemeType.dark => ThemeType.system,
+    };
+    await GStorage.setting.put(SettingBoxKey.themeMode, next.index);
+    Get.changeThemeMode(ThemeUtils.themeMode = next.toThemeMode);
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1524,8 +1649,23 @@ class _WindowsNeoThemeQuickBar extends StatelessWidget {
     final chipBg = darkNav
         ? Colors.white.withValues(alpha: 0.06)
         : tokens.surface.withValues(alpha: 0.65);
+    final chipBorder = darkNav
+        ? Colors.white.withValues(alpha: 0.12)
+        : tokens.border.withValues(alpha: 0.55);
 
-    return PopupMenuButton<WindowsNeoThemeFamily>(
+    ThemeType currentMode;
+    try {
+      currentMode = Pref.themeMode;
+    } catch (_) {
+      currentMode = ThemeType.system;
+    }
+    final brightnessTooltip = switch (currentMode) {
+      ThemeType.light => '当前：浅色模式（点击切换深色）',
+      ThemeType.dark => '当前：深色模式（点击跟随系统）',
+      ThemeType.system => '当前：跟随系统（点击切换浅色）',
+    };
+
+    final themePicker = PopupMenuButton<WindowsNeoThemeFamily>(
       tooltip: '快速切换 Windows Neo 主题',
       initialValue: tokens.family,
       onSelected: WindowsNeoThemeController.select,
@@ -1535,21 +1675,27 @@ class _WindowsNeoThemeQuickBar extends StatelessWidget {
             value: def.family,
             child: Row(
               children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: def
-                        .buildTokens(Theme.of(context), def.defaultDepth)
-                        .accent,
-                    shape: def.family == WindowsNeoThemeFamily.miku
-                        ? BoxShape.circle
-                        : BoxShape.rectangle,
-                    border: Border.all(
-                      color: tokens.border.withValues(alpha: 0.7),
-                      width: 0.8,
-                    ),
-                  ),
+                Builder(
+                  builder: (context) {
+                    final preview = def.buildTokens(
+                      Theme.of(context),
+                      def.defaultDepth,
+                    );
+                    return Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: preview.accent,
+                        shape: preview.usesRoundedGeometry
+                            ? BoxShape.circle
+                            : BoxShape.rectangle,
+                        border: Border.all(
+                          color: tokens.border.withValues(alpha: 0.7),
+                          width: 0.8,
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -1568,26 +1714,22 @@ class _WindowsNeoThemeQuickBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: chipBg,
           borderRadius: tokens.navigationItemRadius,
-          border: Border.all(
-            color: darkNav
-                ? Colors.white.withValues(alpha: 0.12)
-                : tokens.border.withValues(alpha: 0.55),
-          ),
+          border: Border.all(color: chipBorder),
         ),
         child: SizedBox(
           height: 34,
           child: Row(
-            mainAxisAlignment: showLabel
+            mainAxisAlignment: widget.showLabel
                 ? MainAxisAlignment.start
                 : MainAxisAlignment.center,
             children: [
-              if (showLabel) const SizedBox(width: 10),
+              if (widget.showLabel) const SizedBox(width: 10),
               Container(
                 width: 10,
                 height: 10,
                 decoration: BoxDecoration(
                   color: tokens.accent,
-                  shape: tokens.family == WindowsNeoThemeFamily.miku
+                  shape: tokens.usesRoundedGeometry
                       ? BoxShape.circle
                       : BoxShape.rectangle,
                   border: Border.all(
@@ -1596,7 +1738,7 @@ class _WindowsNeoThemeQuickBar extends StatelessWidget {
                   ),
                 ),
               ),
-              if (showLabel) ...[
+              if (widget.showLabel) ...[
                 const SizedBox(width: 9),
                 Expanded(
                   child: Text(
@@ -1604,7 +1746,9 @@ class _WindowsNeoThemeQuickBar extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: tokens.navigationForeground.withValues(alpha: 0.88),
+                      color: tokens.navigationForeground.withValues(
+                        alpha: 0.88,
+                      ),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1616,6 +1760,54 @@ class _WindowsNeoThemeQuickBar extends StatelessWidget {
           ),
         ),
       ),
+    );
+
+    final brightnessBtn = Tooltip(
+      message: brightnessTooltip,
+      child: Material(
+        color: chipBg,
+        borderRadius: tokens.navigationItemRadius,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: _cycleBrightness,
+          hoverColor: darkNav
+              ? Colors.white.withValues(alpha: 0.12)
+              : tokens.hover,
+          child: Container(
+            width: widget.showLabel ? 34 : double.infinity,
+            height: 34,
+            decoration: BoxDecoration(
+              borderRadius: tokens.navigationItemRadius,
+              border: Border.all(color: chipBorder),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              currentMode.icon,
+              size: 16,
+              color: tokens.navigationForeground.withValues(alpha: 0.84),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (!widget.showLabel) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          themePicker,
+          const SizedBox(height: 6),
+          brightnessBtn,
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(child: themePicker),
+        const SizedBox(width: 6),
+        brightnessBtn,
+      ],
     );
   }
 }

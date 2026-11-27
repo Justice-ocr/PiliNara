@@ -30,12 +30,16 @@ class WhisperSessionItem extends StatelessWidget {
     required this.onSetTop,
     required this.onSetMute,
     required this.onRemove,
+    this.onOpenPrivate,
+    this.selected = false,
   });
 
   final Session item;
   final Function(bool isTop, SessionId id) onSetTop;
   final Function(bool isMuted, Int64 talkerUid) onSetMute;
   final ValueChanged<int> onRemove;
+  final ValueChanged<Map<String, dynamic>>? onOpenPrivate;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -51,26 +55,32 @@ class WhisperSessionItem extends StatelessWidget {
         : null;
     final ThemeData theme = Theme.of(context);
     final isWindowsNeo = WindowsVideoTabService.enabled;
+    final tokens = isWindowsNeo ? context.windowsNeo : null;
 
     return ListTile(
       safeArea: !isWindowsNeo,
       contentPadding: isWindowsNeo
-          ? const EdgeInsets.symmetric(horizontal: 16, vertical: 4)
+          ? const EdgeInsets.symmetric(horizontal: 14, vertical: 4)
           : null,
       shape: isWindowsNeo
           ? Border(
-              left: BorderSide(color: context.windowsNeo.border),
-              right: BorderSide(color: context.windowsNeo.border),
+              left: BorderSide(
+                color: selected ? tokens!.accentInk : tokens!.border,
+                width: selected ? 3 : 1,
+              ),
+              right: BorderSide(color: tokens.border),
             )
           : null,
-      tileColor: item.isPinned
+      tileColor: selected && isWindowsNeo
+          ? tokens!.accentSurface
+          : item.isPinned
           ? isWindowsNeo
-                ? context.windowsNeo.accentSurface
+                ? tokens!.accentSoft
                 : theme.colorScheme.onInverseSurface.withValues(
                     alpha: theme.isDark ? 0.4 : 0.8,
                   )
           : isWindowsNeo
-          ? context.windowsNeo.surface
+          ? tokens!.surface
           : null,
       onLongPress: () => showDialog(
         context: context,
@@ -149,17 +159,19 @@ class WhisperSessionItem extends StatelessWidget {
           }
         }
         if (item.id.privateId.hasTalkerUid()) {
-          PageUtils.toDupNamed(
-            '/whisperDetail',
-            arguments: {
-              'talkerId': item.id.privateId.talkerUid.toInt(),
-              'name': item.sessionInfo.sessionName,
-              'face': avatar,
-              if (item.sessionInfo.avatar.hasMid())
-                'mid': item.sessionInfo.avatar.mid.toInt(),
-              'isLive': item.sessionInfo.isLive,
-            },
-          );
+          final arguments = <String, dynamic>{
+            'talkerId': item.id.privateId.talkerUid.toInt(),
+            'name': item.sessionInfo.sessionName,
+            'face': avatar,
+            if (item.sessionInfo.avatar.hasMid())
+              'mid': item.sessionInfo.avatar.mid.toInt(),
+            'isLive': item.sessionInfo.isLive,
+          };
+          if (onOpenPrivate != null) {
+            onOpenPrivate!(arguments);
+          } else {
+            PageUtils.toDupNamed('/whisperDetail', arguments: arguments);
+          }
           return;
         }
 

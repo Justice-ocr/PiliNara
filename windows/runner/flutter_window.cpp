@@ -1,13 +1,102 @@
 #include "flutter_window.h"
 
+#include <dwmapi.h>
+
+#include <cstdint>
 #include <optional>
+#include <string>
 
 #include "flutter/generated_plugin_registrant.h"
+
+namespace {
+
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+
+#ifndef DWMWA_WINDOW_CORNER_PREFERENCE
+#define DWMWA_WINDOW_CORNER_PREFERENCE 33
+#endif
+
+#ifndef DWMWA_BORDER_COLOR
+#define DWMWA_BORDER_COLOR 34
+#endif
+
+#ifndef DWMWA_SYSTEMBACKDROP_TYPE
+#define DWMWA_SYSTEMBACKDROP_TYPE 38
+#endif
+
+constexpr COLORREF kDwmColorDefault = 0xFFFFFFFF;
+
+}  // namespace
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
 
 FlutterWindow::~FlutterWindow() {}
+
+void FlutterWindow::SetupDwmChannel() {
+  if (!flutter_controller_ || !flutter_controller_->engine()) {
+    return;
+  }
+  dwm_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), "pilinara/windows_dwm",
+          &flutter::StandardMethodCodec::GetInstance());
+
+  dwm_channel_->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+                 result) {
+        if (call.method_name() != "syncWindowAppearance") {
+          result->NotImplemented();
+          return;
+        }
+        HWND hwnd = GetHandle();
+        if (!hwnd) {
+          result->Success();
+          return;
+        }
+        const auto* args =
+            std::get_if<flutter::EncodableMap>(call.arguments());
+        if (args != nullptr) {
+          if (auto it = args->find(flutter::EncodableValue("dark"));
+              it != args->end()) {
+            if (const auto* dark = std::get_if<bool>(&it->second)) {
+              BOOL value = *dark ? TRUE : FALSE;
+              DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE,
+                                    &value, sizeof(value));
+            }
+          }
+          if (auto it = args->find(flutter::EncodableValue("cornerPreference"));
+              it != args->end()) {
+            if (const auto* pref = std::get_if<int32_t>(&it->second)) {
+              UINT value = static_cast<UINT>(*pref);
+              DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE,
+                                    &value, sizeof(value));
+            }
+          }
+          if (auto it = args->find(flutter::EncodableValue("borderColor"));
+              it != args->end()) {
+            if (const auto* color = std::get_if<int32_t>(&it->second)) {
+              COLORREF value = *color < 0 ? kDwmColorDefault
+                                          : static_cast<COLORREF>(*color);
+              DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, &value,
+                                    sizeof(value));
+            }
+          }
+          if (auto it = args->find(flutter::EncodableValue("backdropType"));
+              it != args->end()) {
+            if (const auto* backdrop = std::get_if<int32_t>(&it->second)) {
+              UINT value = static_cast<UINT>(*backdrop);
+              DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &value,
+                                    sizeof(value));
+            }
+          }
+        }
+        result->Success();
+      });
+}
 
 bool FlutterWindow::OnCreate() {
   if (!Win32Window::OnCreate()) {
@@ -25,6 +114,7 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  SetupDwmChannel();
 
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
@@ -41,6 +131,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  dwm_channel_.reset();
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }

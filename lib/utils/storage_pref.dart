@@ -1338,6 +1338,34 @@ abstract final class Pref {
     defaultValue: 3,
   );
 
+  static int get windowsNeoCustomAccent => _setting.get(
+    SettingBoxKey.windowsNeoCustomAccent,
+    defaultValue: 0xFF39C5BB,
+  );
+
+  static String get windowsNeoCustomWallpaper => _setting.get(
+    SettingBoxKey.windowsNeoCustomWallpaper,
+    defaultValue: '',
+  );
+
+  static double get windowsNeoCustomOpacity =>
+      (_setting.get(
+            SettingBoxKey.windowsNeoCustomOpacity,
+            defaultValue: 0.14,
+          )
+          as num)
+      .toDouble();
+
+  static bool get windowsNeoCustomSquared => _setting.get(
+    SettingBoxKey.windowsNeoCustomSquared,
+    defaultValue: false,
+  );
+
+  static bool get windowsNeoHoverPreview => _setting.get(
+    SettingBoxKey.windowsNeoHoverPreview,
+    defaultValue: true,
+  );
+
   static bool get enableSponsorBlock =>
       _setting.get(SettingBoxKey.enableSponsorBlock, defaultValue: false);
 

@@ -194,10 +194,12 @@ void main() {
     expect(exAstris.displayFontFallback, contains('Noto Serif SC'));
   });
 
-  test('only Miku keeps soft-surface geometry', () {
+  test('built-in industrial families keep squared geometry', () {
     final theme = ThemeData.light();
     for (final family in WindowsNeoThemeFamily.values.where(
-      (family) => family != WindowsNeoThemeFamily.miku,
+      (family) =>
+          family != WindowsNeoThemeFamily.miku &&
+          family != WindowsNeoThemeFamily.custom,
     )) {
       final tokens = WindowsNeoTokens.fromTheme(theme, family: family);
       expect(tokens.radiusSm, 0, reason: family.name);
@@ -224,6 +226,35 @@ void main() {
       expect(tokens.mediaBadgeRadius, BorderRadius.zero, reason: family.name);
       expect(tokens.actionRadius, BorderRadius.zero, reason: family.name);
     }
+  });
+
+  test('Custom family toggles rounded/squared geometry and calibrates accentInk', () {
+    final light = ThemeData.light();
+    final previousSquared = WindowsNeoThemeController.customSquared.value;
+    final previousAccent = WindowsNeoThemeController.customAccent.value;
+    addTearDown(() {
+      WindowsNeoThemeController.customSquared.value = previousSquared;
+      WindowsNeoThemeController.customAccent.value = previousAccent;
+    });
+
+    WindowsNeoThemeController.customAccent.value = const Color(0xFFFFFA00);
+    WindowsNeoThemeController.customSquared.value = false;
+    final rounded = WindowsNeoTokens.fromTheme(
+      light,
+      family: WindowsNeoThemeFamily.custom,
+    );
+    expect(rounded.usesRoundedGeometry, isTrue);
+    expect(rounded.radiusMd, 10);
+    expect(rounded.accentInk.computeLuminance(), lessThan(0.28));
+
+    WindowsNeoThemeController.customSquared.value = true;
+    final squared = WindowsNeoTokens.fromTheme(
+      light,
+      family: WindowsNeoThemeFamily.custom,
+    );
+    expect(squared.usesRoundedGeometry, isFalse);
+    expect(squared.cardRadius, BorderRadius.zero);
+    expect(squared.actionRadius, BorderRadius.zero);
   });
 
   test('Miku visual identity is isolated from every other family', () {

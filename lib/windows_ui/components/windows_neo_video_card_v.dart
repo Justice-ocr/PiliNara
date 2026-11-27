@@ -11,6 +11,7 @@ import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_card_shell.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_media_meta.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_video_preview_layer.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:material_ui/material_ui.dart';
@@ -84,16 +85,33 @@ class _WindowsNeoVideoCardVState extends State<WindowsNeoVideoCardV> {
                   fit: StackFit.expand,
                   children: [
                     LayoutBuilder(
-                      builder: (context, constraints) => AnimatedScale(
-                        scale: _hovered ? coverScale : 1,
-                        duration: context.windowsNeoDuration(tokens.motionFast),
-                        curve: Curves.easeOutCubic,
-                        child: NetworkImgLayer(
-                          src: item.cover,
-                          width: constraints.maxWidth,
-                          height: constraints.maxHeight,
-                          borderRadius: BorderRadius.zero,
-                        ),
+                      builder: (context, constraints) => Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          AnimatedScale(
+                            scale: _hovered ? coverScale : 1,
+                            duration: context.windowsNeoDuration(
+                              tokens.motionFast,
+                            ),
+                            curve: Curves.easeOutCubic,
+                            child: NetworkImgLayer(
+                              src: item.cover,
+                              width: constraints.maxWidth,
+                              height: constraints.maxHeight,
+                              borderRadius: BorderRadius.zero,
+                            ),
+                          ),
+                          if (item.goto == 'av' &&
+                              item.bvid != null &&
+                              item.cid != null)
+                            WindowsNeoVideoPreviewLayer(
+                              hovered: _hovered,
+                              bvid: item.bvid,
+                              cid: item.cid,
+                              width: constraints.maxWidth,
+                              height: constraints.maxHeight,
+                            ),
+                        ],
                       ),
                     ),
                     const WindowsNeoCoverScrim(),

@@ -4,6 +4,7 @@ import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_account_actions.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_command_palette.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_section_tabs.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
@@ -42,9 +43,10 @@ class WindowsNeoHome extends StatelessWidget {
                       homeController.defaultSearch.value.isNotEmpty
                   ? homeController.defaultSearch.value
                   : '\u641c\u7d22\u89c6\u9891\u3001\u756a\u5267\u3001UP\u4e3b',
-              onTap: () => PageUtils.toSearch(
-                parameters: homeController.enableSearchWord
-                    ? {'hintText': homeController.defaultSearch.value}
+              onTap: () => WindowsNeoCommandPalette.show(
+                context,
+                initialHint: homeController.enableSearchWord
+                    ? homeController.defaultSearch.value
                     : null,
               ),
             ),

@@ -104,51 +104,65 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  PreferredSizeWidget get _buildAppBar => AppBar(
-    shape: Border(
-      bottom: BorderSide(
-        color: theme.dividerColor.withValues(alpha: 0.08),
-        width: 1,
+  PreferredSizeWidget get _buildAppBar {
+    final isWindowsNeo = WindowsVideoTabService.enabled;
+    final tokens = isWindowsNeo ? context.windowsNeo : null;
+    return AppBar(
+      backgroundColor: tokens?.surface,
+      shape: Border(
+        bottom: BorderSide(
+          color: tokens != null
+              ? tokens.border.withValues(alpha: 0.55)
+              : theme.dividerColor.withValues(alpha: 0.08),
+          width: 1,
+        ),
       ),
-    ),
-    actions: [
-      Obx(
-        () => _searchController.showUidBtn.value
-            ? IconButton(
-                tooltip: 'UID搜索用户',
-                icon: const Icon(Icons.person_outline, size: 22),
-                onPressed: () => PageUtils.toMember(
-                  _searchController.controller.text,
-                ),
-              )
-            : const SizedBox.shrink(),
+      actions: [
+        Obx(
+          () => _searchController.showUidBtn.value
+              ? IconButton(
+                  tooltip: 'UID搜索用户',
+                  icon: const Icon(Icons.person_outline, size: 22),
+                  onPressed: () => PageUtils.toMember(
+                    _searchController.controller.text,
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+        IconButton(
+          tooltip: '清空',
+          icon: const Icon(Icons.clear, size: 22),
+          onPressed: _searchController.onClear,
+        ),
+        IconButton(
+          tooltip: '搜索',
+          onPressed: _searchController.submit,
+          icon: Icon(
+            Icons.search,
+            size: 22,
+            color: tokens?.accentInk,
+          ),
+        ),
+        const SizedBox(width: 10),
+      ],
+      title: TextField(
+        autofocus: true,
+        focusNode: _searchController.searchFocusNode,
+        controller: _searchController.controller,
+        textInputAction: TextInputAction.search,
+        onChanged: _searchController.onChange,
+        decoration: InputDecoration(
+          visualDensity: .standard,
+          hintText: _searchController.hintText ?? '搜索视频、番剧、UP主或粘贴 BV 号',
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          filled: false,
+        ),
+        onSubmitted: (value) => _searchController.submit(),
       ),
-      IconButton(
-        tooltip: '清空',
-        icon: const Icon(Icons.clear, size: 22),
-        onPressed: _searchController.onClear,
-      ),
-      IconButton(
-        tooltip: '搜索',
-        onPressed: _searchController.submit,
-        icon: const Icon(Icons.search, size: 22),
-      ),
-      const SizedBox(width: 10),
-    ],
-    title: TextField(
-      autofocus: true,
-      focusNode: _searchController.searchFocusNode,
-      controller: _searchController.controller,
-      textInputAction: TextInputAction.search,
-      onChanged: _searchController.onChange,
-      decoration: InputDecoration(
-        visualDensity: .standard,
-        hintText: _searchController.hintText ?? '搜索',
-        border: InputBorder.none,
-      ),
-      onSubmitted: (value) => _searchController.submit(),
-    ),
-  );
+    );
+  }
 
   Widget _buildSearchSuggest() {
     return Obx(() {
@@ -176,9 +190,11 @@ class _SearchPageState extends State<SearchPage> {
                                     style: e.isEm
                                         ? TextStyle(
                                             fontWeight: .bold,
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
+                                            color: WindowsVideoTabService.enabled
+                                                ? context.windowsNeo.accentInk
+                                                : Theme.of(
+                                                    context,
+                                                  ).colorScheme.primary,
                                           )
                                         : null,
                                   ),

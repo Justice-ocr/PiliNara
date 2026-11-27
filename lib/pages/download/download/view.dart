@@ -27,8 +27,11 @@ import 'package:PiliPlus/pages/download/widgets/folder_card.dart';
 import 'package:PiliPlus/pages/download/widgets/folder_dialog.dart';
 import 'package:PiliPlus/services/download/download_folder_service.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -331,11 +334,265 @@ class _DownloadPageState extends State<DownloadPage>
     });
   }
 
+  Widget _buildWindowsOverviewSliver() {
+    return Obx(() {
+      final tokens = context.windowsNeo;
+      final theme = Theme.of(context);
+      final queueCount = downloadService.waitDownloadQueue.length;
+      final folderCount = _controller.folders.length;
+      final seasonCount = _controller.seasons.length;
+      final continueTarget = _controller.libraryService.continueTarget.value;
+      return SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+        sliver: SliverToBoxAdapter(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: tokens.surfaceRaised,
+              borderRadius: tokens.cardRadius,
+              border: Border.all(
+                color: tokens.border.withValues(alpha: 0.56),
+              ),
+              boxShadow: tokens.cardShadow,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  _DownloadStatChip(
+                    icon: Icons.video_library_outlined,
+                    label: '已缓存合集',
+                    value: '$seasonCount',
+                  ),
+                  const SizedBox(width: 18),
+                  _DownloadStatChip(
+                    icon: Icons.folder_outlined,
+                    label: '自定义文件夹',
+                    value: '$folderCount',
+                  ),
+                  const SizedBox(width: 18),
+                  _DownloadStatChip(
+                    icon: Icons.downloading_outlined,
+                    label: '任务队列',
+                    value: '$queueCount',
+                    highlight: queueCount > 0,
+                  ),
+                  const Spacer(),
+                  if (continueTarget != null)
+                    FilledButton.icon(
+                      onPressed: _isOpeningContinue
+                          ? null
+                          : () => _openContinueTarget(continueTarget),
+                      icon: const Icon(Icons.play_arrow_rounded, size: 17),
+                      label: Text(
+                        '继续播放',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: tokens.onAccentFill,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final padding = MediaQuery.viewPaddingOf(context);
+    final isWindowsNeo = WindowsVideoTabService.enabled;
     return Obx(() {
       final enableMultiSelect = _controller.enableMultiSelect.value;
+      final standardActions = [
+        IconButton(
+          tooltip: '搜索',
+          onPressed: () async {
+            await downloadService.waitForInitialization;
+            if (!mounted) return;
+            await Get.to(DownloadSearchPage(progress: _progress));
+            if (mounted) {
+              await _controller.libraryService.refreshContinueTarget();
+            }
+          },
+          icon: const Icon(Icons.search),
+        ),
+        IconButton(
+          tooltip: '新建文件夹',
+          onPressed: _createFolder,
+          icon: const Icon(Icons.create_new_folder_outlined),
+        ),
+        IconButton(
+          tooltip: '多选',
+          onPressed: () {
+            if (enableMultiSelect) {
+              _controller.handleSelect();
+            } else {
+              _controller.enableMultiSelect.value = true;
+            }
+          },
+          icon: const Icon(Icons.edit_note),
+        ),
+        const SizedBox(width: 6),
+      ];
+      final scrollBody = Stack(
+        clipBehavior: Clip.none,
+        children: [
+          fabAnimWrapper(
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: padding.left,
+                right: padding.right,
+              ),
+              child: CustomScrollView(
+                slivers: [
+                  if (isWindowsNeo) _buildWindowsOverviewSliver(),
+                  Obx(() {
+                    final entry =
+                        downloadService.waitDownloadQueue.firstWhereOrNull(
+                          (e) => e.cid == downloadService.curCid,
+                        ) ??
+                        downloadService.waitDownloadQueue.firstOrNull;
+                    if (entry == null) {
+                      return const SliverToBoxAdapter();
+                    }
+                    return SliverMainAxisGroup(
+                      slivers: [
+                        SliverPadding(
+                          padding: const EdgeInsets.only(
+                            left: 12,
+                            bottom: 7,
+                          ),
+                          sliver: SliverToBoxAdapter(
+                            child: Text(
+                              '正在缓存 (${downloadService.waitDownloadQueue.length})',
+                            ),
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: SizedBox(
+                            height: 110,
+                            child: DetailItem(
+                              entry: entry,
+                              progress: _progress,
+                              downloadService: downloadService,
+                              showTitle: true,
+                              isCurr: true,
+                              controller: _controller,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                  _buildFolderSection(),
+                  Obx(() {
+                    if (_controller.seasons.isEmpty) {
+                      if (downloadService.waitDownloadQueue.isNotEmpty) {
+                        return const SliverToBoxAdapter();
+                      }
+                      return const HttpError();
+                    }
+                    return SliverMainAxisGroup(
+                      slivers: [
+                        SliverPadding(
+                          padding: EdgeInsets.only(
+                            left: 12,
+                            bottom: 7,
+                            top: downloadService.waitDownloadQueue.isEmpty
+                                ? 0
+                                : 7,
+                          ),
+                          sliver: const SliverToBoxAdapter(
+                            child: Text('已缓存视频'),
+                          ),
+                        ),
+                        SliverGrid.builder(
+                          gridDelegate: gridDelegate,
+                          itemBuilder: (context, index) {
+                            final season = _controller.seasons[index];
+                            final seasonInfo = season.seasonInfo;
+                            final pages = season.pages;
+
+                            // 多视频合集单独成卡，点进去才是合集内的视频列表
+                            if (seasonInfo != null && pages.length > 1) {
+                              return SeasonInfoItem(
+                                controller: _controller,
+                                downloadService: downloadService,
+                                season: season,
+                                seasonInfo: seasonInfo,
+                                selectable: season,
+                                enableMultiSelect: enableMultiSelect,
+                                progress: _progress,
+                                updateSeasonDm: updateSeasonDm,
+                                updateSeasonSeg: updateSeasonSeg,
+                                updateSeasonPlayInfo: updateSeasonPlayInfo,
+                              );
+                            }
+
+                            final page = pages.first;
+                            if (page.entries.length == 1) {
+                              final entry = page.entries.first;
+                              return DetailItem(
+                                entry: entry,
+                                progress: _progress,
+                                downloadService: downloadService,
+                                showTitle: true,
+                                onDelete: () => deleteLocalEntries(
+                                  downloadService: downloadService,
+                                  entries: [entry],
+                                ),
+                                controller: _controller,
+                                checked: season.checked,
+                                onSelect: (_) =>
+                                    _controller.onSelect(season),
+                                playContext:
+                                    const DownloadVideoPlayContext.all(),
+                                extraMoreItemsBuilder: (menuContext) =>
+                                    buildAddEntriesToFolderMenuItems(
+                                      context: menuContext,
+                                      entries: [entry],
+                                    ),
+                                onPlayReturned: _controller
+                                    .libraryService
+                                    .refreshContinueTarget,
+                                customOnLongPress: () => _controller
+                                  ..enableMultiSelect.value = true
+                                  ..onSelect(season),
+                              );
+                            }
+
+                            return PageInfoItem(
+                              controller: _controller,
+                              downloadService: downloadService,
+                              selectable: season,
+                              pageInfo: page,
+                              seasonKey: season.playlistKey,
+                              enableMultiSelect: enableMultiSelect,
+                              progress: _progress,
+                              updatePageDm: updatePageDm,
+                              updatePageSeg: updatePageSeg,
+                              updatePagePlayInfo: updatePagePlayInfo,
+                            );
+                          },
+                          itemCount: _controller.seasons.length,
+                        ),
+                      ],
+                    );
+                  }),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: padding.bottom + 100),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (!isWindowsNeo) _buildContinueFab(),
+        ],
+      );
+
       return popScope(
         canPop: !enableMultiSelect,
         onPopInvokedWithResult: (didPop, result) {
@@ -343,222 +600,99 @@ class _DownloadPageState extends State<DownloadPage>
             _controller.handleSelect();
           }
         },
-        child: SimpleScaffold(
-          appBar: MultiSelectAppBarWidget(
-            ctr: _controller,
-            visible: enableMultiSelect,
-            actions: [
-              // 更新弹幕 / 更新片段来自 mixin，作用于选中的整个合集
-              updateBtn(),
-              TextButton(
-                style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                onPressed: _controller.checkedCount == 0
-                    ? null
-                    : _addSelectedToFolders,
-                child: const Text('添加到'),
-              ),
-              if (Platform.isAndroid)
-                TextButton(
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
+        child: isWindowsNeo && !enableMultiSelect
+            ? Scaffold(
+                backgroundColor: context.windowsNeo.background,
+                body: WindowsNeoPage(
+                  title: '离线缓存',
+                  subtitle: '本地缓存视频与离线文件夹管理',
+                  leading: Icon(
+                    Icons.download_outlined,
+                    size: 20,
+                    color: context.windowsNeo.chromeAccent,
                   ),
-                  onPressed: _controller.checkedCount == 0
-                      ? null
-                      : _exportChecked,
-                  child: const Text('导出'),
+                  actions: standardActions,
+                  child: scrollBody,
                 ),
-            ],
-            child: AppBar(
-              title: const Text('离线缓存'),
-              actions: [
-                IconButton(
-                  tooltip: '搜索',
-                  onPressed: () async {
-                    await downloadService.waitForInitialization;
-                    if (!mounted) return;
-                    await Get.to(DownloadSearchPage(progress: _progress));
-                    if (mounted) {
-                      await _controller.libraryService.refreshContinueTarget();
-                    }
-                  },
-                  icon: const Icon(Icons.search),
-                ),
-                IconButton(
-                  tooltip: '新建文件夹',
-                  onPressed: _createFolder,
-                  icon: const Icon(Icons.create_new_folder_outlined),
-                ),
-                IconButton(
-                  tooltip: '多选',
-                  onPressed: () {
-                    if (enableMultiSelect) {
-                      _controller.handleSelect();
-                    } else {
-                      _controller.enableMultiSelect.value = true;
-                    }
-                  },
-                  icon: const Icon(Icons.edit_note),
-                ),
-                const SizedBox(width: 6),
-              ],
-            ),
-          ),
-          body: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              fabAnimWrapper(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: padding.left,
-                    right: padding.right,
-                  ),
-                  child: CustomScrollView(
-                    slivers: [
-                      Obx(() {
-                        final entry =
-                            downloadService.waitDownloadQueue.firstWhereOrNull(
-                              (e) => e.cid == downloadService.curCid,
-                            ) ??
-                            downloadService.waitDownloadQueue.firstOrNull;
-                        if (entry == null) {
-                          return const SliverToBoxAdapter();
-                        }
-                        return SliverMainAxisGroup(
-                          slivers: [
-                            SliverPadding(
-                              padding: const EdgeInsets.only(
-                                left: 12,
-                                bottom: 7,
-                              ),
-                              sliver: SliverToBoxAdapter(
-                                child: Text(
-                                  '正在缓存 (${downloadService.waitDownloadQueue.length})',
-                                ),
-                              ),
-                            ),
-                            SliverToBoxAdapter(
-                              child: SizedBox(
-                                height: 110,
-                                child: DetailItem(
-                                  entry: entry,
-                                  progress: _progress,
-                                  downloadService: downloadService,
-                                  showTitle: true,
-                                  isCurr: true,
-                                  controller: _controller,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      }),
-                      _buildFolderSection(),
-                      Obx(() {
-                        if (_controller.seasons.isEmpty) {
-                          if (downloadService.waitDownloadQueue.isNotEmpty) {
-                            return const SliverToBoxAdapter();
-                          }
-                          return const HttpError();
-                        }
-                        return SliverMainAxisGroup(
-                          slivers: [
-                            SliverPadding(
-                              padding: EdgeInsets.only(
-                                left: 12,
-                                bottom: 7,
-                                top: downloadService.waitDownloadQueue.isEmpty
-                                    ? 0
-                                    : 7,
-                              ),
-                              sliver: const SliverToBoxAdapter(
-                                child: Text('已缓存视频'),
-                              ),
-                            ),
-                            SliverGrid.builder(
-                              gridDelegate: gridDelegate,
-                              itemBuilder: (context, index) {
-                                final season = _controller.seasons[index];
-                                final seasonInfo = season.seasonInfo;
-                                final pages = season.pages;
-
-                                // 多视频合集单独成卡，点进去才是合集内的视频列表
-                                if (seasonInfo != null && pages.length > 1) {
-                                  return SeasonInfoItem(
-                                    controller: _controller,
-                                    downloadService: downloadService,
-                                    season: season,
-                                    seasonInfo: seasonInfo,
-                                    selectable: season,
-                                    enableMultiSelect: enableMultiSelect,
-                                    progress: _progress,
-                                    updateSeasonDm: updateSeasonDm,
-        updateSeasonSeg: updateSeasonSeg,
-        updateSeasonPlayInfo: updateSeasonPlayInfo,
-                                  );
-                                }
-
-                                final page = pages.first;
-                                if (page.entries.length == 1) {
-                                  final entry = page.entries.first;
-                                  return DetailItem(
-                                    entry: entry,
-                                    progress: _progress,
-                                    downloadService: downloadService,
-                                    showTitle: true,
-                                    onDelete: () => deleteLocalEntries(
-                                      downloadService: downloadService,
-                                      entries: [entry],
-                                    ),
-                                    controller: _controller,
-                                    checked: season.checked,
-                                    onSelect: (_) =>
-                                        _controller.onSelect(season),
-                                    playContext:
-                                        const DownloadVideoPlayContext.all(),
-                                    extraMoreItemsBuilder: (menuContext) =>
-                                        buildAddEntriesToFolderMenuItems(
-                                          context: menuContext,
-                                          entries: [entry],
-                                        ),
-                                    onPlayReturned: _controller
-                                        .libraryService
-                                        .refreshContinueTarget,
-                                    customOnLongPress: () => _controller
-                                      ..enableMultiSelect.value = true
-                                      ..onSelect(season),
-                                  );
-                                }
-
-                                return PageInfoItem(
-                                  controller: _controller,
-                                  downloadService: downloadService,
-                                  selectable: season,
-                                  pageInfo: page,
-                                  seasonKey: season.playlistKey,
-                                  enableMultiSelect: enableMultiSelect,
-                                  progress: _progress,
-                                  updatePageDm: updatePageDm,
-        updatePageSeg: updatePageSeg,
-        updatePagePlayInfo: updatePagePlayInfo,
-                                );
-                              },
-                              itemCount: _controller.seasons.length,
-                            ),
-                          ],
-                        );
-                      }),
-                      SliverToBoxAdapter(
-                        child: SizedBox(height: padding.bottom + 100),
+              )
+            : SimpleScaffold(
+                appBar: MultiSelectAppBarWidget(
+                  ctr: _controller,
+                  visible: enableMultiSelect,
+                  actions: [
+                    // 更新弹幕 / 更新片段来自 mixin，作用于选中的整个合集
+                    updateBtn(),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
                       ),
-                    ],
+                      onPressed: _controller.checkedCount == 0
+                          ? null
+                          : _addSelectedToFolders,
+                      child: const Text('添加到'),
+                    ),
+                    if (Platform.isAndroid)
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: _controller.checkedCount == 0
+                            ? null
+                            : _exportChecked,
+                        child: const Text('导出'),
+                      ),
+                  ],
+                  child: AppBar(
+                    title: const Text('离线缓存'),
+                    actions: standardActions,
                   ),
                 ),
+                body: scrollBody,
               ),
-              _buildContinueFab(),
-            ],
-          ),
-        ),
       );
     });
+  }
+}
+
+class _DownloadStatChip extends StatelessWidget {
+  const _DownloadStatChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.highlight = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final bool highlight;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.windowsNeo;
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: highlight ? tokens.accentInk : tokens.muted,
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '$label ',
+          style: theme.textTheme.labelMedium?.copyWith(color: tokens.muted),
+        ),
+        Text(
+          value,
+          style: theme.textTheme.titleSmall?.copyWith(
+            color: highlight ? tokens.accentInk : tokens.ink,
+            fontWeight: FontWeight.w800,
+            fontFamilyFallback: tokens.displayFontFallback,
+          ),
+        ),
+      ],
+    );
   }
 }

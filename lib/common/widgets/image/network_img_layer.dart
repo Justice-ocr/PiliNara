@@ -1,9 +1,11 @@
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -70,6 +72,10 @@ class NetworkImgLayer extends StatelessWidget {
     } else {
       memCacheHeight = height.cacheSize(context);
     }
+    final effectiveFadeIn = WindowsVideoTabService.enabled &&
+            fadeInDuration == const Duration(milliseconds: 120)
+        ? const Duration(milliseconds: 200)
+        : fadeInDuration;
     return CachedNetworkImage(
       gaplessPlayback: true,
       imageUrl: ImageUtils.thumbnailUrl(src, quality),
@@ -80,7 +86,7 @@ class NetworkImgLayer extends StatelessWidget {
       fit: fit,
       alignment: alignment,
       fadeOutDuration: fadeOutDuration,
-      fadeInDuration: fadeInDuration,
+      fadeInDuration: effectiveFadeIn,
       filterQuality: FilterQuality.low,
       placeholder: (_, _) =>
           getPlaceHolder?.call() ??
@@ -97,6 +103,25 @@ class NetworkImgLayer extends StatelessWidget {
     required bool isEmote,
     required bool isAvatar,
   }) {
+    if (WindowsVideoTabService.enabled && !isEmote && !isAvatar) {
+      final tokens = context.windowsNeo;
+      return Container(
+        width: width,
+        height: height,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: borderRadius,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              tokens.hover.withValues(alpha: 0.72),
+              tokens.surfaceRaised.withValues(alpha: 0.88),
+            ],
+          ),
+        ),
+      );
+    }
     return Container(
       width: width,
       height: height,

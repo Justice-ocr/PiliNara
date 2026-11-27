@@ -70,6 +70,7 @@ import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_back_shortcut_listener.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_command_palette.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_media_meta.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/shell/windows_neo_shell.dart';
@@ -146,10 +147,10 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
         onNextTab: () => WindowsVideoTabService.selectRelative(1),
         onPreviousTab: () => WindowsVideoTabService.selectRelative(-1),
         onRestoreTab: WindowsVideoTabService.restoreLastClosedTab,
-        onSearch: () {
-          WindowsVideoTabService.select(WindowsVideoTabService.homeTabId);
-          PageUtils.toSearch();
-        },
+        onSearch: () => WindowsNeoCommandPalette.show(
+          context,
+          onSplit: _showSplitSelection,
+        ),
         // Escape is handled by the app-wide early key handler (main.dart
         // _onBack), which pops the active tab.
         child: Focus(

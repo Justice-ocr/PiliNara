@@ -53,8 +53,8 @@ class ReplyThreadedIndentBox extends SingleChildRenderObjectWidget {
 class RenderReplyThreadedIndentBox extends RenderBox
     with RenderObjectWithChildMixin<RenderBox> {
   static const double indentStep = 8;
-  static const double lineW = 3;
-  static const double dotRadius = 3;
+  static const double lineW = 2;
+  static const double dotRadius = 2.5;
   static const double halfLinePadV = 8;
   static const double hitRadius = 5;
   static const double dragMaxOffset = 60;

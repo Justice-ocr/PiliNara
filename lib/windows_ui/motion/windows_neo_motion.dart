@@ -277,7 +277,9 @@ class _WindowsNeoStaggeredRevealState extends State<WindowsNeoStaggeredReveal>
               WindowsNeoThemeFamily.exAstris => const Offset(0, 0.012),
               WindowsNeoThemeFamily.popucom => const Offset(0, 0.020),
               WindowsNeoThemeFamily.corporate => const Offset(0.014, 0),
-              WindowsNeoThemeFamily.miku => const Offset(0, 0.018),
+              WindowsNeoThemeFamily.miku ||
+              WindowsNeoThemeFamily.custom =>
+                const Offset(0, 0.018),
             },
             end: Offset.zero,
           ).animate(

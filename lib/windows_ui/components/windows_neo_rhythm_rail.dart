@@ -380,6 +380,7 @@ class _WindowsNeoHeaderWavePainter extends CustomPainter {
           ..drawCircle(Offset(size.width * .28, center), 5, secondaryPaint)
           ..drawCircle(Offset(size.width * .70, center), 5, secondaryPaint);
       case WindowsNeoThemeFamily.corporate:
+      case WindowsNeoThemeFamily.custom:
         final frame = Rect.fromLTWH(
           size.width * .20,
           6,

@@ -1,3 +1,5 @@
+import 'dart:io' show File;
+
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -11,25 +13,51 @@ class WindowsNeoBackdrop extends StatelessWidget {
     final tokens = context.windowsNeo;
     final dark = Theme.of(context).brightness == Brightness.dark;
     final artworkAsset = tokens.family.backdropAsset;
+    final customPath = tokens.family == WindowsNeoThemeFamily.custom
+        ? WindowsNeoThemeController.customWallpaper.value
+        : '';
+    final customFile = customPath.isNotEmpty ? File(customPath) : null;
+    final hasCustomFile = customFile != null && customFile.existsSync();
     final artworkOpacity = switch (tokens.depth) {
       WindowsNeoThemeDepth.minimal => 0.0,
-      WindowsNeoThemeDepth.moderate => dark ? 0.08 : 0.06,
-      WindowsNeoThemeDepth.complex => dark ? 0.12 : 0.09,
-      WindowsNeoThemeDepth.maximal => dark ? 0.15 : 0.11,
+      WindowsNeoThemeDepth.moderate => hasCustomFile
+          ? (WindowsNeoThemeController.customOpacity.value * 0.7).clamp(
+              0.04,
+              0.24,
+            )
+          : (dark ? 0.08 : 0.06),
+      WindowsNeoThemeDepth.complex => hasCustomFile
+          ? (WindowsNeoThemeController.customOpacity.value * 0.9).clamp(
+              0.05,
+              0.28,
+            )
+          : (dark ? 0.12 : 0.09),
+      WindowsNeoThemeDepth.maximal => hasCustomFile
+          ? WindowsNeoThemeController.customOpacity.value
+          : (dark ? 0.15 : 0.11),
     };
+    final hasArtwork = artworkAsset != null || hasCustomFile;
     return Stack(
       children: [
-        if (artworkAsset != null && artworkOpacity > 0) ...[
+        if (hasArtwork && artworkOpacity > 0) ...[
           Positioned.fill(
             child: IgnorePointer(
               child: Opacity(
                 opacity: artworkOpacity,
-                child: Image.asset(
-                  artworkAsset,
-                  fit: BoxFit.cover,
-                  alignment: Alignment.centerRight,
-                  filterQuality: FilterQuality.medium,
-                ),
+                child: hasCustomFile
+                    ? Image.file(
+                        customFile,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                        filterQuality: FilterQuality.medium,
+                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                      )
+                    : Image.asset(
+                        artworkAsset!,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.centerRight,
+                        filterQuality: FilterQuality.medium,
+                      ),
               ),
             ),
           ),
@@ -71,7 +99,7 @@ class WindowsNeoBackdrop extends StatelessWidget {
                   depth: tokens.depth,
                   shellMark: tokens.shellMark,
                   shellWordmark: tokens.shellWordmark,
-                  hasArtwork: artworkAsset != null,
+                  hasArtwork: hasArtwork,
                 ),
               ),
             ),
@@ -175,6 +203,11 @@ class _WindowsNeoDotGrid extends CustomPainter {
           Offset(size.width - 210, size.height * .20),
           94.0,
           -.10,
+        ),
+      WindowsNeoThemeFamily.custom => (
+          Offset(size.width - 184, size.height * .18),
+          92.0,
+          0.0,
         ),
     };
     _paintWordmark(

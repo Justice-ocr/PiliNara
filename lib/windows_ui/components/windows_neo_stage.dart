@@ -203,6 +203,13 @@ class _WindowsNeoStageStateDossier extends StatelessWidget {
             left: BorderSide(color: Colors.white.withValues(alpha: 0.28)),
           ),
         ),
+      WindowsNeoThemeFamily.custom => BoxDecoration(
+          color: tokens.surfaceRaised.withValues(alpha: 0.92),
+          borderRadius: tokens.mediaBadgeRadius,
+          border: Border.all(
+            color: tokens.accentBorder.withValues(alpha: 0.56),
+          ),
+        ),
       WindowsNeoThemeFamily.miku => const BoxDecoration(),
     };
     return DecoratedBox(
@@ -347,6 +354,7 @@ class _WindowsNeoStagePainter extends CustomPainter {
       case WindowsNeoThemeFamily.popucom:
         _paintPopucom(canvas, size);
       case WindowsNeoThemeFamily.corporate:
+      case WindowsNeoThemeFamily.custom:
         _paintCorporate(canvas, size);
     }
     _paintSceneCue(canvas, size);
@@ -354,6 +362,7 @@ class _WindowsNeoStagePainter extends CustomPainter {
 
   void _paintSceneCue(Canvas canvas, Size size) {
     if (family == WindowsNeoThemeFamily.miku ||
+        family == WindowsNeoThemeFamily.custom ||
         scene == WindowsNeoStageScene.video ||
         scene == WindowsNeoStageScene.live) {
       return;
@@ -370,6 +379,7 @@ class _WindowsNeoStagePainter extends CustomPainter {
       case WindowsNeoThemeFamily.corporate:
         _paintCorporateScene(canvas, size);
       case WindowsNeoThemeFamily.miku:
+      case WindowsNeoThemeFamily.custom:
         break;
     }
   }
@@ -998,6 +1008,7 @@ class _WindowsNeoStageOutlinePainter extends CustomPainter {
             secondaryPaint,
           );
       case WindowsNeoThemeFamily.miku:
+      case WindowsNeoThemeFamily.custom:
         break;
     }
   }
@@ -1210,6 +1221,7 @@ class _WindowsNeoMediaStagePainter extends _WindowsNeoStagePainter {
               ..strokeWidth = 3,
           );
       case WindowsNeoThemeFamily.miku:
+      case WindowsNeoThemeFamily.custom:
         final paint = Paint()
           ..color = alphaAccent
           ..strokeWidth = 1;
