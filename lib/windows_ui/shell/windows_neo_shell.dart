@@ -2189,6 +2189,7 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
       '/setting' => Icons.settings_outlined,
       '/download' => Icons.download_outlined,
       '/whisper' => Icons.chat_bubble_outline,
+      '/searchTrending' => Icons.local_fire_department_rounded,
       _ => Icons.apps_outlined,
     },
   };

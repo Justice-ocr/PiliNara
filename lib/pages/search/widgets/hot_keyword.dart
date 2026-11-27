@@ -1,7 +1,10 @@
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/models_new/search/search_trending/list.dart';
+import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_trending_kit.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/rendering.dart'
     show
@@ -22,6 +25,76 @@ class SliverHotKeyword extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (WindowsVideoTabService.enabled) {
+      final tokens = context.windowsNeo;
+      return SliverToBoxAdapter(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final twoCol = constraints.maxWidth >= 420;
+            const gap = 8.0;
+            final itemWidth = twoCol
+                ? (constraints.maxWidth - gap) / 2
+                : constraints.maxWidth;
+            return Wrap(
+              spacing: gap,
+              runSpacing: gap,
+              children: [
+                for (var idx = 0; idx < hotSearchList.length; idx++)
+                  SizedBox(
+                    width: itemWidth,
+                    child: Material(
+                      color: tokens.surfaceRaised,
+                      borderRadius: tokens.actionRadius,
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => onClick?.call(hotSearchList[idx].keyword),
+                        hoverColor: tokens.accentSurface,
+                        child: Container(
+                          height: 38,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          decoration: BoxDecoration(
+                            borderRadius: tokens.actionRadius,
+                            border: Border.all(
+                              color: tokens.border.withValues(alpha: 0.45),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              WindowsNeoTrendingRank(
+                                rank: idx + 1,
+                                fontSize: 12.5,
+                                width: 22,
+                              ),
+                              const SizedBox(width: 7),
+                              Expanded(
+                                child: Text(
+                                  hotSearchList[idx].showName,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    color: tokens.ink,
+                                    fontWeight: idx < 3
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              WindowsNeoTrendingTag(item: hotSearchList[idx]),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      );
+    }
+
     late final style = TextStyle(
       fontSize: 14,
       color: ColorScheme.of(context).outline,
