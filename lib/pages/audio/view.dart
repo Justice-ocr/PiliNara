@@ -1,4 +1,5 @@
 import 'dart:math' show min;
+import 'dart:ui' show ImageFilter;
 
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/style.dart';
@@ -176,51 +177,104 @@ class _AudioPageState extends State<AudioPage> {
           const SizedBox(width: 5),
         ],
       ),
-      body: Padding(
-        padding: EdgeInsets.only(
-          left: 20 + padding.left,
-          right: 20 + padding.right,
-          bottom: 30 + padding.bottom,
-        ),
-        child: isPortrait
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: _buildInfo(colorScheme, isPortrait)),
-                  const SizedBox(height: 25),
-                  _buildProgressBar(colorScheme),
-                  _buildDuration(colorScheme),
-                  _buildControls(),
-                ],
-              )
-            : Row(
-                spacing: 12,
-                children: [
-                  Expanded(
-                    child: _buildInfo(colorScheme, isPortrait),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          _buildAmbientCoverBackdrop(colorScheme),
+          Padding(
+            padding: EdgeInsets.only(
+              left: 20 + padding.left,
+              right: 20 + padding.right,
+              bottom: 30 + padding.bottom,
+            ),
+            child: isPortrait
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _buildInfo(colorScheme, isPortrait)),
+                      const SizedBox(height: 25),
+                      _buildProgressBar(colorScheme),
+                      _buildDuration(colorScheme),
+                      _buildControls(),
+                    ],
+                  )
+                : Row(
+                    spacing: 12,
+                    children: [
+                      Expanded(
+                        child: _buildInfo(colorScheme, isPortrait),
+                      ),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Obx(() {
+                              final audioItem = _controller.audioItem.value;
+                              if (audioItem != null) {
+                                return _buildActions(audioItem);
+                              }
+                              return const SizedBox.shrink();
+                            }),
+                            const SizedBox(height: 25),
+                            _buildProgressBar(colorScheme),
+                            _buildDuration(colorScheme),
+                            _buildControls(),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Obx(() {
-                          final audioItem = _controller.audioItem.value;
-                          if (audioItem != null) {
-                            return _buildActions(audioItem);
-                          }
-                          return const SizedBox.shrink();
-                        }),
-                        const SizedBox(height: 25),
-                        _buildProgressBar(colorScheme),
-                        _buildDuration(colorScheme),
-                        _buildControls(),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildAmbientCoverBackdrop(ColorScheme colorScheme) {
+    final isDark = colorScheme.isDark;
+    return IgnorePointer(
+      child: Obx(() {
+        final cover = _controller.audioItem.value?.arc.cover.http2https;
+        if (cover == null || cover.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Opacity(
+              opacity: isDark ? 0.24 : 0.16,
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 46, sigmaY: 46),
+                child: LayoutBuilder(
+                  builder: (context, constraints) => NetworkImgLayer(
+                    src: cover,
+                    width: constraints.maxWidth,
+                    height: constraints.maxHeight,
+                    borderRadius: BorderRadius.zero,
+                    fit: BoxFit.cover,
+                    cacheWidth: false,
+                  ),
+                ),
+              ),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    colorScheme.surface.withValues(alpha: isDark ? 0.56 : 0.72),
+                    colorScheme.surface.withValues(alpha: isDark ? 0.78 : 0.86),
+                    colorScheme.surface.withValues(alpha: isDark ? 0.94 : 0.96),
+                  ],
+                  stops: const [0, 0.55, 1],
+                ),
+              ),
+            ),
+          ],
+        );
+      }),
     );
   }
 

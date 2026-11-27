@@ -83,7 +83,7 @@ class _MediaPageState extends CommonPageState<MinePage>
     super.build(context);
     final secondary = theme.colorScheme.secondary;
     if (WindowsVideoTabService.enabled) {
-      return _buildWindowsPage(theme, secondary);
+      return _buildWindowsPage(theme);
     }
     return Column(
       children: [
@@ -122,13 +122,14 @@ class _MediaPageState extends CommonPageState<MinePage>
     );
   }
 
-  Widget _buildWindowsPage(ThemeData theme, Color secondary) {
+  Widget _buildWindowsPage(ThemeData theme) {
+    final tokens = context.windowsNeo;
     return WindowsNeoPage(
       title: '\u6211\u7684',
       subtitle: '\u8d26\u6237\u3001\u6536\u85cf\u4e0e\u4e2a\u4eba\u5185\u5bb9',
       leading: widget.showBackBtn
           ? const BackButton()
-          : Icon(Icons.person_outline, color: context.windowsNeo.accent),
+          : Icon(Icons.person_outline, color: tokens.chromeAccent),
       actions: _windowsHeaderActions,
       stageMode: WindowsNeoStageMode.browse,
       stageScene: WindowsNeoStageScene.profile,
@@ -144,16 +145,8 @@ class _MediaPageState extends CommonPageState<MinePage>
                 child: Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 22, 18, 12),
-                      child: _buildUserInfo(theme, secondary),
-                    ),
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 14,
-                      ),
-                      child: _buildWindowsQuickActions(),
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
+                      child: _buildWindowsProfileHero(theme),
                     ),
                     for (final tab in controller.mineTabs)
                       switch (tab) {
@@ -167,6 +160,268 @@ class _MediaPageState extends CommonPageState<MinePage>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWindowsProfileHero(ThemeData theme) {
+    final tokens = context.windowsNeo;
+    return Obx(() {
+      final userInfo = controller.userInfo.value;
+      final levelInfo = userInfo.levelInfo;
+      final hasLevel = levelInfo != null && (levelInfo.nextExp ?? 0) > 0;
+      final isVip = userInfo.vipStatus != null && userInfo.vipStatus! > 0;
+      final userStat = controller.userStat.value;
+
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: tokens.surface,
+          borderRadius: tokens.cardRadius,
+          border: Border.all(color: tokens.border.withValues(alpha: 0.48)),
+          boxShadow: tokens.cardShadow,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final wide = constraints.maxWidth >= 680;
+                  final profileRow = GestureDetector(
+                    behavior: .opaque,
+                    onTap: controller.onLogin,
+                    onLongPress: () {
+                      Feedback.forLongPress(context);
+                      controller.onLogin(true);
+                    },
+                    onSecondaryTap: () => controller.onLogin(true),
+                    child: Row(
+                      children: [
+                        userInfo.face != null
+                            ? Stack(
+                                clipBehavior: .none,
+                                children: [
+                                  NetworkImgLayer(
+                                    src: userInfo.face,
+                                    type: .avatar,
+                                    width: 64,
+                                    height: 64,
+                                  ),
+                                  if (isVip)
+                                    Positioned(
+                                      right: -1,
+                                      bottom: -2,
+                                      child: SvgPicture.asset(
+                                        Assets.vipIcon,
+                                        height: 20,
+                                        semanticsLabel: '大会员',
+                                      ),
+                                    ),
+                                ],
+                              )
+                            : ClipOval(
+                                child: Image.asset(
+                                  width: 64,
+                                  height: 64,
+                                  cacheHeight: 64.cacheSize(context),
+                                  Assets.avatarPlaceHolder,
+                                  semanticLabel: '默认头像',
+                                ),
+                              ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                spacing: 8,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      userInfo.uname ?? '点击登录',
+                                      maxLines: 1,
+                                      overflow: .ellipsis,
+                                      style: theme.textTheme.titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            height: 1.1,
+                                            color:
+                                                isVip && userInfo.vipType == 2
+                                                ? theme.colorScheme.vipColor
+                                                : tokens.ink,
+                                          ),
+                                    ),
+                                  ),
+                                  BiliUtils.levelPicture(
+                                    levelInfo?.currentLevel ?? 0,
+                                    isSeniorMember:
+                                        userInfo.isSeniorMember == 1,
+                                    height: 11,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text.rich(
+                                TextSpan(
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    color: tokens.muted,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                                  children: [
+                                    const TextSpan(text: '硬币 '),
+                                    TextSpan(
+                                      text: userInfo.money?.toString() ?? '-',
+                                      style: TextStyle(
+                                        color: tokens.accentInk,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const TextSpan(text: '    经验 '),
+                                    TextSpan(
+                                      text:
+                                          levelInfo?.currentExp?.toString() ??
+                                          '-',
+                                      style: TextStyle(
+                                        color: tokens.accentInk,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: '/${levelInfo?.nextExp ?? '-'}',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 260,
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: tokens.mediaBadgeRadius,
+                                  child: LinearProgressIndicator(
+                                    minHeight: 4,
+                                    value: hasLevel
+                                        ? (levelInfo.currentExp! /
+                                                  levelInfo.nextExp!)
+                                              .clamp(0.0, 1.0)
+                                        : 0,
+                                    backgroundColor: tokens.border.withValues(
+                                      alpha: 0.35,
+                                    ),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      tokens.accentInk,
+                                    ),
+                                    stopIndicatorColor: Colors.transparent,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  final kpis = Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _windowsStatKpi(
+                        count: userStat.dynamicCount,
+                        label: '动态',
+                        onTap: () => controller.push('memberDynamics'),
+                      ),
+                      const SizedBox(width: 10),
+                      _windowsStatKpi(
+                        count: userStat.following,
+                        label: '关注',
+                        onTap: () => controller.push('follow'),
+                      ),
+                      const SizedBox(width: 10),
+                      _windowsStatKpi(
+                        count: userStat.follower,
+                        label: '粉丝',
+                        onTap: () => controller.push('fan'),
+                      ),
+                    ],
+                  );
+
+                  if (wide) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(child: profileRow),
+                        const SizedBox(width: 20),
+                        kpis,
+                      ],
+                    );
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      profileRow,
+                      const SizedBox(height: 16),
+                      kpis,
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 18),
+              Divider(height: 1, color: tokens.border.withValues(alpha: 0.38)),
+              const SizedBox(height: 14),
+              _buildWindowsQuickActions(),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _windowsStatKpi({
+    required int? count,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final tokens = context.windowsNeo;
+    return Material(
+      color: tokens.surfaceRaised,
+      borderRadius: tokens.actionRadius,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        hoverColor: tokens.hover,
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 88),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: tokens.actionRadius,
+            border: Border.all(color: tokens.border.withValues(alpha: 0.45)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                count?.toString() ?? '-',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: tokens.ink,
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  fontFamilyFallback: tokens.displayFontFallback,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: tokens.muted,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -232,29 +487,38 @@ class _MediaPageState extends CommonPageState<MinePage>
         children: controller.list.indexed
             .map(
               (entry) => Material(
-                color: tokens.surfaceRaised.withValues(alpha: 0.72),
-                borderRadius: BorderRadius.circular(6),
+                color: tokens.surfaceRaised,
+                borderRadius: tokens.actionRadius,
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
-                  hoverColor: tokens.accent.withValues(alpha: 0.08),
+                  hoverColor: tokens.hover,
                   onTap: entry.$1 == 0
                       ? () => PageUtils.openToolTab(
                           route: '/download',
                           title: '\u4e0b\u8f7d',
                         )
                       : entry.$2.onTap,
-                  child: SizedBox(
-                    height: 38,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(entry.$2.icon, size: 18, color: tokens.accent),
-                          const SizedBox(width: 8),
-                          Text(entry.$2.title),
-                        ],
+                  child: Container(
+                    height: 36,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: tokens.actionRadius,
+                      border: Border.all(
+                        color: tokens.border.withValues(alpha: 0.45),
                       ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(entry.$2.icon, size: 17, color: tokens.accentInk),
+                        const SizedBox(width: 8),
+                        Text(
+                          entry.$2.title,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: tokens.ink,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

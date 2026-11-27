@@ -1,9 +1,11 @@
 import 'package:PiliPlus/pages/search_result/view.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_media_meta.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_page.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_rhythm_rail.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_section_tabs.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_state.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_stage.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_theme_studio.dart';
 import 'package:PiliPlus/windows_ui/components/windows_neo_video_search_tile.dart';
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/shell/windows_neo_shell.dart';
@@ -398,5 +400,50 @@ void main() {
 
     expect(find.text('01'), findsOneWidget);
     expect(find.text('39'), findsNothing);
+  });
+
+  test('dual-track accentInk ensures readable light-mode contrast', () {
+    for (final family in WindowsNeoThemeFamily.values) {
+      final lightTokens = WindowsNeoTokens.fromTheme(
+        ThemeData.light(),
+        family: family,
+      );
+      expect(
+        lightTokens.accentInk.computeLuminance(),
+        lessThan(0.32),
+        reason: '${family.name} light accentInk should remain readable',
+      );
+      expect(
+        lightTokens.displayFontFallback,
+        isNotEmpty,
+        reason: family.name,
+      );
+    }
+  });
+
+  testWidgets('WindowsNeoThemeStudio and WindowsNeoTag render cleanly', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: WindowsNeoTheme.apply(ThemeData.light()),
+        home: const Scaffold(
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                WindowsNeoThemeStudio(),
+                WindowsNeoTag(text: '已关注'),
+                WindowsNeoTag(text: '充电专属', tone: WindowsNeoTagTone.danger),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Windows Neo 主题工作室'), findsOneWidget);
+    expect(find.text('已关注'), findsOneWidget);
+    expect(find.text('充电专属'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

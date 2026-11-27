@@ -29,13 +29,13 @@ class WindowsNeoMediaBadge extends StatelessWidget {
         color: background.withValues(alpha: 0.86),
         borderRadius: tokens.mediaBadgeRadius,
         border: Border.all(
-          color: tokens.accent.withValues(alpha: 0.62),
+          color: tokens.accent.withValues(alpha: 0.46),
           width: 0.8,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.14),
-            blurRadius: 5,
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
@@ -103,7 +103,7 @@ class WindowsNeoStat extends StatelessWidget {
           width: 3,
           height: 3,
           decoration: BoxDecoration(
-            color: tokens.accent.withValues(alpha: 0.78),
+            color: tokens.accentInk.withValues(alpha: 0.78),
             shape: usesRoundMarker ? BoxShape.circle : BoxShape.rectangle,
           ),
         ),
@@ -165,5 +165,111 @@ class WindowsNeoMediaDivider extends StatelessWidget {
             height: double.infinity,
             child: DecoratedBox(decoration: decoration),
           );
+  }
+}
+
+/// Subtle bottom scrim placed over media thumbnails so badges remain crisp
+/// even on bright covers.
+class WindowsNeoCoverScrim extends StatelessWidget {
+  const WindowsNeoCoverScrim({super.key, this.heightFactor = 0.40});
+
+  final double heightFactor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: FractionallySizedBox(
+            widthFactor: 1,
+            heightFactor: heightFactor,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.16),
+                    Colors.black.withValues(alpha: 0.48),
+                  ],
+                  stops: const [0, 0.52, 1],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+enum WindowsNeoTagTone { accent, outline, danger, neutral }
+
+/// Theme-unified metadata tag that follows the active family's geometry
+/// (rounded for Miku, squared for industrial/archive families) and high-contrast
+/// foreground tokens.
+class WindowsNeoTag extends StatelessWidget {
+  const WindowsNeoTag({
+    super.key,
+    required this.text,
+    this.tone = WindowsNeoTagTone.accent,
+    this.fontSize = 10,
+  });
+
+  final String text;
+  final WindowsNeoTagTone tone;
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    if (text.isEmpty) return const SizedBox.shrink();
+    final tokens = context.windowsNeo;
+    final (Color bg, Color fg, Color border) = switch (tone) {
+      WindowsNeoTagTone.accent => (
+        tokens.accentSurface,
+        tokens.accentInk,
+        tokens.accentBorder.withValues(alpha: 0.34),
+      ),
+      WindowsNeoTagTone.outline => (
+        Colors.transparent,
+        tokens.accentInk,
+        tokens.accentBorder.withValues(alpha: 0.65),
+      ),
+      WindowsNeoTagTone.danger => (
+        const Color(0xFFD93848),
+        Colors.white,
+        const Color(0xFFFF6B7A).withValues(alpha: 0.55),
+      ),
+      WindowsNeoTagTone.neutral => (
+        tokens.surfaceRaised,
+        tokens.muted,
+        tokens.border.withValues(alpha: 0.55),
+      ),
+    };
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: tokens.mediaBadgeRadius,
+        border: Border.all(color: border, width: 0.8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: fg,
+            fontSize: fontSize,
+            height: 1.05,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0,
+            fontFamilyFallback: tokens.uiFontFallback,
+          ),
+        ),
+      ),
+    );
   }
 }

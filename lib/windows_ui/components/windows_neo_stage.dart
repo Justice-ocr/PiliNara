@@ -107,14 +107,18 @@ class WindowsNeoStageFrame extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (showInstrumentation && stateLabel?.isNotEmpty == true)
+              if (showInstrumentation &&
+                  tokens.isMaximal &&
+                  stateLabel?.isNotEmpty == true)
                 Positioned(
                   right: 20,
                   bottom: 12,
-                  child: ExcludeSemantics(
-                    child: _WindowsNeoStageStateDossier(
-                      scene: resolvedScene,
-                      stateLabel: stateLabel!,
+                  child: IgnorePointer(
+                    child: ExcludeSemantics(
+                      child: _WindowsNeoStageStateDossier(
+                        scene: resolvedScene,
+                        stateLabel: stateLabel!,
+                      ),
                     ),
                   ),
                 ),

@@ -30,6 +30,11 @@ class WindowsNeoCardShell extends StatefulWidget {
 
 class _WindowsNeoCardShellState extends State<WindowsNeoCardShell> {
   bool _focused = false;
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (_pressed != value) setState(() => _pressed = value);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,83 +50,100 @@ class _WindowsNeoCardShellState extends State<WindowsNeoCardShell> {
       offset: highlighted ? hoverOffset : Offset.zero,
       duration: context.windowsNeoDuration(tokens.motionFast),
       curve: Curves.easeOutCubic,
-      child: WindowsNeoHoverHalo(
-        borderRadius: tokens.cardRadius,
-        active: _focused,
-        child: AnimatedContainer(
-          duration: context.windowsNeoDuration(tokens.motionFast),
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: highlighted ? tokens.surfaceRaised : tokens.surface,
-            borderRadius: tokens.cardRadius,
-            border: Border.all(
-              color: highlighted
-                  ? tokens.accent.withValues(alpha: 0.34)
-                  : tokens.border.withValues(alpha: 0.40),
-            ),
-            boxShadow: highlighted ? tokens.cardHoverShadow : tokens.cardShadow,
-          ),
-          child: Stack(
-            fit: StackFit.passthrough,
-            children: [
-              Material(
-                color: Colors.transparent,
-                borderRadius: tokens.cardRadius,
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: widget.onTap,
-                  onLongPress: widget.onLongPress,
-                  onSecondaryTap: widget.onSecondaryTap,
-                  onSecondaryTapUp: widget.onSecondaryTapUp,
-                  onFocusChange: (focused) {
-                    if (_focused != focused) setState(() => _focused = focused);
-                  },
-                  focusColor: tokens.accentSoft,
-                  splashColor: tokens.accent.withValues(alpha: 0.06),
-                  highlightColor: tokens.accentSoft,
-                  child: widget.child,
-                ),
+      child: AnimatedScale(
+        scale: _pressed && !context.windowsNeoReduceMotion ? 0.988 : 1.0,
+        duration: context.windowsNeoDuration(const Duration(milliseconds: 80)),
+        curve: Curves.easeOutCubic,
+        child: WindowsNeoHoverHalo(
+          borderRadius: tokens.cardRadius,
+          active: _focused,
+          overlaySurface: false,
+          child: AnimatedContainer(
+            duration: context.windowsNeoDuration(tokens.motionFast),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              color: highlighted ? tokens.surfaceRaised : tokens.surface,
+              borderRadius: tokens.cardRadius,
+              border: Border.all(
+                color: highlighted
+                    ? tokens.accentBorder.withValues(alpha: 0.62)
+                    : tokens.border.withValues(alpha: 0.36),
               ),
-              Positioned(
-                top: 0,
-                left: tokens.spaceLg,
-                right: tokens.spaceLg,
-                height: highlighted ? 2 : 1,
-                child: IgnorePointer(
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween<double>(
-                      begin: 0.28,
-                      end: highlighted ? 1 : 0.28,
-                    ),
-                    duration: context.windowsNeoDuration(tokens.motionFast),
-                    curve: Curves.easeOutCubic,
-                    builder: (context, widthFactor, child) => Align(
-                      alignment: Alignment.centerLeft,
-                      child: FractionallySizedBox(
-                        widthFactor: widthFactor,
-                        child: AnimatedOpacity(
-                          duration: context.windowsNeoDuration(
-                            tokens.motionFast,
+              boxShadow: highlighted ? tokens.cardHoverShadow : tokens.cardShadow,
+            ),
+            child: Stack(
+              fit: StackFit.passthrough,
+              children: [
+                Material(
+                  color: Colors.transparent,
+                  borderRadius: tokens.cardRadius,
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: widget.onTap,
+                    onTapDown: widget.onTap != null
+                        ? (_) => _setPressed(true)
+                        : null,
+                    onTapUp: widget.onTap != null
+                        ? (_) => _setPressed(false)
+                        : null,
+                    onTapCancel: widget.onTap != null
+                        ? () => _setPressed(false)
+                        : null,
+                    onLongPress: widget.onLongPress,
+                    onSecondaryTap: widget.onSecondaryTap,
+                    onSecondaryTapUp: widget.onSecondaryTapUp,
+                    onFocusChange: (focused) {
+                      if (_focused != focused) setState(() => _focused = focused);
+                    },
+                    focusColor: tokens.accentSoft,
+                    splashColor: tokens.accent.withValues(alpha: 0.06),
+                    highlightColor: tokens.accentSoft,
+                    child: widget.child,
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  left: tokens.spaceLg,
+                  right: tokens.spaceLg,
+                  height: highlighted ? 2 : 1,
+                  child: IgnorePointer(
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(
+                        begin: 0.24,
+                        end: highlighted ? 1 : 0.24,
+                      ),
+                      duration: context.windowsNeoDuration(tokens.motionFast),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, widthFactor, child) => Align(
+                        alignment: Alignment.centerLeft,
+                        child: FractionallySizedBox(
+                          widthFactor: widthFactor,
+                          child: AnimatedOpacity(
+                            duration: context.windowsNeoDuration(
+                              tokens.motionFast,
+                            ),
+                            opacity: highlighted ? 0.88 : 0.18,
+                            child: child,
                           ),
-                          opacity: highlighted ? 0.82 : 0.42,
-                          child: child,
                         ),
                       ),
-                    ),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: tokens.cardAccentGradient,
-                        borderRadius: BorderRadius.vertical(
-                          bottom: Radius.circular(
-                            tokens.family == WindowsNeoThemeFamily.miku ? 2 : 0,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: tokens.cardAccentGradient,
+                          borderRadius: BorderRadius.vertical(
+                            bottom: Radius.circular(
+                              tokens.family == WindowsNeoThemeFamily.miku
+                                  ? 2
+                                  : 0,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

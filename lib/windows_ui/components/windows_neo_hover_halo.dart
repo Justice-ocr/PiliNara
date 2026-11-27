@@ -10,12 +10,16 @@ class WindowsNeoHoverHalo extends StatefulWidget {
     required this.borderRadius,
     this.enabled = true,
     this.active = false,
+    this.overlaySurface = true,
   });
 
   final Widget child;
   final BorderRadius borderRadius;
   final bool enabled;
   final bool active;
+  /// When false, avoids painting a translucent gradient veil over media covers
+  /// while keeping subtle container elevation/focus cues intact.
+  final bool overlaySurface;
 
   @override
   State<WindowsNeoHoverHalo> createState() => _WindowsNeoHoverHaloState();
@@ -95,15 +99,16 @@ class _WindowsNeoHoverHaloState extends State<WindowsNeoHoverHalo> {
     final boxShadow = switch (tokens.family) {
       WindowsNeoThemeFamily.miku || WindowsNeoThemeFamily.popucom => [
         BoxShadow(
-          color: tokens.accent.withValues(alpha: haloAlpha),
-          blurRadius: 16,
-          spreadRadius: 1,
+          color: Colors.black.withValues(alpha: isDark ? 0.24 : 0.06),
+          blurRadius: 14,
+          offset: const Offset(0, 4),
         ),
       ],
       WindowsNeoThemeFamily.exAstris => [
         BoxShadow(
-          color: tokens.accent.withValues(alpha: haloAlpha * 0.42),
+          color: Colors.black.withValues(alpha: isDark ? 0.26 : 0.06),
           blurRadius: 12,
+          offset: const Offset(0, 3),
         ),
       ],
       _ => const <BoxShadow>[],
@@ -117,24 +122,26 @@ class _WindowsNeoHoverHaloState extends State<WindowsNeoHoverHalo> {
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           borderRadius: widget.borderRadius,
-          boxShadow: visible ? boxShadow : const [],
+          boxShadow: visible && widget.overlaySurface ? boxShadow : const [],
         ),
-        child: Stack(
-          fit: StackFit.passthrough,
-          children: [
-            widget.child,
-            Positioned.fill(
-              child: IgnorePointer(
-                child: AnimatedOpacity(
-                  duration: context.windowsNeoDuration(tokens.motionFast),
-                  curve: Curves.easeOutCubic,
-                  opacity: visible ? 1 : 0,
-                  child: DecoratedBox(decoration: decoration),
-                ),
-              ),
-            ),
-          ],
-        ),
+        child: widget.overlaySurface
+            ? Stack(
+                fit: StackFit.passthrough,
+                children: [
+                  widget.child,
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: AnimatedOpacity(
+                        duration: context.windowsNeoDuration(tokens.motionFast),
+                        curve: Curves.easeOutCubic,
+                        opacity: visible ? 1 : 0,
+                        child: DecoratedBox(decoration: decoration),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : widget.child,
       ),
     );
   }

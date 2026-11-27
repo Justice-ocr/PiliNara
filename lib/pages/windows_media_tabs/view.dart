@@ -70,6 +70,8 @@ import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/services/windows_video_tab_service.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/windows_ui/components/windows_back_shortcut_listener.dart';
+import 'package:PiliPlus/windows_ui/components/windows_neo_media_meta.dart';
+import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
 import 'package:PiliPlus/windows_ui/shell/windows_neo_shell.dart';
 import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:material_ui/material_ui.dart';
@@ -189,39 +191,156 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
       context: context,
       barrierDismissible: false,
       builder: (context) => Obx(() {
+        final tokens = context.windowsNeo;
+        final theme = Theme.of(context);
         final candidates = WindowsVideoTabService.tabs
             .where(WindowsVideoTabService.isSplitCandidate)
             .toList(growable: false);
+        final draftIds = WindowsVideoTabService.splitDraftTabIds;
         final canApply = WindowsVideoTabService.canApplySplitSelection;
         return AlertDialog(
-          title: const Text('选择分屏标签'),
+          title: Row(
+            children: [
+              Container(width: 3, height: 18, color: tokens.accentInk),
+              const SizedBox(width: 8),
+              const Text('分屏工作台'),
+              const Spacer(),
+              WindowsNeoTag(
+                text: '${draftIds.length} / 4',
+                tone: canApply
+                    ? WindowsNeoTagTone.accent
+                    : WindowsNeoTagTone.neutral,
+              ),
+            ],
+          ),
           content: SizedBox(
-            width: 440,
+            width: 480,
             child: candidates.isEmpty
-                ? const Center(child: Text('请先打开视频或直播标签'))
-                : ListView(
-                    shrinkWrap: true,
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 28),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.splitscreen_outlined,
+                          size: 36,
+                          color: tokens.muted,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          '请先打开至少 2 个视频或直播标签页',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: tokens.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      for (final item in candidates)
-                        CheckboxListTile(
-                          value: WindowsVideoTabService.splitDraftTabIds
-                              .contains(item.id),
-                          dense: true,
-                          controlAffinity: ListTileControlAffinity.leading,
-                          title: Text(
-                            item.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Text(
-                            item.type == WindowsMediaTabType.live ? '直播' : '视频',
-                          ),
-                          onChanged: (value) {
-                            if (value != null) {
-                              WindowsVideoTabService.toggleSplitDraft(item.id);
-                            }
+                      _SplitLayoutPreview(count: draftIds.length),
+                      const SizedBox(height: 12),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 260),
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: candidates.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 6),
+                          itemBuilder: (context, index) {
+                            final item = candidates[index];
+                            final selectedIndex = draftIds.indexOf(item.id);
+                            final selected = selectedIndex != -1;
+                            final isLive =
+                                item.type == WindowsMediaTabType.live;
+                            return Material(
+                              color: selected
+                                  ? tokens.accentSurface
+                                  : tokens.surfaceRaised,
+                              borderRadius: tokens.actionRadius,
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: () =>
+                                    WindowsVideoTabService.toggleSplitDraft(
+                                      item.id,
+                                    ),
+                                hoverColor: tokens.hover,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: tokens.actionRadius,
+                                    border: Border.all(
+                                      color: selected
+                                          ? tokens.accentBorder
+                                          : tokens.border.withValues(
+                                              alpha: 0.45,
+                                            ),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 22,
+                                        height: 22,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: selected
+                                              ? tokens.accentFill
+                                              : tokens.background,
+                                          borderRadius: tokens.mediaBadgeRadius,
+                                          border: Border.all(
+                                            color: selected
+                                                ? tokens.accentBorder
+                                                : tokens.border,
+                                          ),
+                                        ),
+                                        child: selected
+                                            ? Text(
+                                                '${selectedIndex + 1}',
+                                                style: TextStyle(
+                                                  color: tokens.onAccentFill,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w800,
+                                                  fontFamilyFallback: tokens
+                                                      .displayFontFallback,
+                                                ),
+                                              )
+                                            : null,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          item.title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(
+                                                color: tokens.ink,
+                                                fontWeight: selected
+                                                    ? FontWeight.w600
+                                                    : FontWeight.w400,
+                                              ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      WindowsNeoTag(
+                                        text: isLive ? '直播' : '视频',
+                                        tone: isLive
+                                            ? WindowsNeoTagTone.outline
+                                            : WindowsNeoTagTone.neutral,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
                           },
                         ),
+                      ),
                     ],
                   ),
           ),
@@ -247,7 +366,7 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
                     }
                   : null,
               child: Text(
-                '开始分屏${WindowsVideoTabService.splitDraftTabIds.length}/4',
+                '开始分屏 ${draftIds.length}/4',
               ),
             ),
           ],
@@ -951,6 +1070,140 @@ class _SplitDivider {
   final double start;
   final double length;
   final double ratio;
+}
+
+class _SplitLayoutPreview extends StatelessWidget {
+  const _SplitLayoutPreview({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.windowsNeo;
+    final theme = Theme.of(context);
+    final layoutLabel = switch (count) {
+      2 => '双栏并排（1 : 1）',
+      3 => '主副三屏（左 1 + 右 2）',
+      4 => '四宫格监控（2 × 2）',
+      _ => '请选择 2–4 个标签组成桌面分屏',
+    };
+
+    Widget pane(int index, {bool active = true}) => DecoratedBox(
+      decoration: BoxDecoration(
+        color: active ? tokens.accentSurface : tokens.background,
+        borderRadius: tokens.mediaBadgeRadius,
+        border: Border.all(
+          color: active
+              ? tokens.accentBorder.withValues(alpha: 0.72)
+              : tokens.border.withValues(alpha: 0.45),
+        ),
+      ),
+      child: Center(
+        child: Text(
+          active ? '$index' : '—',
+          style: TextStyle(
+            color: active ? tokens.accentInk : tokens.muted,
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            fontFamilyFallback: tokens.displayFontFallback,
+          ),
+        ),
+      ),
+    );
+
+    final preview = switch (count) {
+      2 => Row(
+        children: [
+          Expanded(child: pane(1)),
+          const SizedBox(width: 4),
+          Expanded(child: pane(2)),
+        ],
+      ),
+      3 => Row(
+        children: [
+          Expanded(child: pane(1)),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Column(
+              children: [
+                Expanded(child: pane(2)),
+                const SizedBox(height: 4),
+                Expanded(child: pane(3)),
+              ],
+            ),
+          ),
+        ],
+      ),
+      4 => Column(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: pane(1)),
+                const SizedBox(width: 4),
+                Expanded(child: pane(2)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: pane(3)),
+                const SizedBox(width: 4),
+                Expanded(child: pane(4)),
+              ],
+            ),
+          ),
+        ],
+      ),
+      _ => Row(
+        children: [
+          Expanded(child: pane(1, active: count >= 1)),
+          const SizedBox(width: 4),
+          Expanded(child: pane(2, active: false)),
+        ],
+      ),
+    };
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.background,
+        borderRadius: tokens.actionRadius,
+        border: Border.all(color: tokens.border.withValues(alpha: 0.45)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Row(
+          children: [
+            SizedBox(width: 112, height: 58, child: preview),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '布局预览',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: tokens.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    layoutLabel,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: tokens.ink,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _UnknownWindowsTabRoute extends StatelessWidget {

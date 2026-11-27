@@ -183,23 +183,25 @@ class _WindowsNeoLiveCardState extends State<WindowsNeoLiveCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) => Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    AnimatedScale(
-                      scale: _hovered ? 1.018 : 1,
-                      duration: context.windowsNeoDuration(tokens.motionFast),
-                      curve: Curves.easeOutCubic,
-                      child: NetworkImgLayer(
-                        src: widget.showFirstFrame
-                            ? item.systemCover
-                            : item.cover,
-                        width: constraints.maxWidth,
-                        height: constraints.maxHeight,
-                        type: .emote,
+              child: ClipRect(
+                child: LayoutBuilder(
+                  builder: (context, constraints) => Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      AnimatedScale(
+                        scale: _hovered ? 1.024 : 1,
+                        duration: context.windowsNeoDuration(tokens.motionFast),
+                        curve: Curves.easeOutCubic,
+                        child: NetworkImgLayer(
+                          src: widget.showFirstFrame
+                              ? item.systemCover
+                              : item.cover,
+                          width: constraints.maxWidth,
+                          height: constraints.maxHeight,
+                          type: .emote,
+                        ),
                       ),
-                    ),
+                      const WindowsNeoCoverScrim(),
                     if (item.feedback?.isNotEmpty == true)
                       Positioned(
                         top: 8,
@@ -248,6 +250,7 @@ class _WindowsNeoLiveCardState extends State<WindowsNeoLiveCard> {
                     ),
                   ],
                 ),
+              ),
               ),
             ),
             const WindowsNeoMediaDivider(),

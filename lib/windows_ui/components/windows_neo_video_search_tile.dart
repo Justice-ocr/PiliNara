@@ -1,9 +1,7 @@
-import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/progress_bar/video_progress_indicator.dart';
 import 'package:PiliPlus/common/widgets/video_popup_menu.dart';
 import 'package:PiliPlus/http/search.dart';
-import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models/common/stat_type.dart';
 import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
@@ -90,54 +88,67 @@ class _WindowsNeoVideoSearchTileState extends State<WindowsNeoVideoSearchTile> {
     return SizedBox(
       width: width,
       height: height,
-      child: Stack(
-        children: [
-          const SizedBox.expand(),
-          AnimatedScale(
-            scale: _hovered ? 1.018 : 1,
-            duration: context.windowsNeoDuration(
-              context.windowsNeo.motionFast,
-            ),
-            curve: Curves.easeOutCubic,
-            child: NetworkImgLayer(
-              src: videoItem.cover,
-              width: width,
-              height: height,
-              borderRadius: context.windowsNeo.cardRadius,
-            ),
-          ),
-          if (videoItem.badge case final badge?)
-            PBadge(text: badge, top: 6, left: 6, type: PBadgeType.primary),
-          if (progress != null && progress != 0) ...[
-            Positioned(
-              right: 6,
-              bottom: 7,
-              child: WindowsNeoMediaBadge(
-                text: progress == -1
-                    ? '已看完'
-                    : '${DurationUtils.formatDuration(progress)}/'
-                        '${DurationUtils.formatDuration(videoItem.duration)}',
+      child: ClipRRect(
+        borderRadius: tokens.cardRadius,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            AnimatedScale(
+              scale: _hovered ? 1.024 : 1,
+              duration: context.windowsNeoDuration(
+                tokens.motionFast,
+              ),
+              curve: Curves.easeOutCubic,
+              child: NetworkImgLayer(
+                src: videoItem.cover,
+                width: width,
+                height: height,
+                borderRadius: BorderRadius.zero,
               ),
             ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: VideoProgressIndicator(
-                color: tokens.accent,
-                backgroundColor: tokens.border,
-                progress: progress == -1 ? 1 : progress / videoItem.duration,
+            const WindowsNeoCoverScrim(),
+            if (videoItem.badge case final badge?)
+              Positioned(
+                top: 6,
+                left: 6,
+                child: WindowsNeoTag(
+                  text: badge,
+                  tone: badge == '充电专属'
+                      ? WindowsNeoTagTone.danger
+                      : WindowsNeoTagTone.accent,
+                ),
               ),
-            ),
-          ] else if (videoItem.duration > 0)
-            Positioned(
-              right: 6,
-              bottom: 6,
-              child: WindowsNeoMediaBadge(
-                text: DurationUtils.formatDuration(videoItem.duration),
+            if (progress != null && progress != 0) ...[
+              Positioned(
+                right: 6,
+                bottom: 7,
+                child: WindowsNeoMediaBadge(
+                  text: progress == -1
+                      ? '已看完'
+                      : '${DurationUtils.formatDuration(progress)}/'
+                          '${DurationUtils.formatDuration(videoItem.duration)}',
+                ),
               ),
-            ),
-        ],
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: VideoProgressIndicator(
+                  color: tokens.accent,
+                  backgroundColor: tokens.border,
+                  progress: progress == -1 ? 1 : progress / videoItem.duration,
+                ),
+              ),
+            ] else if (videoItem.duration > 0)
+              Positioned(
+                right: 6,
+                bottom: 6,
+                child: WindowsNeoMediaBadge(
+                  text: DurationUtils.formatDuration(videoItem.duration),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -158,9 +169,16 @@ class _WindowsNeoVideoSearchTileState extends State<WindowsNeoVideoSearchTile> {
                   .map(
                     (part) => TextSpan(
                       text: part.text,
-                      style: TextStyle(
-                        color: part.isEm ? tokens.accent : tokens.ink,
-                      ),
+                      style: part.isEm
+                          ? TextStyle(
+                              color: tokens.accentInk,
+                              fontWeight: FontWeight.w700,
+                              backgroundColor: !tokens.isDarkSurface &&
+                                      tokens.accent.computeLuminance() > 0.65
+                                  ? tokens.accent.withValues(alpha: 0.36)
+                                  : null,
+                            )
+                          : TextStyle(color: tokens.ink),
                     ),
                   )
                   .toList(),

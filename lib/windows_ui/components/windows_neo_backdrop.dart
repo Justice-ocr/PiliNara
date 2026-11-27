@@ -11,13 +11,19 @@ class WindowsNeoBackdrop extends StatelessWidget {
     final tokens = context.windowsNeo;
     final dark = Theme.of(context).brightness == Brightness.dark;
     final artworkAsset = tokens.family.backdropAsset;
+    final artworkOpacity = switch (tokens.depth) {
+      WindowsNeoThemeDepth.minimal => 0.0,
+      WindowsNeoThemeDepth.moderate => dark ? 0.08 : 0.06,
+      WindowsNeoThemeDepth.complex => dark ? 0.12 : 0.09,
+      WindowsNeoThemeDepth.maximal => dark ? 0.15 : 0.11,
+    };
     return Stack(
       children: [
-        if (artworkAsset != null) ...[
+        if (artworkAsset != null && artworkOpacity > 0) ...[
           Positioned.fill(
             child: IgnorePointer(
               child: Opacity(
-                opacity: dark ? 0.16 : 0.11,
+                opacity: artworkOpacity,
                 child: Image.asset(
                   artworkAsset,
                   fit: BoxFit.cover,
@@ -35,9 +41,9 @@ class WindowsNeoBackdrop extends StatelessWidget {
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                     colors: [
-                      tokens.background.withValues(alpha: 0.78),
-                      tokens.background.withValues(alpha: 0.48),
-                      tokens.background.withValues(alpha: 0.70),
+                      tokens.background.withValues(alpha: 0.84),
+                      tokens.background.withValues(alpha: 0.56),
+                      tokens.background.withValues(alpha: 0.72),
                     ],
                     stops: const [0, 0.46, 1],
                   ),
@@ -46,25 +52,26 @@ class WindowsNeoBackdrop extends StatelessWidget {
             ),
           ),
         ],
-        if (tokens.family == WindowsNeoThemeFamily.miku)
+        if (tokens.depth != WindowsNeoThemeDepth.minimal ||
+            tokens.family == WindowsNeoThemeFamily.miku)
           Positioned.fill(
             child: IgnorePointer(
               child: CustomPaint(
                 painter: _WindowsNeoDotGrid(
-                  dotColor: tokens.accent.withValues(
+                  dotColor: tokens.accentInk.withValues(
                     alpha: dark ? 0.045 : 0.055,
                   ),
-                  watermarkColor: tokens.accent.withValues(
-                    alpha: dark ? 0.09 : 0.045,
+                  watermarkColor: tokens.accentInk.withValues(
+                    alpha: dark ? 0.075 : 0.038,
                   ),
-                  motifColor: tokens.stageMotifColor.withValues(
-                    alpha: dark ? 0.065 : 0.045,
-                  ),
+                  motifColor: (dark ? tokens.stageMotifColor : tokens.accentInk)
+                      .withValues(alpha: dark ? 0.08 : 0.06),
                   backdropPattern: tokens.identity.backdropPattern,
                   family: tokens.family,
                   depth: tokens.depth,
                   shellMark: tokens.shellMark,
                   shellWordmark: tokens.shellWordmark,
+                  hasArtwork: artworkAsset != null,
                 ),
               ),
             ),
@@ -85,6 +92,7 @@ class _WindowsNeoDotGrid extends CustomPainter {
     required this.depth,
     required this.shellMark,
     required this.shellWordmark,
+    this.hasArtwork = false,
   });
 
   final Color dotColor;
@@ -95,6 +103,7 @@ class _WindowsNeoDotGrid extends CustomPainter {
   final WindowsNeoThemeDepth depth;
   final String shellMark;
   final String shellWordmark;
+  final bool hasArtwork;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -108,7 +117,9 @@ class _WindowsNeoDotGrid extends CustomPainter {
       return;
     }
 
-    _paintFamilyWordmarks(canvas, size);
+    if (!hasArtwork && depth == WindowsNeoThemeDepth.maximal) {
+      _paintFamilyWordmarks(canvas, size);
+    }
 
     if (depth == WindowsNeoThemeDepth.moderate) {
       _paintModerateRule(canvas, size);
@@ -467,5 +478,6 @@ class _WindowsNeoDotGrid extends CustomPainter {
       oldDelegate.family != family ||
       oldDelegate.depth != depth ||
       oldDelegate.shellMark != shellMark ||
-      oldDelegate.shellWordmark != shellWordmark;
+      oldDelegate.shellWordmark != shellWordmark ||
+      oldDelegate.hasArtwork != hasArtwork;
 }

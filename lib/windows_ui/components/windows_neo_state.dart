@@ -48,13 +48,14 @@ class WindowsNeoSliverState extends StatelessWidget {
                       Text(
                         tokens.shellMark,
                         style: textTheme.displayLarge?.copyWith(
-                          color: tokens.accent.withValues(alpha: 0.07),
+                          color: tokens.accentInk.withValues(alpha: 0.08),
                           fontSize: 92,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 0,
+                          fontFamilyFallback: tokens.displayFontFallback,
                         ),
                       ),
-                      Icon(icon, size: 38, color: tokens.accent),
+                      Icon(icon, size: 38, color: tokens.accentInk),
                     ],
                   ),
                   const SizedBox(

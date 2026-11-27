@@ -1,4 +1,3 @@
-import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_v.dart';
@@ -44,9 +43,9 @@ class _WindowsNeoVideoCardVState extends State<WindowsNeoVideoCardV> {
       context,
     ).scale(tokens.videoCardMetaHeight);
     final coverScale = switch (tokens.family) {
-      WindowsNeoThemeFamily.miku || WindowsNeoThemeFamily.popucom => 1.02,
-      WindowsNeoThemeFamily.exAstris => 1.01,
-      _ => 1.0,
+      WindowsNeoThemeFamily.miku || WindowsNeoThemeFamily.popucom => 1.03,
+      WindowsNeoThemeFamily.exAstris => 1.02,
+      _ => 1.015,
     };
 
     void saveCover() => imageSaveDialog(
@@ -80,48 +79,48 @@ class _WindowsNeoVideoCardVState extends State<WindowsNeoVideoCardV> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  LayoutBuilder(
-                    builder: (context, constraints) => AnimatedScale(
-                      scale: _hovered ? coverScale : 1,
-                      duration: context.windowsNeoDuration(tokens.motionFast),
-                      curve: Curves.easeOut,
-                      child: NetworkImgLayer(
-                        src: item.cover,
-                        width: constraints.maxWidth,
-                        height: constraints.maxHeight,
-                        borderRadius: BorderRadius.zero,
+              child: ClipRect(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    LayoutBuilder(
+                      builder: (context, constraints) => AnimatedScale(
+                        scale: _hovered ? coverScale : 1,
+                        duration: context.windowsNeoDuration(tokens.motionFast),
+                        curve: Curves.easeOutCubic,
+                        child: NetworkImgLayer(
+                          src: item.cover,
+                          width: constraints.maxWidth,
+                          height: constraints.maxHeight,
+                          borderRadius: BorderRadius.zero,
+                        ),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    left: tokens.spaceSm,
-                    right: tokens.spaceSm,
-                    bottom: 7,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        if (item.duration > 0)
-                          WindowsNeoMediaBadge(
-                            text: DurationUtils.formatDuration(item.duration),
-                          ),
-                        const Spacer(),
-                        if (item case RcmdVideoItemAppModel(
-                          :final canPlay,
-                        ) when canPlay != 1)
-                          const PBadge(
-                            text: '\u5145\u7535\u4e13\u5c5e',
-                            isStack: false,
-                            size: .small,
-                            type: .error,
-                            fontSize: 10,
-                          ),
-                      ],
+                    const WindowsNeoCoverScrim(),
+                    Positioned(
+                      left: tokens.spaceSm,
+                      right: tokens.spaceSm,
+                      bottom: 7,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (item.duration > 0)
+                            WindowsNeoMediaBadge(
+                              text: DurationUtils.formatDuration(item.duration),
+                            ),
+                          const Spacer(),
+                          if (item case RcmdVideoItemAppModel(
+                            :final canPlay,
+                          ) when canPlay != 1)
+                            const WindowsNeoTag(
+                              text: '\u5145\u7535\u4e13\u5c5e',
+                              tone: WindowsNeoTagTone.danger,
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const WindowsNeoMediaDivider(),
@@ -131,21 +130,18 @@ class _WindowsNeoVideoCardVState extends State<WindowsNeoVideoCardV> {
                 padding: EdgeInsets.fromLTRB(
                   tokens.spaceSm + 2,
                   tokens.spaceSm,
-                  tokens.spaceXs,
+                  tokens.spaceSm + 2,
                   tokens.spaceSm - 1,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 26),
-                        child: Text(
-                          item.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: tokens.cardTitleStyle(theme.textTheme),
-                        ),
+                      child: Text(
+                        item.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: tokens.cardTitleStyle(theme.textTheme),
                       ),
                     ),
                     Row(
@@ -276,37 +272,31 @@ class _OwnerAndReason extends StatelessWidget {
     return Row(
       children: [
         if (item.goto == 'bangumi' && item.pgcBadge?.isNotEmpty == true) ...[
-          PBadge(
-            text: item.pgcBadge,
-            isStack: false,
-            size: .small,
-            type: .line_primary,
-            fontSize: 9,
+          WindowsNeoTag(
+            text: item.pgcBadge!,
+            tone: WindowsNeoTagTone.outline,
+            fontSize: 9.5,
           ),
           SizedBox(width: tokens.spaceXs + 1),
         ] else if (item.goto == 'picture') ...[
-          const PBadge(
+          const WindowsNeoTag(
             text: '\u52a8\u6001',
-            isStack: false,
-            size: .small,
-            type: .line_primary,
-            fontSize: 9,
+            tone: WindowsNeoTagTone.outline,
+            fontSize: 9.5,
           ),
           SizedBox(width: tokens.spaceXs + 1),
         ] else if (reason?.isNotEmpty == true) ...[
-          PBadge(
-            text: reason,
-            isStack: false,
-            size: .small,
-            type: .secondary,
+          WindowsNeoTag(
+            text: reason!,
+            tone: WindowsNeoTagTone.accent,
+            fontSize: 9.5,
           ),
           SizedBox(width: tokens.spaceXs + 1),
         ] else if (item.isFollowed) ...[
-          const PBadge(
+          const WindowsNeoTag(
             text: '\u5df2\u5173\u6ce8',
-            isStack: false,
-            size: .small,
-            type: .secondary,
+            tone: WindowsNeoTagTone.accent,
+            fontSize: 9.5,
           ),
           SizedBox(width: tokens.spaceXs + 1),
         ],

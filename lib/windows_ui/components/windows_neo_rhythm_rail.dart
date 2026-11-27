@@ -56,14 +56,6 @@ class WindowsNeoActiveBeat extends StatelessWidget {
         borderRadius: BorderRadius.circular(
           tokens.family == WindowsNeoThemeFamily.miku ? height : 0,
         ),
-        boxShadow: active
-            ? [
-                BoxShadow(
-                  color: tokens.accent.withValues(alpha: 0.22),
-                  blurRadius: 6,
-                ),
-              ]
-            : const [],
       ),
     );
   }

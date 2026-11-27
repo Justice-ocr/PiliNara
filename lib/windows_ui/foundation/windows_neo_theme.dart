@@ -267,6 +267,8 @@ abstract final class WindowsNeoThemeRegistry {
       muted: isDark ? const Color(0xFFA9B9BE) : const Color(0xFF5F747A),
       hover: isDark ? const Color(0xFF34464D) : const Color(0xFFD8ECE9),
       accent: accent,
+      accentInk: isDark ? const Color(0xFF4FE0D6) : const Color(0xFF0F8C84),
+      accentBorder: isDark ? const Color(0xFF4FE0D6) : const Color(0xFF24A89F),
       accentSurface: Color.alphaBlend(
         accent.withValues(alpha: isDark ? 0.22 : 0.12),
         surface,
@@ -301,6 +303,8 @@ abstract final class WindowsNeoThemeRegistry {
       muted: isDark ? const Color(0xFFBDBDB5) : const Color(0xFF595952),
       hover: isDark ? const Color(0xFF2C2C29) : const Color(0xFFE0E0D9),
       accent: accent,
+      accentInk: isDark ? accent : const Color(0xFF6B6500),
+      accentBorder: isDark ? const Color(0xFFE6E100) : const Color(0xFF8C8500),
       accentSurface: Color.alphaBlend(
         accent.withValues(alpha: isDark ? 0.18 : 0.34),
         surface,
@@ -343,6 +347,8 @@ abstract final class WindowsNeoThemeRegistry {
       muted: isDark ? const Color(0xFFAFC0C3) : const Color(0xFF506165),
       hover: isDark ? const Color(0xFF1D3035) : const Color(0xFFD7E9EC),
       accent: accent,
+      accentInk: isDark ? const Color(0xFF38DBFF) : const Color(0xFF007EA3),
+      accentBorder: isDark ? const Color(0xFF38DBFF) : const Color(0xFF0095BF),
       accentSurface: Color.alphaBlend(
         accent.withValues(alpha: isDark ? 0.20 : 0.12),
         surface,
@@ -384,6 +390,8 @@ abstract final class WindowsNeoThemeRegistry {
       muted: isDark ? const Color(0xFFB8BAD2) : const Color(0xFF595B72),
       hover: isDark ? const Color(0xFF20254A) : const Color(0xFFDDECEF),
       accent: accent,
+      accentInk: isDark ? const Color(0xFF5CF7E9) : const Color(0xFF147A72),
+      accentBorder: isDark ? const Color(0xFF5CF7E9) : const Color(0xFF2B9A91),
       accentSurface: Color.alphaBlend(
         accent.withValues(alpha: isDark ? 0.16 : 0.10),
         surface,
@@ -425,6 +433,8 @@ abstract final class WindowsNeoThemeRegistry {
       muted: isDark ? const Color(0xFFD1D1CC) : const Color(0xFF59636D),
       hover: isDark ? const Color(0xFF3A414D) : const Color(0xFFFFEDB0),
       accent: accent,
+      accentInk: isDark ? const Color(0xFFFFD43B) : const Color(0xFF9C6200),
+      accentBorder: isDark ? const Color(0xFFFFD43B) : const Color(0xFFD48800),
       accentSurface: Color.alphaBlend(
         accent.withValues(alpha: isDark ? 0.18 : 0.32),
         surface,
@@ -465,6 +475,8 @@ abstract final class WindowsNeoThemeRegistry {
       muted: isDark ? const Color(0xFFC6C6C6) : const Color(0xFF4F4F4F),
       hover: isDark ? const Color(0xFF242424) : const Color(0xFFE8F092),
       accent: accent,
+      accentInk: isDark ? accent : const Color(0xFF111111),
+      accentBorder: isDark ? const Color(0xFFDCE600) : const Color(0xFF3A3A3A),
       accentSurface: Color.alphaBlend(
         accent.withValues(alpha: isDark ? 0.15 : 0.28),
         surface,
@@ -527,6 +539,8 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     required this.muted,
     required this.hover,
     required this.accent,
+    Color? accentInk,
+    Color? accentBorder,
     required this.accentSurface,
     required this.accentSoft,
     required this.ink,
@@ -552,7 +566,8 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     this.motionPage = const Duration(milliseconds: 240),
     this.motionLoading = const Duration(milliseconds: 1100),
     this.motionStagger = const Duration(milliseconds: 28),
-  });
+  }) : accentInk = accentInk ?? accent,
+       accentBorder = accentBorder ?? accent;
 
   /// Miku's cyan anchor, with ice-blue and sakura accents used sparingly.
   static const Color mikuCyan = Color(0xFF39C5BB);
@@ -579,12 +594,23 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
   final Color muted;
   final Color hover;
   final Color accent;
+  /// High-contrast foreground accent suitable for light/dark text & icons.
+  final Color accentInk;
+  /// Calibrated accent stroke for card hover borders and outline badges.
+  final Color accentBorder;
   final Color accentSurface;
   final Color accentSoft;
   final Color ink;
   final Color secondaryAccent;
   final Color tertiaryAccent;
   final Color bannerAccentEnd;
+
+  bool get isDarkSurface => surface.computeLuminance() < 0.14;
+  Color get accentFill => accent;
+  Color get onAccentFill =>
+      accent.computeLuminance() > 0.50 ? const Color(0xFF111111) : Colors.white;
+  /// Uses a light highlight tint on dark chrome and calibrated ink on light.
+  Color get chromeAccent => usesDarkChrome ? accent : accentInk;
 
   final double radiusSm;
   final double radiusMd;
@@ -658,34 +684,64 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
 
   List<String> get displayFontFallback => switch (family) {
         WindowsNeoThemeFamily.ark => const [
+            'Bahnschrift',
             'Arial Narrow',
+            'Segoe UI Variable Display',
             'Roboto Condensed',
             'DIN Condensed',
+            'Microsoft YaHei UI',
           ],
         WindowsNeoThemeFamily.endfield => const [
+            'Bahnschrift',
+            'Segoe UI Variable Display',
             'Space Grotesk',
-            'IBM Plex Sans'
+            'IBM Plex Sans',
+            'Microsoft YaHei UI',
           ],
         WindowsNeoThemeFamily.exAstris => const [
+            'Georgia',
             'Noto Serif SC',
             'Source Han Serif SC',
+            'STSong',
             'serif',
+            'Microsoft YaHei UI',
           ],
-        WindowsNeoThemeFamily.popucom => const ['Noto Sans SC', 'PingFang SC'],
+        WindowsNeoThemeFamily.popucom => const [
+            'Segoe UI Variable Display',
+            'Noto Sans SC',
+            'Microsoft YaHei UI',
+            'PingFang SC',
+          ],
         WindowsNeoThemeFamily.corporate => const [
+            'Bahnschrift',
+            'Segoe UI Variable Display',
             'Space Grotesk',
-            'IBM Plex Sans'
+            'IBM Plex Sans',
+            'Microsoft YaHei UI',
           ],
-        WindowsNeoThemeFamily.miku => const ['Noto Sans SC', 'PingFang SC'],
+        WindowsNeoThemeFamily.miku => const [
+            'Segoe UI Variable Display',
+            'Noto Sans SC',
+            'Microsoft YaHei UI',
+            'PingFang SC',
+          ],
       };
 
   List<String> get uiFontFallback => switch (family) {
         WindowsNeoThemeFamily.exAstris => const [
+            'Segoe UI Variable Text',
             'Noto Sans SC',
             'Source Han Sans SC',
+            'Microsoft YaHei UI',
             'sans-serif',
           ],
-        _ => const ['Noto Sans SC', 'Source Han Sans SC', 'PingFang SC'],
+        _ => const [
+            'Segoe UI Variable Text',
+            'Noto Sans SC',
+            'Source Han Sans SC',
+            'Microsoft YaHei UI',
+            'PingFang SC',
+          ],
       };
 
   Color get chromeSurface => switch (family) {
@@ -720,19 +776,33 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
 
   List<BoxShadow> get cardShadow => [
         BoxShadow(
-          color: ink.withValues(
-            alpha: identity.usesSquaredGeometry ? 0.055 : 0.065,
+          color: Colors.black.withValues(
+            alpha: isDarkSurface
+                ? (identity.usesSquaredGeometry ? 0.22 : 0.26)
+                : (identity.usesSquaredGeometry ? 0.045 : 0.055),
           ),
-          blurRadius: identity.usesSquaredGeometry ? 12 : 18,
-          offset: Offset(0, identity.usesSquaredGeometry ? 4 : 6),
+          blurRadius: identity.usesSquaredGeometry ? 8 : 14,
+          offset: Offset(0, identity.usesSquaredGeometry ? 2 : 4),
         ),
       ];
 
   List<BoxShadow> get cardHoverShadow => [
         BoxShadow(
-          color: accent.withValues(alpha: 0.10),
-          blurRadius: 22,
+          color: Colors.black.withValues(
+            alpha: isDarkSurface ? 0.36 : 0.10,
+          ),
+          blurRadius: identity.usesSquaredGeometry ? 16 : 22,
           offset: const Offset(0, 8),
+        ),
+      ];
+
+  List<BoxShadow> get chromeShadow => [
+        BoxShadow(
+          color: Colors.black.withValues(
+            alpha: isDarkSurface ? 0.28 : 0.05,
+          ),
+          blurRadius: 10,
+          offset: const Offset(0, 2),
         ),
       ];
 
@@ -933,6 +1003,8 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
     Color? muted,
     Color? hover,
     Color? accent,
+    Color? accentInk,
+    Color? accentBorder,
     Color? accentSurface,
     Color? accentSoft,
     Color? ink,
@@ -970,6 +1042,8 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
         muted: muted ?? this.muted,
         hover: hover ?? this.hover,
         accent: accent ?? this.accent,
+        accentInk: accentInk ?? this.accentInk,
+        accentBorder: accentBorder ?? this.accentBorder,
         accentSurface: accentSurface ?? this.accentSurface,
         accentSoft: accentSoft ?? this.accentSoft,
         ink: ink ?? this.ink,
@@ -1011,6 +1085,8 @@ class WindowsNeoTokens extends ThemeExtension<WindowsNeoTokens> {
       muted: Color.lerp(muted, other.muted, t)!,
       hover: Color.lerp(hover, other.hover, t)!,
       accent: Color.lerp(accent, other.accent, t)!,
+      accentInk: Color.lerp(accentInk, other.accentInk, t)!,
+      accentBorder: Color.lerp(accentBorder, other.accentBorder, t)!,
       accentSurface: Color.lerp(accentSurface, other.accentSurface, t)!,
       accentSoft: Color.lerp(accentSoft, other.accentSoft, t)!,
       ink: Color.lerp(ink, other.ink, t)!,
@@ -1078,14 +1154,13 @@ abstract final class WindowsNeoTheme {
     final actionShape = RoundedRectangleBorder(
       borderRadius: tokens.actionRadius,
     );
-    final accentForeground =
-        tokens.accent.computeLuminance() > 0.50 ? Colors.black : Colors.white;
+    final accentForeground = tokens.onAccentFill;
     final actionSide = WidgetStateProperty.resolveWith<BorderSide>((states) {
       if (states.contains(WidgetState.focused)) {
-        return BorderSide(color: tokens.accent, width: 2);
+        return BorderSide(color: tokens.accentBorder, width: 2);
       }
       if (states.contains(WidgetState.hovered)) {
-        return BorderSide(color: tokens.accent.withValues(alpha: 0.78));
+        return BorderSide(color: tokens.accentBorder.withValues(alpha: 0.78));
       }
       return BorderSide(color: tokens.border);
     });
@@ -1155,7 +1230,7 @@ abstract final class WindowsNeoTheme {
         border: outline,
         enabledBorder: outline,
         focusedBorder: outline.copyWith(
-          borderSide: BorderSide(color: tokens.accent, width: 1.4),
+          borderSide: BorderSide(color: tokens.accentBorder, width: 1.4),
         ),
         contentPadding: EdgeInsets.symmetric(
           horizontal: tokens.spaceMd,
@@ -1213,8 +1288,32 @@ abstract final class WindowsNeoTheme {
       tabBarTheme: base.tabBarTheme.copyWith(
         labelColor: tokens.ink,
         unselectedLabelColor: tokens.muted,
-        indicatorColor: tokens.accent,
+        indicatorColor: tokens.accentInk,
         dividerColor: Colors.transparent,
+      ),
+      scrollbarTheme: base.scrollbarTheme.copyWith(
+        thickness: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.hovered) ||
+              states.contains(WidgetState.dragged)) {
+            return 8.0;
+          }
+          return 5.0;
+        }),
+        radius: tokens.family == WindowsNeoThemeFamily.miku
+            ? const Radius.circular(4)
+            : Radius.zero,
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.dragged)) {
+            return tokens.accentBorder.withValues(alpha: 0.78);
+          }
+          if (states.contains(WidgetState.hovered)) {
+            return tokens.muted.withValues(alpha: 0.62);
+          }
+          return tokens.muted.withValues(alpha: 0.32);
+        }),
+        trackColor: const WidgetStatePropertyAll(Colors.transparent),
+        trackBorderColor: const WidgetStatePropertyAll(Colors.transparent),
+        interactive: true,
       ),
       tooltipTheme: base.tooltipTheme.copyWith(
         decoration: BoxDecoration(

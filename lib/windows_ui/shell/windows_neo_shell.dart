@@ -46,6 +46,7 @@ class WindowsNeoShell extends StatefulWidget {
 
 class _WindowsNeoShellState extends State<WindowsNeoShell> {
   bool _navigationOpen = false;
+  bool _sidebarCollapsed = false;
   bool _isMaximized = false;
   Window? _window;
   int? _windowListener;
@@ -84,7 +85,7 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> {
 
   WindowsNeoLayoutMode _layoutMode(double width) {
     if (width < 760) return WindowsNeoLayoutMode.narrow;
-    if (width < 1180) return WindowsNeoLayoutMode.compact;
+    if (width < 1180 || _sidebarCollapsed) return WindowsNeoLayoutMode.compact;
     return WindowsNeoLayoutMode.expanded;
   }
 
@@ -120,6 +121,7 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> {
       child: Builder(
         builder: (context) => LayoutBuilder(
           builder: (context, constraints) {
+            final canToggleSidebar = constraints.maxWidth >= 1180;
             final mode = _layoutMode(constraints.maxWidth);
             return Material(
               color: context.windowsNeo.background,
@@ -127,11 +129,19 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> {
                 children: [
                   _WindowsNeoTitleBar(
                     mode: mode,
+                    canToggleSidebar: canToggleSidebar,
+                    sidebarCollapsed: _sidebarCollapsed,
                     isMaximized: _isMaximized,
+                    tabs: widget.tabs,
+                    activeId: widget.activeTab.id,
                     onToggleNavigation: () => setState(
                       () => _navigationOpen = !_navigationOpen,
                     ),
+                    onToggleSidebarCollapse: () => setState(
+                      () => _sidebarCollapsed = !_sidebarCollapsed,
+                    ),
                     onSearch: _openSearch,
+                    onSplit: widget.onSplit,
                   ),
                   Expanded(
                     child: Stack(
@@ -146,19 +156,7 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> {
                                 onNavigate: _closeNavigation,
                                 onSearch: _openSearch,
                               ),
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  _WindowsNeoTabStrip(
-                                    tabs: widget.tabs,
-                                    activeId: widget.activeTab.id,
-                                    onSearch: _openSearch,
-                                    onSplit: widget.onSplit,
-                                  ),
-                                  Expanded(child: widget.child),
-                                ],
-                              ),
-                            ),
+                            Expanded(child: widget.child),
                           ],
                         ),
                         if (mode == WindowsNeoLayoutMode.narrow)
@@ -241,24 +239,46 @@ class _WindowsNeoShellState extends State<WindowsNeoShell> {
 class _WindowsNeoTitleBar extends StatelessWidget {
   const _WindowsNeoTitleBar({
     required this.mode,
+    required this.canToggleSidebar,
+    required this.sidebarCollapsed,
     required this.isMaximized,
+    required this.tabs,
+    required this.activeId,
     required this.onToggleNavigation,
+    required this.onToggleSidebarCollapse,
     required this.onSearch,
+    required this.onSplit,
   });
 
   final WindowsNeoLayoutMode mode;
+  final bool canToggleSidebar;
+  final bool sidebarCollapsed;
   final bool isMaximized;
+  final List<WindowsWorkspaceTab> tabs;
+  final String activeId;
   final VoidCallback onToggleNavigation;
+  final VoidCallback onToggleSidebarCollapse;
   final VoidCallback onSearch;
+  final VoidCallback onSplit;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tokens = context.windowsNeo;
-    return SizedBox(
-      height: 44,
-      child: ColoredBox(
+    final captionBrightness = tokens.usesDarkChrome
+        ? Brightness.dark
+        : theme.brightness;
+    final dividerColor = tokens.usesDarkChrome
+        ? Colors.white.withValues(alpha: 0.14)
+        : tokens.border.withValues(alpha: 0.65);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
         color: tokens.chromeSurface,
+        border: Border(bottom: BorderSide(color: dividerColor)),
+      ),
+      child: SizedBox(
+        height: 44,
         child: Row(
           children: [
             SizedBox(
@@ -274,15 +294,24 @@ class _WindowsNeoTitleBar extends StatelessWidget {
                       onPressed: onToggleNavigation,
                     )
                   else ...[
-                    const SizedBox(width: 14),
-                    Icon(
-                      Icons.layers_rounded,
-                      size: 20,
-                      color: tokens.accent,
+                    SizedBox(width: mode.showLabels ? 12 : 10),
+                    ClipRRect(
+                      borderRadius: tokens.mediaBadgeRadius,
+                      child: Image.asset(
+                        'assets/images/logo/logo.png',
+                        width: 20,
+                        height: 20,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => Icon(
+                          Icons.layers_rounded,
+                          size: 20,
+                          color: tokens.chromeAccent,
+                        ),
+                      ),
                     ),
                     if (mode.showLabels) ...[
-                      const SizedBox(width: 9),
-                      Flexible(
+                      const SizedBox(width: 8),
+                      Expanded(
                         child: Text(
                           Constants.appName,
                           maxLines: 1,
@@ -290,95 +319,124 @@ class _WindowsNeoTitleBar extends StatelessWidget {
                           style: theme.textTheme.titleSmall?.copyWith(
                             color: tokens.chromeForeground,
                             fontWeight: FontWeight.w700,
+                            fontFamilyFallback: tokens.displayFontFallback,
                           ),
                         ),
                       ),
                     ],
+                    if (canToggleSidebar)
+                      _TitleBarAction(
+                        tooltip: sidebarCollapsed ? '展开侧栏' : '收起侧栏',
+                        icon: sidebarCollapsed
+                            ? Icons.menu_open_rounded
+                            : Icons.chevron_left_rounded,
+                        size: 32,
+                        iconSize: 17,
+                        onPressed: onToggleSidebarCollapse,
+                      ),
+                    if (mode.showLabels) const SizedBox(width: 4),
                   ],
                 ],
               ),
             ),
             VerticalDivider(
-              width: 2,
+              width: 1,
               thickness: 1,
-              color: tokens.chromeForeground.withValues(alpha: 0.24),
+              indent: 9,
+              endIndent: 9,
+              color: dividerColor,
             ),
+            const SizedBox(width: 2),
             const _TitleBarAction(
-              tooltip: '后退',
+              tooltip: '后退 (Alt+Left)',
               icon: Icons.arrow_back,
+              size: 34,
+              iconSize: 17,
               onPressed: WindowsVideoTabService.popActiveTab,
             ),
-            if (mode != WindowsNeoLayoutMode.narrow)
-              _TitleBarAction(
-                tooltip: '搜索',
-                icon: Icons.search,
-                onPressed: onSearch,
-              ),
+            const SizedBox(width: 2),
             Expanded(
-              child: DragToMoveArea(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: mode == WindowsNeoLayoutMode.expanded
-                          ? Padding(
-                              padding: const EdgeInsets.only(left: 6),
-                              child: Text(
-                                'Windows 工作区',
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  color: tokens.chromeMuted,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  const minDragWidth = 48.0;
+                  final maxTabsWidth =
+                      (constraints.maxWidth - minDragWidth).clamp(
+                        0.0,
+                        constraints.maxWidth,
+                      );
+                  return Row(
+                    children: [
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: maxTabsWidth),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 5,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (var index = 0; index < tabs.length; index++) ...[
+                                if (index > 0) const SizedBox(width: 4),
+                                _WindowsNeoTabPresence(
+                                  key: ValueKey(tabs[index].id),
+                                  item: tabs[index],
+                                  active: tabs[index].id == activeId,
                                 ),
-                              ),
-                            )
-                          : const SizedBox.expand(),
-                    ),
-                    if (mode == WindowsNeoLayoutMode.expanded)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 18),
-                          child: IgnorePointer(
-                            child: Text(
-                              tokens.shellMark,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: tokens.accent.withValues(alpha: 0.20),
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0,
-                              ),
-                            ),
+                              ],
+                            ],
                           ),
                         ),
                       ),
-                  ],
-                ),
+                      const Expanded(
+                        child: DragToMoveArea(child: SizedBox.expand()),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
+            _WindowsNeoRecentTabsMenu(foreground: tokens.chromeMuted),
+            _TitleBarAction(
+              tooltip: '分屏播放',
+              icon: Icons.splitscreen_outlined,
+              size: 34,
+              iconSize: 17,
+              onPressed: onSplit,
+            ),
+            _TitleBarAction(
+              tooltip: '新建搜索 (Ctrl+K)',
+              icon: Icons.add,
+              size: 34,
+              iconSize: 18,
+              onPressed: onSearch,
+            ),
+            const SizedBox(width: 4),
+            VerticalDivider(
+              width: 1,
+              thickness: 1,
+              indent: 10,
+              endIndent: 10,
+              color: dividerColor,
+            ),
             WindowCaptionButton.minimize(
-              brightness: tokens.usesDarkChrome
-                  ? Brightness.dark
-                  : theme.brightness,
+              brightness: captionBrightness,
               onPressed: () => WindowManager.instance.getCurrent()?.minimize(),
             ),
             isMaximized
                 ? WindowCaptionButton.unmaximize(
-                    brightness: tokens.usesDarkChrome
-                        ? Brightness.dark
-                        : theme.brightness,
+                    brightness: captionBrightness,
                     onPressed: () =>
                         WindowManager.instance.getCurrent()?.restore(),
                   )
                 : WindowCaptionButton.maximize(
-                    brightness: tokens.usesDarkChrome
-                        ? Brightness.dark
-                        : theme.brightness,
+                    brightness: captionBrightness,
                     onPressed: () =>
                         WindowManager.instance.getCurrent()?.maximize(),
                   ),
             WindowCaptionButton.close(
-              brightness: tokens.usesDarkChrome
-                  ? Brightness.dark
-                  : theme.brightness,
+              brightness: captionBrightness,
               onPressed: () => WindowManager.instance.getCurrent()?.close(),
             ),
           ],
@@ -393,11 +451,15 @@ class _TitleBarAction extends StatelessWidget {
     required this.tooltip,
     required this.icon,
     required this.onPressed,
+    this.size = 38,
+    this.iconSize = 18,
   });
 
   final String tooltip;
   final IconData icon;
   final VoidCallback onPressed;
+  final double size;
+  final double iconSize;
 
   @override
   Widget build(BuildContext context) {
@@ -405,11 +467,12 @@ class _TitleBarAction extends StatelessWidget {
     return WindowsNeoHoverHalo(
       borderRadius: tokens.actionRadius,
       child: SizedBox(
-        width: 42,
-        height: 42,
+        width: size,
+        height: size,
         child: IconButton(
           tooltip: tooltip,
-          iconSize: 18,
+          padding: EdgeInsets.zero,
+          iconSize: iconSize,
           onPressed: onPressed,
           icon: Icon(icon, color: context.windowsNeo.chromeForeground),
         ),
@@ -436,16 +499,17 @@ class _WindowsNeoSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
+    final darkNav = tokens.navigationSurface.computeLuminance() < 0.12;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: tokens.navigationSurface,
-        boxShadow: [
-          BoxShadow(
-            color: tokens.accent.withValues(alpha: 0.10),
-            blurRadius: 14,
-            offset: const Offset(5, 0),
+        border: Border(
+          right: BorderSide(
+            color: darkNav
+                ? Colors.white.withValues(alpha: 0.10)
+                : tokens.border.withValues(alpha: 0.56),
           ),
-        ],
+        ),
       ),
       child: SizedBox(
         width: mode.sidebarWidth,
@@ -454,7 +518,9 @@ class _WindowsNeoSidebar extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final showArtwork =
-                  mode.showLabels && constraints.maxHeight >= 680;
+                  mode.showLabels &&
+                  constraints.maxHeight >= 560 &&
+                  tokens.depth != WindowsNeoThemeDepth.minimal;
               return Column(
                 children: [
                   Expanded(
@@ -486,13 +552,15 @@ class _WindowsNeoSidebar extends StatelessWidget {
                                 onNavigate();
                               },
                             ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           Divider(
                             height: 1,
-                            thickness: 1.2,
-                            color: tokens.border.withValues(alpha: 0.95),
+                            thickness: 1,
+                            color: darkNav
+                                ? Colors.white.withValues(alpha: 0.12)
+                                : tokens.border.withValues(alpha: 0.65),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           _WindowsNeoNavItem(
                             label: '搜索',
                             icon: Icons.search,
@@ -516,10 +584,13 @@ class _WindowsNeoSidebar extends StatelessWidget {
                   ),
                   if (showArtwork) ...[
                     const _WindowsNeoSidebarArtwork(),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
+                  ] else if (mode.showLabels) ...[
+                    const _WindowsNeoSidebarSignature(),
+                    const SizedBox(height: 6),
                   ],
-                  if (mode.showLabels) const _WindowsNeoSidebarSignature(),
-                  if (mode.showLabels) const SizedBox(height: 8),
+                  _WindowsNeoThemeQuickBar(showLabel: mode.showLabels),
+                  const SizedBox(height: 4),
                   _toolItem(
                     label: '设置',
                     icon: Icons.settings_outlined,
@@ -800,7 +871,7 @@ class _WindowsNeoSidebarArtworkLayer extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Opacity(
-            opacity: 0.72,
+            opacity: 0.78,
             child: Image.asset(
               asset,
               fit: BoxFit.cover,
@@ -814,14 +885,36 @@ class _WindowsNeoSidebarArtworkLayer extends StatelessWidget {
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
                 colors: [
-                  tokens.chromeSurface.withValues(alpha: 0.84),
-                  tokens.chromeSurface.withValues(alpha: 0.46),
-                  tokens.chromeSurface.withValues(alpha: 0.12),
+                  tokens.chromeSurface.withValues(alpha: 0.86),
+                  tokens.chromeSurface.withValues(alpha: 0.44),
+                  tokens.chromeSurface.withValues(alpha: 0.14),
                 ],
-                stops: const [0, 0.46, 1],
+                stops: const [0, 0.48, 1],
               ),
             ),
           ),
+          if (tokens.depth == WindowsNeoThemeDepth.complex ||
+              tokens.depth == WindowsNeoThemeDepth.maximal)
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.65,
+                child: switch (artwork) {
+                  WindowsNeoSidebarArtwork.instrumentPanel => CustomPaint(
+                    painter: _WindowsNeoEndfieldStagePainter(
+                      ruleColor: Colors.white.withValues(alpha: 0.22),
+                      signalColor: tokens.accent.withValues(alpha: 0.85),
+                    ),
+                  ),
+                  WindowsNeoSidebarArtwork.archivePanel => CustomPaint(
+                    painter: _WindowsNeoOrbitStagePainter(
+                      lineColor: tokens.accent.withValues(alpha: 0.48),
+                      pointColor: tokens.secondaryAccent.withValues(alpha: 0.68),
+                    ),
+                  ),
+                  _ => const SizedBox.shrink(),
+                },
+              ),
+            ),
           Positioned(
             left: 12,
             top: 10,
@@ -831,19 +924,28 @@ class _WindowsNeoSidebarArtworkLayer extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.92),
                 fontWeight: FontWeight.w900,
                 height: .9,
+                fontFamilyFallback: tokens.displayFontFallback,
               ),
             ),
           ),
           Positioned(
             left: 12,
             bottom: 11,
-            child: Text(
-              tokens.shellWordmark,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.88),
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.8,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(width: 2.5, height: 14, color: tokens.accent),
+                const SizedBox(width: 6),
+                Text(
+                  '${tokens.shellWordmark} · ${tokens.shellSubmark}',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.88),
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.5,
+                    fontFamilyFallback: tokens.displayFontFallback,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1340,73 +1442,66 @@ class _WindowsNeoSidebarSignature extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: SizedBox(
-          height: 108,
+          height: 44,
           child: DecoratedBox(
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
-                  color: tokens.border.withValues(alpha: 0.78),
+                  color: tokens.border.withValues(alpha: 0.52),
                 ),
               ),
             ),
-            child: Stack(
-              clipBehavior: Clip.none,
+            child: Row(
               children: [
-                Positioned(
-                  left: 8,
-                  top: 8,
-                  child: Text(
-                    '01',
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      color: tokens.accent.withValues(alpha: 0.18),
-                      fontWeight: FontWeight.w800,
-                      height: 0.9,
-                      letterSpacing: 1,
-                    ),
-                  ),
+                const SizedBox(width: 6),
+                Container(
+                  width: 3,
+                  height: 22,
+                  color: tokens.chromeAccent.withValues(alpha: 0.84),
                 ),
-                Positioned(
-                  left: 10,
-                  bottom: 12,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 3,
-                        height: 28,
-                        color: tokens.accent.withValues(alpha: 0.72),
+                      Text(
+                        tokens.shellWordmark,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: tokens.navigationForeground.withValues(
+                                alpha: 0.82,
+                              ),
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 2.0,
+                              fontFamilyFallback: tokens.displayFontFallback,
+                            ),
                       ),
-                      const SizedBox(width: 8),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            tokens.shellWordmark,
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(
-                                  color: tokens.navigationForeground.withValues(
-                                    alpha: 0.70,
-                                  ),
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 2.5,
-                                ),
-                          ),
-                          const SizedBox(height: 1),
-                          Text(
-                            tokens.shellSubmark,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  color: tokens.navigationMuted,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.5,
-                                ),
-                          ),
-                        ],
+                      Text(
+                        tokens.shellSubmark,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: tokens.navigationMuted,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                          fontFamilyFallback: tokens.displayFontFallback,
+                        ),
                       ),
                     ],
                   ),
                 ),
+                Text(
+                  tokens.shellMark,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: tokens.chromeAccent.withValues(alpha: 0.42),
+                    fontWeight: FontWeight.w900,
+                    fontFamilyFallback: tokens.displayFontFallback,
+                  ),
+                ),
+                const SizedBox(width: 4),
               ],
             ),
           ),
@@ -1416,92 +1511,109 @@ class _WindowsNeoSidebarSignature extends StatelessWidget {
   }
 }
 
-class _WindowsNeoTabStrip extends StatelessWidget {
-  const _WindowsNeoTabStrip({
-    required this.tabs,
-    required this.activeId,
-    required this.onSearch,
-    required this.onSplit,
-  });
+class _WindowsNeoThemeQuickBar extends StatelessWidget {
+  const _WindowsNeoThemeQuickBar({required this.showLabel});
 
-  final List<WindowsWorkspaceTab> tabs;
-  final String activeId;
-  final VoidCallback onSearch;
-  final VoidCallback onSplit;
+  final bool showLabel;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: tokens.background,
-        boxShadow: [
-          BoxShadow(
-            color: tokens.accent.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: SizedBox(
-        height: 42,
-        child: Stack(
-          children: [
-            const Positioned(
-              left: 8,
-              right: 48,
-              bottom: 3,
-              child: WindowsNeoRhythmRail(),
-            ),
-            Row(
+    final darkNav = tokens.navigationSurface.computeLuminance() < 0.12;
+    final fg = tokens.navigationMuted;
+    final chipBg = darkNav
+        ? Colors.white.withValues(alpha: 0.06)
+        : tokens.surface.withValues(alpha: 0.65);
+
+    return PopupMenuButton<WindowsNeoThemeFamily>(
+      tooltip: '快速切换 Windows Neo 主题',
+      initialValue: tokens.family,
+      onSelected: WindowsNeoThemeController.select,
+      itemBuilder: (context) => [
+        for (final def in WindowsNeoThemeRegistry.values)
+          PopupMenuItem(
+            value: def.family,
+            child: Row(
               children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: def
+                        .buildTokens(Theme.of(context), def.defaultDepth)
+                        .accent,
+                    shape: def.family == WindowsNeoThemeFamily.miku
+                        ? BoxShape.circle
+                        : BoxShape.rectangle,
+                    border: Border.all(
+                      color: tokens.border.withValues(alpha: 0.7),
+                      width: 0.8,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.fromLTRB(8, 5, 4, 5),
-                    itemCount: tabs.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 4),
-                    itemBuilder: (context, index) {
-                      final item = tabs[index];
-                      return _WindowsNeoTabPresence(
-                        key: ValueKey(item.id),
-                        item: item,
-                        active: item.id == activeId,
-                      );
-                    },
+                  child: Text(
+                    '${def.label} · ${def.description}',
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const _WindowsNeoRecentTabsMenu(),
-                WindowsNeoHoverHalo(
-                  borderRadius: tokens.actionRadius,
-                  child: SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: IconButton(
-                      tooltip: '\u5206\u5c4f\u64ad\u653e',
-                      iconSize: 18,
-                      onPressed: onSplit,
-                      icon: const Icon(Icons.splitscreen_outlined),
-                    ),
-                  ),
-                ),
-                WindowsNeoHoverHalo(
-                  borderRadius: tokens.actionRadius,
-                  child: SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: IconButton(
-                      tooltip: '新建搜索',
-                      iconSize: 18,
-                      onPressed: onSearch,
-                      icon: const Icon(Icons.add),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
+                if (def.family == tokens.family)
+                  Icon(Icons.check, size: 16, color: tokens.accentInk),
               ],
             ),
-          ],
+          ),
+      ],
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: chipBg,
+          borderRadius: tokens.navigationItemRadius,
+          border: Border.all(
+            color: darkNav
+                ? Colors.white.withValues(alpha: 0.12)
+                : tokens.border.withValues(alpha: 0.55),
+          ),
+        ),
+        child: SizedBox(
+          height: 34,
+          child: Row(
+            mainAxisAlignment: showLabel
+                ? MainAxisAlignment.start
+                : MainAxisAlignment.center,
+            children: [
+              if (showLabel) const SizedBox(width: 10),
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: tokens.accent,
+                  shape: tokens.family == WindowsNeoThemeFamily.miku
+                      ? BoxShape.circle
+                      : BoxShape.rectangle,
+                  border: Border.all(
+                    color: tokens.navigationForeground.withValues(alpha: 0.35),
+                    width: 0.8,
+                  ),
+                ),
+              ),
+              if (showLabel) ...[
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    tokens.definition.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: tokens.navigationForeground.withValues(alpha: 0.88),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(Icons.unfold_more_rounded, size: 15, color: fg),
+                const SizedBox(width: 6),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -1583,13 +1695,16 @@ class _WindowsNeoTabPresenceState extends State<_WindowsNeoTabPresence>
 }
 
 class _WindowsNeoRecentTabsMenu extends StatelessWidget {
-  const _WindowsNeoRecentTabsMenu();
+  const _WindowsNeoRecentTabsMenu({this.foreground});
+
+  final Color? foreground;
 
   @override
   Widget build(BuildContext context) => Obx(() => _buildMenu(context));
 
   Widget _buildMenu(BuildContext context) {
     final tokens = context.windowsNeo;
+    final baseColor = foreground ?? tokens.muted;
     final tabs = WindowsVideoTabService.recentlyClosedTabs.reversed
         .take(8)
         .toList(growable: false);
@@ -1598,10 +1713,10 @@ class _WindowsNeoRecentTabsMenu extends StatelessWidget {
       enabled: tabs.isNotEmpty,
       icon: Icon(
         Icons.history_rounded,
-        size: 18,
+        size: 17,
         color: tabs.isEmpty
-            ? tokens.muted.withValues(alpha: 0.42)
-            : tokens.muted,
+            ? baseColor.withValues(alpha: 0.38)
+            : baseColor,
       ),
       itemBuilder: (context) => [
         for (final item in tabs)
@@ -1646,7 +1761,16 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.windowsNeo;
-    final foreground = active ? tokens.ink : tokens.muted;
+    final darkChrome = tokens.usesDarkChrome;
+    final foreground = active
+        ? tokens.ink
+        : (darkChrome ? Colors.white.withValues(alpha: 0.76) : tokens.muted);
+    final inactiveBg = darkChrome
+        ? Colors.white.withValues(alpha: 0.08)
+        : tokens.surface.withValues(alpha: 0.42);
+    final inactiveBorder = darkChrome
+        ? Colors.white.withValues(alpha: 0.16)
+        : tokens.border.withValues(alpha: 0.65);
     return Listener(
       onPointerDown: (event) {
         if (event.buttons == kMiddleMouseButton && item.canClose) {
@@ -1662,7 +1786,7 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(
               minWidth: 116,
-              maxWidth: 240,
+              maxWidth: 232,
               minHeight: height,
               maxHeight: height,
             ),
@@ -1676,15 +1800,13 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                     duration: context.windowsNeoDuration(tokens.motionFast),
                     curve: Curves.easeOutCubic,
                     decoration: BoxDecoration(
-                      color: active
-                          ? null
-                          : tokens.surface.withValues(alpha: 0.34),
+                      color: active ? null : inactiveBg,
                       gradient: active ? tokens.workspaceTabGradient : null,
                       borderRadius: tokens.workspaceTabRadius,
                       border: Border.all(
                         color: active
-                            ? tokens.accent.withValues(alpha: 0.58)
-                            : tokens.border.withValues(alpha: 0.72),
+                            ? tokens.accentBorder.withValues(alpha: 0.65)
+                            : inactiveBorder,
                       ),
                     ),
                     child: Material(
@@ -1692,7 +1814,9 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                       borderRadius: tokens.workspaceTabRadius,
                       child: InkWell(
                         borderRadius: tokens.workspaceTabRadius,
-                        hoverColor: tokens.hover,
+                        hoverColor: darkChrome
+                            ? Colors.white.withValues(alpha: 0.12)
+                            : tokens.hover,
                         onTap: active
                             ? null
                             : () => WindowsVideoTabService.select(item.id),
@@ -1703,15 +1827,15 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                             children: [
                               Icon(
                                 _iconForItem(item),
-                                size: 16,
-                                color: active ? tokens.accent : foreground,
+                                size: 15.5,
+                                color: active ? tokens.accentInk : foreground,
                               ),
                               const SizedBox(width: 7),
                               if (WindowsVideoTabService.isPinned(item.id)) ...[
                                 Icon(
                                   Icons.push_pin_rounded,
                                   size: 13,
-                                  color: tokens.accent,
+                                  color: tokens.accentInk,
                                 ),
                                 const SizedBox(width: 5),
                               ],
@@ -1746,12 +1870,12 @@ class WindowsNeoWorkspaceTab extends StatelessWidget {
                                         padding: EdgeInsets.zero,
                                         iconSize: 14,
                                         color: audible
-                                            ? tokens.accent
+                                            ? tokens.accentInk
                                             : foreground,
                                         style: audible
                                             ? IconButton.styleFrom(
-                                                backgroundColor: tokens.accent
-                                                    .withValues(alpha: 0.12),
+                                                backgroundColor: tokens
+                                                    .accentSurface,
                                               )
                                             : null,
                                         onPressed: () =>

@@ -1,4 +1,5 @@
 import 'package:PiliPlus/windows_ui/foundation/windows_neo_theme.dart';
+import 'package:PiliPlus/windows_ui/motion/windows_neo_motion.dart';
 import 'package:material_ui/material_ui.dart';
 
 class WindowsNeoContextStack extends StatelessWidget {
@@ -12,10 +13,40 @@ class WindowsNeoContextStack extends StatelessWidget {
   final List<Widget> contexts;
 
   @override
-  Widget build(BuildContext context) => IndexedStack(
-    index: contexts.length,
-    children: [base, ...contexts],
-  );
+  Widget build(BuildContext context) {
+    final tokens = context.windowsNeo;
+    final hasContext = contexts.isNotEmpty;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Offstage(
+          offstage: hasContext,
+          child: TickerMode(enabled: !hasContext, child: base),
+        ),
+        if (hasContext)
+          AnimatedSwitcher(
+            duration: context.windowsNeoDuration(tokens.motionFast),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0.03, 0),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              ),
+            ),
+            child: IndexedStack(
+              key: ValueKey(contexts.length),
+              index: contexts.length - 1,
+              children: contexts,
+            ),
+          ),
+      ],
+    );
+  }
 }
 
 class WindowsNeoContextPanel extends StatelessWidget {
@@ -74,7 +105,7 @@ class WindowsNeoContextPanel extends StatelessWidget {
                         ? 2
                         : 3,
                     height: 18,
-                    color: tokens.accent,
+                    color: darkHeader ? tokens.accent : tokens.accentInk,
                   ),
                   const SizedBox(width: 8),
                   Expanded(

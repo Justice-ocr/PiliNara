@@ -54,12 +54,17 @@ class WindowsNeoPage extends StatelessWidget {
     final commandUsesDarkChrome = switch (tokens.family) {
       WindowsNeoThemeFamily.ark ||
       WindowsNeoThemeFamily.exAstris ||
+      WindowsNeoThemeFamily.popucom ||
       WindowsNeoThemeFamily.corporate => true,
       _ => false,
     };
     final showSubtitle =
         !compactHeader && subtitle != null && subtitle!.isNotEmpty;
-    final headerHeight = showSubtitle
+    final mergeCommandIntoHeader =
+        compactHeader && !showSubtitle && commandBar != null;
+    final headerHeight = mergeCommandIntoHeader
+        ? 48.0
+        : showSubtitle
         ? tokens.pageHeaderHeight
         : tokens.pageHeaderHeight - 8;
     final navigator = Navigator.maybeOf(context);
@@ -77,27 +82,25 @@ class WindowsNeoPage extends StatelessWidget {
                 border: Border(
                   bottom: BorderSide(
                     color: headerUsesDarkChrome
-                        ? Colors.white.withValues(alpha: 0.16)
-                        : tokens.border.withValues(alpha: 0.78),
+                        ? Colors.white.withValues(alpha: 0.14)
+                        : tokens.border.withValues(alpha: 0.62),
                   ),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: tokens.accent.withValues(alpha: 0.07),
-                    blurRadius: 9,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+                boxShadow: tokens.chromeShadow,
               ),
               child: CustomPaint(
-                painter: tokens.depth == WindowsNeoThemeDepth.minimal
+                painter:
+                    tokens.depth == WindowsNeoThemeDepth.minimal ||
+                        mergeCommandIntoHeader
                     ? null
                     : _WindowsNeoPageHeaderCuePainter(
                         family: tokens.family,
-                        accent: tokens.accent,
+                        accent: headerUsesDarkChrome
+                            ? tokens.accent
+                            : tokens.accentInk,
                         rule: headerUsesDarkChrome
-                            ? Colors.white.withValues(alpha: 0.28)
-                            : tokens.border.withValues(alpha: 0.78),
+                            ? Colors.white.withValues(alpha: 0.24)
+                            : tokens.border.withValues(alpha: 0.68),
                       ),
                 child: SizedBox(
                   height: headerHeight,
@@ -118,56 +121,74 @@ class WindowsNeoPage extends StatelessWidget {
                             SizedBox(width: tokens.spaceSm),
                           ],
                           if (leading != null) ...[
-                            SizedBox.square(dimension: 34, child: leading),
-                            SizedBox(width: tokens.spaceMd - 2),
+                            SizedBox.square(dimension: 30, child: leading),
+                            SizedBox(width: tokens.spaceSm),
                           ],
                           const WindowsNeoHeaderBeat(),
                           SizedBox(width: tokens.spaceSm),
-                          Expanded(
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                if (tokens.depth !=
-                                    WindowsNeoThemeDepth.minimal)
-                                  const Positioned(
-                                    right: 14,
-                                    top: 4,
-                                    child: IgnorePointer(
-                                      child: WindowsNeoHeaderWave(),
+                          if (mergeCommandIntoHeader) ...[
+                            Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: tokens
+                                  .pageTitleStyle(theme.textTheme)
+                                  .copyWith(color: headerInk),
+                            ),
+                            SizedBox(width: tokens.spaceMd),
+                            Expanded(child: commandBar!),
+                            SizedBox(width: tokens.spaceSm),
+                          ] else
+                            Expanded(
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  if (tokens.depth ==
+                                          WindowsNeoThemeDepth.complex ||
+                                      tokens.depth ==
+                                          WindowsNeoThemeDepth.maximal)
+                                    const Positioned(
+                                      right: 14,
+                                      top: 4,
+                                      child: IgnorePointer(
+                                        child: WindowsNeoHeaderWave(),
+                                      ),
                                     ),
-                                  ),
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: tokens
-                                          .pageTitleStyle(theme.textTheme)
-                                          .copyWith(color: headerInk),
-                                    ),
-                                    if (showSubtitle) ...[
-                                      const SizedBox(height: 2),
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
                                       Text(
-                                        subtitle!,
+                                        title,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: tokens
-                                            .pageSubtitleStyle(theme.textTheme)
-                                            .copyWith(
-                                              color: headerInk.withValues(
-                                                alpha: 0.68,
-                                              ),
-                                            ),
+                                            .pageTitleStyle(theme.textTheme)
+                                            .copyWith(color: headerInk),
                                       ),
+                                      if (showSubtitle) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          subtitle!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: tokens
+                                              .pageSubtitleStyle(
+                                                theme.textTheme,
+                                              )
+                                              .copyWith(
+                                                color: headerInk.withValues(
+                                                  alpha: 0.68,
+                                                ),
+                                              ),
+                                        ),
+                                      ],
                                     ],
-                                  ],
-                                ),
-                              ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
                           for (final action in actions) action,
                         ],
                       ),
@@ -176,7 +197,7 @@ class WindowsNeoPage extends StatelessWidget {
                 ),
               ),
             ),
-            if (commandBar case final commandBar?) ...[
+            if (commandBar != null && !mergeCommandIntoHeader) ...[
               DecoratedBox(
                 decoration: BoxDecoration(
                   color: commandUsesDarkChrome
@@ -186,16 +207,9 @@ class WindowsNeoPage extends StatelessWidget {
                     bottom: BorderSide(
                       color: commandUsesDarkChrome
                           ? Colors.white.withValues(alpha: 0.12)
-                          : tokens.border.withValues(alpha: 0.62),
+                          : tokens.border.withValues(alpha: 0.54),
                     ),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: tokens.accent.withValues(alpha: 0.05),
-                      blurRadius: 7,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
                 ),
                 child: commandBar,
               ),

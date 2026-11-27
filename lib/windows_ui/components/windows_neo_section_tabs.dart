@@ -25,6 +25,7 @@ class WindowsNeoSectionTabs extends StatelessWidget {
     final onDarkChrome = switch (tokens.family) {
       WindowsNeoThemeFamily.ark ||
       WindowsNeoThemeFamily.exAstris ||
+      WindowsNeoThemeFamily.popucom ||
       WindowsNeoThemeFamily.corporate => true,
       _ => false,
     };

@@ -148,13 +148,15 @@ class _LastRefreshMarker extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: tokens.cardRadius,
-            border: Border.all(color: tokens.accent.withValues(alpha: 0.18)),
+            border: Border.all(
+              color: tokens.accentBorder.withValues(alpha: 0.34),
+            ),
           ),
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.refresh_outlined, color: tokens.accent),
+                Icon(Icons.refresh_outlined, color: tokens.accentInk),
                 SizedBox(height: tokens.spaceSm),
                 Text(
                   '\u4e0a\u6b21\u770b\u5230\u8fd9\u91cc',

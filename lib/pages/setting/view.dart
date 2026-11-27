@@ -163,7 +163,7 @@ class _SettingPageState extends State<SettingPage> {
     return WindowsNeoPage(
       title: '设置',
       subtitle: '调整播放、内容与应用偏好',
-      leading: Icon(Icons.tune_outlined, color: tokens.accent),
+      leading: Icon(Icons.tune_outlined, color: tokens.chromeAccent),
       child: Row(
         children: [
           SizedBox(
@@ -180,11 +180,18 @@ class _SettingPageState extends State<SettingPage> {
                 Container(
                   height: 58,
                   padding: const EdgeInsets.symmetric(horizontal: 22),
-                  color: tokens.surface.withValues(alpha: 0.82),
+                  decoration: BoxDecoration(
+                    color: tokens.surface.withValues(alpha: 0.88),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: tokens.border.withValues(alpha: 0.42),
+                      ),
+                    ),
+                  ),
                   child: Row(
                     children: [
                       IconTheme.merge(
-                        data: IconThemeData(color: tokens.accent, size: 21),
+                        data: IconThemeData(color: tokens.accentInk, size: 21),
                         child: selected.icon,
                       ),
                       const SizedBox(width: 12),
@@ -221,10 +228,17 @@ class _SettingPageState extends State<SettingPage> {
                       alignment: Alignment.topCenter,
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 920),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: ColoredBox(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
                             color: tokens.surface,
+                            borderRadius: tokens.cardRadius,
+                            border: Border.all(
+                              color: tokens.border.withValues(alpha: 0.45),
+                            ),
+                            boxShadow: tokens.cardShadow,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: tokens.cardRadius,
                             child: Theme(
                               data: theme.copyWith(
                                 scaffoldBackgroundColor: tokens.surface,
