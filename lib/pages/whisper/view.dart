@@ -163,12 +163,14 @@ class _WhisperPageState extends State<WhisperPage> {
                             controllerTag: 'whisper-embedded-$activeTalkerId',
                             embedded: true,
                           )
-                        : Center(
-                            child: WindowsNeoState(
-                              icon: Icons.forum_outlined,
-                              title: '选择左侧会话开始聊天',
-                              message: '可拖拽中轴调整会话列表宽度，右键会话可置顶或免打扰',
-                            ),
+                        : const CustomScrollView(
+                            slivers: [
+                              WindowsNeoSliverState(
+                                icon: Icons.forum_outlined,
+                                title: '选择左侧会话开始聊天',
+                                message: '可拖拽中轴调整会话列表宽度，右键会话可置顶或免打扰',
+                              ),
+                            ],
                           ),
                   ),
                 ],
