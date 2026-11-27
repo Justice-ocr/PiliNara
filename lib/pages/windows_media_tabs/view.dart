@@ -196,7 +196,9 @@ class _WindowsMediaTabsPageState extends State<WindowsMediaTabsPage> {
         final candidates = WindowsVideoTabService.tabs
             .where(WindowsVideoTabService.isSplitCandidate)
             .toList(growable: false);
-        final draftIds = WindowsVideoTabService.splitDraftTabIds;
+        final draftIds = WindowsVideoTabService.splitDraftTabIds.toList(
+          growable: false,
+        );
         final canApply = WindowsVideoTabService.canApplySplitSelection;
         return AlertDialog(
           title: Row(
