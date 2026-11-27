@@ -1628,7 +1628,7 @@ class _WindowsNeoThemeQuickBar extends StatefulWidget {
 
 class _WindowsNeoThemeQuickBarState extends State<_WindowsNeoThemeQuickBar> {
   Future<void> _cycleBrightness() async {
-    final current = Pref.themeMode;
+    final current = Pref.themeType;
     final next = switch (current) {
       ThemeType.system => ThemeType.light,
       ThemeType.light => ThemeType.dark,
@@ -1655,7 +1655,7 @@ class _WindowsNeoThemeQuickBarState extends State<_WindowsNeoThemeQuickBar> {
 
     ThemeType currentMode;
     try {
-      currentMode = Pref.themeMode;
+      currentMode = Pref.themeType;
     } catch (_) {
       currentMode = ThemeType.system;
     }
@@ -1663,6 +1663,11 @@ class _WindowsNeoThemeQuickBarState extends State<_WindowsNeoThemeQuickBar> {
       ThemeType.light => '当前：浅色模式（点击切换深色）',
       ThemeType.dark => '当前：深色模式（点击跟随系统）',
       ThemeType.system => '当前：跟随系统（点击切换浅色）',
+    };
+    final brightnessIcon = switch (currentMode) {
+      ThemeType.light => Icons.light_mode_outlined,
+      ThemeType.dark => Icons.dark_mode_outlined,
+      ThemeType.system => Icons.brightness_auto_outlined,
     };
 
     final themePicker = PopupMenuButton<WindowsNeoThemeFamily>(
@@ -1782,7 +1787,7 @@ class _WindowsNeoThemeQuickBarState extends State<_WindowsNeoThemeQuickBar> {
             ),
             alignment: Alignment.center,
             child: Icon(
-              currentMode.icon,
+              brightnessIcon,
               size: 16,
               color: tokens.navigationForeground.withValues(alpha: 0.84),
             ),

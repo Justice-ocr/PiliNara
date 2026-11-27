@@ -163,7 +163,7 @@ class _WhisperPageState extends State<WhisperPage> {
                             controllerTag: 'whisper-embedded-$activeTalkerId',
                             embedded: true,
                           )
-                        : const Center(
+                        : Center(
                             child: WindowsNeoState(
                               icon: Icons.forum_outlined,
                               title: '选择左侧会话开始聊天',

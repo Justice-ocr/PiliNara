@@ -156,7 +156,7 @@ class _WindowsNeoCommandPaletteState extends State<WindowsNeoCommandPalette> {
   }
 
   void _cycleBrightness() {
-    final current = Pref.themeMode;
+    final current = Pref.themeType;
     final next = switch (current) {
       ThemeType.light => ThemeType.dark,
       ThemeType.dark => ThemeType.system,
